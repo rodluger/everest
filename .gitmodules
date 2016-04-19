@@ -1,0 +1,6 @@
+[submodule "kplr"]
+	path = kplr
+	url = https://github.com/rodluger/kplr
+[submodule "pysyzygy"]
+	path = pysyzygy
+	url = https://github.com/rodluger/pysyzygy
