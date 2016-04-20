@@ -44,6 +44,10 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   if not os.path.exists(outdir):
     os.makedirs(outdir)
   
+  # Setup logging
+  InitLog(os.path.join(outdir, 'compute.log'), log_level = log_level, 
+          screen_level = screen_level)
+  
   # Check if we've done this already
   if os.path.exists(os.path.join(outdir, 'data.npz')) and not clobber:
     # Load from disk
@@ -57,10 +61,6 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     data['gp'] = george.GP(kernel.george_kernel())
     return data
   
-  # Setup logging
-  InitLog(os.path.join(outdir, 'compute.log'), log_level = log_level, 
-          screen_level = screen_level)
-
   # Begin pre-processing
   log.info('Pre-processing the data...')
   time = k2star.time
@@ -337,7 +337,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              msf = msf, usf = usf, bestij = bestij,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
              kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
-             git_hash = git_hash, git_branch = git_branch, outdir = outdir)
+             git_hash = git_hash, git_branch = git_branch, outdir = outdir,
+             campaign = k2star.campaign)
   np.savez_compressed(os.path.join(outdir, 'data.npz'), **data)
   
   # Finally, delete the old .npz files

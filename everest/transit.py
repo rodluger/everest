@@ -60,7 +60,7 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   '''
   
   # Remove extra kwargs
-  for k in ['mask', 'everest', 'k2sff']:
+  for k in ['mask', 'everest']:
     kwargs.pop(k, None)
   
   # Note that rhos can affect RpRs, so we should really do this iteratively,
