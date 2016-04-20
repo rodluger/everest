@@ -1,0 +1,4 @@
+# Manual corrections to the Villanova data, which often
+# reports incorrect phases for some EBs!
+# KIC,camp,period,bjd0,pwidth,swidth,sep,
+202072596,K2C0,3.9787998,56776.883052,0.0410,0.03,0.585,
