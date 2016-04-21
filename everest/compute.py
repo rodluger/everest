@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_order = 3,
-            ps_iter = 100, npc_arr = np.arange(25, 200, 10),
+            ps_iter = 100, npc_arr = np.arange(25, 200, 5),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.DEBUG, gp_iter = 2, **kwargs):
   '''
@@ -218,8 +218,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
 
     # Compute the scatter for different number of principal components
     log.info('Minimizing the predictive scatter...')
-    masked_scatter = np.zeros_like(npc_arr)
-    unmasked_scatter = np.zeros_like(npc_arr)
+    masked_scatter = np.zeros_like(npc_arr, dtype = float)
+    unmasked_scatter = np.zeros_like(npc_arr, dtype = float)
     for i, n in enumerate(npc_arr):
       log.debug('Number of components = %d...' % n)
       sX = SliceX(X, n, npctot)
@@ -398,15 +398,15 @@ def MinimizeScatter(npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha =
   
   # Masked and unmasked "scatter functions": smooth GP-generated curves
   # that approximate the scatter as a function of the number of components
-  msf = np.zeros_like(npc_pred) * np.nan
-  usf = np.zeros_like(npc_pred) * np.nan
+  msf = np.zeros_like(npc_pred, dtype = float) * np.nan
+  usf = np.zeros_like(npc_pred, dtype = float) * np.nan
  
   # Fit the scatter with a GP. GP params are hard-coded for now.
   sig = 1.4826 * np.nanmedian(np.abs(masked_scatter - np.nanmedian(masked_scatter)))
   amp = 10 * sig
   tau = 100
   gp_scatter = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-  gp_scatter.compute(npc_arr, np.ones_like(npc_arr) * sig)
+  gp_scatter.compute(npc_arr, np.ones_like(npc_arr, dtype = float) * sig)
   
   # Predicted scatter in masked regions
   msf, _ = gp_scatter.predict(masked_scatter - np.nanmedian(masked_scatter), npc_pred)

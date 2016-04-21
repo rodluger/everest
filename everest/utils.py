@@ -9,7 +9,7 @@ utils.py
 from __future__ import division, print_function, absolute_import, unicode_literals
 from scipy.signal import medfilt
 import numpy as np
-import sys
+import sys, traceback, pdb
 import logging
 log = logging.getLogger(__name__)
 
@@ -383,3 +383,28 @@ def AcorSev(kchisq):
   else:
     acorsev = 5
   return acorsev
+
+def ExceptionHook(exctype, value, tb):
+  '''
+  A custom exception handler.
+  
+  '''
+  
+  for line in traceback.format_exception_only(exctype, value):
+    log.error(line.replace('\n', ''))
+  for line in traceback.format_tb(tb):
+    log.error(line.replace('\n', ''))
+  sys.__excepthook__(exctype, value, tb)
+
+def ExceptionHookPDB(exctype, value, tb):
+  '''
+  A custom exception handler, with PDB post-mortem for debugging.
+  
+  '''
+  
+  for line in traceback.format_exception_only(exctype, value):
+    log.error(line.replace('\n', ''))
+  for line in traceback.format_tb(tb):
+    log.error(line.replace('\n', ''))
+  sys.__excepthook__(exctype, value, tb)
+  pdb.pm()

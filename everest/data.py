@@ -372,6 +372,31 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
+def GetK2Stars(clobber = False):
+  '''
+  Download and return a dict of all K2 stars organized by campaign.
+  
+  '''
+  
+  # Download
+  if clobber:
+    client = kplr.API()
+    stars = client.k2_star_list()
+    for campaign in stars.keys():
+      with open(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), 'w') as f:
+        for star in stars[campaign]:
+          print(star, file = f)
+  
+  # Return
+  res = {}
+  for campaign in range(99):
+    f = os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign)
+    if os.path.exists(f):
+      stars = np.loadtxt(f, dtype = int)
+      res.update({campaign: stars})
+  
+  return res
+  
 def GetK2Planets():
   '''
   The CSV file below was downloaded from 
