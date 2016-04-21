@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .data import GetK2Data
-from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter
+from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX
 from .utils import InitLog, Mask, GetMasks, Breakpoint, SatSev, \
                    AcorSev, PadWithZeros, RMS, Outliers
 from .kernels import KernelModels
@@ -25,7 +25,7 @@ import logging
 log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
-            outlier_sigma = 5, mask_times = [],
+            outlier_sigma = 5, mask_times = [], pld_arr = [1,2,3],
             ps_iter = 100, npc_arr = np.arange(25, 250, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.DEBUG, gp_iter = 1, **kwargs):
@@ -202,6 +202,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     unmasked_scatter = best['unmasked_scatter']
     msf = best['msf']
     usf = best['usf']
+    breakpoints = best['breakpoints']
   except:
     # Compute PLD basis vectors and save them to disk
     log.info('Computing the basis vectors...')
@@ -211,44 +212,47 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     else:
       breakpoints = [breakpoint]
     if not os.path.exists(os.path.join(outdir, 'best.npz')):
-      for pld_order in [1,2,3]:
+      for pld_order in pld_arr:
         file = os.path.join(outdir, 'X_%02d.npz' % pld_order)
         if not os.path.exists(file):
-          X = PLDBasis(fpix, time = time, pld_order = pld_order, 
-                       max_components = npc_arr[-1], 
-                       breakpoints = breakpoints)
-          np.savez(file, X = X)
+          X, npctot = PLDBasis(fpix, time = time, pld_order = pld_order, 
+                               max_components = npc_arr[-1], 
+                               breakpoints = breakpoints)
+          np.savez(file, X = X, npctot = npctot)
           del X
   
     # Reload them from disk
-    tmp = [np.load(os.path.join(outdir, 'X_%02d.npz' % pld_order))['X'] 
-                   for pld_order in [1,2,3]]
+    tmp = [np.load(os.path.join(outdir, 'X_%02d.npz' % pld_order)) for pld_order in pld_arr]
     X_arr = np.empty(len(tmp), dtype = object)
-    X_arr[:] = tmp
+    X_arr[:] = [t['X'] for t in tmp]
+    npctot = [t['npctot'] for t in tmp]
   
     # Compute the scatter for each combination of (pld order, number of components)
     log.info('Minimizing the predictive scatter...')
-    masked_scatter = np.zeros((3, len(npc_arr)))
-    unmasked_scatter = np.zeros((3, len(npc_arr)))
-    for i, pld_order in enumerate([1,2,3]):
-      for j, npc in enumerate(npc_arr):
-        log.debug('PLD order = %d, Number of components = %d...' % (pld_order, npc))
+    masked_scatter = np.zeros((len(pld_arr), len(npc_arr)))
+    unmasked_scatter = np.zeros((len(pld_arr), len(npc_arr)))
+    for i, pld_order in enumerate(pld_arr):
+      for j, n in enumerate(npc_arr):
+        log.debug('PLD order = %d, Number of components = %d...' % (pld_order, n))
+        X = SliceX(X_arr[i], n, npctot[i])
         masked_scatter[i,j], unmasked_scatter[i,j] = \
-        ComputeScatter(X_arr[i][:,:npc], flux, time, ferr, 
+        ComputeScatter(X, flux, time, ferr, 
                        gp, mask = mask, niter = ps_iter)
     
     # Find the params that minimize the scatter  
     i, j, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
-                     masked_scatter, unmasked_scatter, alpha = scatter_alpha)
+                     masked_scatter, unmasked_scatter, 
+                     alpha = scatter_alpha)
     bestij = [i, j]
     pld_order = i + 1
     npc = npc_pred[j]
-    X = X_arr[i][:,:npc]
+    X = SliceX(X_arr[i], npc, npctot[i])
     
     # Save and delete the large X files
     np.savez(os.path.join(outdir, 'best.npz'), X = X, pld_order = pld_order, 
              npc = npc, bestij = bestij, masked_scatter = masked_scatter,
-             unmasked_scatter = unmasked_scatter, msf = msf, usf = usf)
+             unmasked_scatter = unmasked_scatter, msf = msf, usf = usf,
+             breakpoints = breakpoints)
     for pld_order, nchunk in bestij:
       os.remove(os.path.join(outdir, 'X_%02d.npz' % (pld_order)))
 
@@ -332,13 +336,13 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              white = white), fpldgp = fpldgp, pld_order = pld_order,
              rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
              rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
-             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
+             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, pld_arr = pld_arr, npc_pred = npc_pred,
              masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
              msf = msf, usf = usf, bestij = bestij,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
              kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
              git_hash = git_hash, git_branch = git_branch, outdir = outdir,
-             campaign = k2star.campaign)
+             campaign = k2star.campaign, breakpoints = breakpoints)
   np.savez_compressed(os.path.join(outdir, 'data.npz'), **data)
   
   # Finally, delete the old .npz files

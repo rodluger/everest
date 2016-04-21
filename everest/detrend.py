@@ -82,7 +82,7 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 1, cross_terms =
     chunk = np.hstack((lzeros, x, rzeros))
     X = np.vstack((X, chunk))
   
-  return X
+  return X, n_components
 
 def PLDModel(C, X):
   '''
@@ -108,6 +108,19 @@ def PLDCoeffs(X, Y, time, errors, gp, mask = []):
   B = np.dot(mX.T, gp.solver.apply_inverse(mY))
   return np.linalg.solve(A, B)
 
+def SliceX(X, n, npc):
+  '''
+  Reduce the dimensionality of X from ``npc`` components to ``n`` components.
+  Trivial in the case where there's no breakpoints, slightly tricky when we have
+  submatrices in ``X``.
+  
+  '''
+  
+  # Number of chunks in X
+  nchunks = X.shape[1] // npc
+  inds = np.concatenate([np.arange(i * npc + n, (i + 1) * npc) for i in range(nchunks)])
+  return np.delete(X, inds, 1)
+
 def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 100):
   '''
   Compute the median scatter in the de-trended light curve and the 
@@ -132,8 +145,8 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 100):
   # The precision in the unmasked light curve
   C = PLDCoeffs(X, Y, time, errors, gp, mask_orig)
   M = PLDModel(C, X)
-  unmasked_scatter = (1.e6 * np.std((Y - M + med) / med) / np.sqrt(13))
-  
+  unmasked_scatter = RMS((Y - M + med) / med)
+
   # Compute the precision several times and take the median
   for n in range(niter):
     tol = 0.28
@@ -166,7 +179,7 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 100):
     # Predict the model in that interval
     M = PLDModel(C, X[chunk])
     
-    # The masked detrended interval and its precision in ppm
+    # The masked de-trended interval and its precision in ppm
     masked_scatter.append(1.e6 * np.std((Y[chunk] - M + med) / med) / np.sqrt(13))
   
   # Take the median and return

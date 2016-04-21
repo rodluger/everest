@@ -96,6 +96,7 @@ def PlotScatter(EPIC, data):
   
   flux = data['flux']
   npc_arr = data['npc_arr']
+  pld_arr = data['pld_arr']
   npc_pred = data['npc_pred']
   masked_scatter = data['masked_scatter']
   unmasked_scatter = data['unmasked_scatter']
@@ -110,17 +111,17 @@ def PlotScatter(EPIC, data):
     elif n == 2: return 'nd'
     elif n == 3: return 'rd'
     else: return 'th'
-  pld_str = [r'%d$^\mathrm{%s}$ order PLD' % (n, suf(n)) for n in [1,2,3]]
+  pld_str = [r'%d$^\mathrm{%s}$ order PLD' % (n, suf(n)) for n in pld_arr]
   
   # Plot the scatter as a function of the many parameters
-  fig, ax = pl.subplots(3, figsize = (12, 8))
+  fig, ax = pl.subplots(len(pld_arr), figsize = (12, 8))
   fig.subplots_adjust(hspace = 0.3, wspace = 0.2, left = 0.1, right = 0.95)
   
   # Some global minima/maxima, etc.
   ytop = np.inf
   mps = [np.inf, (0, 0)]
   
-  for i in range(3):
+  for i in range(len(pld_arr)):
     
       # We're going to set the upper y limits based on the plot
       # with the *lowest* scatter

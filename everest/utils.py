@@ -193,26 +193,21 @@ def Outliers(time, flux, fpix = None, ferr = None, mask = [], kernel_size = 5,
     
       # Remove the outlier if the RMS improved
       if GetRMS(tr, pr, fr, er) < RMS0:
-        # Get the outlier index in the **original** array
-        outlier = np.argmax(time == otime)
-        time = np.delete(time, outlier)
-        fpix = np.delete(fpix, outlier, axis = 0)
-        flux = np.delete(flux, outlier)
-        ferr = np.delete(ferr, outlier)
         rtimes.append(otime)  
       else:
         ktimes.append(otime)
         
-    rtimes = np.array(rtimes, dtype = int)
-    ktimes = np.array(ktimes, dtype = int)
+    rtimes = np.array(rtimes, dtype = float)
+    ktimes = np.array(ktimes, dtype = float)
   
   else:
     rtimes = np.array(otimes)
-    ktimes = np.array([], dtype = int)
+    ktimes = np.array([], dtype = float)
   
   # Grab the indices from the times and return
   remove = np.array(sorted([np.argmax(time == t) for t in rtimes]))
   keep = np.array(sorted([np.argmax(time == t) for t in ktimes]))
+
   return remove, keep
       
 def Chunks(l, n, all = False):
