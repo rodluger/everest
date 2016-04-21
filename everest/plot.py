@@ -52,12 +52,9 @@ def Plot(data):
   # Plot the scatter curves
   log.info('Plotting the scatter curve...')
   if not os.path.exists(os.path.join(outdir, 'scatter.png')):
-    try:
-      fig, ax = PlotScatter(EPIC, data)
-      fig.savefig(os.path.join(outdir, 'scatter.png'))
-      pl.close()
-    except:
-      log.error('An error occurred while plotting the scatter curve.')
+    fig, ax = PlotScatter(EPIC, data)
+    fig.savefig(os.path.join(outdir, 'scatter.png'))
+    pl.close()
 
   # Plot the detrended data
   log.info('Plotting the detrended data...')
@@ -96,74 +93,39 @@ def PlotScatter(EPIC, data):
   
   flux = data['flux']
   npc_arr = data['npc_arr']
-  pld_arr = data['pld_arr']
   npc_pred = data['npc_pred']
   masked_scatter = data['masked_scatter']
   unmasked_scatter = data['unmasked_scatter']
   msf = data['msf']
   usf = data['usf']
-  bestij = data['bestij']
+  besti = data['besti']
   r1, r2, r3, r4, r5 = data['rms']
   
-  # Labels
-  def suf(n):
-    if n == 1: return 'st'
-    elif n == 2: return 'nd'
-    elif n == 3: return 'rd'
-    else: return 'th'
-  pld_str = [r'%d$^\mathrm{%s}$ order PLD' % (n, suf(n)) for n in pld_arr]
-  
-  # Plot the scatter as a function of the many parameters
-  fig, ax = pl.subplots(len(pld_arr), figsize = (12, 8))
-  ax = np.atleast_1d(ax)
+  # Plot the scatter as a function of the number of components
+  fig, ax = pl.subplots(1, figsize = (12, 8))
   fig.subplots_adjust(hspace = 0.3, wspace = 0.2, left = 0.1, right = 0.95)
   
-  # Some global minima/maxima, etc.
-  ytop = -np.inf
-  ybot = np.inf
-  mps = [np.inf, (0, 0)]
-
-  for i in range(len(pld_arr)):
-    
-    # Get y lims
-    mx = max(np.nanmax(masked_scatter[i]), np.nanmax(unmasked_scatter[i]), 
-             np.nanmax(msf[i]), np.nanmax(usf[i]))
-    if mx > ytop:
-      ytop = mx
-    mn = min(np.nanmin(masked_scatter[i]), np.nanmin(unmasked_scatter[i]), 
-             np.nanmin(msf[i]), np.nanmin(usf[i]))
-    if mn < ybot:
-      ybot = mn
-    
-    # Plot the scatter curves
-    ax[i].plot(npc_arr, masked_scatter[i], 'r.', alpha = 0.25)
-    ax[i].plot(npc_arr, unmasked_scatter[i], 'b.', alpha = 0.25)
-    ax[i].plot(npc_pred, msf[i], 'r-', label = 'Masked')
-    ax[i].plot(npc_pred, usf[i], 'b-', label = 'Unmasked') 
-    
-    # Appearance
-    ax[i].set_title('%s' % (pld_str[i]), fontsize = 12)
-
-  # Add labels   
-  for axis in ax: 
-    axis.set_ylabel('Precision (ppm)', fontsize = 12)
+  # Plot the scatter curves
+  ax.plot(npc_arr, masked_scatter, 'r.', alpha = 0.25)
+  ax.plot(npc_arr, unmasked_scatter, 'b.', alpha = 0.25)
+  ax.plot(npc_pred, msf, 'r-', label = 'Masked')
+  ax.plot(npc_pred, usf, 'b-', label = 'Unmasked') 
   
-  # Misc
-  for axis, ydata in zip(ax, masked_scatter):
-    axis.set_ylim(ybot, ytop)
-    if np.nanmin(ydata[len(ydata) // 2:]) > ytop / 2.:
-      axis.legend(loc = 'lower right', fontsize = 8)
-    else:
-      axis.legend(loc = 'upper right', fontsize = 8)
-    for label in axis.get_xticklabels() + axis.get_yticklabels():
-      label.set_fontsize(8)
+  # Add labels   
+  ax.set_ylabel('Precision (ppm)', fontsize = 18)
+  ax.set_xlabel('Number of principal components', fontsize = 18)
   pl.suptitle('EPIC %d (%.1f ppm)' % (EPIC, r1), fontsize = 25)
   
+  # Appearance
+  ax.margins(0.01, 0.01)
+  ax.legend(loc = 'best', fontsize = 12)
+  for label in ax.get_xticklabels() + ax.get_yticklabels():
+    label.set_fontsize(12)
+  
   # Finally, mark the best run
-  i, j = bestij
-  ax[i].axvline(npc_pred[j], color = 'k', ls = '--')
-  ax[i].axhline(mps[0], color = 'r', ls = '--')
-  ax[i].set_axis_bgcolor('#e6e6ff')
+  ax.axvline(npc_pred[besti], color = 'k', ls = '--')
+  ax.axhline(msf[besti], color = 'k', ls = '--')
+  ax.set_axis_bgcolor('#e6e6ff')
 
   return fig, ax
 

@@ -25,10 +25,10 @@ import logging
 log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
-            outlier_sigma = 5, mask_times = [], pld_arr = [1,2,3],
+            outlier_sigma = 5, mask_times = [], pld_order = 3,
             ps_iter = 100, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
-            screen_level = logging.DEBUG, gp_iter = 1, **kwargs):
+            screen_level = logging.DEBUG, gp_iter = 2, **kwargs):
   '''
   
   '''
@@ -194,9 +194,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   npc_pred = np.arange(npc_arr[0], npc_arr[-1])
   try:
     best = np.load(os.path.join(outdir, 'best.npz'))
-    pld_order = best['pld_order']
     npc = best['npc']
-    bestij = best['bestij']
+    besti = best['besti']
     X = best['X']
     masked_scatter = best['masked_scatter']
     unmasked_scatter = best['unmasked_scatter']
@@ -204,57 +203,42 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     usf = best['usf']
     breakpoints = best['breakpoints']
   except:
-    # Compute PLD basis vectors and save them to disk
-    log.info('Computing the basis vectors...')
+    # Compute PLD basis vectors
+    log.info('Computing the design matrix...')
     breakpoint = Breakpoint(k2star.campaign, time, mask)
     if breakpoint is None:
       breakpoints = []
     else:
       breakpoints = [breakpoint]
-    if not os.path.exists(os.path.join(outdir, 'best.npz')):
-      for pld_order in pld_arr:
-        file = os.path.join(outdir, 'X_%02d.npz' % pld_order)
-        if not os.path.exists(file):
-          X, npctot = PLDBasis(fpix, time = time, pld_order = pld_order, 
-                               max_components = npc_arr[-1], 
-                               breakpoints = breakpoints)
-          np.savez(file, X = X, npctot = npctot)
-          del X
-  
-    # Reload them from disk
-    tmp = [np.load(os.path.join(outdir, 'X_%02d.npz' % pld_order)) for pld_order in pld_arr]
-    X_arr = np.empty(len(tmp), dtype = object)
-    X_arr[:] = [t['X'] for t in tmp]
-    npctot = [t['npctot'] for t in tmp]
+    # We compute one large design matrix with ``max_components``
+    # vectors, then slice it below if we choose fewer components
+    X, npctot = PLDBasis(fpix, time = time, pld_order = pld_order,
+                         max_components = npc_arr[-1], 
+                         breakpoints = breakpoints)
 
-    # Compute the scatter for each combination of (pld order, number of components)
+    # Compute the scatter for different number of principal components
     log.info('Minimizing the predictive scatter...')
-    masked_scatter = np.zeros((len(pld_arr), len(npc_arr)))
-    unmasked_scatter = np.zeros((len(pld_arr), len(npc_arr)))
-    for i, pld_order in enumerate(pld_arr):
-      for j, n in enumerate(npc_arr):
-        log.debug('PLD order = %d, Number of components = %d...' % (pld_order, n))
-        X = SliceX(X_arr[i], n, npctot[i])
-        masked_scatter[i,j], unmasked_scatter[i,j] = \
-        ComputeScatter(X, flux, time, ferr, 
-                       gp, mask = mask, niter = ps_iter)
+    masked_scatter = np.zeros_like(npc_arr)
+    unmasked_scatter = np.zeros_like(npc_arr)
+    for i, n in enumerate(npc_arr):
+      log.debug('Number of components = %d...' % n)
+      sX = SliceX(X, n, npctot)
+      masked_scatter[i], unmasked_scatter[i] = \
+      ComputeScatter(sX, flux, time, ferr, 
+                     gp, mask = mask, niter = ps_iter)
 
     # Find the params that minimize the scatter  
-    i, j, msf, usf = MinimizeScatter(pld_arr, npc_arr, npc_pred, 
-                     masked_scatter, unmasked_scatter, 
-                     alpha = scatter_alpha)
-    bestij = [i, j]
-    pld_order = pld_arr[i]
-    npc = npc_pred[j]
-    X = SliceX(X_arr[i], npc, npctot[i])
+    besti, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
+                      masked_scatter, unmasked_scatter, 
+                      alpha = scatter_alpha)
+    npc = npc_pred[besti]
+    X = SliceX(X, npc, npctot)
     
-    # Save and delete the large X files
-    np.savez(os.path.join(outdir, 'best.npz'), X = X, pld_order = pld_order, 
-             npc = npc, bestij = bestij, masked_scatter = masked_scatter,
+    # Save!
+    np.savez(os.path.join(outdir, 'best.npz'), X = X, 
+             npc = npc, besti = besti, masked_scatter = masked_scatter,
              unmasked_scatter = unmasked_scatter, msf = msf, usf = usf,
              breakpoints = breakpoints)
-    for pld_order in pld_arr:
-      os.remove(os.path.join(outdir, 'X_%02d.npz' % (pld_order)))
 
   # Now detrend with the best values
   log.info('Detrending using best solution...') 
@@ -336,9 +320,9 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              white = white), fpldgp = fpldgp, pld_order = pld_order,
              rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
              rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
-             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, pld_arr = pld_arr, npc_pred = npc_pred,
+             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
              masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
-             msf = msf, usf = usf, bestij = bestij,
+             msf = msf, usf = usf, besti = besti,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
              kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
              git_hash = git_hash, git_branch = git_branch, outdir = outdir,
@@ -407,60 +391,38 @@ def GetCDPP(flux, fpld):
   
   return rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, rms_pht
   
-def MinimizeScatter(pld_arr, npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha = 0.):
+def MinimizeScatter(npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha = 0.):
   '''
   
   '''
-
-  # Some global minima/maxima, etc.
-  ytop = np.inf
-  mms = [np.inf, (0, 0)]
   
   # Masked and unmasked "scatter functions": smooth GP-generated curves
   # that approximate the scatter as a function of the number of components
-  msf = np.zeros((len(pld_arr), len(npc_pred))) * np.nan
-  usf = np.zeros((len(pld_arr), len(npc_pred))) * np.nan
+  msf = np.zeros_like(npc_pred) * np.nan
+  usf = np.zeros_like(npc_pred) * np.nan
+ 
+  # Fit the scatter with a GP. GP params are hard-coded for now.
+  sig = 1.4826 * np.nanmedian(np.abs(masked_scatter - np.nanmedian(masked_scatter)))
+  amp = 10 * sig
+  tau = 100
+  gp_scatter = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+  gp_scatter.compute(npc_arr, np.ones_like(npc_arr) * sig)
   
-  for i in range(len(pld_arr)):
-      
-    # Fit the scatter with a GP. GP params are hard-coded for now.
-    sig = 1.4826 * np.nanmedian(np.abs(masked_scatter[i] - np.nanmedian(masked_scatter[i])))
-    amp = 10 * sig
-    tau = 100
-    gp_scatter = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-    try:
-      gp_scatter.compute(npc_arr, np.ones_like(npc_arr) * sig)
-    except np.linalg.linalg.LinAlgError:
-      continue
-    
-    # NOTE: I'm wrapping this in an exception catcher since sometimes there could
-    # be NaNs in ``masked_scatter`` and ``unmasked_scatter``. Not sure how george 
-    # handles those, so let's play it safe... Eventually I should treat this more 
-    # rigorously.
-    try:
-      # Predicted scatter in masked regions
-      msf[i], _ = gp_scatter.predict(masked_scatter[i] - np.nanmedian(masked_scatter[i]), npc_pred)
-      msf[i] += np.median(masked_scatter[i])
-    
-      # Computed scatter in unmasked regions
-      usf[i], _ = gp_scatter.predict(unmasked_scatter[i] - np.nanmedian(unmasked_scatter[i]), npc_pred)
-      usf[i] += np.median(unmasked_scatter[i])
-    except:
-      continue
-       
-    # The minimum masked scatter (mms). Sometimes it might be desirable to
-    # also minimize the *difference* between the masked and unmasked scatter
-    # to avoid choosing outliers on the scatter plot. In that case, set alpha
-    # to something > 0 (but <= 1).
-    met = msf[i] + alpha * np.abs(msf[i] - usf[i])
-    j = np.nanargmin(met)
-    if met[j] < mms[0]:
-      mms = [met[j], (i, j)]
+  # Predicted scatter in masked regions
+  msf, _ = gp_scatter.predict(masked_scatter - np.nanmedian(masked_scatter), npc_pred)
+  msf += np.median(masked_scatter)
 
-  # Finally, get the best run
-  i, j = mms[1]
+  # Computed scatter in unmasked regions
+  usf, _ = gp_scatter.predict(unmasked_scatter - np.nanmedian(unmasked_scatter), npc_pred)
+  usf += np.median(unmasked_scatter)
+     
+  # Find the minimum masked scatter. Sometimes it might be desirable to
+  # also minimize the *difference* between the masked and unmasked scatter
+  # to avoid choosing outliers on the scatter plot. In that case, set alpha
+  # to something > 0 (but <= 1).
+  i = np.nanargmin(msf + alpha * np.abs(msf - usf))
 
-  return i, j, msf, usf
+  return i, msf, usf
 
 def GetTransitDepth(time, flux, inject, buf = 5, order = 3):
   '''

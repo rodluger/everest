@@ -38,7 +38,7 @@ def IsAlias(periods, p, tol = 0.05):
         return True
   return False
 
-def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
+def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 2):
   '''
   Fit various kernels to the autocorrelation of the PLD-de-trended data
   and return a bunch of stuff.
@@ -70,6 +70,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
   amp = np.median([np.std(yi) for yi in 
                    Chunks(flux, int(2. / np.median(time[1:] - time [:-1])))])
   gp = george.GP(george.kernels.WhiteKernel(0. ** 2) + amp ** 2 * george.kernels.Matern32Kernel(2. ** 2))
+  pcomb = None
   
   # We're going to do this iteratively, refining the GP each time
   for iter in range(niter):
@@ -82,44 +83,51 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     M = PLDModel(C, X)
     fpld = flux - M
   
-    # Now remove long-period trends and smooth the data to get ``fpld_med``
-    fpld_med = Smooth(fpld - np.poly1d(np.polyfit(time, fpld, 3))(time), 13)
-  
-    # Run a periodogram analysis to get the peak periods. We'll use these as initial
-    # guesses for the kernel curve fitting routine below.
-    period = np.linspace(0.1, maxt, 1000)
-    omega = 2 * np.pi / period
-    PS = lomb_scargle(time, fpld_med, ferr, omega, generalized=True)
-    D = lomb_scargle_bootstrap(time, fpld_med, ferr, omega, generalized=True,
-                               N_bootstraps=100, random_state=0)
-    sig1 = np.percentile(D, 99)
-  
-    # Get the peak periods (where the power is high and the derivative changes sign)
-    PS_ = np.array(PS) 
-    PS_[PS_ < sig1] = sig1
-    deriv = PS_[1:] - PS_[:-1]
-    peaks = np.where((np.sign(deriv[1:]) == -1)  & (np.sign(deriv[:-1]) == 1))[0]
-    strength = [np.max([PS_[peak - 1], PS_[peak], PS_[peak + 1]]) for peak in peaks]
-    pers = [foo[0] for foo in sorted(zip(period[peaks], strength), key = lambda x: -x[1])]
+    # On the first run-through, compute the periodogram to find the peak periods
+    if pcomb is None:
     
-    # Remove any easy aliases
-    aliases = []
-    for i in range(1, len(pers)):
-      if IsAlias(pers[:i], pers[i]):
-        aliases.append(i)
-    if len(aliases):
-      pers = list(np.delete(pers, aliases))
+      # Now remove long-period trends and smooth the data to get ``fpld_med``
+      fpld_med = Smooth(fpld - np.poly1d(np.polyfit(time, fpld, 3))(time), 13)
   
-    # Add the default periods if we have less than 3
-    # and limit to ``maxp`` periods
-    if len(pers) < 3:
-      pers += default_periods
-      pers = pers[:3]
-    pers = pers[:maxp]
+      # Run a periodogram analysis to get the peak periods. We'll use these as initial
+      # guesses for the kernel curve fitting routine below.
+      log.info('Computing the periodogram...')
+      period = np.linspace(0.1, maxt, 1000)
+      omega = 2 * np.pi / period
+      PS = lomb_scargle(time, fpld_med, ferr, omega, generalized=True)
+      D = lomb_scargle_bootstrap(time, fpld_med, ferr, omega, generalized=True,
+                                 N_bootstraps=100, random_state=0)
+      sig1 = np.percentile(D, 99)
   
-    # Make a list of period combinations of length ``n``
-    pcomb = lambda n: list(combinations(pers, n))
+      # Get the peak periods (where the power is high and the derivative changes sign)
+      PS_ = np.array(PS) 
+      PS_[PS_ < sig1] = sig1
+      deriv = PS_[1:] - PS_[:-1]
+      peaks = np.where((np.sign(deriv[1:]) == -1)  & (np.sign(deriv[:-1]) == 1))[0]
+      strength = [np.max([PS_[peak - 1], PS_[peak], PS_[peak + 1]]) for peak in peaks]
+      pers = [foo[0] for foo in sorted(zip(period[peaks], strength), key = lambda x: -x[1])]
+    
+      # Remove any easy aliases
+      aliases = []
+      for i in range(1, len(pers)):
+        if IsAlias(pers[:i], pers[i]):
+          aliases.append(i)
+      if len(aliases):
+        pers = list(np.delete(pers, aliases))
   
+      # Add the default periods if we have less than 3
+      # and limit to ``maxp`` periods
+      if len(pers) < 3:
+        pers += default_periods
+        pers = pers[:3]
+      pers = pers[:maxp]
+  
+      # Make a list of period combinations of length ``n``
+      pcomb = lambda n: list(combinations(pers, n))
+    
+    # Below we compute the autocorrelation of the de-trended flux
+    log.info('Computing the autocorrelation (%d/%d)...' % (iter + 1, niter))
+    
     # Fill in data gaps with the GP.
     dt = np.median(time[1:] - time[:-1])
     # Explicitly add the errors to the white component of the kernel
@@ -158,7 +166,8 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     # ``KernelModels`` in the ``kernel`` module.
     # Find the chisq based on only the first half (``maxt`` / 2 ~ 10 days) of the data.
     # We don't care that much about longer timescales.
-    kernel = None
+    log.info('Selecting the optimal kernel (%d/%d)...' % (iter + 1, niter))
+    kpars = None
     chisq = np.inf
     knum = None
     count = 0
@@ -201,28 +210,32 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
           try:  
             params, _ = curve_fit(kfunc, lags, acor, sigma = sigma, 
                                   p0 = p0, maxfev = 10000)
-          except:
+          except RuntimeError as e:
             # Some of the fits may not converge; just move on to the next one
-            continue
-        
+            if str(e).startswith('Optimal parameters not found'):
+              continue
+            else:
+              raise e
+              
           # Now compute the chi^2 of the model. If it's better than the previous
           # value, store this kernel
-          c = np.sum(((acor[:len(lags) // 2] - kfunc(lags[:len(lags) // 2], *params)) 
-                       / sigma[:len(lags) // 2]) ** 2)
+          c = np.sum(((acor[:len(lags) // 2] - kfunc(lags[:len(lags) // 2], *params)) / sigma[:len(lags) // 2]) ** 2)
+                       
           if c < chisq:
-            k[:] = np.abs(params)
-            kernel = k
+            kpars = np.abs(params)
             knum = kn
             chisq = c
     
       count += 1
       if chisq < minchisq:
         break
-    
+
     # Were we able to get the params?
-    if kernel is None:
+    if kpars is None:
       raise Exception('Unable to determine GP params!')
-  
+    kernel = KernelModels[knum]
+    kernel[:] = kpars
+    
     # Now we try to figure out the best kernel amplitude and white
     # noise component by maximizing the likelihood of the
     # de-trended data.
@@ -253,8 +266,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     
     # Recalculate the chisq here. Shouldn't have to do this, but I was getting
     # strange values otherwise...
-    chisq = np.sum(((acor - kernel(lags) / kernel(0.)) ** 2 / 
-                     sigma ** 2)[:len(lags) // 2])
+    chisq = np.sum(((acor - kernel(lags) / kernel(0.)) ** 2 / sigma ** 2)[:len(lags) // 2])
     
     # Next time around, we'll use the new GP and 5 chunks
     gp = george.GP(kernel.george_kernel())
