@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_order = 3,
-            ps_iter = 100, npc_arr = np.arange(25, 200, 10),
+            ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.DEBUG, gp_iter = 2, **kwargs):
   '''
@@ -124,16 +124,15 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Are there any new planet candidates in this lightcurve?
   # NOTE: This section was coded specifically for Ethan Kruse's search pipeline.
   new_candidates = []
-  if kwargs.get('new_candidate', False):
-    for cnum in range(10):
-      f = os.path.join(EVEREST_PATH, 'new', '%s.02d.npz' % (EPIC, cnum))
-      if os.path.exists(f):
-        tmp = np.load(f)
-        new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
-                                    for tn in tmp['ttimes']])
-        mask_times = sorted(set(mask_times) | set(new_tmask))
-        new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
-                                'tmask': new_tmask}])
+  for cnum in range(10):
+    f = os.path.join(EVEREST_PATH, 'new', '%s.02d.npz' % (EPIC, cnum))
+    if os.path.exists(f):
+      tmp = np.load(f)
+      new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
+                                  for tn in tmp['ttimes']])
+      mask_times = sorted(set(mask_times) | set(new_tmask))
+      new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
+                              'tmask': new_tmask}])
   
   # Obtain transit and outlier masks
   log.info('Computing transit and outlier masks...')
@@ -214,7 +213,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
       sX = SliceX(X, n, npctot)
       masked_scatter[i], unmasked_scatter[i] = \
       ComputeScatter(sX, flux, time, ferr, 
-                     gp, mask = mask, niter = ps_iter)
+                     gp, mask = mask, niter = ps_iter,
+                     nmasks = ps_masks)
 
     # Find the params that minimize the scatter  
     besti, msf, usf = MinimizeScatter(npc_arr, npc_pred, 

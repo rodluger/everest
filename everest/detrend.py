@@ -7,7 +7,7 @@ detrend.py
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from .utils import Mask, RMS
+from .utils import Mask, RMS, Chunks
 import numpy as np
 from scipy.misc import comb as nchoosek
 from itertools import combinations_with_replacement as multichoose
@@ -125,7 +125,7 @@ def SliceX(X, n, npc):
   inds = np.concatenate([np.arange(i * npc + n, (i + 1) * npc) for i in range(nchunks)])
   return np.delete(X, inds, 1)
 
-def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 100):
+def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   '''
   Compute the median scatter in the de-trended light curve and the 
   median scatter in small masked portions of the light curve to
@@ -151,41 +151,34 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 100):
   M = PLDModel(C, X)
   unmasked_scatter = RMS((Y - M + med) / med)
 
+  # Get the indices of all contiguous 13-cadence segments of data,
+  # separated into ``nmasks`` chunks
+  sz = len(mT) // nmasks
+  chunks = list(Chunks(mT, sz))
+  inds = [[] for i in chunks]
+  for c, chunk in enumerate(chunks):
+    for i, t in enumerate(chunk[:-13]):
+      if chunk[i + 13] - t <= 0.28:
+        inds[c].append(i + c * sz)
+  
   # Compute the precision several times and take the median
   for n in range(niter):
-    tol = 0.28
-    # Select a random continuous 6-hour (13 cadence) interval to mask
-    while True:
-      # Randomize a timestamp
-      a = mT[0] + (mT[-1] - mT[0] - 0.28) * np.random.random()
-      istart = np.argmax(mT >= a)
-      iend = istart + 13
-      try:
-        # Make sure this interval is between 6.5 and 7 hours long
-        if (mT[iend] - mT[istart] <= tol):
-          chunk = np.arange(istart, iend, dtype = int)
-          break
-      except:
-        tol += 0.001
-        if tol > 0.3:
-          # We've tried this 20 times and couldn't find enough data.
-          # Something is wrong here -- maybe a very sparse dataset.
-          # Let's return NaNs and move on.
-          return np.nan, np.nan
-        continue
+    
+    # Get all our masks
+    masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds]]
     
     # Redefine the mask function
-    mask_new = list(np.append(mask_orig, chunk))
+    mask_new = list(np.append(mask_orig, np.concatenate(masks)))
     
     # Get coefficients based on the masked data
     C = PLDCoeffs(X, Y, time, errors, gp, mask_new)
     
     # Predict the model in that interval
-    M = PLDModel(C, X[chunk])
+    M = [PLDModel(C, X[m]) for m in masks]
     
     # The masked de-trended interval and its precision in ppm
-    masked_scatter.append(1.e6 * np.std((Y[chunk] - M + med) / med) / np.sqrt(13))
-  
+    masked_scatter.append(np.median([1.e6 * np.std((Y[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))
+    
   # Take the median and return
   masked_scatter = np.median(masked_scatter)
   return masked_scatter, unmasked_scatter

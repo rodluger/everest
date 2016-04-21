@@ -32,3 +32,16 @@ def Run(EPIC, debug = True, **kwargs):
   # Plot the output
   Plot(data)
 
+def RunCampaign(campaign, debug = False, **kwargs):
+  '''
+  Compute and plot data for all targets in a given campaign.
+  
+  '''
+  
+  # Set up our custom exception handlers
+  if debug:
+    sys.excepthook = ExceptionHookPDB
+  else:
+    sys.excepthook = ExceptionHook
+  
+  raise Exception("Not yet implemented!")
