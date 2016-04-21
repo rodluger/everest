@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_arr = [1,2,3],
-            ps_iter = 100, npc_arr = np.arange(25, 150, 10),
+            ps_iter = 100, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.DEBUG, gp_iter = 1, **kwargs):
   '''

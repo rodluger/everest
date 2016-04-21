@@ -115,6 +115,7 @@ def PlotScatter(EPIC, data):
   
   # Plot the scatter as a function of the many parameters
   fig, ax = pl.subplots(len(pld_arr), figsize = (12, 8))
+  ax = np.atleast_1d(ax)
   fig.subplots_adjust(hspace = 0.3, wspace = 0.2, left = 0.1, right = 0.95)
   
   # Some global minima/maxima, etc.
@@ -163,8 +164,6 @@ def PlotScatter(EPIC, data):
   ax[i].axvline(npc_pred[j], color = 'k', ls = '--')
   ax[i].axhline(mps[0], color = 'r', ls = '--')
   ax[i].set_axis_bgcolor('#e6e6ff')
-
-  pl.show(); quit() #debug
 
   return fig, ax
 
