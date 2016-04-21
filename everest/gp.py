@@ -15,6 +15,7 @@ import warnings
 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
 warnings.filterwarnings('ignore', r'Polyfit may be poorly conditioned')
 warnings.filterwarnings('ignore', r'Covariance of the parameters could not be estimated')
+warnings.filterwarnings('ignore', r'Covariance is not positive-semidefinite')
 from statsmodels.tsa.stattools import acf
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit, fmin_l_bfgs_b
@@ -41,11 +42,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
   '''
   Fit various kernels to the autocorrelation of the PLD-de-trended data
   and return a bunch of stuff.
-  
-  TODO: If there are too many gaps, the autocorrelation function won't be
-        correct, since it assumes evenly sampled data. We should eventually fill
-        in the gaps with synthetic data.
-  
+    
   '''
   
   # Setup the mask
@@ -59,7 +56,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
   
   # A rather arbitrary standard deviation function for curve_fit below.
   # We basically want the tightest fit closest to a lag of zero.
-  sigma = lambda n: np.sqrt(np.linspace(0.05 ** 2, 0.5 ** 2, n))
+  fsigma = lambda n: np.sqrt(np.linspace(0.05 ** 2, 0.5 ** 2, n))
   
   # Mask the transits and outliers now
   time = mask(time)
@@ -68,11 +65,11 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
   flux = np.sum(fpix, axis = 1)
   
   # The first time through, de-trend with a 2-day Matern 3/2 kernel to get approximate 
-  # stellar signal. We're using 1st order PLD and splitting the light curve into 10 chunks
+  # stellar signal. We're using 1st order PLD and splitting the light curve into 10 chunks.
   nchunks = 10
   amp = np.median([np.std(yi) for yi in 
                    Chunks(flux, int(2. / np.median(time[1:] - time [:-1])))])
-  gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(2. ** 2))
+  gp = george.GP(george.kernels.WhiteKernel(0. ** 2) + amp ** 2 * george.kernels.Matern32Kernel(2. ** 2))
   
   # We're going to do this iteratively, refining the GP each time
   for iter in range(niter):
@@ -123,14 +120,40 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     # Make a list of period combinations of length ``n``
     pcomb = lambda n: list(combinations(pers, n))
   
-    # Get the autocorrelation function of the de-trended data up to ``maxt`` days
+    # Fill in data gaps with the GP.
     dt = np.median(time[1:] - time[:-1])
-    tfull = np.arange(time[0], time[-1], dt)
-    pfull = interp1d(time, fpld)(tfull)
+    # Explicitly add the errors to the white component of the kernel
+    # for the prediction, to ensure the scatter in the gaps is ~correct
+    pars = gp.kernel.pars; pars[0] += np.median(ferr) ** 2
+    gp.kernel.pars = pars
+    gp.compute(time, ferr)
+    # Find the time array without gaps
+    time_nogaps = []
+    t0 = time[0]
+    for t in time:
+      if t > 1.5 * dt + t0:
+        time_nogaps.extend(list(np.arange(t0 + dt, t - 0.5 * dt, dt)))
+      time_nogaps.append(t)
+      t0 = t
+
+    time_nogaps = np.array(time_nogaps)
+    # Now sample from the GP
+    fpld_nogaps = gp.sample_conditional(fpld, time_nogaps)
+    ferr_nogaps = np.array([ferr[np.argmin(np.abs(time - t))] for t in time_nogaps])
+    # We don't want to resample our observed data, so we'll repopulate the
+    # observed times with the original data (a bit convoluted, but it works...) 
+    for i,t in enumerate(time_nogaps):
+      j = np.argmax(time == t)
+      if j:
+        fpld_nogaps[i] = fpld[j]
+  
+    # Get the autocorrelation function of the de-trended data up to ``maxt`` days
+    tfull = np.arange(time_nogaps[0], time_nogaps[-1], dt)
+    pfull = interp1d(time_nogaps, fpld_nogaps)(tfull)
     acor = acf(pfull, nlags = maxt / dt)
     lags = np.arange(len(acor)) * dt
-    sigma = sigma(len(lags))
-  
+    sigma = fsigma(len(lags))
+    
     # Fit various kernels to the autocorrelation function. These are all in
     # ``KernelModels`` in the ``kernel`` module.
     # Find the chisq based on only the first half (``maxt`` / 2 ~ 10 days) of the data.
@@ -207,7 +230,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     kpars = np.array(kernel.params)
 
     # We'll maximize the likelihood using george
-    log.info('Optimizing the kernel amplitude...')
+    log.info('Optimizing the kernel amplitude (%d/%d)...' % (iter + 1, niter))
     def _NegLL(x):
       w, a = x
       kp = np.array(kpars)
@@ -215,8 +238,8 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
       kp[amppars[1:]] *= a
       kernel[:] = kp
       gp = george.GP(kernel.george_kernel())
-      gp.compute(time, ferr)
-      nll = -gp.lnlikelihood(fpld)
+      gp.compute(time_nogaps, ferr_nogaps)
+      nll = -gp.lnlikelihood(fpld_nogaps)
       return nll
     # The median 6-hr standard deviation will be our white noise amplitude guess
     # The full standard deviation will be our red kernel guess
