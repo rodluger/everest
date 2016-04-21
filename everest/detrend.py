@@ -9,6 +9,7 @@ detrend.py
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .utils import Mask, RMS
 import numpy as np
+from scipy.misc import comb as nchoosek
 from itertools import combinations_with_replacement as multichoose
 from sklearn.decomposition import PCA
 import logging
@@ -31,6 +32,9 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 1, cross_terms =
   npts, npix = fpix.shape
   frac = fpix / np.sum(fpix, axis = 1).reshape(-1, 1)
   
+  # The number of signals (equation 6 in the paper)
+  nsignals = int(np.sum([nchoosek(npix + k - 1, k) for k in range(1, pld_order + 1)]))
+  
   # Add the breakpoints
   if breakpoints:
     assert time is not None, "Missing ``time`` array in ``PLDBasis()``."
@@ -51,7 +55,7 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 1, cross_terms =
   # equal to the number of signals in the first place
   n_components = max_components
   for f in frac:
-    n_components = min(n_components, f.shape[0], npix)
+    n_components = min(n_components, f.shape[0], nsignals)
   
   # Setup the design matrix
   sz = n_components * len(frac)
@@ -70,7 +74,7 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 1, cross_terms =
     # Perform PCA on them
     pca = PCA(n_components = n_components - 1)
     xpca = pca.fit_transform(x)
-    
+
     # Prepend a column vector of ones, since PCA transform removes 
     # the property that the basis vectors all sum to one.
     x = np.hstack([np.ones(xpca.shape[0]).reshape(-1, 1), xpca])

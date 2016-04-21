@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_arr = [1,2,3],
-            ps_iter = 100, npc_arr = np.arange(25, 250, 10),
+            ps_iter = 100, npc_arr = np.arange(25, 150, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.DEBUG, gp_iter = 1, **kwargs):
   '''
@@ -226,7 +226,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     X_arr = np.empty(len(tmp), dtype = object)
     X_arr[:] = [t['X'] for t in tmp]
     npctot = [t['npctot'] for t in tmp]
-  
+
     # Compute the scatter for each combination of (pld order, number of components)
     log.info('Minimizing the predictive scatter...')
     masked_scatter = np.zeros((len(pld_arr), len(npc_arr)))
@@ -238,13 +238,13 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
         masked_scatter[i,j], unmasked_scatter[i,j] = \
         ComputeScatter(X, flux, time, ferr, 
                        gp, mask = mask, niter = ps_iter)
-    
+
     # Find the params that minimize the scatter  
-    i, j, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
+    i, j, msf, usf = MinimizeScatter(pld_arr, npc_arr, npc_pred, 
                      masked_scatter, unmasked_scatter, 
                      alpha = scatter_alpha)
     bestij = [i, j]
-    pld_order = i + 1
+    pld_order = pld_arr[i]
     npc = npc_pred[j]
     X = SliceX(X_arr[i], npc, npctot[i])
     
@@ -253,7 +253,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              npc = npc, bestij = bestij, masked_scatter = masked_scatter,
              unmasked_scatter = unmasked_scatter, msf = msf, usf = usf,
              breakpoints = breakpoints)
-    for pld_order, nchunk in bestij:
+    for pld_order in pld_arr:
       os.remove(os.path.join(outdir, 'X_%02d.npz' % (pld_order)))
 
   # Now detrend with the best values
@@ -349,8 +349,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   for file in ['best.npz', 'gpdata.npz', 'mask.npz']:
     os.remove(os.path.join(outdir, file))
   
-  # Replace the ``gp`` entry with the actual GP instance and return
+  # Reload, and replace the ``gp`` entry with the actual GP instance and return
+  del data
+  data = dict(np.load(os.path.join(outdir, 'data.npz')))
   data['gp'] = gp
+  
   return data
 
 def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4, r5,
@@ -404,7 +407,7 @@ def GetCDPP(flux, fpld):
   
   return rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, rms_pht
   
-def MinimizeScatter(npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha = 0.):
+def MinimizeScatter(pld_arr, npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha = 0.):
   '''
   
   '''
@@ -415,10 +418,10 @@ def MinimizeScatter(npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha =
   
   # Masked and unmasked "scatter functions": smooth GP-generated curves
   # that approximate the scatter as a function of the number of components
-  msf = np.zeros((3, len(npc_pred))) * np.nan
-  usf = np.zeros((3, len(npc_pred))) * np.nan
+  msf = np.zeros((len(pld_arr), len(npc_pred))) * np.nan
+  usf = np.zeros((len(pld_arr), len(npc_pred))) * np.nan
   
-  for i in range(3):
+  for i in range(len(pld_arr)):
       
     # Fit the scatter with a GP. GP params are hard-coded for now.
     sig = 1.4826 * np.nanmedian(np.abs(masked_scatter[i] - np.nanmedian(masked_scatter[i])))

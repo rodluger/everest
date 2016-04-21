@@ -27,7 +27,7 @@ def Plot(data):
   
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
-  
+    
   # Plot the apertures
   log.info('Plotting the apertures...')
   if not os.path.exists(os.path.join(outdir, 'aper.png')):
@@ -118,25 +118,30 @@ def PlotScatter(EPIC, data):
   fig.subplots_adjust(hspace = 0.3, wspace = 0.2, left = 0.1, right = 0.95)
   
   # Some global minima/maxima, etc.
-  ytop = np.inf
+  ytop = -np.inf
+  ybot = np.inf
   mps = [np.inf, (0, 0)]
-  
+
   for i in range(len(pld_arr)):
     
-      # We're going to set the upper y limits based on the plot
-      # with the *lowest* scatter
-      foo = max(np.nanmax(masked_scatter[i]), np.nanmax(unmasked_scatter[i]))
-      if foo < ytop:
-        ytop = foo
-
-      # Plot the scatter curves
-      ax[i].plot(npc_arr, masked_scatter[i], 'r.', alpha = 0.25)
-      ax[i].plot(npc_arr, unmasked_scatter[i], 'b.', alpha = 0.25)
-      ax[i].plot(npc_pred, msf[i], 'r-', label = 'Masked')
-      ax[i].plot(npc_pred, usf[i], 'b-', label = 'Unmasked') 
-      
-      # Appearance
-      ax[i].set_title('%s' % (pld_str[i]), fontsize = 12)
+    # Get y lims
+    mx = max(np.nanmax(masked_scatter[i]), np.nanmax(unmasked_scatter[i]), 
+             np.nanmax(msf[i]), np.nanmax(usf[i]))
+    if mx > ytop:
+      ytop = mx
+    mn = min(np.nanmin(masked_scatter[i]), np.nanmin(unmasked_scatter[i]), 
+             np.nanmin(msf[i]), np.nanmin(usf[i]))
+    if mn < ybot:
+      ybot = mn
+    
+    # Plot the scatter curves
+    ax[i].plot(npc_arr, masked_scatter[i], 'r.', alpha = 0.25)
+    ax[i].plot(npc_arr, unmasked_scatter[i], 'b.', alpha = 0.25)
+    ax[i].plot(npc_pred, msf[i], 'r-', label = 'Masked')
+    ax[i].plot(npc_pred, usf[i], 'b-', label = 'Unmasked') 
+    
+    # Appearance
+    ax[i].set_title('%s' % (pld_str[i]), fontsize = 12)
 
   # Add labels   
   for axis in ax: 
@@ -144,7 +149,7 @@ def PlotScatter(EPIC, data):
   
   # Misc
   for axis, ydata in zip(ax, masked_scatter):
-    axis.set_ylim(0, ytop)
+    axis.set_ylim(ybot, ytop)
     if np.nanmin(ydata[len(ydata) // 2:]) > ytop / 2.:
       axis.legend(loc = 'lower right', fontsize = 8)
     else:
@@ -158,6 +163,8 @@ def PlotScatter(EPIC, data):
   ax[i].axvline(npc_pred[j], color = 'k', ls = '--')
   ax[i].axhline(mps[0], color = 'r', ls = '--')
   ax[i].set_axis_bgcolor('#e6e6ff')
+
+  pl.show(); quit() #debug
 
   return fig, ax
 

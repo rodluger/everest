@@ -67,7 +67,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
   ferr = mask(ferr)
   flux = np.sum(fpix, axis = 1)
   
-  # The first time through, detrend with a 2-day Matern 3/2 kernel to get approximate 
+  # The first time through, de-trend with a 2-day Matern 3/2 kernel to get approximate 
   # stellar signal. We're using 1st order PLD and splitting the light curve into 10 chunks
   nchunks = 10
   amp = np.median([np.std(yi) for yi in 
@@ -79,8 +79,8 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     
     # De-trend
     brkpts = [time[int(i)] for i in np.linspace(0, len(time), nchunks + 1)[1:-1]]
-    X = PLDBasis(fpix, time = time, pld_order = 1, max_components = 50, 
-                 breakpoints = brkpts)
+    X, _ = PLDBasis(fpix, time = time, pld_order = 1, max_components = 50, 
+                    breakpoints = brkpts)
     C = PLDCoeffs(X, flux, time, ferr, gp)
     M = PLDModel(C, X)
     fpld = flux - M
@@ -211,7 +211,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     def _NegLL(x):
       w, a = x
       kp = np.array(kpars)
-      kp[amppars[0]] *= w
+      kp[amppars[0]] = w
       kp[amppars[1:]] *= a
       kernel[:] = kp
       gp = george.GP(kernel.george_kernel())
@@ -224,7 +224,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 1):
     bounds = [[0.1 * init[0], 10 * init[0]], [1., 100 * init[1]]]
     x = fmin_l_bfgs_b(_NegLL, init, approx_grad = True, bounds = bounds) 
     white, amp = x[0]
-    kpars[amppars[0]] *= white
+    kpars[amppars[0]] = white
     kpars[amppars[1:]] *= amp
     kernel[:] = kpars
     
