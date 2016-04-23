@@ -50,6 +50,10 @@ def RunCampaign(campaign, **kwargs):
     print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
                           str(EPIC), str(EPIC) + '.npz')):
-      GetK2Data(EPIC)
+      try:
+        GetK2Data(EPIC)
+      except:
+        # Some targets could be corrupted
+        continue
   
   # TODO: Now submit a cluster job
