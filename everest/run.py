@@ -11,6 +11,8 @@ from .plot import Plot
 from .data import GetK2Stars, GetK2Data
 from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB
+import os
+from kplr.config import KPLR_ROOT
 import sys
 import logging
 log = logging.getLogger(__name__)
@@ -46,6 +48,8 @@ def RunCampaign(campaign, **kwargs):
   # Download the TPF data for each one
   for i, EPIC in enumerate(stars):
     print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    GetK2Data(EPIC)
+    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
+                          str(EPIC), str(EPIC) + '.npz')):
+      GetK2Data(EPIC)
   
   # TODO: Now submit a cluster job
