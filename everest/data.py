@@ -203,6 +203,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
     perr = data['perr']
     campaign = data['campaign']
     aperture = data['aperture']
+    cadn = data['cadn']
     _nearby = data['nearby']
     nearby = [Source(**s) for s in _nearby]
     clobber = False
@@ -220,11 +221,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
     with tpf.open() as f:
       aperture = f[2].data
       qdata = f[1].data
-    
-    # Delete the kplr tpf
-    if delete_kplr_data:
-      os.remove(os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename))
-    
+        
     # Get the arrays
     time = np.array(qdata.field('TIME'), dtype='float64')
     cadn = np.array(qdata.field('CADENCENO'), dtype='int32')
@@ -291,11 +288,15 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
     _nearby = [s.__dict__ for s in GetSources(EPIC)]
   
     # Save
-    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, 
-                        aperture = aperture, nearby = _nearby)
+    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                        aperture = aperture, nearby = _nearby, campaign = campaign)
   
     # Make it into an object
     nearby = [Source(**s) for s in _nearby]
+  
+    # Delete the kplr tpf
+    if delete_kplr_data:
+      os.remove(os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename))
   
   # Get any K2 planets associated with this EPIC
   planets = []

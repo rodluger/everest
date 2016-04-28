@@ -11,8 +11,9 @@ import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .data import GetK2Data
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX
-from .utils import InitLog, Mask, GetMasks, Breakpoint, SatSev, \
-                   AcorSev, PadWithZeros, RMS, Outliers
+from .utils import InitLog, Mask, GetMasks, Breakpoint, \
+                   PadWithZeros, RMS, Outliers
+from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
 from .gp import GetGP
 from .transit import Transit
@@ -277,8 +278,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Gauge the saturation, crowding, and acor severity
   crwdinfo, crwdsev = GetContaminants(EPIC, k2star.fpix, k2star.apertures, 
                                       apnum, k2star.kepmag, k2star.nearby)
-  satsev = SatSev(fpix)
-  acorsev = AcorSev(chisq)
+  satsev = Saturation(fpix)
+  acorsev = Autocorrelation(chisq)
 
   # Write the .pld file to disk
   log.info('Saving detrended lightcurve to disk...') 
@@ -489,75 +490,30 @@ def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
   contour = np.zeros((ny,nx))
   contour[apidx] = 1
   contour = np.lib.pad(contour, 1, PadWithZeros)
-  neighbors = []  
-  for source in nearby:
+  maxsev = 0
+  crwdinfo = ["#   EPIC      ΔKp (mag)   SEVERITY (0-5)",
+              "# ---------   ---------   --------------"]
   
-    # Get the distance from a source to the edge of the aperture
-    # Not terribly robust, but sufficient for an estimate
-    if source.epic != EPIC:
-      dist = np.inf
-      m, n = int(np.round(source.y - source.y0)), int(np.round(source.x - source.x0))
-      for dm in range(-3,4):
-        for dn in range(-3,4):
-          if m + dm >= 0 and m + dm < ny and n + dn >= 0 and n + dn < nx:
-            if contour[m + dm, n + dn]:
-              d = np.sqrt(dm ** 2 + dn ** 2)
-              if d < dist:
-                dist = d
-      if not np.isinf(dist):
-        neighbors.append((dist, source.epic, source.kepmag))
-
-  # Generate some info about possible contaminant sources
-  neighbors = sorted(neighbors)
-  crwdsev = 0
-  crwdinfo = ["#   EPIC       D (PIX)   ΔKp (mag)   SEVERITY (0-5)",
-              "# ---------    -------   ---------   --------------"]
-  for d, e, k in neighbors:
-    dk = k - kepmag
-    if not np.isnan(dk):
-      # Assess the severity of the contamination
-      if d == 0 and dk < 0:
-        note = "5 (PLD FAILURE)"
-        if crwdsev < 5: crwdsev = 5
-      elif d == 0 and dk < 3:
-        note = "4 (LIKELY OVERFITTING)"
-        if crwdsev < 4: crwdsev = 4
-      elif d == 0 and dk < 5:
-        note = "3 (MINOR OVERFITTING)"
-        if crwdsev < 3: crwdsev = 3
-      elif d == 0 and dk > 5:
-        note = "1"
-        if crwdsev < 1: crwdsev = 1
-      elif d <= 1. and dk < 0:
-        note = "4 (LIKELY OVERFITTING)"
-        if crwdsev < 4: crwdsev = 4
-      elif d <= 1. and dk < 3:
-        note = "2"
-        if crwdsev < 2: crwdsev = 2
-      elif d <= 1. and dk < 5:
-        note = "1"
-        if crwdsev < 1: crwdsev = 1
-      elif d <= 2. and dk < 0:
-        note = "3 (MINOR OVERFITTING)"
-        if crwdsev < 3: crwdsev = 3
-      elif d <= 2. and dk < 5:
-        note = "2"
-        if crwdsev < 2: crwdsev = 2
-      elif d <= 3. and dk < 0:
-        note = "2"
-        if crwdsev < 2: crwdsev = 2
-      else:
-        note = "0"
-      # Make it into a string
+  for source in [s for s in nearby if s.epic != EPIC]:
+    dk = source.kepmag - kepmag
+    if np.isnan(dk):
+      dk = "????"
+      note = ""
+    else:
       if dk < 0:
         dk = "%.3f" % dk
       else:
         dk = "+%.3f" % dk
-    else:
-      dk = "????"
-      note = ""
-    crwdinfo.append("# %d    %.2f      %s      %s" % (e, d, dk, note))
+      crwdsev = Crowding(kepmag, source, ny, nx, contour)
+      if crwdsev > maxsev: maxsev = crwdsev
+      if crwdsev == 5: note = "5 (PLD FAILURE)"
+      elif crwdsev == 4: note = "4 (LIKELY OVERFITTING)"
+      elif crwdsev == 3: note = "3 (MINOR OVERFITTING)"
+      elif crwdsev == 2: note = "2"
+      elif crwdsev == 1: note = "1"
+      else: note = "0"
+    crwdinfo.append("# %d    %s      %s" % (e, dk, note))
   crwdinfo.append("#")
   crwdinfo = "\n".join(crwdinfo)
   
-  return crwdinfo, crwdsev
+  return crwdinfo, maxsev

@@ -97,7 +97,7 @@ def Breakpoint(campaign, time, mask = []):
 
 def RMS(y, win = 13, remove_outliers = False):
   '''
-  Return the RMS in ppm based on the median running standard deviation for
+  Return the CDPP (rms) in ppm based on the median running standard deviation for
   a window size of 13 cadences (~6 hours) as in VJ14.
   
   '''
@@ -341,48 +341,6 @@ def GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = [],
   mask = sorted(set(trn_mask + list(rem_mask)))
     
   return mask, trn_mask, rem_mask, keep_mask
-
-def SatSev(fpix):
-  '''
-  Gauge the saturation severity. 
-  TODO: Do this more rigorously!
-  
-  '''
-  
-  maxmed = np.median(fpix.T[0])
-  if maxmed > 180000:
-    satsev = 5
-  elif maxmed > 170000:
-    satsev = 4
-  elif maxmed > 160000:
-    satsev = 3
-  elif maxmed > 150000:
-    satsev = 2
-  elif maxmed > 140000:
-    satsev = 1
-  else:
-    satsev = 0
-  return satsev
-
-def AcorSev(kchisq):
-  '''
-  Gauge the acor fitting severity.
-  
-  '''
-  
-  if kchisq < 1.:
-    acorsev = 0
-  elif kchisq < 30.:
-    acorsev = 1
-  elif kchisq < 70.:
-    acorsev = 2
-  elif kchisq < 100.:
-    acorsev = 3
-  elif kchisq < 150.:
-    acorsev = 4
-  else:
-    acorsev = 5
-  return acorsev
 
 def ExceptionHook(exctype, value, tb):
   '''

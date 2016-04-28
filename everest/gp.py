@@ -19,7 +19,11 @@ warnings.filterwarnings('ignore', r'Covariance is not positive-semidefinite')
 from statsmodels.tsa.stattools import acf
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit, fmin_l_bfgs_b
-from astroML.time_series import lomb_scargle, lomb_scargle_bootstrap
+try:
+  from astroML.time_series import lomb_scargle, lomb_scargle_bootstrap
+except:
+  lomb_scargle = None
+  lomb_scargle_bootstrap = None
 from itertools import combinations
 import numpy as np
 import george
@@ -44,6 +48,10 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 2):
   and return a bunch of stuff.
     
   '''
+  
+  # Check if astroML is installed
+  if lomb_scargle is None or lomb_scargle_bootstrap is None:
+    raise Exception("Unable to import ``lomb_scargle``. Please check your astroML installation.")
   
   # Setup the mask
   mask = Mask(mask)
