@@ -65,7 +65,7 @@ for campaign in range(0,7):
       except HTTPError:
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, 0, 0), file = outfile)
         continue
-      flux = s.pdcflux[~np.isnan(s.flux)]
+      flux = s.flux[~np.isnan(s.flux)]
       rms = RMS(flux / np.median(flux), remove_outliers = True)
       flux_sv2 = flux - savgol_filter(flux, 49, 2) + np.median(flux)
       rms_sv2 = RMS(flux_sv2 / np.nanmedian(flux_sv2), remove_outliers = True)
