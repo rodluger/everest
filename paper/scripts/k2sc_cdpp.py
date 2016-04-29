@@ -65,8 +65,9 @@ for campaign in range(4,7):
       except HTTPError:
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, 0, 0), file = outfile)
         continue
-      rms = RMS(s.pdcflux / np.nanmedian(s.pdcflux), remove_outliers = True)
-      flux_sv2 = s.pdcflux - savgol_filter(s.pdcflux, 49, 2) + np.nanmedian(s.pdcflux)
+      flux = s.pdcflux[~np.isnan(s.pdcflux)]
+      rms = RMS(flux / np.median(flux), remove_outliers = True)
+      flux_sv2 = flux - savgol_filter(flux, 49, 2) + np.median(flux)
       rms_sv2 = RMS(flux_sv2 / np.nanmedian(flux_sv2), remove_outliers = True)
       print("{:>09d} {:>15.3f} {:>15.3f}".format(star, rms, rms_sv2), file = outfile)
       # Delete the lightcurve on disk
