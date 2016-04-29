@@ -19,7 +19,7 @@ sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.detrend import PLDBasis, ComputeScatter, SliceX
 from everest.gp import GetGP
-from everest.utils import InitLog, GetMasks
+from everest.utils import InitLog, GetMasks, Breakpoints
 from everest.data import GetK2Data
 from everest.kernels import KernelModels
 import matplotlib.pyplot as pl
@@ -61,6 +61,7 @@ def GetData(EPIC = 201497682):
   knum, kpars, white, _, kchisq, _ = GetGP(EPIC, time, fpix, ferr, mask = mask, niter = 2)['data']
   
   # Get the basis vectors
+  breakpoints = Breakpoints(k2star.campaign, time, mask)
   X = PLDBasis(fpix, pld_order = 3, cross_terms = True, max_components = 500)
   
   # Save

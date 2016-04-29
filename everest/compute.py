@@ -11,7 +11,7 @@ import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .data import GetK2Data
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX
-from .utils import InitLog, Mask, GetMasks, Breakpoint, \
+from .utils import InitLog, Mask, GetMasks, Breakpoints, \
                    PadWithZeros, RMS, Outliers
 from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
@@ -194,11 +194,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   except:
     # Compute PLD basis vectors
     log.info('Computing the design matrix...')
-    breakpoint = Breakpoint(k2star.campaign, time, mask)
-    if breakpoint is None:
-      breakpoints = []
-    else:
-      breakpoints = [breakpoint]
+    breakpoints = Breakpoints(k2star.campaign, time, mask)
     # We compute one large design matrix with ``max_components``
     # vectors, then slice it below if we choose fewer components
     X, npctot = PLDBasis(fpix, time = time, pld_order = pld_order,

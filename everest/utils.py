@@ -78,7 +78,7 @@ def PadWithZeros(vector, pad_width, iaxis, kwargs):
     vector[-pad_width[1]:] = 0
     return vector
 
-def Breakpoint(campaign, time, mask = []):
+def Breakpoints(campaign, time, mask = []):
   '''
   Return the timestamp of the breakpoint for a given campaign, if any.
   
@@ -91,9 +91,9 @@ def Breakpoint(campaign, time, mask = []):
   # K2 Campaign 1: force lightcurve split at t ~ 2017.5,
   # which is a mid-campaign data gap
   if campaign == 1:
-    return mtime[np.argmin(np.abs(mtime - 2017.5))]
+    return [mtime[np.argmin(np.abs(mtime - 2017.5))]]
   else:
-    return None
+    return []
 
 def RMS(y, win = 13, remove_outliers = False):
   '''
