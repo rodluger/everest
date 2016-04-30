@@ -62,7 +62,8 @@ def GetData(EPIC = 201497682):
   
   # Get the basis vectors
   breakpoints = Breakpoints(k2star.campaign, time, mask)
-  X = PLDBasis(fpix, pld_order = 3, cross_terms = True, max_components = 500)
+  X = PLDBasis(fpix, time = time, pld_order = 3, cross_terms = True, max_components = 500,
+               breakpoints = breakpoints)
   
   # Save
   np.savez(os.path.join('npz', 'scatter_in.npz'), time = time, X = X, flux = flux, 
