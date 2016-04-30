@@ -29,7 +29,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
             outlier_sigma = 5, mask_times = [], pld_order = 3,
             ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
-            screen_level = logging.DEBUG, gp_iter = 2, **kwargs):
+            screen_level = logging.CRITICAL, gp_iter = 2, **kwargs):
   '''
   
   '''
