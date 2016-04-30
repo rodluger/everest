@@ -12,12 +12,13 @@ from .data import GetK2Stars, GetK2Data
 from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB
 import os
+EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from kplr.config import KPLR_ROOT
 import sys
-import logging
-log = logging.getLogger(__name__)
+import subprocess
+import imp
 
-def Run(EPIC, debug = True, **kwargs):
+def Run(EPIC, debug = False, **kwargs):
   '''
   Compute and plot data for a given target.
   
@@ -35,9 +36,11 @@ def Run(EPIC, debug = True, **kwargs):
   # Plot the output
   Plot(data)
 
-def RunCampaign(campaign, **kwargs):
+def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
+                email = 'rodluger@gmail.com', 
+                kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
-  Compute and plot data for all targets in a given campaign.
+  Submits a cluster job to compute and plot data for all targets in a given campaign.
   
   '''
   
@@ -55,5 +58,47 @@ def RunCampaign(campaign, **kwargs):
       except:
         # Some targets could be corrupted
         continue
+        
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'run.pbs')
+  str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d' % (EVEREST_ROOT, 
+          nodes, os.path.abspath(kwargs_file), campaign)
+  str_out = os.path.join(EVEREST_ROOT, 'C%02d.log' % campaign)
+  qsub_args = ['qsub', pbsfile, 
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', 'C%02d' % campaign, 
+               '-l', str_n,
+               '-l', str_w,
+               '-M', email,
+               '-m', 'a']
+            
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
+def _RunCampaign(campaign, kwargs_file):
+  '''
+  The actual function that runs a given campaign; this must
+  be called from ``run.pbs``.
   
-  # TODO: Now submit a cluster job
+  '''
+  
+  # Get the kwargs
+  kwargs = imp.load_source("kwargs", kwargs_file).kwargs
+  
+  # Set up our custom exception handler
+  sys.excepthook = ExceptionHook
+  
+  # Get all the stars
+  stars = GetK2Stars()[campaign]
+  nstars = len(stars)
+  
+  # Compute and plot
+  for i, EPIC in enumerate(stars):
+    print("Detrending EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    data = Compute(EPIC, **kwargs)
+    Plot(data)

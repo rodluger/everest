@@ -90,12 +90,12 @@ def GetScatter(EPIC = 201497682):
   kernel = KernelModels[knum]
   kernel[:] = kpars
   gp = george.GP(kernel.george_kernel())
-  npc = np.arange(1, X.shape[1], 10)
+  npc = np.arange(1, npctot, 10)
   pred = np.zeros_like(npc)
   real = np.zeros_like(npc)
   for i, n in enumerate(npc):
-    log.info('%d/%d...' % (n, X.shape[1]))
-    pred[i], real[i] = ComputeScatter(SliceX(X, n, npctot), flux, time, ferr, gp, niter = 30, nmasks = 10)
+    log.info('%d/%d...' % (n, npctot))
+    pred[i], real[i] = ComputeScatter(SliceX(X, n, npctot), flux, time, ferr, gp, niter = 300, nmasks = 1)
 
   # Save
   np.savez(os.path.join('npz', 'scatter_out.npz'), npc = npc, pred = pred, real = real)
