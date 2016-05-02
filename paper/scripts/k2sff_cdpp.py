@@ -62,7 +62,7 @@ for campaign in range(0,7):
       # Get the cdpp
       try:
         s = kplr.K2SFF(star)
-      except HTTPError:
+      except (HTTPError, TypeError, ValueError):
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, 0, 0), file = outfile)
         continue
       flux = s.fcor[~np.isnan(s.fcor)]
