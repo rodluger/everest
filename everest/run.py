@@ -10,7 +10,8 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from .plot import Plot
 from .data import GetK2Stars, GetK2Data
 from .compute import Compute
-from .utils import ExceptionHook, ExceptionHookPDB
+from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
+from .pool import Pool
 import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from kplr.config import KPLR_ROOT
@@ -80,6 +81,16 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
+def _ComputeAndPlot(EPIC, **kwargs):
+  '''
+  Wrapper around ``Compute()`` and ``Plot()``.
+  
+  '''
+  
+  data = Compute(EPIC, **kwargs)
+  Plot(data)
+  return True
+
 def _RunCampaign(campaign, kwargs_file):
   '''
   The actual function that runs a given campaign; this must
@@ -87,18 +98,19 @@ def _RunCampaign(campaign, kwargs_file):
   
   '''
   
-  # Get the kwargs
-  kwargs = imp.load_source("kwargs", kwargs_file).kwargs
-  
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
   
-  # Get all the stars
-  stars = GetK2Stars()[campaign]
-  nstars = len(stars)
+  # Initialize our multiprocessing pool
+  with Pool() as pool:
+
+    # Get the kwargs
+    kwargs = imp.load_source("kwargs", kwargs_file).kwargs
   
-  # Compute and plot
-  for i, EPIC in enumerate(stars):
-    print("Detrending EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    data = Compute(EPIC, **kwargs)
-    Plot(data)
+    # Get all the stars
+    stars = GetK2Stars()[campaign]
+    nstars = len(stars)
+  
+    # Compute and plot
+    C = FunctionWrapper(_ComputeAndPlot, **kwargs)
+    pool.map(C, stars)

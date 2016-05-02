@@ -17,9 +17,9 @@ EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
 sys.path.insert(1, EVEREST_ROOT)
 import everest
-from everest.detrend import PLDBasis, ComputeScatter, SliceX
+from everest.detrend import PLDBasis, PLDCoeffs, PLDModel, ComputeScatter, SliceX
 from everest.gp import GetGP
-from everest.utils import InitLog, GetMasks, Breakpoints
+from everest.utils import InitLog, GetMasks, Breakpoints, RMS, Mask
 from everest.data import GetK2Data
 from everest.kernels import KernelModels
 import matplotlib.pyplot as pl
@@ -93,9 +93,11 @@ def GetScatter(EPIC = 201497682):
   npc = np.arange(1, npctot, 10)
   pred = np.zeros_like(npc)
   real = np.zeros_like(npc)
+  
   for i, n in enumerate(npc):
     log.info('%d/%d...' % (n, npctot))
-    pred[i], real[i] = ComputeScatter(SliceX(X, n, npctot), flux, time, ferr, gp, niter = 300, nmasks = 1)
+    pred[i], real[i] = ComputeScatter(SliceX(X, n, npctot), flux, time, ferr, gp, 
+                                      mask = mask, niter = 30, nmasks = 10)
 
   # Save
   np.savez(os.path.join('npz', 'scatter_out.npz'), npc = npc, pred = pred, real = real)
@@ -143,13 +145,9 @@ def PlotScatter(EPIC = 201497682):
   freal += np.nanmedian(real)
   pl.plot(npc_pred, freal, 'b-', label = 'Unmasked') 
 
-  # The minimum predicted scatter. Here we minimize the sum of the predicted
-  # scatter and the difference between the predicted and computed scatter.
-  # This isn't super rigorous, but we want both quantities to be small, so
-  # this should further prevent us from choosing an outlier in fP1 as the minimum.
-  met = fpred + np.abs(fpred - freal)
-  k = np.nanargmin(met)
-  mps = [met[k], npc_pred[k]]
+  # The minimum predicted scatter.
+  k = np.nanargmin(fpred)
+  mps = [fpred[k], npc_pred[k]]
   
   # Mark the best value
   pl.axvline(mps[1], color = 'k', lw = 2, alpha = 0.5, ls = '--', label = 'Best Model')

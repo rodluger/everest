@@ -29,6 +29,22 @@ class Mask(object):
     else:
       return None
 
+class FunctionWrapper(object):
+  '''
+  A simple function wrapper class.
+  
+  '''
+  
+  def __init__(self, f, *args, **kwargs):
+  
+    self.f = f
+    self.args = args
+    self.kwargs = kwargs
+  
+  def __call__(self, x):
+  
+    return self.f(x, *self.args, **self.kwargs)
+
 class NoPILFilter(logging.Filter):
   '''
   The PIL image module has a nasty habit of sending all sorts of 

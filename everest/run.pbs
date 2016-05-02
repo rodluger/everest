@@ -4,7 +4,7 @@
 export OPENBLAS_NUM_THREADS=1
 
 # CD into our working directory
-cd ${EVEREST_ROOT}/everest
+cd ${EVEREST_ROOT}
 
 if [ $NODES -eq 1 ]; then
   # Run on a single node with Python multiprocessing
