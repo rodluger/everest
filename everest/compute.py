@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_order = 3,
+            optimize_npc = True,
             ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.CRITICAL, gp_iter = 2, **kwargs):
@@ -200,25 +201,35 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     X, npctot = PLDBasis(fpix, time = time, pld_order = pld_order,
                          max_components = npc_arr[-1], 
                          breakpoints = breakpoints)
+    
+    if optimize_npc:
+      # Compute the scatter for different number of principal components
+      log.info('Minimizing the predictive scatter...')
+      masked_scatter = np.zeros_like(npc_arr, dtype = float)
+      unmasked_scatter = np.zeros_like(npc_arr, dtype = float)
+      for i, n in enumerate(npc_arr):
+        log.debug('Number of components = %d...' % n)
+        sX = SliceX(X, n, npctot)
+        masked_scatter[i], unmasked_scatter[i] = \
+        ComputeScatter(sX, flux, time, ferr, 
+                       gp, mask = mask, niter = ps_iter,
+                       nmasks = ps_masks)
 
-    # Compute the scatter for different number of principal components
-    log.info('Minimizing the predictive scatter...')
-    masked_scatter = np.zeros_like(npc_arr, dtype = float)
-    unmasked_scatter = np.zeros_like(npc_arr, dtype = float)
-    for i, n in enumerate(npc_arr):
-      log.debug('Number of components = %d...' % n)
-      sX = SliceX(X, n, npctot)
-      masked_scatter[i], unmasked_scatter[i] = \
-      ComputeScatter(sX, flux, time, ferr, 
-                     gp, mask = mask, niter = ps_iter,
-                     nmasks = ps_masks)
-
-    # Find the params that minimize the scatter  
-    besti, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
-                      masked_scatter, unmasked_scatter, 
-                      alpha = scatter_alpha)
-    npc = npc_pred[besti]
-    X = SliceX(X, npc, npctot)
+      # Find the params that minimize the scatter  
+      besti, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
+                        masked_scatter, unmasked_scatter, 
+                        alpha = scatter_alpha)
+      npc = npc_pred[besti]
+      X = SliceX(X, npc, npctot)
+    else:
+      # We're just going to use 100 principal components and run with it
+      masked_scatter = np.array([], dtype = float)
+      unmasked_scatter = np.array([], dtype = float)
+      besti = None
+      msf = None
+      usf = None
+      npc = 100
+      X = SliceX(X, npc, npctot)
     
     # Save!
     np.savez(os.path.join(outdir, 'best.npz'), X = X, 

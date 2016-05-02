@@ -51,10 +51,11 @@ def Plot(data):
 
   # Plot the scatter curves
   log.info('Plotting the scatter curve...')
-  if not os.path.exists(os.path.join(outdir, 'scatter.png')):
-    fig, ax = PlotScatter(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'scatter.png'))
-    pl.close()
+  if len(data['masked_scatter']):
+    if not os.path.exists(os.path.join(outdir, 'scatter.png')):
+      fig, ax = PlotScatter(EPIC, data)
+      fig.savefig(os.path.join(outdir, 'scatter.png'))
+      pl.close()
 
   # Plot the detrended data
   log.info('Plotting the detrended data...')

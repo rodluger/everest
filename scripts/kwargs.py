@@ -19,6 +19,7 @@ kwargs = dict(
                 outlier_sigma = 5, 
                 mask_times = [], 
                 pld_order = 3,
+                optimize_npc = False,
                 ps_iter = 50, 
                 ps_masks = 10, 
                 npc_arr = np.arange(25, 200, 10),
@@ -26,5 +27,5 @@ kwargs = dict(
                 gp_iter = 2,
                 inject = {}, 
                 log_level = logging.DEBUG, 
-                screen_level = logging.CRITICAL
+                screen_level = logging.DEBUG
              )

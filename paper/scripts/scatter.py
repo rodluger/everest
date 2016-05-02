@@ -62,6 +62,7 @@ def GetData(EPIC = 201497682):
   
   # Get the basis vectors
   breakpoints = Breakpoints(k2star.campaign, time, mask)
+  
   X = PLDBasis(fpix, time = time, pld_order = 3, cross_terms = True, max_components = 500,
                breakpoints = breakpoints)
   
@@ -84,7 +85,7 @@ def GetScatter(EPIC = 201497682):
   mask = data['mask']
   knum = data['knum']
   kpars = data['kpars']
-    
+
   # Get the scatter
   log.info('Computing the scatter...')
   kernel = KernelModels[knum]
