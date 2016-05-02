@@ -127,7 +127,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # NOTE: This section was coded specifically for Ethan Kruse's search pipeline.
   new_candidates = []
   for cnum in range(10):
-    f = os.path.join(EVEREST_PATH, 'new', '%s.02d.npz' % (EPIC, cnum))
+    f = os.path.join(EVEREST_ROOT, 'new', '%d.%02d.npz' % (EPIC, cnum))
     if os.path.exists(f):
       tmp = np.load(f)
       new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
@@ -519,7 +519,7 @@ def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
       elif crwdsev == 2: note = "2"
       elif crwdsev == 1: note = "1"
       else: note = "0"
-    crwdinfo.append("# %d    %s      %s" % (e, dk, note))
+    crwdinfo.append("# %d    %s      %s" % (source.epic, dk, note))
   crwdinfo.append("#")
   crwdinfo = "\n".join(crwdinfo)
   
