@@ -4,4 +4,10 @@ __pycache__
 /new
 /scripts/*
 *.npz
-paper/tex/images
+paper/tex/k2.aux
+paper/tex/k2.log
+paper/tex/k2.out
+paper/tex/k2Notes.bib
+paper/tex/k2.bbl
+paper/tex/k2.blg
+paper/tex/k2.pdf
