@@ -29,7 +29,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
             optimize_npc = True, mask_candidates = False,
             ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
-            screen_level = logging.CRITICAL, gp_iter = 2, **kwargs):
+            screen_level = logging.CRITICAL, gp_iter = 2, 
+            jpeg_quality = 30, **kwargs):
   '''
   
   '''
@@ -296,7 +297,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              fpix_full = k2star.fpix, apertures = k2star.apertures, mask = mask,
              trn_mask = trn_mask, out_mask = out_mask, mask_candidates = mask_candidates,
              apnum = apnum, bkg = bkg, inject = inject, new_candidates = new_candidates, 
-             kepmag = k2star.kepmag, EB = k2star.EB,
+             kepmag = k2star.kepmag, EB = False if k2star.EB is False else k2star.EB.__dict__,
              planets = [planet.__dict__ for planet in k2star.planets], 
              nearby = k2star._nearby, fpld = fpld_norm, fwhite = fwhite_norm, 
              C = C, X = X, gp = None, gpinfo = dict(knum = knum, kpars = kpars, 
@@ -309,7 +310,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
              kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
              git_hash = git_hash, git_branch = git_branch, outdir = outdir,
-             campaign = k2star.campaign, breakpoints = breakpoints, gp_iter = gp_iter)
+             campaign = k2star.campaign, breakpoints = breakpoints, gp_iter = gp_iter,
+             jpeg_quality = jpeg_quality)
   np.savez_compressed(os.path.join(outdir, 'data.npz'), **data)
   
   # Finally, delete the old .npz files

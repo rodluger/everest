@@ -27,6 +27,7 @@ kwargs = dict(
                 scatter_alpha = 0.,
                 gp_iter = 2,
                 inject = {}, 
+                jpeg_quality = 30,
                 log_level = logging.DEBUG, 
                 screen_level = logging.CRITICAL
              )

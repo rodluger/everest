@@ -25,13 +25,16 @@ def Plot(data):
   
   '''
   
-  # DEBUG
-  data['jpeg_quality'] = 30
-  
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
+  
+  # DEBUG
+  data['jpeg_quality'] = 30
+  outdir = '/Users/rodrigo/src/everest/output/C00/202094117/default'
+  # / DEBUG
+  
   jpeg_quality = data['jpeg_quality']
-    
+  
   # Plot the apertures
   log.info('Plotting the apertures...')
   if not os.path.exists(os.path.join(outdir, 'aper.jpg')):
@@ -520,20 +523,19 @@ def PlotFolded(EPIC, data):
   kepmag = data['kepmag']
   campaign = data['campaign']
   planets = data['planets']
-  EB = data['EB']
+  EB = data['EB'][()]
   outdir = data['outdir'][()]
   jpeg_quality = data['jpeg_quality']
       
   # Is the star is an eclipsing binary?
   if EB:
     for n, eclipse, t0, dur in zip([1,2], ['Primary', 'Secondary'], ['p0', 's0'], ['pdur', 'sdur']):
-      fig, ax = pl.figure(1, figsize = (16, 8))
+      fig, ax = pl.subplots(1, figsize = (16, 8))
       fig.subplots_adjust(wspace = 0.1, hspace = 0.25, left = 0.075, right = 0.95)
-      ax.set_ylabel('Flux', fontsize - 18)
+      ax.set_ylabel('Flux', fontsize = 18)
       ax.set_title('EPIC %d: %s Eclipse' % (EPIC, eclipse), fontsize = 18)
       ax.set_xlabel('Time (days)', fontsize = 18)
-      foldp = lambda t: (t - EB[t0] - EB['period'] / 2.) % \
-                         EB['period'] - EB['period'] / 2.
+      foldp = lambda t: (t - EB[t0] - EB['period'] / 2.) % EB['period'] - EB['period'] / 2.
       ax.plot(foldp(time), fwhite, 'b.', alpha = 0.4)
         
       # Fix y lims

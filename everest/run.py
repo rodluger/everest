@@ -97,7 +97,7 @@ def RunCandidates(download_only = False,
                '-l', str_n,
                '-l', str_w,
                '-M', email,
-               '-m', 'a']
+               '-m', 'ae']
             
   # Now we submit the job
   print("Submitting the job...")
@@ -146,7 +146,7 @@ def RunCampaign(campaign, download_only = False,
                '-l', str_n,
                '-l', str_w,
                '-M', email,
-               '-m', 'a']
+               '-m', 'ae']
             
   # Now we submit the job
   print("Submitting the job...")
@@ -167,6 +167,9 @@ def _RunCandidates(kwargs_file):
 
     # Get the kwargs
     kwargs = imp.load_source("kwargs", kwargs_file).kwargs
+  
+    # Override ``mask_candidates``
+    kwargs['mask_candidates'] = True
   
     # Get all the stars
     stars = [int(p.epic_name[5:]) for p in GetK2Planets()]
@@ -193,10 +196,7 @@ def _RunCampaign(campaign, kwargs_file):
 
     # Get the kwargs
     kwargs = imp.load_source("kwargs", kwargs_file).kwargs
-    
-    # Override ``mask_candidates``
-    kwargs['mask_candidates'] = True
-    
+        
     # Get all the stars
     stars = GetK2Stars()[campaign]
     nstars = len(stars)
