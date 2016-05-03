@@ -42,17 +42,16 @@
 \altaffilmark{2}Virtual Planetary Laboratory, Seattle, WA 98195, USA}
 
 \begin{abstract}
-We present \texttt{EVEREST} (\emph{EPIC Variability Extraction and Removal for
-Exoplanet Science Targets}), an open-source pipeline for removing instrumental noise
+We present \texttt{EVEREST}, an open-source pipeline for removing instrumental noise
 from \emph{K2} light curves. \texttt{EVEREST} employs a variant of the pixel-level decorrelation (PLD)
 technique developed by \cite{DEM15} to remove systematics introduced by the spacecraft's 
 pointing error and a Gaussian process (GP) to capture astrophysical variability. We
 apply \texttt{EVEREST} to all \emph{K2} targets in Campaigns 0-6, yielding light curves
 with precision comparable to that of the original \emph{Kepler} mission for stars brighter
 than $K_p \approx 13$, and within a factor of two of the \emph{Kepler} precision for fainter
-targets. We further compare our light curves to the other de-trended light curves \note{available
-at MAST HLSP} and demonstrate that, on average, \texttt{EVEREST} results in the highest precision of any
-pipeline for $K_p \lesssim 15$ stars. The \texttt{EVEREST} catalog and the source code
+targets. We further compare our light curves to the other de-trended light curves available
+for download at the MAST HLSP server and demonstrate that, on average, \texttt{EVEREST} results 
+in the highest precision for $K_p \lesssim 15$ stars. The \texttt{EVEREST} light curves and the source code
 used to generate it are freely available online.
 \end{abstract}
 
@@ -72,11 +71,11 @@ the spacecraft along the plane of the ecliptic, pointing drift could be mitigate
 by the solar wind pressure and by periodic thruster firings. As of May 2014 the spacecraft has been operating in
 this new mode, known as \emph{K2}, and has continued to enable high precision photometry
 science, monitoring tens of thousands of stars near the plane of the ecliptic during campaigns 
-lasting about 75 days each.
+lasting about 75 days each \citep{HOW14}.
 
-However, because of the reduced pointing accuracy, \emph{K2} raw photometry is between 
+However, because of the reduced pointing accuracy, \emph{K2} raw aperture photometry is between 
 3 and 4 times less precise than that of the original \emph{Kepler} mission and displays
-strong instrumental artefacts on $\sim$ 6 hour timescales, which
+strong instrumental artefacts with different timescales, including a $\sim$ 6 hour trend, which
 severely compromise its ability to detect small transits. Recently, several authors
 have developed powerful methods to correct for these systematics, often coming within
 a factor of $\sim$ 2 of the original \emph{Kepler} precision.
@@ -98,7 +97,7 @@ a model for the instrumental systematics. The nonparametric nature of the GP res
 in a flexible model with increased de-trending power especially for dim \emph{K2}
 targets.
 
-In one way or another, all of these methods rely on numerical methods to identify and 
+In one way or another, all of these techniques rely on numerical methods to identify and 
 remove correlations between the stellar position and the intensity fluctuations. Even
 when a nonparametric technique such as a GP is used, assumptions are still made about
 the nature of the correlations between spacecraft motion and instrumental variability.
@@ -107,15 +106,16 @@ and relies on assumptions about the shape of the stellar PSF.
 
 A powerful alternative to these methods is pixel-level decorrelation (PLD), a method developed
 by \cite{DEM15} to correct for systematics in \emph{Spitzer} observations of transiting
-hot Jupiters. The tenet of PLD is that the \emph{best way to correct for noise introduced by
+hot Jupiters. The tenet of PLD is that the best way to correct for noise introduced by
 the motion of the stellar image does not involve actual measurements of the position
-of the star}. The position of the stellar image is, after all, a secondary data product
+of the star. The position of the stellar image is, after all, a secondary data product
 of photometry, and is subject to additional uncertainty.
 PLD skips these two numerical steps (i.e., fitting for the stellar position and solving
 for the correlations) by operating on the \emph{primary} data products of photometry, the
-intensities in each of the detector pixels. These intensities are normalized by the
-total flux in the chosen aperture then used as basis vectors for an ordinary least-squares 
-(OLS) fit to the aperture-summed flux. Since astrophysical signals (stellar variability,
+intensities in each of the detector pixels. 
+These intensities are normalized by the
+total flux in the chosen aperture then used as basis vectors for a linear least-squares 
+(LLS) fit to the aperture-summed flux. Since astrophysical signals (stellar variability,
 planet transits, stellar eclipses, etc.) are present in all of the pixels in the aperture,
 the normalization step removes astrophysical information from the basis set, ensuring
 that PLD remove only the signals that are \emph{different} across the aperture. PLD is
@@ -351,7 +351,7 @@ The PLD-only fit (Figure~\ref{fig:sinusoid}\textbf{b}) is quite poor. The genera
 curve is mostly preserved and, as expected, the stellar signal is still present 
 in the residuals, but the fit increases the white noise by a factor of $\sim$ 4,
 all but washing out the transits (bottom panel). This happens because of a
-serious limitation of the OLS problem framed in Equation~\ref{eq:demingsolution}, 
+serious limitation of the LLS problem framed in Equation~\ref{eq:demingsolution}, 
 which yields the PLD coefficients that minimize the scatter of the PLD term $m_i$ 
 about the flux $y_i$. If $m_i$ is not a suitable approximation to the flux, as in the case
 of a highly variable star, the $\chi^2$ of the fit will necessarily be large.
