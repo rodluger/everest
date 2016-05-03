@@ -27,7 +27,7 @@ def Plot(data):
   
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
-  jpeg_quality = data['jpeg_quality']
+  jpeg_quality = data['jpeg_quality'][()]
   
   # Plot the apertures
   log.info('Plotting the apertures...')
@@ -521,7 +521,7 @@ def PlotFolded(EPIC, data):
   planets = data['planets']
   EB = data['EB'][()]
   outdir = data['outdir'][()]
-  jpeg_quality = data['jpeg_quality']
+  jpeg_quality = data['jpeg_quality'][()]
       
   # Is the star is an eclipsing binary?
   if EB:
