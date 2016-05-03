@@ -15,7 +15,6 @@ import numpy as np
 
 kwargs = dict(
                 run_name = 'default',
-                debug = False,
                 apnum = 15, 
                 outlier_sigma = 5,
                 mask_times = [], 

@@ -29,7 +29,7 @@ def Run(EPIC, **kwargs):
   Plot(data)
   return True
 
-def RunSingle(EPIC, kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
+def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Compute and plot data for a given target.
   
@@ -39,7 +39,7 @@ def RunSingle(EPIC, kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.
   kwargs = imp.load_source("kwargs", kwargs_file).kwargs
   
   # Set up our custom exception handlers
-  if kwargs['debug']:
+  if debug:
     sys.excepthook = ExceptionHookPDB
   else:
     sys.excepthook = ExceptionHook
