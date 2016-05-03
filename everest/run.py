@@ -19,14 +19,17 @@ import sys
 import subprocess
 import imp
 
-def Run(EPIC, debug = False, **kwargs):
+def Run(EPIC, kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Compute and plot data for a given target.
   
   '''
   
+  # Get the kwargs
+  kwargs = imp.load_source("kwargs", kwargs_file).kwargs
+  
   # Set up our custom exception handlers
-  if debug:
+  if kwargs['debug']:
     sys.excepthook = ExceptionHookPDB
   else:
     sys.excepthook = ExceptionHook
