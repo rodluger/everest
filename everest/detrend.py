@@ -9,6 +9,7 @@ detrend.py
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .utils import Mask, RMS, Chunks
 import numpy as np
+import george
 from scipy.misc import comb as nchoosek
 from itertools import combinations_with_replacement as multichoose
 from sklearn.decomposition import PCA
@@ -182,3 +183,61 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   # Take the median and return
   masked_scatter = np.median(masked_scatter)
   return masked_scatter, unmasked_scatter
+
+def Outliers(time, flux, fpix, ferr, mask = [], sigma = 5):
+  '''
+  Return the indices of outliers we should remove from the light curve when computing
+  the PLD coeffs.
+  
+  '''
+
+  # Mask the arrays right off the bat
+  time_orig = np.array(time)
+  time = np.delete(time, mask)
+  flux = np.delete(flux, mask)
+  fpix = np.delete(fpix, mask, axis = 0)
+  ferr = np.delete(ferr, mask)
+
+  # Set up a generic GP
+  amp = np.median([np.std(y) for y in Chunks(flux, int(2. / np.median(time[1:] - time [:-1])))])
+  gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(2. ** 2))
+  
+  # Compute the basis vectors for 1st order PLD w/ 5 chunks
+  nchunks = 5
+  brkpts = [time[int(k)] for k in np.linspace(0, len(time), nchunks + 1)[1:-1]]
+  X, _ = PLDBasis(fpix, time = time, pld_order = 1, max_components = 50, breakpoints = brkpts)
+  
+  # First we (tentatively) clip outliers from the raw flux.
+  med = np.median(flux)
+  MAD = 1.4826 * np.median(np.abs(flux - med))
+  i = np.where((flux > med + sigma * MAD) | (flux < med - sigma * MAD))[0]
+  log.info('Iteration #00: %d outliers.' % len(i))
+  
+  # Now do iterative sigma clipping. 
+  j = [-1]
+  count = 0
+  while not np.array_equal(i, j):
+    
+    # Reset; the loop ends when we get the same outliers twice in a row
+    j = i
+    count += 1
+    if count > 10:
+      # We will continue, even though there may be issues
+      log.error('Maximum number of iterations in ``Outliers()`` exceeded.')
+      break
+    
+    # Remove both the PLD component and the GP component
+    C = PLDCoeffs(X, flux, time, ferr, gp, mask = i)
+    M = PLDModel(C, X)
+    mu, _ = gp.predict(np.delete(flux - M, i), time)
+    fdet = flux - M - mu
+  
+    # Clip!
+    med = np.median(fdet)
+    MAD = 1.4826 * np.median(np.abs(fdet - med))
+    i = np.where((fdet > med + sigma * MAD) | (fdet < med - sigma * MAD))[0]
+  
+    # Log
+    log.info('Iteration #%02d: %d outliers.' % (count, len(i)))
+  
+  return [np.argmax(time_orig == time[j]) for j in i]

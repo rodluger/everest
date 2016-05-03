@@ -10,9 +10,8 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .data import GetK2Data
-from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX
-from .utils import InitLog, Mask, GetMasks, Breakpoints, \
-                   PadWithZeros, RMS, Outliers
+from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
+from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers
 from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
 from .gp import GetGP
@@ -27,7 +26,7 @@ log = logging.getLogger(__name__)
 
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_order = 3,
-            optimize_npc = True,
+            optimize_npc = True, mask_candidates = False,
             ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.CRITICAL, gp_iter = 2, **kwargs):
@@ -105,7 +104,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     # This won't actually skew our recovery results -- it's just simpler than
     # doing some sort of iterative outlier removal step in the recovery.
     log.info('Removing outliers...')
-    outliers, _ = Outliers(time, flux, fpix = fpix, ferr = ferr, sigma = 3)
+    outliers = Outliers(time, flux, fpix, ferr, sigma = 3)
+    
     time = np.delete(time, outliers)
     flux = np.delete(flux, outliers)
     ferr = np.delete(ferr, outliers)
@@ -126,15 +126,16 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Are there any new planet candidates in this lightcurve?
   # NOTE: This section was coded specifically for Ethan Kruse's search pipeline.
   new_candidates = []
-  for cnum in range(10):
-    f = os.path.join(EVEREST_ROOT, 'new', '%d.%02d.npz' % (EPIC, cnum))
-    if os.path.exists(f):
-      tmp = np.load(f)
-      new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
-                                  for tn in tmp['ttimes']])
-      mask_times = sorted(set(mask_times) | set(new_tmask))
-      new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
-                              'tmask': new_tmask}])
+  if mask_candidates:
+    for cnum in range(10):
+      f = os.path.join(EVEREST_ROOT, 'new', '%d.%02d.npz' % (EPIC, cnum))
+      if os.path.exists(f):
+        tmp = np.load(f)
+        new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
+                                    for tn in tmp['ttimes']])
+        mask_times = sorted(set(mask_times) | set(new_tmask))
+        new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
+                                'tmask': new_tmask}])
   
   # Obtain transit and outlier masks
   log.info('Computing transit and outlier masks...')
@@ -142,14 +143,20 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     maskdata = np.load(os.path.join(outdir, 'mask.npz'))
     mask = maskdata['mask']
     trn_mask = maskdata['trn_mask']
-    rem_mask = maskdata['rem_mask']
-    keep_mask = maskdata['keep_mask']
+    out_mask = maskdata['out_mask']
   except:
-    mask, trn_mask, rem_mask, keep_mask = \
-    GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = k2star.planets, 
-             EB = k2star.EB, mask_times = mask_times)
+    # Will we mask known candidates?
+    if mask_candidates:
+      planets = k2star.planets
+      EB = k2star.EB
+    else:
+      planets = []
+      EB = None
+    mask, trn_mask, out_mask = \
+    GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = planets, 
+             EB = EB, mask_times = mask_times)
     np.savez(os.path.join(outdir, 'mask.npz'), mask = mask,
-             trn_mask = trn_mask, rem_mask = rem_mask, keep_mask = keep_mask)
+             trn_mask = trn_mask, out_mask = out_mask)
 
   # Compute GP hyperparameters
   log.info('Computing the GP hyperparameters...')
@@ -251,11 +258,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   fpld += np.median(flux)
   fpld_norm = fpld / np.median(M(fpld))  
   
-  # Now compute the fully whitened flux
+  # Now compute the fully whitened flux (for plotting purposes only)
   fwhite = flux - model
   fwhite += np.median(flux)
   med = np.median(M(fwhite))
-  outliers, _ = Outliers(M(time), M(fwhite), sigma = 5)
+  outliers = MADOutliers(M(time), M(fwhite))  
   O = Mask(outliers)
   gp.compute(O(M(time)), O(M(ferr)))
   mu, _ = gp.predict(O(M(fwhite)) - med, time)
@@ -308,7 +315,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Save everything to one massive .npz file
   data = dict(time = time, flux = flux, ferr = ferr, fpix = fpix, perr = perr, 
              fpix_full = k2star.fpix, apertures = k2star.apertures, mask = mask,
-             trn_mask = trn_mask, rem_mask = rem_mask, keep_mask = keep_mask, 
+             trn_mask = trn_mask, out_mask = out_mask, mask_candidates = mask_candidates,
              apnum = apnum, bkg = bkg, inject = inject, new_candidates = new_candidates, 
              kepmag = k2star.kepmag, EB = k2star.EB,
              planets = [planet.__dict__ for planet in k2star.planets], 
@@ -524,3 +531,54 @@ def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
   crwdinfo = "\n".join(crwdinfo)
   
   return crwdinfo, maxsev
+
+def GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = [], 
+             EB = None, mask_times = []):
+  '''
+  
+  '''
+  
+  # Get the transit masks
+  if len(planets):
+    mask = []
+    for planet in planets:
+    
+      # Get the transit duration
+      if not np.isnan(planet.pl_trandur):
+        tdur = planet.pl_trandur * 1.2
+      else:
+        # Assume 4 hours for safety...
+        tdur = 4. / 24.
+
+      # Get the transit times
+      per = planet.pl_orbper
+      t0 = planet.pl_tranmid - 2454833
+      t0 += np.ceil((time[0] - tdur - t0) / per) * per
+      ttimes = np.arange(t0, time[-1] + tdur, per)
+
+      for t in ttimes:
+        mask.extend(np.where(np.abs(time - t) < tdur / 2.)[0])
+    
+    mask = sorted(mask)
+
+  else:
+    mask = []
+
+  # Get eclipsing binary masks
+  if EB:
+    mask = sorted(set(mask + EB.mask(time)))
+    
+  # Enforce user-defined masks
+  if len(mask_times):
+    m = [np.argmax(np.abs(time - t) < 0.001) for t in mask_times]
+    mask_pld = sorted(set(mask_pld + m))
+
+  # Mask additional astrophysical outliers (including transits!) in the SAP flux 
+  # for PLD to work properly. If we don't do this, PLD will actually attempt to
+  # correct for these outliers at the expense of increasing the white noise in the
+  # PLD fit.
+  trn_mask = list(mask)
+  out_mask = Outliers(time, flux, fpix, ferr, mask = trn_mask, sigma = outlier_sigma)
+  mask = sorted(set(trn_mask + list(out_mask)))
+    
+  return mask, trn_mask, out_mask

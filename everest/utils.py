@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from scipy.signal import medfilt
 import numpy as np
 import sys, traceback, pdb
+import george
 import logging
 log = logging.getLogger(__name__)
 
@@ -133,98 +134,21 @@ def RMS(y, win = 13, remove_outliers = False):
     
   return 1.e6 * np.nanmedian([np.std(yi)/np.sqrt(win) for yi in Chunks(y, win, all = True)])
 
-def Outliers(time, flux, fpix = None, ferr = None, mask = [], kernel_size = 5, 
-             sigma = 5):
+def MADOutliers(t, f, sigma = 5, kernel_size = 5):
   '''
-  Return ``remove`` and ``keep``, indices of outliers we should remove from and
-  keep in the light curve, respectively.
   
   '''
   
-  # Apply the mask
-  mask = Mask(mask)
-  t = mask(time)
-  f = mask(flux)
-  p = mask(fpix)
-  e = mask(ferr)
-      
-  # Outliers indices
-  otimes = []
-  rtimes = []
-  ktimes = []
-  res = []
-  
-  # First we apply a median filter to the data
+  tout = []
   fs = f - MedianFilter(f, kernel_size)
-
-  # Then we perform a median absolute deviation (MAD) cut
   M = np.median(fs)
   MAD = 1.4826 * np.median(np.abs(fs - M))
   for ti, fi in zip(t, fs):
     if (fi > M + sigma * MAD) or (fi < M - sigma * MAD):
-      # Outlier times
-      otimes.append(ti)
-      # Residuals
-      res.append(np.abs(fi - M))
-  # Sort the outliers by how bad they are
-  _, otimes = np.array(sorted(zip(res, otimes))[::-1]).T
+      tout.append(ti)
+  outliers = np.array(sorted([np.argmax(t == ti) for ti in tout]))
   
-  # If the user provided fpix and ferr, we're going to
-  # do PLD iteratively to identify outliers that contribute
-  # to increasing the scatter.
-  if len(otimes) and fpix is not None and ferr is not None:
-  
-    # Define an RMS function for the detrended data
-    # We're applying first order PLD with a 30th order polynomial
-    def GetRMS(ti, pi, fi, ei, poly_order = 30):
-      frac = pi / fi.reshape(-1, 1)
-      tprime = (ti - ti[0]) / (ti[-1] - ti[0])
-      poly = np.vstack([tprime ** n for n in range(1, poly_order + 1)]).T
-      x = np.hstack([frac, poly])
-      Kinv = np.diag(1. / ei ** 2)
-      A = np.dot(np.dot(x.T, Kinv), x)
-      B = np.dot(np.dot(x.T, Kinv), fi)
-      c = np.linalg.solve(A, B)
-      m = np.dot(c, x.T)
-      return RMS((fi - m) / np.median(fi))
-    
-    # Loop over all the outliers
-    for otime in otimes:
-    
-      # Get the outlier index in the **masked** array
-      outlier = np.argmax(t == otime)
-      
-      # Get the indices in the vicinity (300 cadences) of the outlier
-      a = max(0, outlier - 150)
-      b = min(outlier + 150, len(time))
-      
-      # Get the baseline RMS of the **masked** chunk
-      RMS0 = GetRMS(t[a:b], p[a:b], f[a:b], e[a:b])
-    
-      # The **masked** arrays, with the outlier removed
-      tr = np.delete(t, outlier)[a:b - 1]
-      pr = np.delete(p, outlier, axis = 0)[a:b - 1]
-      fr = np.delete(f, outlier)[a:b - 1]
-      er = np.delete(e, outlier)[a:b - 1]
-    
-      # Remove the outlier if the RMS improved
-      if GetRMS(tr, pr, fr, er) < RMS0:
-        rtimes.append(otime)  
-      else:
-        ktimes.append(otime)
-        
-    rtimes = np.array(rtimes, dtype = float)
-    ktimes = np.array(ktimes, dtype = float)
-  
-  else:
-    rtimes = np.array(otimes)
-    ktimes = np.array([], dtype = float)
-  
-  # Grab the indices from the times and return
-  remove = np.array(sorted([np.argmax(time == t) for t in rtimes]))
-  keep = np.array(sorted([np.argmax(time == t) for t in ktimes]))
-
-  return remove, keep
+  return outliers
       
 def Chunks(l, n, all = False):
   '''
@@ -305,58 +229,6 @@ def LatexExpSq(f, minexp = 3):
     return r"$\left({0} \times 10^{{{1}}}\right)^2$".format(base, int(exponent))
   else:
     return LatexExp(f, minexp)[:-1] + '^2$'
-
-def GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = [], 
-             EB = None, mask_times = []):
-  '''
-  
-  '''
-  
-  # Get the transit masks
-  if len(planets):
-    mask = []
-    for planet in planets:
-    
-      # Get the transit duration
-      if not np.isnan(planet.pl_trandur):
-        tdur = planet.pl_trandur * 1.2
-      else:
-        # Assume 4 hours for safety...
-        tdur = 4. / 24.
-
-      # Get the transit times
-      per = planet.pl_orbper
-      t0 = planet.pl_tranmid - 2454833
-      t0 += np.ceil((time[0] - tdur - t0) / per) * per
-      ttimes = np.arange(t0, time[-1] + tdur, per)
-
-      for t in ttimes:
-        mask.extend(np.where(np.abs(time - t) < tdur / 2.)[0])
-    
-    mask = sorted(mask)
-
-  else:
-    mask = []
-
-  # Get eclipsing binary masks
-  if EB:
-    mask = sorted(set(mask + EB.mask(time)))
-    
-  # Enforce user-defined masks
-  if len(mask_times):
-    m = [np.argmax(np.abs(time - t) < 0.001) for t in mask_times]
-    mask_pld = sorted(set(mask_pld + m))
-
-  # Mask additional astrophysical outliers (including transits!) in the SAP flux 
-  # for PLD to work properly. If we don't do this, PLD will actually attempt to
-  # correct for these outliers at the expense of increasing the white noise in the
-  # PLD fit.
-  trn_mask = list(mask)
-  rem_mask, keep_mask = Outliers(time, flux, fpix = fpix, ferr = ferr, mask = trn_mask, 
-                                 sigma = outlier_sigma)
-  mask = sorted(set(trn_mask + list(rem_mask)))
-    
-  return mask, trn_mask, rem_mask, keep_mask
 
 def ExceptionHook(exctype, value, tb):
   '''

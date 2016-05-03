@@ -8,7 +8,7 @@ plot.py
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
-from .utils import RMS, Outliers, Mask, PadWithZeros
+from .utils import RMS, Mask, PadWithZeros
 from .transit import Transit
 from .sources import Source
 import matplotlib.pyplot as pl
@@ -50,8 +50,8 @@ def Plot(data):
     pl.close()
 
   # Plot the scatter curves
-  log.info('Plotting the scatter curve...')
   if len(data['masked_scatter']):
+    log.info('Plotting the scatter curve...')
     if not os.path.exists(os.path.join(outdir, 'scatter.png')):
       fig, ax = PlotScatter(EPIC, data)
       fig.savefig(os.path.join(outdir, 'scatter.png'))
@@ -65,11 +65,12 @@ def Plot(data):
     pl.close()
   
   # Plot the folded data
-  log.info('Plotting the folded data...')
-  try:
-    PlotFolded(EPIC, data)
-  except:
-    log.error('An error occurred while plotting the folded data.')
+  if data['mask_candidates']:
+    log.info('Plotting the folded data...')
+    try:
+      PlotFolded(EPIC, data)
+    except:
+      log.error('An error occurred while plotting the folded data.')
 
   # Convert the images to a single PDF and remove the .png files
   images = []
@@ -203,9 +204,8 @@ def PlotOutliers(EPIC, data):
   bkg = data['bkg']
   flux = data['flux']
   mask = data['mask']
-  trn_mask = data['trn_mask']
-  remove = data['rem_mask']
-  keep = data['keep_mask']
+  trn_mask = np.array(data['trn_mask'], dtype = int)
+  remove = np.array(data['out_mask'], dtype = int)
   
   fig, ax = pl.subplots(2, figsize = (16, 8))
   fig.subplots_adjust(left = 0.1, right = 0.95, hspace = 0.02)
@@ -217,7 +217,6 @@ def PlotOutliers(EPIC, data):
   
   ax[1].plot(np.delete(time, trn_mask), np.delete(flux, trn_mask), 'k.', alpha = 0.3)
   ax[1].plot(time[trn_mask], flux[trn_mask], 'b.', label = 'Masked (transit)', alpha = 0.5)
-  ax[1].plot(time[keep], flux[keep], 'g.', label = 'Kept in lightcurve', alpha = 0.5)
   ax[1].plot(time[remove], flux[remove], 'r.', label = 'Removed from lightcurve', )
   ax[1].legend(loc = 'upper left', fontsize = 12, numpoints = 1)
   ax[1].margins(0.01, 0.05)
@@ -318,11 +317,12 @@ def PlotDetrended(EPIC, data):
   perr = data['perr']
   bkg = data['bkg'] * fpix.shape[1]
   mask = data['mask']
-  trn_mask = data['trn_mask']
-  rem_mask = data['rem_mask']
+  trn_mask = np.array(data['trn_mask'], dtype = int)
+  rem_mask = np.array(data['out_mask'], dtype = int)
   apnum = data['apnum']
   inject = data['inject'][()]
   new_candidates = data['new_candidates'][()]
+  mask_candidates = data['mask_candidates']
   C = data['C']
   pld_order = data['pld_order']
   fpld = data['fpld']
@@ -337,7 +337,10 @@ def PlotDetrended(EPIC, data):
   planets = data['planets']
                             
   # Plot
-  fig, ax = pl.subplots(3, figsize = (16, 12))
+  if mask_candidates:
+    fig, ax = pl.subplots(3, figsize = (16, 12))
+  else:
+    fig, ax = pl.subplots(2, figsize = (16, 12))
   fig.subplots_adjust(left = 0.08, right = 0.98, hspace = 0.15, wspace = 0.125)
   
   # 1. Raw flux, background removed
@@ -373,24 +376,27 @@ def PlotDetrended(EPIC, data):
     hi += (hi - lo) / 3
   ax[1].set_ylim(lo, hi)
   
-  # 3. The fully whitened PLD-detrended data      
-  ax[2].plot(time, fwhite, 'b.', alpha = 0.3)
+  if mask_candidates:
+    # 3. The fully whitened PLD-detrended data, only if we masked candidate
+    # transits and want to see what they look like in the whitened data      
+    ax[2].plot(time, fwhite, 'b.', alpha = 0.3)
   
-  # Adjust y limits based on the Everest-detrended data
-  y = np.delete(fwhite, rem_mask)
-  lo = y[y < 1]
-  lo = 1. - 2. * (1. - lo[np.argsort(lo)][10])
-  hi = y[y > 1]
-  hi = 1. + 2. * (hi[np.argsort(hi)][-10] - 1.)
-  rng = hi - lo
-  lo -= 0.1 * rng
-  hi += 0.4 * rng
-  ax[2].set_ylim(lo, hi)
+    # Adjust y limits based on the Everest-detrended data
+    y = np.delete(fwhite, rem_mask)
+    lo = y[y < 1]
+    lo = 1. - 2. * (1. - lo[np.argsort(lo)][10])
+    hi = y[y > 1]
+    hi = 1. + 2. * (hi[np.argsort(hi)][-10] - 1.)
+    rng = hi - lo
+    lo -= 0.1 * rng
+    hi += 0.4 * rng
+    ax[2].set_ylim(lo, hi)
 
   # Adjust limits
   ax[0].margins(0.01, None)
   ax[1].set_xlim(*ax[0].get_xlim())
-  ax[2].set_xlim(*ax[0].get_xlim())
+  if mask_candidates:
+    ax[2].set_xlim(*ax[0].get_xlim())
   
   # Legends and labels
   leg1 = ax[0].legend(handles=[l01, l02, l03], loc = 'upper right', 
@@ -405,8 +411,9 @@ def PlotDetrended(EPIC, data):
                    horizontalalignment = 'right', 
                    verticalalignment = 'top',
                    xycoords = 'axes fraction', fontsize = 12, color = 'k')
-  ax[2].set_ylabel('Whitened', fontsize = 18)
-  ax[2].set_xlabel('Time (days)', fontsize = 18)
+  if mask_candidates:
+    ax[2].set_ylabel('Whitened', fontsize = 18)
+  ax[-1].set_xlabel('Time (days)', fontsize = 18)
   pl.suptitle(r'EPIC %d (C%02d, K$_p$ = %.3f)' % (EPIC, campaign, kepmag), fontsize = 25)
   for axis in ax:
     axis.ticklabel_format(useOffset=False)
@@ -487,8 +494,8 @@ def PlotFolded(EPIC, data):
   perr = data['perr']
   bkg = data['bkg'] * fpix.shape[1]
   mask = data['mask']
-  trn_mask = data['trn_mask']
-  rem_mask = data['rem_mask']
+  trn_mask = np.array(data['trn_mask'], dtype = int)
+  rem_mask = np.array(data['out_mask'], dtype = int)
   apnum = data['apnum']
   inject = data['inject'][()]
   new_candidates = data['new_candidates'][()]
