@@ -27,12 +27,6 @@ def Plot(data):
   
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
-  
-  # DEBUG
-  data['jpeg_quality'] = 30
-  outdir = '/Users/rodrigo/src/everest/output/C00/202094117/default'
-  # / DEBUG
-  
   jpeg_quality = data['jpeg_quality']
   
   # Plot the apertures
@@ -78,6 +72,8 @@ def Plot(data):
       PlotFolded(EPIC, data)
     except:
       log.error('An error occurred while plotting the folded data.')
+  
+  log.info('Done!')
 
 def PlotScatter(EPIC, data):
   '''
