@@ -27,4 +27,4 @@ from . import compute, data, detrend, gp, kernels, pool, sources, transit, utils
 from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars
 from .pool import Pool
 from .compute import Compute
-from .run import Run, RunCampaign
+from .run import Run, RunCampaign, RunCandidates

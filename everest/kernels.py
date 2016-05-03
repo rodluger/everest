@@ -198,12 +198,14 @@ class Exp(Kernel):
     self.parnames = np.array(['tau'])
     
   def __repr__(self):
-    return r'$\mathbf{Exp}$(%s)' % LatexExpSq(self.params[0])
+    return r'$\mathbf{Exp}$(%s)' % LatexExp(self.params[0])
   
   def _function(self, t):
     return np.exp(-np.abs(t) / self.params[0])
   
   def _george(self):
+    # As far as I understand, ExpKernel expects the **square** of the timescale,
+    # even though it's never squared in the actual expression. TODO: Confirm this.
     return george.kernels.ExpKernel(self.params[0] ** 2)
 
 class Cos(Kernel):  

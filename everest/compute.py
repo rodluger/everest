@@ -122,39 +122,18 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     for i in range(fpix.shape[1]):
       fpix[:,i] *= transit_model    
     flux = np.sum(fpix, axis = 1)
-  
-  # Are there any new planet candidates in this lightcurve?
-  # NOTE: This section was coded specifically for Ethan Kruse's search pipeline.
-  new_candidates = []
-  if mask_candidates:
-    for cnum in range(10):
-      f = os.path.join(EVEREST_ROOT, 'new', '%d.%02d.npz' % (EPIC, cnum))
-      if os.path.exists(f):
-        tmp = np.load(f)
-        new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
-                                    for tn in tmp['ttimes']])
-        mask_times = sorted(set(mask_times) | set(new_tmask))
-        new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
-                                'tmask': new_tmask}])
-  
-  # Obtain transit and outlier masks
-  log.info('Computing transit and outlier masks...')
+    
+  # Obtain outlier (and optionally transit) masks
+  log.info('Computing outlier masks...')
   try:
     maskdata = np.load(os.path.join(outdir, 'mask.npz'))
     mask = maskdata['mask']
     trn_mask = maskdata['trn_mask']
     out_mask = maskdata['out_mask']
   except:
-    # Will we mask known candidates?
-    if mask_candidates:
-      planets = k2star.planets
-      EB = k2star.EB
-    else:
-      planets = []
-      EB = None
-    mask, trn_mask, out_mask = \
-    GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = planets, 
-             EB = EB, mask_times = mask_times)
+    mask, trn_mask, out_mask, new_candidates = \
+    GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = k2star.planets, 
+             EB = k2star.EB, mask_times = mask_times, mask_candidates = mask_candidates)
     np.savez(os.path.join(outdir, 'mask.npz'), mask = mask,
              trn_mask = trn_mask, out_mask = out_mask)
 
@@ -330,7 +309,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
              kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
              git_hash = git_hash, git_branch = git_branch, outdir = outdir,
-             campaign = k2star.campaign, breakpoints = breakpoints)
+             campaign = k2star.campaign, breakpoints = breakpoints, gp_iter = gp_iter)
   np.savez_compressed(os.path.join(outdir, 'data.npz'), **data)
   
   # Finally, delete the old .npz files
@@ -532,14 +511,14 @@ def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
   
   return crwdinfo, maxsev
 
-def GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = [], 
-             EB = None, mask_times = []):
+def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [], 
+             EB = None, mask_times = [], mask_candidates = False):
   '''
   
   '''
   
   # Get the transit masks
-  if len(planets):
+  if mask_candidates and len(planets):
     mask = []
     for planet in planets:
     
@@ -565,15 +544,29 @@ def GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = [],
     mask = []
 
   # Get eclipsing binary masks
-  if EB:
+  if mask_candidates and EB:
     mask = sorted(set(mask + EB.mask(time)))
+    
+  # Are there any new planet candidates in this lightcurve?
+  # This block was coded specifically for Ethan Kruse's search pipeline.
+  new_candidates = []
+  if mask_candidates:
+    for cnum in range(10):
+      f = os.path.join(EVEREST_ROOT, 'new', '%d.%02d.npz' % (EPIC, cnum))
+      if os.path.exists(f):
+        tmp = np.load(f)
+        new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
+                                    for tn in tmp['ttimes']])
+        mask_times = sorted(set(mask_times) | set(new_tmask))
+        new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
+                                'tmask': new_tmask}])  
     
   # Enforce user-defined masks
   if len(mask_times):
     m = [np.argmax(np.abs(time - t) < 0.001) for t in mask_times]
     mask_pld = sorted(set(mask_pld + m))
 
-  # Mask additional astrophysical outliers (including transits!) in the SAP flux 
+  # Mask astrophysical outliers (including transits!) in the SAP flux 
   # for PLD to work properly. If we don't do this, PLD will actually attempt to
   # correct for these outliers at the expense of increasing the white noise in the
   # PLD fit.
@@ -581,4 +574,4 @@ def GetMasks(time, flux, fpix, ferr, outlier_sigma, planets = [],
   out_mask = Outliers(time, flux, fpix, ferr, mask = trn_mask, sigma = outlier_sigma)
   mask = sorted(set(trn_mask + list(out_mask)))
     
-  return mask, trn_mask, out_mask
+  return mask, trn_mask, out_mask, new_candidates

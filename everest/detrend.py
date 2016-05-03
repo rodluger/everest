@@ -221,7 +221,7 @@ def Outliers(time, flux, fpix, ferr, mask = [], sigma = 5):
     # Reset; the loop ends when we get the same outliers twice in a row
     j = i
     count += 1
-    if count > 10:
+    if count > 25:
       # We will continue, even though there may be issues
       log.error('Maximum number of iterations in ``Outliers()`` exceeded.')
       break

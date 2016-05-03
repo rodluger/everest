@@ -394,7 +394,7 @@ def GetK2Stars(clobber = False):
   
   # Return
   res = {}
-  for campaign in range(99):
+  for campaign in range(100):
     f = os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign)
     if os.path.exists(f):
       stars = np.loadtxt(f, dtype = int)

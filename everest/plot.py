@@ -25,43 +25,47 @@ def Plot(data):
   
   '''
   
+  # DEBUG
+  data['jpeg_quality'] = 30
+  
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
+  jpeg_quality = data['jpeg_quality']
     
   # Plot the apertures
   log.info('Plotting the apertures...')
-  if not os.path.exists(os.path.join(outdir, 'aper.png')):
+  if not os.path.exists(os.path.join(outdir, 'aper.jpg')):
     fig, ax = PlotApertures(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'aper.png'))
+    fig.savefig(os.path.join(outdir, 'aper.jpg'), quality = jpeg_quality)
     pl.close()
 
   # Plot the outliers
   log.info('Plotting the outliers...')
-  if not os.path.exists(os.path.join(outdir, 'outliers.png')):
+  if not os.path.exists(os.path.join(outdir, 'outliers.jpg')):
     fig, ax = PlotOutliers(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'outliers.png'))
+    fig.savefig(os.path.join(outdir, 'outliers.jpg'), quality = jpeg_quality)
     pl.close()  
 
   # Plot the apertures
   log.info('Plotting the GP...')
-  if not os.path.exists(os.path.join(outdir, 'acor.png')):
+  if not os.path.exists(os.path.join(outdir, 'acor.jpg')):
     fig, ax = PlotGP(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'acor.png'))
+    fig.savefig(os.path.join(outdir, 'acor.jpg'), quality = jpeg_quality)
     pl.close()
 
   # Plot the scatter curves
   if len(data['masked_scatter']):
     log.info('Plotting the scatter curve...')
-    if not os.path.exists(os.path.join(outdir, 'scatter.png')):
+    if not os.path.exists(os.path.join(outdir, 'scatter.jpg')):
       fig, ax = PlotScatter(EPIC, data)
-      fig.savefig(os.path.join(outdir, 'scatter.png'))
+      fig.savefig(os.path.join(outdir, 'scatter.jpg'), quality = jpeg_quality)
       pl.close()
 
   # Plot the detrended data
   log.info('Plotting the detrended data...')
-  if not os.path.exists(os.path.join(outdir, 'detrended.png')):
+  if not os.path.exists(os.path.join(outdir, 'detrended.jpg')):
     fig, ax = PlotDetrended(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'detrended.png'))
+    fig.savefig(os.path.join(outdir, 'detrended.jpg'), quality = jpeg_quality)
     pl.close()
   
   # Plot the folded data
@@ -71,22 +75,6 @@ def Plot(data):
       PlotFolded(EPIC, data)
     except:
       log.error('An error occurred while plotting the folded data.')
-
-  # Convert the images to a single PDF and remove the .png files
-  images = []
-  for img in ['detrended.png', 'folded_01.png', 'folded_02.png', 'folded_03.png', 
-              'folded_04.png', 'folded_05.png', 'folded_06.png', 'folded_07.png', 
-              'folded_EB01.png', 'folded_EB02.png', 'aper.png', 
-              'scatter.png', 'acor.png', 'outliers.png']:
-    if os.path.exists(os.path.join(outdir, img)):
-      images.append(os.path.join(outdir, img))
-  if len(images):
-    try:
-      subprocess.call(['convert'] + images + [os.path.join(outdir, '%s.pdf' % EPIC)])
-      for image in images:
-        os.remove(image)
-    except:
-      log.warn('Unable to generate PDF.')
 
 def PlotScatter(EPIC, data):
   '''
@@ -146,6 +134,7 @@ def PlotGP(EPIC, data):
   white = data['white']
   amp = data['amp']
   kernfunc, kernstr = data['kernfunc']
+  gp_iter = data['gp_iter']
   
   time = np.delete(time, mask, axis = 0)
   dt = np.median(time[1:] - time[:-1])
@@ -175,7 +164,7 @@ def PlotGP(EPIC, data):
   ax[2].fill_between(lags, acor - sigma, acor + sigma, alpha = 0.1, color = 'k')
   ax[2].plot(lags, kernfunc, '-', alpha = 1., label = kernstr)
   ax[2].legend(loc = 'upper right', fontsize = 14)
-  ax[2].annotate(r'$\chi^2 = %.2f\ (%d\times)$' % (chisq, count), xy = (0.02, 0.96), xycoords = 'axes fraction',
+  ax[2].annotate(r'$\chi^2 = %.2f\ (%d\times)$' % (chisq, gp_iter), xy = (0.02, 0.96), xycoords = 'axes fraction',
                  fontsize = 14, verticalalignment = 'top', horizontalalignment = 'left')
   ax[2].annotate(r'$W = %.1f\sigma_w$' % (white / np.median(ferr)) + '\n' + 
                  r'$A = %.1f\sigma_a$' % (amp /  np.std(fpld)), 
@@ -335,6 +324,7 @@ def PlotDetrended(EPIC, data):
   kepmag = data['kepmag']
   campaign = data['campaign']
   planets = data['planets']
+  breakpoints = data['breakpoints']
                             
   # Plot
   if mask_candidates:
@@ -346,7 +336,7 @@ def PlotDetrended(EPIC, data):
   # 1. Raw flux, background removed
   l01, = ax[0].plot(time, flux, 'r.', alpha = 0.3, label = 'Raw Flux')
   l02, = ax[0].plot(time[trn_mask], flux[trn_mask], 'b.', alpha = 0.5, 
-             label = 'Transit mask')
+               label = 'Transit mask')
   l03, = ax[0].plot(time[rem_mask], flux[rem_mask], 'k.', alpha = 1, 
                label = 'Outlier mask')
   l04, = ax[0].plot([np.nan], [np.nan], 'w.', 
@@ -399,8 +389,12 @@ def PlotDetrended(EPIC, data):
     ax[2].set_xlim(*ax[0].get_xlim())
   
   # Legends and labels
-  leg1 = ax[0].legend(handles=[l01, l02, l03], loc = 'upper right', 
-                      fontsize = 12, numpoints = 3)
+  if len(trn_mask):
+    leg1 = ax[0].legend(handles=[l01, l02, l03], loc = 'upper right', 
+                        fontsize = 12, numpoints = 3)
+  else:
+    leg1 = ax[0].legend(handles=[l01, l03], loc = 'upper right', 
+                        fontsize = 12, numpoints = 3)
   ax[0].add_artist(leg1)
   ax[0].legend(handles=[l04, l05], loc='upper left', fontsize = 12, numpoints = 1, handlelength = 0, handletextpad = 0.5)
   ax[1].legend(handles=[l11], loc = 'upper left', fontsize = 12, numpoints = 1, handlelength = 0, handletextpad = 0.5)
@@ -414,7 +408,7 @@ def PlotDetrended(EPIC, data):
   if mask_candidates:
     ax[2].set_ylabel('Whitened', fontsize = 18)
   ax[-1].set_xlabel('Time (days)', fontsize = 18)
-  pl.suptitle(r'EPIC %d (C%02d, K$_p$ = %.3f)' % (EPIC, campaign, kepmag), fontsize = 25)
+  pl.suptitle(r'EPIC %d' % EPIC, fontsize = 25)
   for axis in ax:
     axis.ticklabel_format(useOffset=False)
   for axis in ax[:-1]:
@@ -423,49 +417,50 @@ def PlotDetrended(EPIC, data):
     label.set_fontsize(14)
     
   # Mark the known planet candidates
-  for axis in ax:
-    tlim = axis.get_xlim()
-    xticks = []
-    xticklabels = []
-    for planet, color in zip(planets, ['r', 'b', 'g', 'k', 'y'] * 10):
-      per = planet['pl_orbper']
+  if mask_candidates:
+    for axis in ax:
+      tlim = axis.get_xlim()
+      xticks = []
+      xticklabels = []
+      for planet, color in zip(planets, ['r', 'b', 'g', 'k', 'y'] * 10):
+        per = planet['pl_orbper']
       
-      # This will look horrible if the period is too short!
-      if per < 0.75:
-        continue
+        # This will look horrible if the period is too short!
+        if per < 0.75:
+          continue
       
-      t0 = planet['pl_tranmid'] - 2454833
-      t0 += np.ceil((tlim[0] - t0) / per) * per
-      for ttime in np.arange(t0, tlim[-1], per):
-        xticks.append(ttime)
-        xticklabels.append(int(planet['epic_candname'][-2:]))
-        axis.axvline(ttime, color = color, ls = '--', alpha = 0.15)
-    
-    # Mark planet injections (if any)
-    if len(inject):
-      per = inject['per']
-      if per < 0.75:
-        continue
-      t0 = inject['t0']
-      t0 += np.ceil((tlim[0] - t0) / per) * per
-      for ttime in np.arange(t0, tlim[-1], per):
-        xticks.append(ttime)
-        xticklabels.append('J')
-        axis.axvline(ttime, color = 'k', ls = '--', alpha = 0.15) 
-    
-    # Mark new planet candidates (if any)
-    if new_candidates:
-      for new_candidate in new_candidates:
-        for ttime in new_candidate['ttimes']:
+        t0 = planet['pl_tranmid'] - 2454833
+        t0 += np.ceil((tlim[0] - t0) / per) * per
+        for ttime in np.arange(t0, tlim[-1], per):
           xticks.append(ttime)
-          xticklabels.append('N')
-          axis.axvline(ttime, color = 'b', ls = '--', alpha = 0.15) 
+          xticklabels.append(int(planet['epic_candname'][-2:]))
+          axis.axvline(ttime, color = color, ls = '--', alpha = 0.15)
     
-    if len(xticks):
-      axtn = axis.twiny()
-      axtn.set_xlim(tlim)
-      axtn.set_xticks(xticks)
-      axtn.set_xticklabels(xticklabels, fontsize = 8)
+      # Mark planet injections (if any)
+      if len(inject):
+        per = inject['per']
+        if per < 0.75:
+          continue
+        t0 = inject['t0']
+        t0 += np.ceil((tlim[0] - t0) / per) * per
+        for ttime in np.arange(t0, tlim[-1], per):
+          xticks.append(ttime)
+          xticklabels.append('J')
+          axis.axvline(ttime, color = 'k', ls = '--', alpha = 0.15) 
+    
+      # Mark new planet candidates (if any)
+      if new_candidates:
+        for new_candidate in new_candidates:
+          for ttime in new_candidate['ttimes']:
+            xticks.append(ttime)
+            xticklabels.append('N')
+            axis.axvline(ttime, color = 'b', ls = '--', alpha = 0.15) 
+    
+      if len(xticks):
+        axtn = axis.twiny()
+        axtn.set_xlim(tlim)
+        axtn.set_xticks(xticks)
+        axtn.set_xticklabels(xticklabels, fontsize = 8)
   
   # Indicate crowding, saturation, and acor fitting metrics
   def color(sev):
@@ -479,6 +474,20 @@ def PlotDetrended(EPIC, data):
   fig.text(0.94, 0.975,"C%d" % crwdsev, ha="right", va="top", fontsize=24, color=color(crwdsev))
   fig.text(0.91, 0.975,"S%d" % satsev, ha="right", va="top", fontsize=24, color=color(satsev))
 
+  # Indicate the campaign and Kp
+  fig.text(0.03, 0.975,"C%02d" % campaign, ha="left", va="top", fontsize=24, color='b')
+  fig.text(0.08, 0.975,"Kp%.1f" % kepmag, ha="left", va="top", fontsize=24, color='b')
+  
+  # Mark the breakpoints
+  # Indicate where the lightcurve was split
+  s_old = 0
+  for axis in ax:
+    fill = False
+    for s in np.append(breakpoints, [time[-1]]):
+      if fill:
+        axis.axvspan(s_old, s, alpha=0.05, color='k')
+      fill = not fill
+      s_old = s
   return fig, ax  
 
 def PlotFolded(EPIC, data):
@@ -513,6 +522,7 @@ def PlotFolded(EPIC, data):
   planets = data['planets']
   EB = data['EB']
   outdir = data['outdir'][()]
+  jpeg_quality = data['jpeg_quality']
       
   # Is the star is an eclipsing binary?
   if EB:
@@ -546,7 +556,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
 
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_EB%02d.png' % n))
+      fig.savefig(os.path.join(outdir, 'folded_EB%02d.jpg' % n), quality = jpeg_quality)
       pl.close()
 
   # Is this a planet host?
@@ -599,7 +609,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.png' % pcount))
+      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
       pcount += 1
       pl.close()
     
@@ -649,7 +659,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.png' % pcount))
+      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
       pcount += 1
       pl.close()
     
@@ -689,6 +699,6 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.png' % pcount))
+      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
       pcount += 1
       pl.close() 
