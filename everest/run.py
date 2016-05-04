@@ -48,7 +48,7 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
   # Run
   Run(EPIC, **kwargs)
 
-def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0,
+def RunInjections(depth = 0.01, mask = False,
                   nodes = 5, ppn = 12, walltime = 100, 
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
@@ -58,27 +58,6 @@ def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0,
   
   '''
   
-  # Get all known planet hosts
-  stars = [int(s) for s in GetK2InjectionTestStars()]
-  nstars = len(stars)
-
-  # Download the TPF data for each one
-  for i, EPIC in enumerate(stars):
-    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
-                          str(EPIC), str(EPIC) + '.npz')):
-      try:
-        GetK2Data(EPIC)
-        if delay: 
-          time.sleep(delay)
-      except:
-        # Some targets could be corrupted
-        continue
-  
-  # Download only?
-  if download_only:
-    return
-        
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runinjections.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
@@ -100,8 +79,7 @@ def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCandidates(download_only = False, delay = 0,
-                  nodes = 5, ppn = 12, walltime = 100, 
+def RunCandidates(nodes = 5, ppn = 12, walltime = 100, 
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
@@ -109,34 +87,7 @@ def RunCandidates(download_only = False, delay = 0,
   confirmed planets or planet candidates.
   
   '''
-  
-  # Get all known planet hosts
-  stars = [int(p.epic_name[5:]) for p in GetK2Planets()]
-  
-  # Get new candidate hosts
-  new = [int(f[:9]) for f in os.listdir(os.path.join(EVEREST_ROOT, 'new')) if f.endswith('.npz')]
-  
-  # Combine
-  stars = list(set(stars + new))
-  nstars = len(stars)
-  
-  # Download the TPF data for each one
-  for i, EPIC in enumerate(stars):
-    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
-                          str(EPIC), str(EPIC) + '.npz')):
-      try:
-        GetK2Data(EPIC)
-        if delay:
-          time.sleep(delay)
-      except:
-        # Some targets could be corrupted
-        continue
-  
-  # Download only?
-  if download_only:
-    return
-        
+          
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcandidates.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
@@ -158,36 +109,14 @@ def RunCandidates(download_only = False, delay = 0,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCampaign(campaign, download_only = False, delay = 0.25,
-                nodes = 5, ppn = 12, walltime = 100, 
+def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
                 email = 'rodluger@gmail.com', 
                 kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
   
   '''
-  
-  # Get all star IDs for this campaign
-  stars = GetK2Stars()[campaign]
-  nstars = len(stars)
-  
-  # Download the TPF data for each one
-  for i, EPIC in enumerate(stars):
-    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
-                          str(EPIC), str(EPIC) + '.npz')):
-      try:
-        GetK2Data(EPIC)
-        if delay:
-          time.sleep(delay)
-      except:
-        # Some targets could be corrupted
-        continue
-  
-  # Download only?
-  if download_only:
-    return
-        
+          
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
@@ -201,6 +130,32 @@ def RunCampaign(campaign, download_only = False, delay = 0.25,
                '-j', 'oe', 
                '-N', 'C%02d' % campaign, 
                '-l', str_n,
+               '-l', str_w,
+               '-M', email,
+               '-m', 'ae']
+            
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
+def DownloadCampaign(campaign, email = 'rodluger@gmail.com', walltime = 8):
+  '''
+  Submits a cluster job to the build queue to download all tpfs for a given
+  campaign.
+  
+  '''
+          
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'download.pbs')
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
+  str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_C%02d.log' % campaign)
+  qsub_args = ['qsub', pbsfile, 
+               '-q', 'build',
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', 'DOWNLOAD_C%02d' % campaign,
                '-l', str_w,
                '-M', email,
                '-m', 'ae']
@@ -290,3 +245,25 @@ def _RunCampaign(campaign, kwargs_file):
     # Compute and plot
     C = FunctionWrapper(Run, **kwargs)
     pool.map(C, stars)
+
+def _DownloadCampaign(campaign):
+  '''
+  Download all stars from a given campaign. This is
+  called from ``download.pbs``
+  
+  '''
+  
+  # Get all star IDs for this campaign
+  stars = GetK2Stars()[campaign]
+  nstars = len(stars)
+  
+  # Download the TPF data for each one
+  for i, EPIC in enumerate(stars):
+    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
+                          str(EPIC), str(EPIC) + '.npz')):
+      try:
+        GetK2Data(EPIC)
+      except:
+        # Some targets could be corrupted
+        continue  
