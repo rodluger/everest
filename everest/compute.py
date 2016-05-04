@@ -566,7 +566,7 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   # Enforce user-defined masks
   if len(mask_times):
     m = [np.argmax(np.abs(time - t) < 0.001) for t in mask_times]
-    mask_pld = sorted(set(mask_pld + m))
+    mask = sorted(set(mask + m))
 
   # Mask astrophysical outliers (including transits!) in the SAP flux 
   # for PLD to work properly. If we don't do this, PLD will actually attempt to

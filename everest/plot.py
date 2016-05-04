@@ -204,7 +204,7 @@ def PlotOutliers(EPIC, data):
   ax[0].margins(0.01, None)
   
   ax[1].plot(np.delete(time, trn_mask), np.delete(flux, trn_mask), 'k.', alpha = 0.3)
-  ax[1].plot(time[trn_mask], flux[trn_mask], 'b.', label = 'Masked (transit)', alpha = 0.5)
+  ax[1].plot(time[trn_mask], flux[trn_mask], 'b.', label = 'Masked (user)', alpha = 0.5)
   ax[1].plot(time[remove], flux[remove], 'r.', label = 'Removed from lightcurve', )
   ax[1].legend(loc = 'upper left', fontsize = 12, numpoints = 1)
   ax[1].margins(0.01, 0.05)
@@ -335,7 +335,7 @@ def PlotDetrended(EPIC, data):
   # 1. Raw flux, background removed
   l01, = ax[0].plot(time, flux, 'r.', alpha = 0.3, label = 'Raw Flux')
   l02, = ax[0].plot(time[trn_mask], flux[trn_mask], 'b.', alpha = 0.5, 
-               label = 'Transit mask')
+               label = 'User mask')
   l03, = ax[0].plot(time[rem_mask], flux[rem_mask], 'k.', alpha = 1, 
                label = 'Outlier mask')
   l04, = ax[0].plot([np.nan], [np.nan], 'w.', 

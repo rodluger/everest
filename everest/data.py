@@ -401,6 +401,26 @@ def GetK2Stars(clobber = False):
       res.update({campaign: stars})
   
   return res
+
+def GetK2InjectionTestStars(clobber = False):
+  '''
+  Download and return a dict of 500 K2 stars from Campaigns 0-4,
+  with 50 stars per magnitude bin in the range 8-18. We use these
+  for injection tests.
+  
+  '''
+  
+  # Download
+  if clobber:
+    client = kplr.API()
+    allstars = client.k2_star_mags(stars_per_mag = 50, mags = range(8,18))
+    with open(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 'w') as f:
+      for stars in allstars: print(", ".join([str(s) for s in stars]), file = f)
+  
+  # Return the flattened list
+  stars = np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 
+                     dtype = int, delimiter = ',')
+  return [item for sublist in stars for item in sublist]
   
 def GetK2Planets():
   '''

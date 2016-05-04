@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Prevent numpy from multithreading
+export OPENBLAS_NUM_THREADS=1
+
+# CD into our working directory
+cd ${EVEREST_ROOT}
+
+if [ $NODES -eq 1 ]; then
+  # Run on a single node with Python multiprocessing
+  python -c "import everest; everest.run._RunInjections('$KWARGS_FILE', $DEPTH, $MASK)"
+else
+  # Run on multiple nodes with MPI
+  mpirun -np $PBS_NP python -c "import everest; everest.run._RunInjections('$KWARGS_FILE', $DEPTH, $MASK)"
+fi
