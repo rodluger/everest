@@ -48,7 +48,7 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
   # Run
   Run(EPIC, **kwargs)
 
-def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0.25,
+def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0,
                   nodes = 5, ppn = 12, walltime = 100, 
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
@@ -69,7 +69,8 @@ def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0.2
                           str(EPIC), str(EPIC) + '.npz')):
       try:
         GetK2Data(EPIC)
-        time.sleep(delay)
+        if delay: 
+          time.sleep(delay)
       except:
         # Some targets could be corrupted
         continue
@@ -99,7 +100,7 @@ def RunInjections(depth = 0.01, mask = False, download_only = False, delay = 0.2
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCandidates(download_only = False, delay = 0.25,
+def RunCandidates(download_only = False, delay = 0,
                   nodes = 5, ppn = 12, walltime = 100, 
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
@@ -126,7 +127,8 @@ def RunCandidates(download_only = False, delay = 0.25,
                           str(EPIC), str(EPIC) + '.npz')):
       try:
         GetK2Data(EPIC)
-        time.sleep(delay)
+        if delay:
+          time.sleep(delay)
       except:
         # Some targets could be corrupted
         continue
