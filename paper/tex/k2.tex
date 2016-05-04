@@ -46,7 +46,7 @@ We present \texttt{EVEREST}, an open-source pipeline for removing instrumental n
 from \emph{K2} light curves. \texttt{EVEREST} employs a variant of the pixel-level decorrelation (PLD)
 technique developed by \cite{DEM15} to remove systematics introduced by the spacecraft's 
 pointing error and a Gaussian process (GP) to capture astrophysical variability. We
-apply \texttt{EVEREST} to all \emph{K2} targets in Campaigns 0-6, yielding light curves
+apply \texttt{EVEREST} to all \emph{K2} targets in Campaigns 0-7, yielding light curves
 with precision comparable to that of the original \emph{Kepler} mission for stars brighter
 than $K_p \approx 13$, and within a factor of two of the \emph{Kepler} precision for fainter
 targets. We further compare our light curves to the other de-trended light curves available
@@ -130,7 +130,8 @@ solely from the pixels of the star under consideration.
 
 In this paper we build on the PLD method of \cite{DEM15}, extending it to higher order
 in the pixel fluxes and performing principal component analysis (PCA) on the basis
-vectors to generate the ideal set of regressors. We further couple PLD with a GP to 
+vectors to limit the flexibility of the model and thus prevent overfitting. We further 
+couple PLD with a GP to 
 disentangle astrophysical and instrumental variability. We apply our pipeline, \texttt{EVEREST}
 (\emph{EPIC Variability Extraction and Removal for
 Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from Campaigns 0-6 and generate a 
@@ -159,7 +160,7 @@ all pixels in the aperture; the last three terms are a polynomial in time used
 to capture temporal variations in the flux baseline.
 
 The coefficients are obtained by minimizing the sum of the squares of the difference
-between the model $m_i$ and the transit-corrected simple aperture photometry (SAP) flux, $y_i$:
+between the model $m_i$ and the simple aperture photometry (SAP) flux, $y_i$:
 \begin{align}
 \label{eq:demingsolution}
 \frac{\partial \chi^2}{\partial a_l} = 0
@@ -171,12 +172,9 @@ where
 \end{align}
 where $\sigma_i$ are the standard errors of the flux and
 \begin{align}
-\label{eq:demingcorrsap}
-y_i = \frac{1}{\tau_i}\sum\limits_{k}p_{ik}.
+\label{eq:demingsap}
+y_i = \sum\limits_{k}p_{ik}.
 \end{align}
-Division by the transit model $\tau_i$ is necessary because $m_i$ contains no transit
-information, since it is a function only of the fractional pixel fluxes, which
-contain no transit signal themselves.
 
 Framed in this manner, computation of the PLD model is a linear regression problem; the
 coefficients $a_l$ are readily found by solving Equation~(\ref{eq:demingsolution}).
@@ -228,8 +226,8 @@ In Figure~\ref{fig:third_order}, we illustrate the de-trending technique for EPI
 201367065 (K2-3), a star host to at least two transiting planets \citep{CRO15}. The top
 panel shows the normalized raw aperture-summed flux after subtracting off the 
 background; note the large systematics at very short ($\sim$ 6 hr) timescales. The
-next panel shows the flux de-trended with first order PLD (Equation~\ref{eq:demingmodel}),
-having masked the known transits. The scatter is reduced by a factor of 2.9 and the
+next panel shows the flux de-trended with first order PLD (Equation~\ref{eq:demingmodel}).
+The scatter is reduced by a factor of 2.9 and the
 seven transits become visible by eye. The following two panels show the results of
 second and third order PLD, which improve the scatter over the raw data by factors of 
 4.7 and 5.2, respectively. Note, importantly, that even data collected during thruster
@@ -237,28 +235,32 @@ fire events (the outlier points seen above the continuum every $\sim$ 6 hr in th
 two plots), is properly corrected by higher order PLD.
 
 One might wonder why not go to even higher order PLD. While possible in principle,
-one must take care not to overfit, given the steep increase in the number of
-coefficients as one goes to higher order. Given that $K2$ apertures must be relatively
-large to properly enclose all of the flux of the (moving) source, the number of
-coefficients for third order PLD can easily reach several thousand. For a star with an
-aperture of 30 pixels (typical of a $Kepler$ magnitude $\sim$ 13 star), the number of
-coefficients in Equation~(\ref{eq:pldmodel}) is
-\begin{align}
-n_{pld} &= \mathlarger{\mathlarger{\sum\limits_{k=1}^{3}}}{n_{pix} + k - 1 \choose k} \nonumber\\
-        &= 30 + 465 + 4960 \nonumber\\
-        &= 5455.
-\end{align}
-Given an average of $\sim$ 3750 long cadence data points in a typical \emph{K2} 
-campaign, third order PLD would already grossly overfit most \emph{K2} targets. To
-avoid this, one option is to perform PLD on a subset of the pixels in the aperture,
-preferably the brightest ones. This is what we did in Figure~\ref{fig:third_order}, 
-where for 10 pixels the number of coefficients is 285.
+the number of regressors increases steeply with the PLD order. For a typical \emph{K2} star, this number is
+around $5\times 10^3$ for third order PLD, and would increase to $\sim5\times 10^4$ for
+fourth order and $\sim3\times 10^5$ for fifth order PLD.
+%
+%For a \emph{K2} star with an aperture containing 30 pixels (typical of a $Kepler$ magnitude 
+%$\sim$ 13 star), the number of
+%coefficients in Equation~(\ref{eq:pldmodel}) is
+%\begin{align}
+%n_{pld} &= \mathlarger{\mathlarger{\sum\limits_{k=1}^{3}}}{n_{pix} + k - 1 \choose k} \nonumber\\
+%        &= 30 + 465 + 4960 \nonumber\\
+%        &= 5455.
+%\end{align}
+%
+While such a large number of regressors can become computationally expensive, the 
+most serious drawback of higher order PLD is that it can become so flexible as to
+lead to overfitting. As we discuss in \S\ref{sec:dmopt} below,
+PLD can sometimes overstep and remove part of the white noise component of the 
+light curve. This is particularly problematic when the number of regressors becomes very large,
+in which case PLD can lead to artificially low scatter in the de-trended light curve,
+washing out astrophysical signals (including transits) in the process.
 
-However, rather than assume that the brightest $N$ pixels contain the most
-de-trending power, a more agnostic (and better) approach is to compute the principal components of the
-variability directly. We perform principal component analysis (PCA) on the first,
-second, and third order fractional pixel fluxes (the terms in Equation~\ref{eq:pldmodel})
-to obtain a set of $N$ basis vectors $\mathbf{x}$ that describe most of the instrumental
+To avoid these issues, in Figure~\ref{fig:third_order} we computed the PLD basis vectors from
+the 10 brightest pixels in the aperture. In practice, however, we obtain better results
+by instead performing principal component analysis (PCA) on the first,
+second, and third order fractional pixel fluxes (the terms in Equation~\ref{eq:pldmodel}).
+This gives us a set of $N$ basis vectors $\mathbf{x}$ that describe most of the instrumental
 variability in the light curve. We use these to construct our \emph{design matrix} 
 \begin{align}
 \label{eq:designmatrix}
@@ -274,12 +276,12 @@ variability in the light curve. We use these to construct our \emph{design matri
 \end{align}
 where $M$ denotes the total number of data points along the time dimension. We choose
 the number of principal components $N$ that maximize the de-trending power while preventing
-overfitting. We explain our method in \S\ref{sec:dmopt} below; typically, $N < 100$.
+overfitting. We explain our method in \S\ref{sec:dmopt} below; typically, $N < 200$.
 
 Since our problem is still linear, our model is simply
 \begin{align}
 \label{eq:pcamodel}
-\mathbf{m} = \mathbf{X}^\top \cdot \mathbf{c}
+\mathbf{m} = \mathbf{X} \cdot \mathbf{c}
 \end{align}
 where $\mathbf{c}$ is the vector of coefficients, one for each basis vector in $\mathbf{X}$.
 Their values are given by solving the generalized least-squares (GLS) problem
@@ -287,8 +289,8 @@ Their values are given by solving the generalized least-squares (GLS) problem
 \label{eq:pcacoefficients}
 \mathbf{c} = \left(\mathbf{X}^\top \cdot \mathbf{K}^{-1} \cdot \mathbf{X}\right)^{-1} \cdot \left(\mathbf{X}^\top \cdot \mathbf{K}^{-1} \cdot \mathbf{y}\right)
 \end{align}
-where $\mathbf{K}$ is the covariance matrix of the data and $\mathbf{y}$ is the transit-corrected
-SAP flux given by Equation~(\ref{eq:demingcorrsap}). Note that for a diagonal covariance
+where $\mathbf{K}$ is the covariance matrix of the data and $\mathbf{y}$ is the
+SAP flux given by Equation~(\ref{eq:demingsap}). Note that for a diagonal covariance
 $\mathbf{K}_{ij} = \delta_{ij}\sigma_i^2$, Equation~(\ref{eq:pcacoefficients}) is
 mathematically equivalent to Equations~(\ref{eq:demingsolution}) and 
 (\ref{eq:demingchisq}) from before.
@@ -385,7 +387,7 @@ fact, the curve is almost identical to the fit to the original data
 recovered to high fidelity by subtracting the PLD term (second panel). After removing it,
 the final residuals (third panel) show a comparable (in fact, marginally smaller) RMS to the
 residuals of the original data. It is also clear from the bottom panel that the transit 
-shape and depth are fully preserved.
+shape and depth are well preserved.
 
 We note, finally, that another advantage of the GP approach is that the PLD model is
 relatively insensitive to the particular choice of kernel function and values of its
