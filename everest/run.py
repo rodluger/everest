@@ -178,7 +178,8 @@ def RunCampaign(campaign, download_only = False, delay = 0.25,
                           str(EPIC), str(EPIC) + '.npz')):
       try:
         GetK2Data(EPIC)
-        time.sleep(delay)
+        if delay:
+          time.sleep(delay)
       except:
         # Some targets could be corrupted
         continue
