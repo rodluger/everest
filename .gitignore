@@ -13,3 +13,4 @@ paper/tex/k2.blg
 paper/tex/k2.pdf
 _*.py
 _*.tsv
+*.pyc
