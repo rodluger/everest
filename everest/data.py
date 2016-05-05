@@ -413,7 +413,7 @@ def GetK2InjectionTestStars(clobber = False):
   # Download
   if clobber:
     client = kplr.API()
-    allstars = client.k2_star_mags(stars_per_mag = 50, mags = range(8,18))
+    allstars = client.k2_star_mags(stars_per_mag = 200, mags = range(8,18))
     with open(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 'w') as f:
       for stars in allstars: print(", ".join([str(s) for s in stars]), file = f)
   
