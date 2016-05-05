@@ -20,7 +20,7 @@ import subprocess
 import imp
 import time
 
-def DownloadCampaign(campaign, email = 'rodluger@gmail.com', walltime = 8):
+def DownloadCampaign(campaign, queue = 'build', email = 'rodluger@gmail.com', walltime = 8):
   '''
   Submits a cluster job to the build queue to download all TPFs for a given
   campaign.
@@ -33,7 +33,7 @@ def DownloadCampaign(campaign, email = 'rodluger@gmail.com', walltime = 8):
   str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
   str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
-               '-q', 'build',
+               '-q', queue,
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
@@ -77,7 +77,7 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
   # Run
   Run(EPIC, **kwargs)
 
-def RunInjections(depth = 0.01, mask = False,
+def RunInjections(depth = 0.01, mask = False, queue = 'vsm',
                   nodes = 5, ppn = 12, walltime = 100, 
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
@@ -87,18 +87,20 @@ def RunInjections(depth = 0.01, mask = False,
   
   '''
   
-  # Submit the cluster job      
+  # Submit the cluster job   
+  name = 'inject_%.4f%s' % (depth, ('m' if mask else 'u'))   
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runinjections.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_ROOT=%s,NODES=%d,MASK=%d,DEPTH=%0.4f,KWARGS_FILE=%s' % (EVEREST_ROOT, 
           nodes, int(mask), depth, os.path.abspath(kwargs_file))
-  str_out = os.path.join(EVEREST_ROOT, 'injections.log')
+  str_out = os.path.join(EVEREST_ROOT, '%s.log' % name)
   qsub_args = ['qsub', pbsfile, 
+               '-q', queue,
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
-               '-N', 'injections', 
+               '-N', name, 
                '-l', str_n,
                '-l', str_w,
                '-M', email,
@@ -108,7 +110,7 @@ def RunInjections(depth = 0.01, mask = False,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCandidates(nodes = 5, ppn = 12, walltime = 100, 
+def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = 'vsm',
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
@@ -125,6 +127,7 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100,
           nodes, os.path.abspath(kwargs_file))
   str_out = os.path.join(EVEREST_ROOT, 'candidates.log')
   qsub_args = ['qsub', pbsfile, 
+               '-q', queue, 
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
@@ -139,7 +142,7 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100,
   subprocess.call(qsub_args)
 
 def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
-                email = 'rodluger@gmail.com', 
+                email = 'rodluger@gmail.com', queue = 'vsm',
                 kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
@@ -154,6 +157,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
           nodes, os.path.abspath(kwargs_file), campaign)
   str_out = os.path.join(EVEREST_ROOT, 'C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
+               '-q', queue, 
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
