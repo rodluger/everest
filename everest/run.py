@@ -110,7 +110,7 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = 'vsm',
+def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
                   email = 'rodluger@gmail.com', 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
@@ -127,7 +127,6 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = 'vsm',
           nodes, os.path.abspath(kwargs_file))
   str_out = os.path.join(EVEREST_ROOT, 'candidates.log')
   qsub_args = ['qsub', pbsfile, 
-               '-q', queue, 
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
@@ -136,13 +135,14 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = 'vsm',
                '-l', str_w,
                '-M', email,
                '-m', 'ae']
-            
+  if queue is not None:
+    qsub_args += ['-q', queue]          
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
 def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
-                email = 'rodluger@gmail.com', queue = 'vsm',
+                email = 'rodluger@gmail.com', queue = None,
                 kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
@@ -166,7 +166,8 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
                '-l', str_w,
                '-M', email,
                '-m', 'ae']
-            
+  if queue is not None:
+    qsub_args += ['-q', queue]          
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
