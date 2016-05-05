@@ -37,9 +37,11 @@
 
 \title{EVEREST: Pixel Level Decorrelation of \emph{K2} Light curves}
 
-\author{R. Luger\altaffilmark{1,2}, E. Agol\altaffilmark{1,2}, R. Barnes\altaffilmark{1,2}, and E. Kruse\altaffilmark{1}}
+\author{Rodrigo Luger\altaffilmark{1,2}, Eric Agol\altaffilmark{1,2}, Ethan Kruse\altaffilmark{1}, Rory Barnes\altaffilmark{1,2},\\
+Andrew Becker\altaffilmark{1}, Daniel Foreman-Mackey\altaffilmark{1}, and Drake Deming\altaffilmark{3}}
 \affil{\altaffilmark{1}Astronomy Department, University of Washington, Box 351580, Seattle, WA 98195, USA; rodluger@uw.edu\\
-\altaffilmark{2}Virtual Planetary Laboratory, Seattle, WA 98195, USA}
+\altaffilmark{2}Virtual Planetary Laboratory, Seattle, WA 98195, USA\\
+\altaffilmark{3}Department of Astronomy, University of Maryland, College Park, MD 20742, USA}
 
 \begin{abstract}
 We present \texttt{EVEREST}, an open-source pipeline for removing instrumental noise
@@ -134,7 +136,7 @@ vectors to limit the flexibility of the model and thus prevent overfitting. We f
 couple PLD with a GP to 
 disentangle astrophysical and instrumental variability. We apply our pipeline, \texttt{EVEREST}
 (\emph{EPIC Variability Extraction and Removal for
-Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from Campaigns 0-6 and generate a 
+Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from Campaigns 0-7 and generate a 
 publicly-available database\footnote{\texttt{\note{\url{https://archive.stsci.edu/prepds/everest/}}}}
 of processed light curves. Our code is open-source and
 available online.\footnote{\texttt{\url{https://github.com/rodluger/everest}}}
@@ -168,9 +170,9 @@ between the model $m_i$ and the simple aperture photometry (SAP) flux, $y_i$:
 where
 \begin{align}
 \label{eq:demingchisq}
-\chi^2 = \mathlarger{\mathlarger{\sum\limits_{i}}}\frac{\left(y_i - m_i\right)^2}{\sigma_i^2}
+\chi^2 = \mathlarger{\mathlarger{\sum\limits_{i}}}\frac{\left(y_i - m_i\right)^2}{\sigma_i^2}.
 \end{align}
-where $\sigma_i$ are the standard errors of the flux and
+In the expression above, $\sigma_i$ are the standard errors of the flux and
 \begin{align}
 \label{eq:demingsap}
 y_i = \sum\limits_{k}p_{ik}.
@@ -178,16 +180,16 @@ y_i = \sum\limits_{k}p_{ik}.
 
 Framed in this manner, computation of the PLD model is a linear regression problem; the
 coefficients $a_l$ are readily found by solving Equation~(\ref{eq:demingsolution}).
-However, the transit model $\tau_i$ is generally unknown and must also be obtained from
-the data, in which case the linearity is lost. \cite{DEM15} thus ran MCMC chains to
-simultaneously solve for the PLD coefficients and the parameters of the transit model.
-
-Alternatively, one may instead solve Equation~(\ref{eq:demingsolution}) using the
-out-of-transit flux only (i.e., by masking all arrays during transit). 
-Since $\tau_i = 1$ outside of transit, the problem remains linear, allowing one to
-easily obtain the model $m_i$ conditioned on the out-of-transit flux. In the limit that
-the transit duration is short relative to the orbital period (which is the case for most
-exoplanets), we find that there is no practical difference between the two methods.
+%However, the transit model $\tau_i$ is generally unknown and must also be obtained from
+%the data, in which case the linearity is lost. \cite{DEM15} thus ran MCMC chains to
+%simultaneously solve for the PLD coefficients and the parameters of the transit model.
+%
+%Alternatively, one may instead solve Equation~(\ref{eq:demingsolution}) using the
+%out-of-transit flux only (i.e., by masking all arrays during transit). 
+%Since $\tau_i = 1$ outside of transit, the problem remains linear, allowing one to
+%easily obtain the model $m_i$ conditioned on the out-of-transit flux. In the limit that
+%the transit duration is short relative to the orbital period (which is the case for most
+%exoplanets), we find that there is no practical difference between the two methods.
 
 \subsection{Higher Order PLD}
 \label{sec:higherorder}
@@ -234,7 +236,7 @@ second and third order PLD, which improve the scatter over the raw data by facto
 fire events (the outlier points seen above the continuum every $\sim$ 6 hr in the top 
 two plots), is properly corrected by higher order PLD.
 
-One might wonder why not go to even higher order PLD. While possible in principle,
+One might wonder why not go to even higher order in the pixel coefficients. While possible in principle,
 the number of regressors increases steeply with the PLD order. For a typical \emph{K2} star, this number is
 around $5\times 10^3$ for third order PLD, and would increase to $\sim5\times 10^4$ for
 fourth order and $\sim3\times 10^5$ for fifth order PLD.
@@ -303,7 +305,7 @@ mathematically equivalent to Equations~(\ref{eq:demingsolution}) and
       \psfig{file=images/sinusoid.png,width=\textwidth}
        \caption{Different de-trending techniques for quarter 4 of KIC 8583696 (KOI 1275),
                 a planet candidate host from the original \emph{Kepler} mission. The original
-                data is shown in the left column; in the other columns we
+                data are shown in the left column; in the other columns we
                 artificially injected a sinusoidal signal with a period
                 of 25 days and an amplitude comparable to that of the instrumental variability.
                 The top row shows the raw SAP data (black) and the first order
@@ -323,7 +325,7 @@ terms. In principle, modeling stellar variability should not be necessary if all
 to remove is the instrumental noise. By virtue of using the
 \emph{fractional} pixel fluxes as basis vectors (from which the astrophysical signal
 has been removed by the normalization), PLD should fit out instrumental variability only,
-obviating the need for an extra temporal term. However, in practice, this is not
+obviating the need for an extra temporal term. However, in practice, this is not always
 the case. To illustrate this, in Figure~\ref{fig:sinusoid} we plot a quarter of data
 of KOI 1275, a star with one planet candidate discovered by the original \emph{Kepler}
 mission \citep{BOR11}. We chose this star over one from the \emph{K2}
@@ -419,19 +421,27 @@ that lie outside the aperture and subtract it from all pixels
 to remove the background signal. In this paper, we consider only the long cadence (LC)
 $\emph{K2}$ dataset.
 
-Next, we mask any known transits, eclipses, or astrophysical false positives, as neither
-PLD nor the GP are able to accurately model these, which could lead to white noise
-inflation as described in \S\ref{sec:gp}. These are obtained from the Exoplanet Archive
-K2 Candidates database\footnote{\texttt{\url{http://exoplanetarchive.ipac.caltech.edu}}} and from
-the Kepler Eclipsing Binary Catalog \citep{LAC15}. Note that these data points are masked solely for
-the purpose of computing the PLD coefficients, and we include them in the final
-de-trended datasets. Similarly, we find it necessary to mask large outliers before
-performing PLD. We apply a 5-cadence median filter to the SAP flux and subtract it
-from the flux, then perform a median absolute deviation (MAD) cut at 5 sigma to 
-identify potential outliers. For each outlier identified this way, we then compute
-a first order PLD model in the vicinity of the outlier, with and without the outlier
-included in the data. If the RMS of the de-trended data decreases when the outlier
-is removed, we mask it during our analysis; otherwise we keep it in the light curve.
+Next, we perform iterative sigma-clipping to mask large outliers. Just
+as PLD can artificially inflate the white noise in an attempt to remove stellar
+variability (\S\ref{sec:gp}), it can do so in the presence of short timescale features
+such as eclipses, transits, flares, or cosmic ray hits. \cite{DEM15} deal with this
+by explicitly adding a transit term to the PLD model (Equation~\ref{eq:demingmodel}),
+but this requires knowledge of the transit parameters. Since we do not
+know \emph{a priori} whether there are transits in a given light curve, we instead 
+mask all features in the light curve that are not well modeled by either the PLD
+terms or the GP. We then train our model on the masked light curve to compute the
+PLD coefficients and use those to de-trend the full, unmasked light curve.
+
+We detect outliers by dividing the light curve into five chunks and de-trending each
+with a first order PLD model. We use a 2-day Mat\'ern-3/2
+covariance (see \ref{sec:gpopt}) with amplitude equal to the median standard deviation
+of the flux in all 2-day segments; again, we note that our results are relatively
+insensitive to the particular value of these parameters. Next, we perform a
+median absolute deviation (MAD) cut at 5 sigma to identify outliers.
+We then re-compute the PLD model by masking those outliers and de-trend the full
+light curve, identifying a new set of outliers. This process is repeated until no new outliers
+are identified. We find that this identifies deep transits, eclipses, and
+other outliers that could affect the quality of the PLD fit.
 
 \subsection{GP Optimization}
 \label{sec:gpopt}
@@ -446,7 +456,7 @@ is removed, we mask it during our analysis; otherwise we keep it in the light cu
                 its autocorrelation function (bottom right, black curve). Different
                 kernels are then fit to the autocorrelation function, and the one
                 with the lowest $\chi^2$ value is chosen for the de-trending step
-                (blue curve). The grey envelope about the autocorrelation curve is
+                (red curve). The grey envelope about the autocorrelation curve is
                 the ad hoc standard error assumed to compute $\chi^2$.
                 }
      \label{fig:acor}
@@ -481,15 +491,15 @@ light curve. We therefore adopt an iterative procedure, where we guess at the in
 kernel form and hyperparameters and use it to de-trend the light curve with PLD, thus
 obtaining an approximate stellar component. We then train the GP on this stellar
 component and use it to run our PLD analysis again. While this can be repeated
-multiple times, we find that once is typically enough for most targets. This procedure
+multiple times, we find that two iterations is typically enough for most targets. This procedure
 is illustrated in Figure~\ref{fig:acor}.
 
 Our initial kernel is a Mat\'ern-3/2 kernel with $\tau_m = 2$ days and amplitude
 equal to the median variance in 2-day chunks of the light curve. We split the light curve
-into ten roughly equal chunks and de-trend each of them with first order PLD
+into 5-10 roughly equal chunks and de-trend each of them with first order PLD
 using Equations~\ref{eq:pcamodel} and \ref{eq:pcacoefficients}. We then compute the 
 autocorrelation function of the de-trended data and perform least-squares fits
-on different combinations of the kernels in Equation~\ref{eq:kernels}, using
+on different additive and multiplicative combinations of the kernels in Equation~\ref{eq:kernels}, using
 the peaks in a Lomb-Scargle periodogram as the initial
 guess for the periods in the cosine kernels. We choose the kernel and corresponding
 hyperparameters that result in the best fit and compute its overall amplitude
@@ -503,7 +513,7 @@ where $\mathbf{y}$ is the de-trended flux and $n$ is the number of data points
 in $\mathbf{y}$ \citep{RW06}. In principle, one may optimize the parameters of each
 of the kernel combinations in this way to obtain the best estimate of the covariance
 matrix. However, such a procedure is computationally expensive. After considerable
-experimentation, we find that the method outlined above---which takes less than one
+experimentation, we find that the method outlined above---which takes on the order of one
 minute on a single core of a 2.66 GHz machine---is sufficient to ensure PLD removes
 only the instrumental component of the noise for most targets.
 
@@ -527,37 +537,42 @@ where we kept only 285 basis vectors in the bottom panel. Had we de-trended with
        \caption{\emph{Top}: Third order PLD applied to EPIC 201367065, but this time keeping 
                 \emph{all} basis vectors. Compare to 
                 Figure~\ref{fig:third_order}. While the median scatter improved by a factor
-                of about 2, the scatter in the transits (which were masked during the de-trending)
+                of about 4, the scatter in the transits (which were masked during the de-trending)
                 increased by a factor of several thousand. \emph{Bottom}: The same figure, 
                 but zoomed out to show the in-transit scatter.}
      \label{fig:overfitting}
   \end{center}
 \end{figure}
-While the median scatter improved by a factor of $\sim$~2, the in-transit scatter increased
+While the median scatter improved by a factor of $\sim$~4, the in-transit scatter increased
 by a factor of several thousand. This is because we masked the transits of \emph{K2-3b},
-\emph{c}, and \emph{d} during the de-trending step (see \S\ref{sec:firstorder}). The poor
+\emph{c}, and \emph{d} during the de-trending step (see \S\ref{sec:pre}). The poor
 performance of the extrapolated model betrays its terrible predictive power, a clear sign
 of overfitting.
 
-One way to prevent this is to use an information criterion, such as the Bayesian Information 
-Criterion (BIC), which adds a penalty term to the likelihood (Equation~\ref{eq:like}) 
-that grows in size with the number of model parameters \citep[see, e.g.,][]{DFM15}.
-However, in the spirit of the previous example, we find that a more agnostic and data-driven
-approach is to measure the amount of overfitting by \emph{directly} computing the predictive power
-of the model in masked regions of the data. To this end, for a range of design matrix sizes, we 
-compare the RMS in 6-hr chunks of the de-trended data to the RMS in 6-hr chunks that we purposefully 
-masked during the de-trending step. This process is illustrated in Figure~\ref{fig:scatter}.
+In order to limit the flexibility of our PLD model, we implement a simple cross-validation
+scheme. We divide the light curve into training sets (large chunks of data that we use to compute the PLD
+coefficients) and validation sets (small chunks that we de-trend using the coefficients
+computed from the training sets). We then compute the 6-hr precision in the validation
+sets for a range of design matrix sizes. Since the validation data is never used
+to compute the PLD coefficients, the model cannot overfit in the validation set. Instead,
+as the number of regressors becomes too large and PLD begins to fit out astrophysical
+signals and/or white noise, the scatter in the validation set will grow.
+This process is illustrated in Figure~\ref{fig:scatter}, where we plot the scatter in 
+the training set (blue) and the scatter in the validation set (red) as a function of
+the number of principal components $n_{pc}$.
 
 \begin{figure}[h]
   \begin{center}
       \psfig{file=images/scatter.png,width=3.5in}
        \caption{De-trended light curve precision as a function of the number of principal
                 components for EPIC 201497682. The blue curve is the median
-                6-hr RMS scatter of the entire light curve; the red curve is the median 
-                scatter in 6-hr chunks that were masked during the de-trending step.
+                6-hr precision (in ppm) of the unmasked sections of the light curve (the training set); 
+                the red curve is the median 
+                precision in 6-hr chunks that were masked during the de-trending step
+                (the validation set).
                 Initially, the scatter decreases in both cases as the 
-                number of components is increased. However, above $\sim$ 50 components, while the apparent
-                scatter continues to decrease, the scatter in the masked regions (where 
+                number of components is increased. However, above $\sim$ 50 components, while the
+                scatter in the training set continues to decrease, the scatter in the validation set (where 
                 the model is extrapolated) begins to grow. This is the signature
                 of overfitting. We therefore choose 50 principal components for the
                 de-trending, yielding a precision of 55 ppm (versus $\sim$ 70 ppm for the
@@ -566,24 +581,22 @@ masked during the de-trending step. This process is illustrated in Figure~\ref{f
   \end{center}
 \end{figure}
 
-Initially, as the number of principal components $n_{pc}$ increases, the scatter in the de-trended flux
-decreases in the full light curve (blue curve) as well as in the masked portions of the light curve
-(red curve). As the number of components increases further, the nominal precision continues to improve,
+Initially, as $n_{pc}$ increases, the scatter in both the training and validation data
+decreases. As the number of components increases further, the training precision continues to improve,
 eventually surpassing the photon noise limit for $n_{pc} \gtrsim 1000$. This is obviously unphysical and a
-clear sign of overfitting. The red curve, on the other hand, begins to increase steadily above $n \sim 50$,
+clear sign of overfitting. The scatter in the validation set, on the other hand, begins to increase steadily above $n \sim 50$,
 indicating that the predictive power of the model worsens as the number of principal components is increased.
-The minimum in the red curve, which occurs for $n_{pc} \sim 50$, is the best we can do; above that point, PLD
+The minimum in the red curve, which occurs for $n_{pc} \sim 80$, is the best we can do; above that point, PLD
 is likely to begin fitting out white noise.
 
-We employ this bootstrapping method for all EPIC targets. In practice, we compute the scatter in masked
+We employ this cross-validation method for all EPIC targets. In practice, we compute the scatter in masked
 and unmasked chunks of the light curve thirty times for each value of $n_{pc}$ and take the median. Our
 grid in $n_{pc}$ typically ranges from 1 to 250 principal components, with a spacing of ten components.
 We then smooth the curves with a GP and find the value of $n_{pc}$ that minimizes \emph{both} the masked scatter
 \emph{and} the absolute value of the difference between the masked and unmasked scatter.
 
-In practice, we also find that varying the PLD order can also lead to better fits, and thus we perform the
-procedure outlined above for first, second, and third order PLD. Finally, similarly to \cite{AIG16}, 
-we occasionally find it necessary to split a light curve into two or more separate chunks. Reversals in
+In practice, similarly to \cite{AIG16}, for some campaigns
+we find it necessary to split the light curves into two separate chunks. Reversals in
 the direction of the spacecraft roll during a campaign can qualitatively change the instrumental
 systematics. This is evident in the top left panel of Figure~\ref{fig:acor}, where the systematics
 become much more apparent after $t \sim 2025$ d. Like \cite{AIG16}, we identify these breakpoints
@@ -610,10 +623,7 @@ x_{B,0} & ... & x_{B,N} & 1 & 0 & ... & 0 & 0\\
 where $B$ is the index of the breakpoint. We also perform PCA separately on each of the 
 two chunks. By redesigning $\mathbf{X}$ in this way, we can fit for different PLD 
 coefficients for each of the two chunks while preserving the covariance structure 
-across the breakpoint. We also consider further subdivisions of the light curves into
-three and four chunks, divided such that there are approximately equal number of 
-data points in each of the chunks. As before, we perform the same bootstrapping technique
-to identify the optimal number of chunks for each EPIC target.
+across the breakpoint.
 
 \subsection{De-trending}
 After optimizing the GP and choosing the order of the PLD, the number of principal components, and the 
@@ -629,9 +639,11 @@ they do not in principle contain any astrophysical signals. De-trending with PLD
 should therefore preserve the transit shape and depth, a fact that is confirmed
 for the transits of several hot Jupiters observed with \emph{Spitzer} \citep{DEM15}.
 However, as we showed in \S\ref{sec:dmopt}, PLD can increase the
-in-transit scatter when the transits are masked and too many principal components 
-are present (see Figure~\ref{fig:overfitting}). Unmasked transits can also be affected
-by overfitting, since PLD can exploit linear combinations of the white noise component
+scatter of regions of the data that are not used to compute the coefficients
+(such as transits that are flagged as outliers) when too many principal components 
+are present (see Figure~\ref{fig:overfitting}). If a transit is missed in the
+outlier detection step, the transit shape may also be affected,
+since PLD can exploit linear combinations of the white noise component
 to decrease the transit depth and therefore improve the likelihood of the fit.
 
 \begin{figure}[h]
@@ -658,17 +670,15 @@ to decrease the transit depth and therefore improve the likelihood of the fit.
 
 In order to test whether our pipeline is robust against these effects, we ran a set
 of transit injection and recovery tests on a sample of EPIC
-targets that do not contain known transit events. We randomly selected 50 stars from
-each magnitude bin in the range $8 \le K_p \le 18$ ($K_p$ is the Kepler bandpass magnitude)
-for a total sample size of 500
-stars per run. We then injected synthetic transits of varying depths into the
+targets that do not contain known transit events. We randomly selected 50 Campaigns 0-4 stars 
+from each magnitude bin in the range $8 \le K_p \le 18$ ($K_p$ is the Kepler bandpass magnitude)
+for a total sample size of 500 stars per run. We then injected synthetic transits of varying depths into the
 light curve by multiplying each pixel by a transit model generated by the 
 \texttt{pysyzygy}\footnote{\texttt{\url{https://github.com/rodluger/pysyzygy}}}
 package. For simplicity, we fixed the period at 3.57 days (for an average of about
 20 transits per target) and the duration at 2.5 hours, assuming zero eccentricity
 and quadratic limb darkening parameters $a = 0.45$ and $b = 0.30$. We then
-ran our pipeline twice for each injection, once masking the transits when computing
-the PLD coefficients, and once leaving them unmasked.
+ran our pipeline to de-trend the light curves.
 
 Performing a full transit search is outside the scope of this paper. Since our 
 goal is to determine whether or not PLD can bias transit depths, we fix all the
@@ -680,21 +690,21 @@ in Figure~\ref{fig:injections}.
 Each panel shows two histograms of the recovered depth as a fraction of the true
 depth, $D/D_0$. In blue, we plot the recovery results after de-trending with our pipeline.
 As a control, we also injected transits directly into the \emph{de-trended} data from
-the \texttt{K2SFF} pipeline. Columns correspond to transits that were masked (left) and
-left unmasked (right) during the de-trending step. Rows correspond to different
+the \texttt{K2SFF} pipeline. \note{Columns correspond to transits that were masked (left) and
+left unmasked (right) during the de-trending step.} Rows correspond to different
 injected fractional depths: $10^{-2}$, $10^{-3}$, and $10^{-4}$, ranging from a typical 
 hot Jupiter to a roughly Earth-sized planet.
 
-In the masked runs, we recover the transit depth with no bias; all three blue histograms
-are Gaussian-shaped and have medians of 1.00, consistent with the control runs. Moreover, 
+\note{In the masked runs, we recover the transit depth with no bias; all three blue histograms
+have medians of 1.00, consistent with the control runs. Moreover, 
 it is evident by inspection that the widths of the distributions are nearly identical
 to the widths of those in the control runs. This is particularly important given the
 concern that PLD could increase the in-transit scatter, which would lead to larger
 uncertainty on the transit depth and a broader distribution. Since this is not the case,
 we conclude that our optimization method (\S\ref{sec:dmopt}) is correctly preventing 
-overfitting and not leading to bias or increased uncertainty on the transit depth.
+overfitting and not leading to bias or increased uncertainty on the transit depth.}
 
-In the unmasked runs, a small bias toward lower depth is visible from the histograms.
+\note{In the unmasked runs, a small bias toward lower depth is visible from the histograms.
 As we mentioned above, this is expected, since we have no term in our design
 matrix (Equation~\ref{eq:designmatrix}) to explicitly model transits. Since the GP
 is (by design) not flexible enough to capture transit events, the PLD basis vectors
@@ -713,7 +723,7 @@ remove astrophysical variability. Despite significantly reducing the noise, the
 by masking the eclipses prior to the PLD step, our pipeline prevents them from becoming
 shallower while successfully removing the instrumental noise. Note that had we not
 masked the eclipse when solving for the PLD coefficients, our eclipses would be
-similarly shallower.
+similarly shallower.}
 
 \begin{figure}[h]
   \begin{center}
@@ -727,12 +737,12 @@ similarly shallower.
   \end{center}
 \end{figure}
 
-It is important to note that currently undetected transits are of course not masked
+\note{It is important to note that currently undetected transits are of course not masked
 during our de-trending step, causing them to become slightly shallower (on the order
 of 5\%) in the de-trended flux. If new transiting candidates are discovered with
 \texttt{EVEREST} data, we recommend that the de-trending step be repeated either with
 an explicit transit model or by masking the transit events. This will remove the bias
-toward shallower transits.
+toward shallower transits.}
 
 It is also possible that transits with very low signal-to-noise may be completely
 fit out during the de-trending step. As \cite{DFM15} point out, this is an inevitable
@@ -943,8 +953,8 @@ $K_p \lesssim 12$ dwarfs. Moreover, \texttt{EVEREST} yields lower average CDPP v
 
 \subsection{Comparison to Other Pipelines}
 \label{sec:comparison}
-In this section we compare the precision of our de-trended light curves to that of the,
-\texttt{K2VARCAT}, \texttt{K2SFF}, and \texttt{K2SC} light curves. Though other
+In this section we compare the precision of our de-trended light curves to that of the
+\texttt{K2VARCAT} \citep{ARM15}, \texttt{K2SFF} \citep{VJ14}, and \texttt{K2SC} \citep{AIG16} light curves. Though other
 pipelines exist \citep[e.g.,][]{LUN15, HUA15, CRO15}, here we focus on those that 
 are also available for download at
 the MAST HLSP \emph{K2} archive.\footnote{https://archive.stsci.edu/k2/hlsp/}
@@ -953,7 +963,7 @@ compute the CDPP as described in \S\ref{sec:precision}. In
 Figures~\ref{fig:comparison_k2varcat}-\ref{fig:comparison_k2sc}, we plot a pairwise
 comparison of the precision achieved for all Campaign 0-4 light curves that are
 available in both our catalog and that of the other pipeline. These plots are based
-on Figure 10 in \cite{AIG16}; they show the relative 6-hr CDPP difference between
+on Figure 10 in \cite{AIG16}; the plots show the relative 6-hr CDPP difference between
 our light curves and those produced by the \texttt{K2VARCAT}, \texttt{K2SFF}, and \texttt{K2SC}
 pipelines as a function of Kepler magnitude. Individual light curves are indicated by
 blue dots, and the median in half magnitude-wide bins is shown as a black line.
@@ -983,7 +993,7 @@ pipeline, whose performance is the best out of the three we consider here. In or
 ensure the two datasets are compared on equal footing, we use the systematics-corrected
 \texttt{K2SC} fluxes rather than the fully whitened fluxes; we obtain these by
 summing the \texttt{FLUX} and \texttt{TREND\_T} columns in the dataset. We then apply
-a Savitsky-Golay filter, as we do to the \texttt{EVEREST} data, to remove the stellar 
+a Savitsky-Golay filter \citep{SG64}, as we do to the \texttt{EVEREST} data, to remove the stellar 
 components of the variability.
 
 \texttt{K2SC} yields slightly higher median precision than \texttt{EVEREST} (by about 5\%) for 
@@ -1097,16 +1107,15 @@ fluxes and combining it with principal component analysis to yield a set of basi
 vectors that together capture most of the instrumental variability in the data. A Gaussian
 process (GP) is then used to remove the instrumental
 systematics while preserving astrophysical signals. In order to prevent overfitting, we
-develop a bootstrapping method to determine the ideal order of the PLD
-model and the number of principal components to use in the fit, yielding reliable,
+develop a method to determine the ideal number of principal components to use in the fit, yielding reliable,
 high precision de-trended light curves for all \emph{K2} campaigns to date.
 
 We validate our model by performing transit injection and recovery tests and show that
-when transits are properly masked, we recover the correct depth without any bias.
-When transits are not masked (as in the case of undiscovered planets), PLD de-trending
+when transits are properly masked by iterative sigma-clipping, we recover the correct depth without any bias.
+When transits are not masked (which could be the case for low signal-to-noise transits), PLD de-trending
 can lead to slightly shallower transits by $\lesssim 5\%$. However, the increased
 precision of the de-trended light curves should be sufficient to enable the
-detection of previously unknown, small transiting planets around \emph{K2} \citep{KRU16}.
+detection of previously unknown, small transiting planets around \emph{K2} host stars \citep{KRU16}.
 
 We further compare our de-trended light curves to those produced by other \emph{K2} pipelines.
 \texttt{EVEREST} light curves have systematically higher precision than both \texttt{K2SFF}

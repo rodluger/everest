@@ -19,7 +19,8 @@ sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.detrend import PLDBasis, PLDCoeffs, PLDModel, ComputeScatter, SliceX
 from everest.gp import GetGP
-from everest.utils import InitLog, GetMasks, Breakpoints, RMS, Mask
+from everest.utils import InitLog, Breakpoints, RMS, Mask
+from everest.compute import GetMasks
 from everest.data import GetK2Data
 from everest.kernels import KernelModels
 import matplotlib.pyplot as pl
@@ -119,7 +120,7 @@ def PlotScatter(EPIC = 201497682):
   phtrms = 32.7
   
   # Plot it
-  fig = pl.figure(figsize = (12, 8))
+  fig = pl.figure(figsize = (8, 6))
   pl.plot(npc, pred, 'r.', alpha = 0.25)
   pl.plot(npc, real, 'b.', alpha = 0.25)
   
@@ -139,19 +140,19 @@ def PlotScatter(EPIC = 201497682):
   # Predicted scatter
   fpred, _ = gp_scatter.predict(pred - np.nanmedian(pred), npc_pred)
   fpred += np.nanmedian(pred)
-  pl.plot(npc_pred, fpred, 'r-', label = 'Masked')
+  pl.plot(npc_pred, fpred, 'r-', label = 'Validation set', lw = 2)
 
   # Computed scatter
   freal, _ = gp_scatter.predict(real - np.nanmedian(real), npc_pred)
   freal += np.nanmedian(real)
-  pl.plot(npc_pred, freal, 'b-', label = 'Unmasked') 
+  pl.plot(npc_pred, freal, 'b-', label = 'Training set', lw = 2) 
 
   # The minimum predicted scatter.
   k = np.nanargmin(fpred)
   mps = [fpred[k], npc_pred[k]]
   
   # Mark the best value
-  pl.axvline(mps[1], color = 'k', lw = 2, alpha = 0.5, ls = '--', label = 'Best Model')
+  pl.axvline(mps[1], color = 'k', lw = 2, alpha = 0.5, ls = '--', label = 'Best model')
   pl.axhline(mps[0], color = 'k', lw = 2, alpha = 0.5, ls = '--')
   
   # Add labels       

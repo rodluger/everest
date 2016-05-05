@@ -11,3 +11,5 @@ paper/tex/k2Notes.bib
 paper/tex/k2.bbl
 paper/tex/k2.blg
 paper/tex/k2.pdf
+_*.py
+_*.tsv

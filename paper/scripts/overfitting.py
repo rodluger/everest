@@ -14,7 +14,8 @@ IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
 sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.data import GetK2Data
-from everest.utils import GetMasks, RMS
+from everest.utils import RMS
+from everest.compute import GetMasks
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import george
@@ -97,7 +98,8 @@ time, flux, Y, rms, rms_in_transit = GetDetrended()
 
 ax[0].plot(time, (Y + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % rms)
 ax[0].set_ylabel('De-trended Flux', fontsize = 12)
-ax[0].legend(loc = 'upper right', numpoints = 3, fontsize = 10)
+ax[0].text(2014.4, 1.00425, "6-hr scatter: %.1f ppm" % rms, ha="right", va="top", fontsize=12,
+           bbox = dict(fc = 'w'))
 ax[0].yaxis.set_major_locator(MaxNLocator(5))
 ax[0].margins(0.01, None)
 ax[0].set_ylim(0.996, 1.0050)
@@ -105,7 +107,6 @@ ax[0].ticklabel_format(useOffset=False)
 
 ax[1].plot(time, (Y + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % rms)
 ax[1].set_ylabel('De-trended Flux', fontsize = 12, labelpad = 20.5)
-ax[1].legend(loc = 'upper right', numpoints = 3, fontsize = 10)
 ax[1].yaxis.set_major_locator(MaxNLocator(5))
 ax[1].margins(0.01, None)
 ax[1].set_ylim(0.86, 1.14)

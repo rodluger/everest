@@ -14,7 +14,8 @@ IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
 sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.data import GetK2Data
-from everest.utils import GetMasks, RMS
+from everest.utils import RMS
+from everest.compute import GetMasks
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import george
@@ -130,8 +131,9 @@ ax[1].set_ylabel('1st Order PLD', fontsize = 14)
 ax[2].set_ylabel('2nd Order PLD', fontsize = 14)
 ax[3].set_ylabel('3rd Order PLD', fontsize = 14)
 
-for axis in ax:
-  axis.legend(loc = 'upper right', numpoints = 3, fontsize = 10)
+for axis, rms in zip(ax, [RMS0, RMS1, RMS2, RMS3]):
+  axis.text(2014.4, 1.00425, "6-hr scatter: %.1f ppm" % rms, ha="right", va="top", fontsize=12,
+           bbox = dict(fc = 'w'))
   axis.yaxis.set_major_locator(MaxNLocator(5))
   axis.margins(0.01, None)
   axis.set_ylim(0.996, 1.0050)
