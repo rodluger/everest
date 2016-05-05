@@ -8,15 +8,16 @@ plot.py
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
-from .utils import RMS, Mask, PadWithZeros
+from .utils import RMS, Mask, PadWithZeros, LatexExp
 from .transit import Transit
 from .sources import Source
+import os
+EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator, ScalarFormatter
 from scipy.ndimage import zoom
 from scipy.interpolate import interp1d
 import numpy as np
-import os
 import logging
 log = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ def Plot(data):
   
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
+  outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
   
   # Plot the apertures
@@ -66,12 +68,12 @@ def Plot(data):
     pl.close()
   
   # Plot the folded data
-  if data['mask_candidates']:
+  if data['mask_candidates'] or len(data['inject'][()]):
     log.info('Plotting the folded data...')
-    try:
-      PlotFolded(EPIC, data)
-    except:
-      log.error('An error occurred while plotting the folded data.')
+    #try:
+    PlotFolded(EPIC, data)
+    #except:
+    #  log.error('An error occurred while plotting the folded data.')
   
   log.info('Done!')
 
@@ -326,7 +328,7 @@ def PlotDetrended(EPIC, data):
   breakpoints = data['breakpoints']
                             
   # Plot
-  if mask_candidates:
+  if mask_candidates or len(inject):
     fig, ax = pl.subplots(3, figsize = (16, 12))
   else:
     fig, ax = pl.subplots(2, figsize = (16, 12))
@@ -365,11 +367,12 @@ def PlotDetrended(EPIC, data):
     hi += (hi - lo) / 3
   ax[1].set_ylim(lo, hi)
   
-  if mask_candidates:
+  if mask_candidates or len(inject):
     # 3. The fully whitened PLD-detrended data, only if we masked candidate
     # transits and want to see what they look like in the whitened data      
     ax[2].plot(time, fwhite, 'b.', alpha = 0.3)
   
+  if mask_candidates:
     # Adjust y limits based on the Everest-detrended data
     y = np.delete(fwhite, rem_mask)
     lo = y[y < 1]
@@ -384,7 +387,7 @@ def PlotDetrended(EPIC, data):
   # Adjust limits
   ax[0].margins(0.01, None)
   ax[1].set_xlim(*ax[0].get_xlim())
-  if mask_candidates:
+  if mask_candidates or len(inject):
     ax[2].set_xlim(*ax[0].get_xlim())
   
   # Legends and labels
@@ -404,7 +407,7 @@ def PlotDetrended(EPIC, data):
                    horizontalalignment = 'right', 
                    verticalalignment = 'top',
                    xycoords = 'axes fraction', fontsize = 12, color = 'k')
-  if mask_candidates:
+  if mask_candidates or len(inject):
     ax[2].set_ylabel('Whitened', fontsize = 18)
   ax[-1].set_xlabel('Time (days)', fontsize = 18)
   pl.suptitle(r'EPIC %d' % EPIC, fontsize = 25)
@@ -416,7 +419,7 @@ def PlotDetrended(EPIC, data):
     label.set_fontsize(14)
     
   # Mark the known planet candidates
-  if mask_candidates:
+  if mask_candidates or len(inject):
     for axis in ax:
       tlim = axis.get_xlim()
       xticks = []
@@ -521,6 +524,7 @@ def PlotFolded(EPIC, data):
   planets = data['planets']
   EB = data['EB'][()]
   outdir = data['outdir'][()]
+  outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
       
   # Is the star is an eclipsing binary?
@@ -626,7 +630,7 @@ def PlotFolded(EPIC, data):
       ax.set_xlabel('Time (days)', fontsize = 18)
   
       # Plot
-      axtop.plot(at, ad, 'k.', alpha = 0.4)
+      ax.plot(at, ad, 'k.', alpha = 0.4)
       
       # Plot the transit model
       tprime = np.linspace(-1, 1, 1000)
