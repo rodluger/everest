@@ -54,8 +54,8 @@ for i, EPIC, per, t0, ylim, yticks, ylimf, yticksf in \
 
   ax[0].plot(tsff, fsff, 'k.', alpha = 0.3)
   ax[1].plot(time, fpld, 'k.', alpha = 0.3)
-  ax[2].plot(F(time_k2sff), fwhite_sff, 'k.')
-  ax[3].plot(F(time), fwhite, 'k.')
+  ax[2].plot(F(time_k2sff), fwhite_sff, 'k.', alpha = 0.5)
+  ax[3].plot(F(time), fwhite, 'k.', alpha = 0.5)
   
   for n in [0,1]:
     ax[n].ticklabel_format(useOffset=False)

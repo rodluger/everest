@@ -39,9 +39,12 @@
 
 \author{Rodrigo Luger\altaffilmark{1,2}, Eric Agol\altaffilmark{1,2}, Ethan Kruse\altaffilmark{1}, Rory Barnes\altaffilmark{1,2},\\
 Andrew Becker\altaffilmark{1}, Daniel Foreman-Mackey\altaffilmark{1}, and Drake Deming\altaffilmark{3}}
-\affil{\altaffilmark{1}Astronomy Department, University of Washington, Box 351580, Seattle, WA 98195, USA; rodluger@uw.edu\\
-\altaffilmark{2}Virtual Planetary Laboratory, Seattle, WA 98195, USA\\
-\altaffilmark{3}Department of Astronomy, University of Maryland, College Park, MD 20742, USA}
+%\affil{\footnotemark[1]Astronomy Department, University of Washington, Box 351580, Seattle, WA 98195, USA; rodluger@uw.edu\\
+%\footnotemark[2]Virtual Planetary Laboratory, Seattle, WA 98195, USA\\
+%\footnotemark[3]Department of Astronomy, University of Maryland, College Park, MD 20742, USA}
+\altaffiltext{1}{Astronomy Department, University of Washington, Box 351580, Seattle, WA 98195, USA; \href{mailto:rodluger@uw.edu}{rodluger@uw.edu}}
+\altaffiltext{2}{Virtual Planetary Laboratory, Seattle, WA 98195, USA}
+\altaffiltext{3}{Department of Astronomy, University of Maryland, College Park, MD 20742, USA}
 
 \begin{abstract}
 We present \texttt{EVEREST}, an open-source pipeline for removing instrumental noise
@@ -134,13 +137,24 @@ In this paper we build on the PLD method of \cite{DEM15}, extending it to higher
 in the pixel fluxes and performing principal component analysis (PCA) on the basis
 vectors to limit the flexibility of the model and thus prevent overfitting. We further 
 couple PLD with a GP to 
-disentangle astrophysical and instrumental variability. We apply our pipeline, \texttt{EVEREST}
+disentangle astrophysical and instrumental variability. 
+%
+% TODO: Provide the links in the published version
+%We apply our pipeline, \texttt{EVEREST}
+%(\emph{EPIC Variability Extraction and Removal for
+%Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from Campaigns 0-7 and generate a 
+%publicly-available database\footnote{\texttt{\url{https://archive.stsci.edu/prepds/everest/}}}
+%of processed light curves. Our code is open-source and
+%available online.\footnote{\texttt{\url{https://github.com/rodluger/everest}}}
+%
+%
+We apply our pipeline, \texttt{EVEREST}
 (\emph{EPIC Variability Extraction and Removal for
 Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from Campaigns 0-7 and generate a 
-publicly-available database\footnote{\texttt{\note{\url{https://archive.stsci.edu/prepds/everest/}}}}
-of processed light curves. Our code is open-source and
-available online.\footnote{\texttt{\url{https://github.com/rodluger/everest}}}
-
+publicly-available database of processed light curves. Our code is open-source and will be made
+available online.
+%
+%
 The paper is organized as follows: in \S\ref{sec:pld} we review the basics of PLD and
 derive our third-order PLD/PCA/GP model, and in \S\ref{sec:methods} we describe our pipeline
 in detail. Results are presented in \S\ref{sec:results}, and in \S\ref{sec:conclusions}
@@ -906,7 +920,9 @@ as the CDPP.
        \caption{6-hr photometric precision as a function of Kepler magnitude $K_p$
                 for all stars observed by \emph{Kepler} (yellow dots) and for
                 all \emph{K2} targets in Campaigns 0-4 de-trended with \texttt{EVEREST}
-                (blue). For most of the stars in the magnitude range $11 < K_p < 13.5$,
+                (blue). The median values and the standard deviations are indicated
+                for 0.5 magnitude-wide bins as circles.
+                For most of the stars in the magnitude range $11 < K_p < 13.5$,
                 our pipeline recovers the original \emph{Kepler} precision.}
      \label{fig:precision1}
   \end{center}
@@ -931,7 +947,7 @@ inside the aperture or brighter neighbors within 2 pixels of the edge of the ape
 since PLD is likely to lead to artificially low CDPP in those cases. \texttt{EVEREST}
 CDPP values are plotted as blue dots. For comparison, in yellow we plot the CDPP calculated for the raw
 SAP fluxes of all stars observed by the original \emph{Kepler} mission. 
-\texttt{EVEREST} recovers the \emph{Kepler} CDPP for most $K_p \lesssim 13$ stars,
+\texttt{EVEREST} recovers the raw \emph{Kepler} CDPP for most $K_p \lesssim 13$ stars,
 and yields light curves with CDPP within about 1.5 times that of \emph{Kepler}
 for $13 \lesssim K_p \lesssim 15$. The sparser clump of stars above the bulk group between
 $K_p = 11$ and 14 are likely giants, whose short-timescale pulsations are not efficiently
@@ -1125,10 +1141,19 @@ light curves have marginally higher precision on average. Currently, \texttt{EVE
 performs poorly for saturated targets and for those in highly crowded fields, though
 these issues will be addressed in future versions of the pipeline.
 
-Our catalog of de-trended light curves will be made publicly available at
-\texttt{\note{\url{https://archive.stsci.edu/prepds/everest/}}} and will be constantly
+%
+% TODO: Provide links in the published version
+%Our catalog of de-trended light curves will be made publicly available at
+%\texttt{\note{\url{https://archive.stsci.edu/prepds/everest/}}} and will be constantly
+%updated for new \emph{K2} campaigns. The source code used to de-trend the light curves
+%is open source and available at \texttt{\url{https://github.com/rodluger/everest}}.
+%
+%
+Our catalog of de-trended light curves will be made publicly available at and will be constantly
 updated for new \emph{K2} campaigns. The source code used to de-trend the light curves
-is open source and available at \texttt{\url{https://github.com/rodluger/everest}}.
+is open source and will be made available shortly.
+%
+%
 
 \bibliographystyle{apj}
 \bibliography{k2}
