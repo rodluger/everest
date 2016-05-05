@@ -20,6 +20,32 @@ import subprocess
 import imp
 import time
 
+def DownloadCampaign(campaign, email = 'rodluger@gmail.com', walltime = 8):
+  '''
+  Submits a cluster job to the build queue to download all TPFs for a given
+  campaign.
+  
+  '''
+          
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'download.pbs')
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
+  str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_C%02d.log' % campaign)
+  qsub_args = ['qsub', pbsfile, 
+               '-q', 'build',
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', 'DOWNLOAD_C%02d' % campaign,
+               '-l', str_w,
+               '-M', email,
+               '-m', 'ae']
+            
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
 def Run(EPIC, **kwargs):
   '''
   Wrapper around ``Compute()`` and ``Plot()``.
@@ -27,8 +53,11 @@ def Run(EPIC, **kwargs):
   '''
   
   data = Compute(EPIC, **kwargs)
-  Plot(data)
-  return True
+  if data is not None:
+    Plot(data)
+    return True
+  else:
+    return False
 
 def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
@@ -138,31 +167,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def DownloadCampaign(campaign, email = 'rodluger@gmail.com', walltime = 8):
-  '''
-  Submits a cluster job to the build queue to download all tpfs for a given
-  campaign.
-  
-  '''
-          
-  # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'download.pbs')
-  str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
-  str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_C%02d.log' % campaign)
-  qsub_args = ['qsub', pbsfile, 
-               '-q', 'build',
-               '-v', str_v, 
-               '-o', str_out,
-               '-j', 'oe', 
-               '-N', 'DOWNLOAD_C%02d' % campaign,
-               '-l', str_w,
-               '-M', email,
-               '-m', 'ae']
-            
-  # Now we submit the job
-  print("Submitting the job...")
-  subprocess.call(qsub_args)
+# ---- PBS routines ---- #
 
 def _RunCandidates(kwargs_file):
   '''
