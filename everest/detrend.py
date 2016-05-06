@@ -162,6 +162,10 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
       if chunk[i + 13] - t <= 0.28:
         inds[c].append(i + c * sz)
   
+  # Check whether we have at least one chunk!
+  if len(inds) == 0:
+    return np.nan, np.nan
+  
   # Compute the precision several times and take the median
   for n in range(niter):
     

@@ -202,10 +202,14 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
                        gp, mask = mask, niter = ps_iter,
                        nmasks = ps_masks)
 
-      # Find the params that minimize the scatter  
-      besti, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
-                        masked_scatter, unmasked_scatter, 
-                        alpha = scatter_alpha)
+      # Find the params that minimize the scatter 
+      if not np.all(np.isnan(masked_scatter)): 
+        besti, msf, usf = MinimizeScatter(npc_arr, npc_pred, 
+                          masked_scatter, unmasked_scatter, 
+                          alpha = scatter_alpha)
+      else:
+        log.error("Unable to perform cross-validation for this target.")
+        return None
       npc = npc_pred[besti]
       X = SliceX(X, npc, npctot)
     else:
