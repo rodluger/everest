@@ -162,16 +162,12 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
       if chunk[i + 13] - t <= 0.28:
         inds[c].append(i + c * sz)
   
-  # Check whether we have at least one chunk!
-  if len(inds) == 0:
-    return np.nan, np.nan
-  
   # Compute the precision several times and take the median
   for n in range(niter):
     
     # Get all our masks
-    masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds]]
-    
+    masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
+
     # Redefine the mask function
     mask_new = list(np.append(mask_orig, np.concatenate(masks)))
     
