@@ -341,9 +341,9 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
    "# CROWDING SEVERITY:  %d" % crwdsev,
    "# ACOR CHISQ:         %.2f" % kchisq,
    "#",
-   "# RAW PRECISION:    {:8.2f} ppm / {:8.2f} ppm".format(r1, r2),
-   "# ANCHOR PRECISION: {:8.2f} ppm / {:8.2f} ppm".format(r3, r4),
-   "# PHOTON LIMIT:     {:8.2f} ppm".format(r5),
+   "# RAW PRECISION:     {:8.2f} ppm / {:8.2f} ppm".format(r1, r2),
+   "# EVEREST PRECISION: {:8.2f} ppm / {:8.2f} ppm".format(r3, r4),
+   "# PHOTON LIMIT:      {:8.2f} ppm".format(r5),
    "#"
   ]
 

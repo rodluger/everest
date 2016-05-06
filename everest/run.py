@@ -157,7 +157,6 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
           nodes, os.path.abspath(kwargs_file), campaign)
   str_out = os.path.join(EVEREST_ROOT, 'C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
-               '-q', queue, 
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
