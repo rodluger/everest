@@ -22,7 +22,6 @@ for EPIC in GetK2InjectionTestStars():
   for campaign in range(10):
     outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, '%s' % EPIC, 'default')
     if os.path.exists(os.path.join(outdir, 'data.npz')):
-      count += 1
       break
   if campaign == 9:
     # No data for this target
@@ -32,6 +31,7 @@ for EPIC in GetK2InjectionTestStars():
     # We've done this one already
     continue
   
+  count += 1
   data = np.load(os.path.join(outdir, 'data.npz'))
   time = data['time']
   fpld = data['fpld']
