@@ -23,7 +23,7 @@ ranges = [(0.5, 1.5), (0.5, 1.5),
           (0., 2.), (0., 2.)]
 depths = [1e-2, 1e-2, 1e-3, 1e-3, 1e-4, 1e-4]
 nbins = [30, 30, 30, 30, 30, 30]
-ymax = [0.6, 0.6, 0.25, 0.25, 0.2, 0.2]
+ymax = [0.6, 0.6, 0.6, 0.6, 0.2, 0.2]
 xticks = [[0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
@@ -40,31 +40,61 @@ def GetDepths(clobber = False):
     data = np.load(os.path.join('npz', 'injections.npz'))
     D = data['D']
     E = data['E']
+    DC = data['DC']
+    EC = data['EC']
   else:
-    D = []
-    E = []
+    D = []; DC = []
+    E = []; EC = []
     for i, folder, depth, rng in zip(range(len(folders)), folders, depths, ranges):
       nstars = 0
+      everest_depth = []
+      everest_err = []
+      control_depth = []
+      control_err = []
+      
+      # Loop over all campaigns
       for campaign in range(7):
+      
+        # Get the targets
         stars = [s for s in os.listdir(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign)) if 
                  os.path.exists(os.path.join(EVEREST_ROOT, 'output', 
                  'C%02d' % campaign, s, folder, '%s.inj' % s))]
         nstars += len(stars)
-        everest_depth = []
-        everest_err = []
+        
+        # Now get the depths in the injection and the control
         for star in stars:
+        
+          # Injection
           with open(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
                     folder, '%s.inj' % star), 'r') as f:
             lines = f.readlines()
             a, _, b = re.findall('([-0-9.]+)', lines[4])
             everest_depth.append(float(a))
             everest_err.append(float(b))
-      print('%s: %d' % (folder, nstars))
+          
+          # Control injection
+          if os.path.exists((os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
+                             'default', '%s.ctrl.inj' % star))):
+            with open(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
+                      'default', '%s.ctrl.inj' % star), 'r') as f:
+              lines = f.readlines()
+              a, _, b = re.findall('([-0-9.]+)', lines[4])
+              control_depth.append(float(a))
+              control_err.append(float(b))
+      
+      # Append to running list
       D.append(everest_depth)
       E.append(everest_err)
-    np.savez(os.path.join('npz', 'injections.npz'), D = D, E = E)
-  return D, E
+      DC.append(control_depth)
+      EC.append(control_err)
+        
+      print('%s: %d' % (folder, nstars))
+      
+    np.savez(os.path.join('npz', 'injections.npz'), D = D, E = E, DC = DC, EC = EC)
+  
+  return D, E, DC, EC
 
+# Set up the figure
 fig, ax = pl.subplots(3,2, figsize = (10,12))
 fig.subplots_adjust(hspace = 0.25)
 ax = ax.flatten()
@@ -74,30 +104,55 @@ ax[0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 
 ax[2].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
 ax[4].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
 
-D, E = GetDepths()
+# Get the depths
+D, E, DC, EC = GetDepths(clobber = True)
 
+# Plot
 for i, axis in enumerate(ax): 
 
   # Plot the histograms
   everest_depth = np.array(D[i]) / depths[i]
+  control_depth = np.array(DC[i]) / depths[i]
+  
+  try:
+    axis.hist(everest_depth, bins = nbins[i], range = ranges[i], color = 'b', 
+              histtype = 'step', weights = np.ones_like(everest_depth)/len(everest_depth))
+  except:
+    pass
 
-  axis.hist(everest_depth, bins = nbins[i], range = ranges[i], color = 'b', 
-            histtype = 'step', weights = np.ones_like(everest_depth)/len(everest_depth))
+  try:
+    axis.hist(control_depth, bins = nbins[i], range = ranges[i], color = 'r', 
+              histtype = 'step', weights = np.ones_like(control_depth)/len(control_depth))
+  except:
+    pass
+    
   axis.axvline(1., color = 'k', ls = '--')
   
   # Indicate the fraction above and below
-  au = len(np.where(everest_depth < ranges[i][0])[0]) / len(everest_depth)
-  al = len(np.where(everest_depth > ranges[i][1])[0]) / len(everest_depth)
+  au = len(np.where(everest_depth > ranges[i][1])[0]) / len(everest_depth)
+  al = len(np.where(everest_depth < ranges[i][0])[0]) / len(everest_depth)
   axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
                 xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
                 arrowprops = dict(arrowstyle="->",color='b'))
   axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
                 xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
-                arrowprops = dict(arrowstyle="->",color='b'))  
+                arrowprops = dict(arrowstyle="->",color='b'))
   
+  if len(control_depth):  
+    cu = len(np.where(control_depth > ranges[i][1])[0]) / len(control_depth)
+    cl = len(np.where(control_depth < ranges[i][0])[0]) / len(control_depth)
+    axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
+                  xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
+                  arrowprops = dict(arrowstyle="->",color='r'))
+    axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
+                  xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
+                  arrowprops = dict(arrowstyle="->",color='r'))
+                
   # Indicate the median
   axis.annotate('M = %.2f' % np.median(everest_depth), xy = (0.3, 0.5), ha = 'right',
                 xycoords = 'axes fraction', color = 'b', fontsize = 14)
+  axis.annotate('M = %.2f' % np.median(control_depth), xy = (0.7, 0.5), ha = 'left',
+                xycoords = 'axes fraction', color = 'r', fontsize = 14)
   
   # Tweaks
   axis.set_xticks(xticks[i])
