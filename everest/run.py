@@ -46,6 +46,32 @@ def DownloadCampaign(campaign, queue = 'build', email = 'rodluger@gmail.com', wa
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
+def DownloadInjections(queue = 'build', email = 'rodluger@gmail.com', walltime = 8):
+  '''
+  Submits a cluster job to the build queue to download all TPFs for a given
+  campaign.
+  
+  '''
+          
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'downloadinj.pbs')
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_ROOT=%s' % (EVEREST_ROOT)
+  str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_INJ.log')
+  qsub_args = ['qsub', pbsfile, 
+               '-q', queue,
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', 'DOWNLOAD_INJ',
+               '-l', str_w,
+               '-M', email,
+               '-m', 'ae']
+            
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
 def Run(EPIC, **kwargs):
   '''
   Wrapper around ``Compute()`` and ``Plot()``.
@@ -264,6 +290,28 @@ def _DownloadCampaign(campaign):
   
   # Get all star IDs for this campaign
   stars = GetK2Stars()[campaign]
+  nstars = len(stars)
+  
+  # Download the TPF data for each one
+  for i, EPIC in enumerate(stars):
+    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
+                          str(EPIC), str(EPIC) + '.npz')):
+      try:
+        GetK2Data(EPIC)
+      except:
+        # Some targets could be corrupted
+        continue  
+
+def _DownloadInjections():
+  '''
+  Download all stars for the injection tests. This is
+  called from ``downloadinj.pbs``
+  
+  '''
+  
+  # Get all star IDs
+  stars = [int(s) for s in GetK2InjectionTestStars()]
   nstars = len(stars)
   
   # Download the TPF data for each one
