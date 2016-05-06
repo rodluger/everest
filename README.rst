@@ -8,6 +8,7 @@ To-do
 =====
 
 - Run a quick version of the pipeline, no optimization!
+- Flag outliers in the output file
 - Cite `this paper <https://arxiv.org/abs/1604.07442>`_ on asteroseismology
 - Lighter blue line in precision figure (11)
 - Better saturation and crowding metrics

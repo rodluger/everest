@@ -88,7 +88,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   if fpix.shape[1] > 75:
     log.info('Too many pixels in aperture! Aborting to avoid memory errors.')
     with open(os.path.join(outdir, '%d.err' % EPIC), 'w') as f:
-      print('ERROR: Too many pixels in aperture (%d).' % fpix.shape[1])
+      print('ERROR: Too many pixels in aperture (%d).' % fpix.shape[1], file = f)
     return None
   
   # Inject transits?
