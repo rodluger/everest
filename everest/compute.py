@@ -131,12 +131,13 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
     mask = maskdata['mask']
     trn_mask = maskdata['trn_mask']
     out_mask = maskdata['out_mask']
+    new_candidates = maskdata['new_candidates']
   except:
     mask, trn_mask, out_mask, new_candidates = \
     GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = k2star.planets, 
              EB = k2star.EB, mask_times = mask_times, mask_candidates = mask_candidates)
     np.savez(os.path.join(outdir, 'mask.npz'), mask = mask,
-             trn_mask = trn_mask, out_mask = out_mask)
+             trn_mask = trn_mask, out_mask = out_mask, new_candidates = new_candidates)
 
   # Compute GP hyperparameters
   log.info('Computing the GP hyperparameters...')
