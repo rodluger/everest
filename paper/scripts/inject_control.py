@@ -28,6 +28,10 @@ for EPIC in GetK2InjectionTestStars():
     # No data for this target
     continue
   
+  if os.path.exists(os.path.join(outdir, '%d.ctrl.inj' % EPIC)):
+    # We've done this one already
+    continue
+  
   data = np.load(os.path.join(outdir, 'data.npz'))
   time = data['time']
   fpld = data['fpld']
