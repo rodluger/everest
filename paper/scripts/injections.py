@@ -22,7 +22,7 @@ ranges = [(0.5, 1.5), (0.5, 1.5),
           (0., 2.), (0., 2.)]
 depths = [1e-2, 1e-2, 1e-3, 1e-3, 1e-4, 1e-4]
 nbins = [30, 30, 30, 30, 30, 30]
-ymax = [0.6, 0.6, 0.6, 0.6, 0.2, 0.2]
+ymax = [0.5, 0.5, 0.3, 0.3, 0.1, 0.1]
 xticks = [[0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
@@ -46,6 +46,7 @@ def GetDepths(clobber = False):
     E = []; EC = []
     for i, folder, depth, rng, n in zip(range(len(folders)), folders, depths, ranges, nums):
       nstars = 0
+      nstars_ctrl = 0
       everest_depth = []
       everest_err = []
       control_depth = []
@@ -57,9 +58,9 @@ def GetDepths(clobber = False):
         # Get the targets
         stars = [s for s in os.listdir(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign)) if 
                  os.path.exists(os.path.join(EVEREST_ROOT, 'output', 
-                 'C%02d' % campaign, s, folder, '%s.inj' % s))]
+                 'C%02d' % campaign, s, folder, '%s.ctrl1.inj' % s))]
         nstars += len(stars)
-        
+
         # Now get the depths in the injection and the control
         for star in stars:
         
@@ -70,7 +71,20 @@ def GetDepths(clobber = False):
             a, _, b = re.findall('([-0-9.]+)', lines[4])
             everest_depth.append(float(a))
             everest_err.append(float(b))
-          
+      
+      # Loop over all campaigns
+      for campaign in range(7):
+      
+        # Get the targets
+        stars = [s for s in os.listdir(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign)) if 
+                 os.path.exists(os.path.join(EVEREST_ROOT, 'output', 
+                 'C%02d' % campaign, s, 'default', '%s.ctrl1.inj' % s))]
+        nstars_ctrl += len(stars)
+        
+        # Now get the depths in the injection and the control
+        # These must be first generated with ``inject_control.py``
+        for star in stars:
+        
           # Control injection
           if os.path.exists((os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
                              'default', '%s.ctrl%d.inj' % (star, n)))):
@@ -87,7 +101,7 @@ def GetDepths(clobber = False):
       DC.append(control_depth)
       EC.append(control_err)
         
-      print('%s: %d' % (folder, nstars))
+      print('%s: %d/%d' % (folder, nstars, nstars_ctrl))
       
     np.savez(os.path.join('npz', 'injections.npz'), D = D, E = E, DC = DC, EC = EC)
   
@@ -128,14 +142,15 @@ for i, axis in enumerate(ax):
   axis.axvline(1., color = 'k', ls = '--')
   
   # Indicate the fraction above and below
-  au = len(np.where(everest_depth > ranges[i][1])[0]) / len(everest_depth)
-  al = len(np.where(everest_depth < ranges[i][0])[0]) / len(everest_depth)
-  axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
-                xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
-                arrowprops = dict(arrowstyle="->",color='b'))
-  axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
-                xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
-                arrowprops = dict(arrowstyle="->",color='b'))
+  if len(everest_depth):
+    au = len(np.where(everest_depth > ranges[i][1])[0]) / len(everest_depth)
+    al = len(np.where(everest_depth < ranges[i][0])[0]) / len(everest_depth)
+    axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
+                  xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
+                  arrowprops = dict(arrowstyle="->",color='b'))
+    axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
+                  xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
+                  arrowprops = dict(arrowstyle="->",color='b'))
   
   if len(control_depth):  
     cu = len(np.where(control_depth > ranges[i][1])[0]) / len(control_depth)

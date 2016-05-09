@@ -4,6 +4,15 @@
 inject_control.py
 -----------------
 
+Runs **control** injection/recovery tests on the sample of ~2,000
+random EPIC targets returned by ``GetK2InjectionTestStars()``.
+In this control group, the injection/recovery is performed on the
+**de-trended** light curve. There will be no bias (by construction)
+but the width of the recovered depth distributions is useful when
+comparing to the actual injection runs. These runs generate the
+red histograms in the injection/recovery plot in the paper.
+
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
