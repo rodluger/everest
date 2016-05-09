@@ -16,6 +16,7 @@ from everest.compute import GetTransitDepth
 import numpy as np
 
 count = 0
+bad = []
 for EPIC in GetK2InjectionTestStars():
   
   # Get the de-trended light curve (no injections)
@@ -31,11 +32,14 @@ for EPIC in GetK2InjectionTestStars():
     # We've done this one already
     continue
   
-  count += 1
-  data = np.load(os.path.join(outdir, 'data.npz'))
-  time = data['time']
-  fpld = data['fpld']
+  try:
+    data = np.load(os.path.join(outdir, 'data.npz'))
+    time = data['time']
+    fpld = data['fpld']
+  except:
+    bad.append(str(EPIC))
   
+  count += 1
   for depth in [0.01, 0.001, 0.0001]:
     for mask in [True, False]:
 
@@ -62,3 +66,4 @@ for EPIC in GetK2InjectionTestStars():
                                   inject['everest'][1]), file = injfile)
 
 print('%d targets processed.' % count)
+print('ERRORS:', ', '.join(bad))
