@@ -45,7 +45,10 @@ for campaign in range(7):
   # Remove ones we've done
   with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    done, _, _ = np.loadtxt(os.path.join('CDPP', 'everest_C%02d.tsv' % campaign), dtype = float, unpack = True)
+    if os.path.exists(os.path.join('CDPP', 'everest_C%02d.tsv' % campaign)):
+      done, _, _ = np.loadtxt(os.path.join('CDPP', 'everest_C%02d.tsv' % campaign), dtype = float, unpack = True)
+    else:
+      done = []
   if len(done):
     done = [int(d) for d in done]
   stars = list(set(stars) - set(done))
