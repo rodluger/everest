@@ -38,6 +38,7 @@ for EPIC in GetK2InjectionTestStars():
     fpld = data['fpld']
   except:
     bad.append(str(EPIC))
+    continue
   
   count += 1
   for depth in [0.01, 0.001, 0.0001]:
