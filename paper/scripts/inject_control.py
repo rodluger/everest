@@ -56,7 +56,7 @@ for EPIC in GetK2InjectionTestStars():
       inject.update({'everest': GetTransitDepth(time, fpld * Transit(time, **inject), inject, buf = 5, order = 2)})
 
       # Save recovery info to disk
-      with open(os.path.join(outdir, '%d.ctrl%d.inj' % (EPIC % n)), 'w') as injfile:
+      with open(os.path.join(outdir, '%d.ctrl%d.inj' % (EPIC, n)), 'w') as injfile:
         if inject['mask']:
           print('Masked:            True', file = injfile)
         else:
