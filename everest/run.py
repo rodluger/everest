@@ -248,7 +248,7 @@ def _RunInjections(kwargs_file, depth, mask):
     
     # Override ``inject`` and ``run_name``
     kwargs['inject'] = dict(t0 = 0., 
-                            per = 3.56789, 
+                            per = 3 + 7 * np.random.random(),   # Random periods between 3 and 10 days
                             depth = depth, 
                             dur = 0.1,
                             mask = mask)
