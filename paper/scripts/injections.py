@@ -14,6 +14,7 @@ import matplotlib.pyplot as pl
 import re
 
 # Some hard-coded stuff
+save = False
 folders = ['inject_0.0100m', 'inject_0.0100u', 'inject_0.0010m', 
            'inject_0.0010u', 'inject_0.0001m', 'inject_0.0001u']
 nums = [1, 2, 3, 4, 5, 6]
@@ -173,7 +174,8 @@ for i, axis in enumerate(ax):
   axis.set_ylim(0, ymax[i])
   axis.set_xlabel(r'D/D$_0$', fontsize = 14)
 
-pl.show()
-
-#fig.savefig('../tex/images/injections.png', bbox_inches = 'tight')
-#fig.savefig('../tex/images/injections.pdf', bbox_inches = 'tight')
+if save:
+  fig.savefig('../tex/images/injections.png', bbox_inches = 'tight')
+  fig.savefig('../tex/images/injections.pdf', bbox_inches = 'tight')
+else:
+  pl.show()

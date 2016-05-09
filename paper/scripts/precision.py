@@ -4,8 +4,7 @@
 precision.py
 ------------
        
-TODO: Work on this!     
-        
+      
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -15,12 +14,14 @@ import matplotlib.pyplot as pl
 import re
 
 # User
-campaigns = [6] # [1,2,3,4,5,6]
+campaigns = [4] # [1,2,3,4,5,6]
 save = False
 fig_precision1 = False
 fig_precision2 = False
 fig_comp_k2sff = False
-fig_comp_k2sc = True
+fig_comp_k2sc = False
+fig_comp_k2varcat = False
+fig_comp_k2sff_k2sc = True
 
 # Get the raw **Kepler** rms
 kep_star, kep_kepmag, _, kep_raw = np.loadtxt(os.path.join('CDPP', 'kepler.tsv'), unpack = True)
@@ -303,6 +304,75 @@ if fig_comp_k2varcat:
   if save:
     fig.savefig('../tex/images/comparison_k2varcat.png' % name, bbox_inches = 'tight')
     fig.savefig('../tex/images/comparison_k2varcat.pdf' % name, bbox_inches = 'tight')
+    pl.close()
+
+if fig_comp_k2sff_k2sc:
+  '''
+  
+  '''
+
+  # Get the kepmags for each campaign
+  evr_epic = np.concatenate([k2_star[c] for c in campaigns])
+  k = np.concatenate([k2_kepmag[c] for c in campaigns])
+
+  # Get the K2SC rms for each campaign
+  sc_epic = []
+  sc_cdpp = []
+  for c in campaigns:
+    try:
+      a, _, b = np.loadtxt(os.path.join('CDPP', 'k2sc_C%02d.tsv' % c), unpack = True)
+      sc_epic.extend(a)
+      sc_cdpp.extend(b)
+    except:
+      continue
+
+  # Get the K2SFF rms for each campaign
+  sff_epic = []
+  sff_cdpp = []
+  for c in campaigns:
+    try:
+      a, _, b = np.loadtxt(os.path.join('CDPP', 'k2sff_C%02d.tsv' % c), unpack = True)
+      sff_epic.extend(a)
+      sff_cdpp.extend(b)
+    except:
+      continue
+  
+  # Now align with EVEREST for the one-to-one comparison
+  stars = list(set(evr_epic) & set(sff_epic) & set(sc_epic))
+  x = []
+  y = []
+  for star in stars:
+    h = np.argmax(sc_epic == star)
+    i = np.argmax(evr_epic == star)
+    j = np.argmax(sff_epic == star)
+    x.append(k[i])
+    y.append(((sc_cdpp[h] - sff_cdpp[j]) / sff_cdpp[j]))
+  x = np.array(x)
+  y = np.array(y)
+  
+  # Plot the equivalent of Fig. 10 in Aigrain+16
+  fig, ax = pl.subplots(1, figsize = (9,6))
+  ax.plot(x, y, 'b.', alpha = 0.2)
+  ax.set_ylim(-1,1)
+  ax.set_xlim(11,19)
+  ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
+  ax.axhline(0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
+  ax.axhline(-0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
+
+  bins = np.arange(10,19.5,0.5)
+  by = np.zeros_like(bins) * np.nan
+  for b, bin in enumerate(bins):
+    i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
+    by[b] = np.median(y[i])
+  pl.plot(bins, by, 'k-', lw = 2)
+
+  # Tweaks
+  ax.set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{K2SC}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 22)
+  ax.set_xlabel('Kepler Magnitude', fontsize = 18)
+  
+  if save:
+    fig.savefig('../tex/images/comparison_k2sff_k2sc.png' % name, bbox_inches = 'tight')
+    fig.savefig('../tex/images/comparison_k2sff_k2sc.pdf' % name, bbox_inches = 'tight')
     pl.close()
 
 if not save:
