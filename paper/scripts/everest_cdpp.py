@@ -77,4 +77,7 @@ for campaign in range(7):
         kepmag = data['kepmag']
       
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, rms_evr, rms_evr_savgol), file = feverest)
+        
+        import pdb; pdb.set_trace()
+        
         print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}".format(star, kepmag, rms_raw, rms_raw_savgol, rms_pht), file = fraw)
