@@ -16,6 +16,7 @@ import re
 # Some hard-coded stuff
 folders = ['inject_0.0100m', 'inject_0.0100u', 'inject_0.0010m', 
            'inject_0.0010u', 'inject_0.0001m', 'inject_0.0001u']
+nums = [1, 2, 3, 4, 5, 6]
 ranges = [(0.5, 1.5), (0.5, 1.5), 
           (0.5, 1.5), (0.5, 1.5), 
           (0., 2.), (0., 2.)]
@@ -43,7 +44,7 @@ def GetDepths(clobber = False):
   else:
     D = []; DC = []
     E = []; EC = []
-    for i, folder, depth, rng in zip(range(len(folders)), folders, depths, ranges):
+    for i, folder, depth, rng, n in zip(range(len(folders)), folders, depths, ranges, nums):
       nstars = 0
       everest_depth = []
       everest_err = []
@@ -72,9 +73,9 @@ def GetDepths(clobber = False):
           
           # Control injection
           if os.path.exists((os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
-                             'default', '%s.ctrl.inj' % star))):
+                             'default', '%s.ctrl%d.inj' % (star, n)))):
             with open(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
-                      'default', '%s.ctrl.inj' % star), 'r') as f:
+                      'default', '%s.ctrl%d.inj' % (star, n)), 'r') as f:
               lines = f.readlines()
               a, _, b = re.findall('([-0-9.]+)', lines[4])
               control_depth.append(float(a))

@@ -17,6 +17,7 @@ EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from kplr.config import KPLR_ROOT
 import sys
 import subprocess
+import numpy as np
 import imp
 import time
 
