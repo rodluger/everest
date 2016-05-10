@@ -24,6 +24,7 @@ from everest.transit import Transit
 from everest.compute import GetTransitDepth
 import numpy as np
 
+clobber = True
 count = 0
 bad = []
 for EPIC in GetK2InjectionTestStars():
@@ -37,14 +38,15 @@ for EPIC in GetK2InjectionTestStars():
     # No data for this target
     continue
   
-  if os.path.exists(os.path.join(outdir, '%d.ctrl6.inj' % EPIC)):
+  if not clobber and os.path.exists(os.path.join(outdir, '%d.ctrl6.inj' % EPIC)):
     # We've done this one already
     continue
   
   try:
+    # Get the de-trended data without the outliers
     data = np.load(os.path.join(outdir, 'data.npz'))
-    time = data['time']
-    fpld = data['fpld']
+    time = np.delete(data['time'], data['mask'])
+    fpld = np.delete(data['fpld'], data['mask'])
   except:
     bad.append(str(EPIC))
     continue

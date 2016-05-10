@@ -15,15 +15,15 @@ import re
 
 # Some hard-coded stuff
 save = False
-folders = ['inject_0.0100m', 'inject_0.0100u', 'inject_0.0010m', 
-           'inject_0.0010u', 'inject_0.0001m', 'inject_0.0001u']
-nums = [1, 2, 3, 4, 5, 6]
+folders = ['inject_0.0100u', 'inject_0.0100m', 'inject_0.0010u', 
+           'inject_0.0010m', 'inject_0.0001u', 'inject_0.0001m']
+nums = [2, 1, 4, 3, 6, 5]
 ranges = [(0.5, 1.5), (0.5, 1.5), 
           (0.5, 1.5), (0.5, 1.5), 
           (0., 2.), (0., 2.)]
 depths = [1e-2, 1e-2, 1e-3, 1e-3, 1e-4, 1e-4]
 nbins = [30, 30, 30, 30, 30, 30]
-ymax = [0.5, 0.5, 0.3, 0.3, 0.1, 0.1]
+ymax = [0.5, 0.5, 0.3, 0.3, 0.2, 0.2]
 xticks = [[0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
@@ -59,7 +59,7 @@ def GetDepths(clobber = False):
         # Get the targets
         stars = [s for s in os.listdir(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign)) if 
                  os.path.exists(os.path.join(EVEREST_ROOT, 'output', 
-                 'C%02d' % campaign, s, folder, '%s.ctrl1.inj' % s))]
+                 'C%02d' % campaign, s, folder, '%s.inj' % s))]
         nstars += len(stars)
 
         # Now get the depths in the injection and the control
@@ -112,8 +112,8 @@ def GetDepths(clobber = False):
 fig, ax = pl.subplots(3,2, figsize = (10,12))
 fig.subplots_adjust(hspace = 0.25)
 ax = ax.flatten()
-ax[0].set_title(r'Masked', fontsize = 18)
-ax[1].set_title(r'Unmasked', fontsize = 18)
+ax[0].set_title(r'Default', fontsize = 18)
+ax[1].set_title(r'Masked', fontsize = 18)
 ax[0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
 ax[2].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
 ax[4].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
