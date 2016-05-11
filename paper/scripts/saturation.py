@@ -84,8 +84,12 @@ for i in range(15):
       ax[i,j].set_visible(False)
 for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
   ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
+  ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
 for j,i in [[5,2],[5,12],[6,5],[6,8]]:
   ax[i,j].set_axis_bgcolor((0.9, 0.9, 1.))
+  ax[i,j].annotate('O', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
 ax[0,0].set_xlim(-0.15, 0.15)
 ax[0,0].set_ylim(0.95,1.05)
 fig.savefig(os.path.join(IMG_PATH, 'saturation1.png'), bbox_inches = 'tight')
@@ -103,8 +107,12 @@ for i in range(15):
       ax[i,j].set_visible(False)
 for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
   ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
+  ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
 for j,i in [[5,2],[5,12],[6,5],[6,8]]:
   ax[i,j].set_axis_bgcolor((0.9, 0.9, 1.))
+  ax[i,j].annotate('O', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
 ax[0,0].set_xlim(-0.15, 0.15)
 ax[0,0].set_ylim(0.95,1.05)
 fig.savefig(os.path.join(IMG_PATH, 'saturation2.png'), bbox_inches = 'tight')

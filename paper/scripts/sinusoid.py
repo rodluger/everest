@@ -21,13 +21,21 @@ IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
 sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.detrend import PLDBasis, PLDCoeffs, PLDModel
-from everest.utils import RMS, MedianFilter
+from everest.utils import RMS, MedianFilter, Smooth
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import kplr
 import george
 from george.kernels import Matern32Kernel, WhiteKernel
+
+def TransitMedian(t, y):
+  dt = 0.05
+  bins = np.arange(-0.7, 0.7, dt)
+  med = np.zeros_like(bins)
+  for i, b in enumerate(bins):
+    med[i] = np.median(y[np.where((t > b - dt / 2.) & (t < b + dt / 2.))])
+  return bins, med
 
 def GetKeplerData(koi, fnum):
   '''
@@ -175,7 +183,8 @@ ax[0,0].plot(time, P1, 'r-', label = 'PLD Model')
 ax[1,0].plot(time, F1 - P1, 'k.', alpha = 0.3)
 ax[2,0].plot(time, F1 - P1 - G1, 'k.', alpha = 0.3)
 ax[3,0].plot(fold(time), F1 - P1 - G1, 'k.', alpha = 1)
-t, y = fold2(time, MedianFilter(F1 - P1 - G1, 10))
+t, y = fold2(time, F1 - P1 - G1)
+t, y = TransitMedian(t, y)
 ax[3,0].plot(t, y, 'r-', lw = 2)
 
 # 2a. Raw data times sinusoid
@@ -186,18 +195,20 @@ ax[0,1].plot(time, P2, 'r-', label = 'PLD Model')
 ax[1,1].plot(time, F2 - P2, 'k.', alpha = 0.3)
 ax[2,1].plot(time, F2 - P2 - G2, 'k.', alpha = 0.3)
 ax[3,1].plot(fold(time), F2 - P2 - G2, 'k.', alpha = 1)
-t, y = fold2(time, MedianFilter(F2 - P2 - G2, 10))
+t, y = fold2(time, F2 - P2 - G2)
+t, y = TransitMedian(t, y)
 ax[3,1].plot(t, y, 'r-', lw = 2)
 
 # 3a. Raw data times sinusoid
 ax[0,2].plot(time, F3, 'k.', alpha = 0.3, label = 'SAP Flux')
 ax[0,2].plot(time, P3, 'r-', label = 'PLD Model')
 
-# 3b. PLD + GP-detrended sinusoidal data
+# 3b. PLD-detrended sinusoidal data
 ax[1,2].plot(time, F3 - P3, 'k.', alpha = 0.3)
 ax[2,2].plot(time, F3 - P3 - G3, 'k.', alpha = 0.3)
 ax[3,2].plot(fold(time), F3 - P3 - G3, 'k.', alpha = 1)
-t, y = fold2(time, MedianFilter(F3 - P3 - G3, 10))
+t, y = fold2(time, F3 - P3 - G3)
+t, y = TransitMedian(t, y)
 ax[3,2].plot(t, y, 'r-', lw = 2)
 
 # 4a. Raw data times sinusoid
@@ -208,7 +219,8 @@ ax[0,3].plot(time, P4, 'r-', label = 'PLD Model')
 ax[1,3].plot(time, F4 - P4, 'k.', alpha = 0.3)
 ax[2,3].plot(time, F4 - P4 - G4, 'k.', alpha = 0.3)
 ax[3,3].plot(fold(time), F4 - P4 - G4, 'k.', alpha = 1)
-t, y = fold2(time, MedianFilter(F4 - P4 - G4, 10))
+t, y = fold2(time, F4 - P4 - G4)
+t, y = TransitMedian(t, y)
 ax[3,3].plot(t, y, 'r-', lw = 2)
 
 # Fix plot ranges

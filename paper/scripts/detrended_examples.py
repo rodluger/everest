@@ -52,10 +52,10 @@ for i, EPIC, per, t0, ylim, yticks, ylimf, yticksf in \
         pl.subplot2grid((2, 10), (0, 7), colspan=3, rowspan=1),
         pl.subplot2grid((2, 10), (1, 7), colspan=3, rowspan=1)]
 
-  ax[0].plot(tsff, fsff, 'k.', alpha = 0.3)
+  ax[0].plot(tsff, fsff, 'r.', alpha = 0.3)
   ax[1].plot(time, fpld, 'k.', alpha = 0.3)
-  ax[2].plot(F(time_k2sff), fwhite_sff, 'k.', alpha = 0.5)
-  ax[3].plot(F(time), fwhite, 'k.', alpha = 0.5)
+  ax[2].plot(F(time_k2sff), fwhite_sff, 'r.', alpha = 0.75)
+  ax[3].plot(F(time), fwhite, 'k.', alpha = 0.75)
   
   for n in [0,1]:
     ax[n].ticklabel_format(useOffset=False)

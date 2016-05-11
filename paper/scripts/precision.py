@@ -15,7 +15,7 @@ from matplotlib.ticker import MaxNLocator
 import re
 
 # The campaigns we'll use for the synthesis plots
-campaigns = [1,2,3,4,5,6]
+campaigns = [0,1,2,3,4,5]
 figures = [1,2,3,4,5,6]
 
 # Get the raw **Kepler** rms
@@ -99,19 +99,28 @@ def fig_precision(fig, ax, campaigns, labels = True):
   bins = np.arange(10.5,19.,0.5)
   b_raw = np.zeros_like(bins) * np.nan
   b_k2 = np.zeros_like(bins) * np.nan
+  mode = np.zeros_like(bins) * np.nan
   b_pht = np.zeros_like(bins) * np.nan
   for b, bin in enumerate(bins):
     i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
     b_raw[b] = np.nanmedian(r[i])
     b_pht[b] = np.nanmedian(p[i])
     b_k2[b] = np.nanmedian(e[i])
-  
+    
+    # Compute the mode?
+    h, edg = np.histogram(np.log10(e[i]), range = (np.log10(b_pht[b]), np.log10(b_raw[b])), bins = 100)
+    j = np.argmax(h)
+    mode[b] = 10 ** edg[j]
+    
   # Let's fit a straight line to the photon limit curve
   phot_lin = 10 ** np.poly1d(np.polyfit(bins, np.log10(b_pht), 1))(bins)
   
   ax.plot(bins, b_raw, 'r--', label = 'Raw', lw = 2)
   ax.plot(bins, b_k2, ls = '-', color = 'b', label = 'EVEREST', lw = 2)
   ax.plot(bins, phot_lin, 'y--', label = 'Photon limit', lw = 2)
+  
+  # The mode... Perhaps someday.
+  #ax.plot(bins, mode, ls = '--', color = 'b', label = 'EVEREST (mode)', lw = 2)
   
   if labels:
     ax.legend(loc = 'upper left')
@@ -352,22 +361,22 @@ if 1 in figures:
   fig_comp_kepler(fig, ax, campaigns = campaigns)
   fig.savefig('../tex/images/comparison_kepler.png', bbox_inches = 'tight')
   pl.close()
-  fig, ax = pl.subplots(2, 4, figsize = (18, 6))
+  fig, ax = pl.subplots(2, 3, figsize = (14, 6))
   fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
   ax = ax.flatten()
-  for n in range(8):
+  for n in range(6):
     fig_comp_kepler(fig, ax[n], campaigns = [n], errorbars = False, labels = False)
-    if n not in [4,5,6,7]: 
+    if n not in [3,4,5]: 
       ax[n].set_xticklabels([])
     else:
       ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      ax[n].set_xlabel(r'K$_\mathrm{p}$', fontsize = 18)
-    if n not in [0,4]: 
+    if n not in [0,3]: 
       ax[n].set_yticklabels([])
-    else:
-      ax[n].set_ylabel('CDPP (ppm)', fontsize = 18)
     ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                    ha = 'left', va = 'top', fontsize = 14)
+  fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 22)
+  fig.text(0.08, 0.5, '6-hr CDPP (ppm)', fontsize = 22, 
+           ha='center', va='center', rotation='vertical')
   fig.savefig('../tex/images/comparison_kepler_by_campaign.png', bbox_inches = 'tight')
   pl.close()
 
@@ -378,22 +387,22 @@ if 2 in figures:
   fig_precision(fig, ax, campaigns)
   fig.savefig('../tex/images/precision.png', bbox_inches = 'tight')
   pl.close()
-  fig, ax = pl.subplots(2, 4, figsize = (18, 6))
+  fig, ax = pl.subplots(2, 3, figsize = (14, 6))
   fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
   ax = ax.flatten()
-  for n in range(8):
+  for n in range(6):
     fig_precision(fig, ax[n], campaigns = [n], labels = False)
-    if n not in [4,5,6,7]: 
+    if n not in [3,4,5]: 
       ax[n].set_xticklabels([])
     else:
       ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      ax[n].set_xlabel(r'K$_\mathrm{p}$', fontsize = 18)
-    if n not in [0,4]: 
+    if n not in [0,3]: 
       ax[n].set_yticklabels([])
-    else:
-      ax[n].set_ylabel('CDPP (ppm)', fontsize = 18)
     ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                    ha = 'left', va = 'top', fontsize = 14)
+  fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 22)
+  fig.text(0.08, 0.5, '6-hr CDPP (ppm)', fontsize = 22, 
+           ha='center', va='center', rotation='vertical')
   fig.savefig('../tex/images/precision_by_campaign.png', bbox_inches = 'tight')
   pl.close()
 
@@ -404,22 +413,23 @@ if 3 in figures:
   fig_comp_k2sff(fig, ax, campaigns)
   fig.savefig('../tex/images/comparison_k2sff.png', bbox_inches = 'tight')
   pl.close()
-  fig, ax = pl.subplots(2, 4, figsize = (18, 6))
-  fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
+  
+  fig, ax = pl.subplots(2, 3, figsize = (12, 8))
+  fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
   ax = ax.flatten()
-  for n in range(8):
+  for n in range(6):
     fig_comp_k2sff(fig, ax[n], campaigns = [n], labels = False)
-    if n not in [4,5,6,7]: 
+    if n not in [3,4,5]: 
       ax[n].set_xticklabels([])
     else:
       ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      ax[n].set_xlabel(r'K$_\mathrm{p}$', fontsize = 18)
-    if n not in [0,4]: 
+    if n not in [0,3]: 
       ax[n].set_yticklabels([])
-    else:
-      ax[n].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 12)
     ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                    ha = 'left', va = 'top', fontsize = 14)
+  fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 24)
+  fig.text(0.08, 0.5, r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 28, 
+           ha='center', va='center', rotation='vertical')
   fig.savefig('../tex/images/comparison_k2sff_by_campaign.png', bbox_inches = 'tight')
   pl.close()
 
@@ -430,22 +440,19 @@ if 4 in figures:
   fig_comp_k2sc(fig, ax, campaigns)
   fig.savefig('../tex/images/comparison_k2sc.png', bbox_inches = 'tight')
   pl.close()
-  fig, ax = pl.subplots(2, 4, figsize = (18, 6))
-  fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
+  
+  fig, ax = pl.subplots(1, 2, figsize = (12, 3.5))
+  fig.subplots_adjust(wspace = 0.05, hspace = 0.075, bottom = 0.15)
   ax = ax.flatten()
-  for n in range(8):
-    fig_comp_k2sc(fig, ax[n], campaigns = [n], labels = False)
-    if n not in [4,5,6,7]: 
-      ax[n].set_xticklabels([])
-    else:
-      ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      ax[n].set_xlabel(r'K$_\mathrm{p}$', fontsize = 18)
-    if n not in [0,4]: 
-      ax[n].set_yticklabels([])
-    else:
-      ax[n].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 12)
-    ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
-                   ha = 'left', va = 'top', fontsize = 14)
+  fig_comp_k2sff(fig, ax[0], campaigns = [4], labels = False)
+  fig_comp_k2sff(fig, ax[1], campaigns = [5], labels = False)
+  ax[0].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+  ax[1].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+  ax[1].set_yticklabels([])
+  ax[0].annotate('C04', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  ax[1].annotate('C05', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 18)
+  ax[0].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 18)
   fig.savefig('../tex/images/comparison_k2sc_by_campaign.png', bbox_inches = 'tight')
   pl.close()
 
@@ -456,25 +463,25 @@ if 5 in figures:
   fig_comp_k2varcat(fig, ax, campaigns)
   fig.savefig('../tex/images/comparison_k2varcat.png', bbox_inches = 'tight')
   pl.close()
-  fig, ax = pl.subplots(2, 4, figsize = (18, 6))
-  fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
+  
+  fig, ax = pl.subplots(2, 3, figsize = (12, 8))
+  fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
   ax = ax.flatten()
-  for n in range(8):
+  for n in range(6):
     fig_comp_k2varcat(fig, ax[n], campaigns = [n], labels = False)
-    if n not in [4,5,6,7]: 
+    if n not in [3,4,5]: 
       ax[n].set_xticklabels([])
     else:
       ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      ax[n].set_xlabel(r'K$_\mathrm{p}$', fontsize = 18)
-    if n not in [0,4]: 
+    if n not in [0,3]: 
       ax[n].set_yticklabels([])
-    else:
-      ax[n].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2VARCAT}}}{\mathrm{CDPP}_{\mathrm{K2VARCAT}}}$', fontsize = 12)
     ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                    ha = 'left', va = 'top', fontsize = 14)
+  fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 24)
+  fig.text(0.08, 0.5, r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2VARCAT}}}{\mathrm{CDPP}_{\mathrm{K2VARCAT}}}$', fontsize = 28, 
+           ha='center', va='center', rotation='vertical')
   fig.savefig('../tex/images/comparison_k2varcat_by_campaign.png', bbox_inches = 'tight')
   pl.close()
-
 
 # 6. Compare K2SC to K2SFF
 # ------------------------
@@ -483,21 +490,18 @@ if 6 in figures:
   fig_comp_k2sff_k2sc(fig, ax, campaigns)
   fig.savefig('../tex/images/comparison_k2sff_k2sc.png', bbox_inches = 'tight')
   pl.close()
-  fig, ax = pl.subplots(2, 4, figsize = (18, 6))
-  fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
+  
+  fig, ax = pl.subplots(1, 2, figsize = (12, 3.5))
+  fig.subplots_adjust(wspace = 0.05, hspace = 0.075, bottom = 0.15)
   ax = ax.flatten()
-  for n in range(8):
-    fig_comp_k2sff_k2sc(fig, ax[n], campaigns = [n], labels = False)
-    if n not in [4,5,6,7]: 
-      ax[n].set_xticklabels([])
-    else:
-      ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      ax[n].set_xlabel(r'K$_\mathrm{p}$', fontsize = 18)
-    if n not in [0,4]: 
-      ax[n].set_yticklabels([])
-    else:
-      ax[n].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{K2SC}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 12)
-    ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
-                   ha = 'left', va = 'top', fontsize = 14)
+  fig_comp_k2sff_k2sc(fig, ax[0], campaigns = [4], labels = False)
+  fig_comp_k2sff_k2sc(fig, ax[1], campaigns = [5], labels = False)
+  ax[0].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+  ax[1].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+  ax[1].set_yticklabels([])
+  ax[0].annotate('C04', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  ax[1].annotate('C05', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 18)
+  ax[0].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{K2SC}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 18)
   fig.savefig('../tex/images/comparison_k2sff_k2sc_by_campaign.png', bbox_inches = 'tight')
   pl.close()

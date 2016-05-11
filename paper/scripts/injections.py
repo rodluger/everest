@@ -14,7 +14,7 @@ import matplotlib.pyplot as pl
 import re
 
 # Some hard-coded stuff
-save = False
+save = True
 folders = ['inject_0.0100u', 'inject_0.0100m', 'inject_0.0010u', 
            'inject_0.0010m', 'inject_0.0001u', 'inject_0.0001m']
 nums = [2, 1, 4, 3, 6, 5]
@@ -23,7 +23,7 @@ ranges = [(0.5, 1.5), (0.5, 1.5),
           (0., 2.), (0., 2.)]
 depths = [1e-2, 1e-2, 1e-3, 1e-3, 1e-4, 1e-4]
 nbins = [30, 30, 30, 30, 30, 30]
-ymax = [0.5, 0.5, 0.3, 0.3, 0.2, 0.2]
+ymax = [0.6, 0.6, 0.4, 0.4, 0.15, 0.15]
 xticks = [[0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
           [0.5, 0.75, 1., 1.25, 1.5],
@@ -127,6 +127,12 @@ for i, axis in enumerate(ax):
   # Plot the histograms
   everest_depth = np.array(D[i]) / depths[i]
   control_depth = np.array(DC[i]) / depths[i]
+
+  try:
+    axis.hist(control_depth, bins = nbins[i], range = ranges[i], color = 'r', 
+              histtype = 'step', weights = np.ones_like(control_depth)/len(control_depth))
+  except:
+    pass
   
   try:
     axis.hist(everest_depth, bins = nbins[i], range = ranges[i], color = 'b', 
@@ -134,12 +140,6 @@ for i, axis in enumerate(ax):
   except:
     pass
 
-  try:
-    axis.hist(control_depth, bins = nbins[i], range = ranges[i], color = 'r', 
-              histtype = 'step', weights = np.ones_like(control_depth)/len(control_depth))
-  except:
-    pass
-    
   axis.axvline(1., color = 'k', ls = '--')
   
   # Indicate the fraction above and below
@@ -171,6 +171,7 @@ for i, axis in enumerate(ax):
   
   # Tweaks
   axis.set_xticks(xticks[i])
+  axis.set_xlim(xticks[i][0], xticks[i][-1])
   axis.set_ylim(0, ymax[i])
   axis.set_xlabel(r'D/D$_0$', fontsize = 14)
 

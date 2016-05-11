@@ -33,7 +33,7 @@ s0 = 56775.488 + per / 2.
 P = lambda t: (t - (p0 - 54833) - per / 2.) % per - per / 2.
 S = lambda t: (t - (s0 - 54833) - per / 2.) % per - per / 2.
 
-fig, ax = pl.subplots(2,4, sharex = True, sharey = True, figsize = (16,6))
+fig, ax = pl.subplots(2,4, sharex = True, sharey = True, figsize = (12,6))
 fig.subplots_adjust(hspace = 0.1, wspace = 0.075)
 ax[0,0].plot(P(time), flux, 'k.', alpha = 0.3)
 ax[0,3].plot(P(time), fwhite_sff, 'k.', alpha = 0.3)
