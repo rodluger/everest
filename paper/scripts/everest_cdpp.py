@@ -74,8 +74,8 @@ for campaign in range(7):
         except:
           continue
         rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
-        satsev = data['satsev']
-        crwdsev = data['crwdsev']
+        satsev = data['satsev'][()]
+        crwdsev = data['crwdsev'][()]
         kepmag = data['kepmag'][()]
       
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, rms_evr, rms_evr_savgol), file = feverest)
