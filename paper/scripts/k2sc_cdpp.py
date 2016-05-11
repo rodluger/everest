@@ -22,7 +22,7 @@ import warnings
 from urllib.error import HTTPError
 from scipy.signal import savgol_filter
 
-for campaign in range(4,7):
+for campaign in range(3,7):
   
   print("\nRunning campaign %02d..." % campaign)
   
