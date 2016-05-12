@@ -8,6 +8,10 @@ To-do
 =====
 
 - Easy EVEREST calling for masked transits.
+- Take median of unsaturated background!
+- Make Eigen3 installation easier (copy george?)
+- Import astroML
+- MacOS backend doesn't work
 
 - Re-run injections; re-run precision plots.
 - Plot the autocorrelation function and scatter in the binned residuals 

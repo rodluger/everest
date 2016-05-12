@@ -252,7 +252,7 @@ def PlotApertures(EPIC, data):
     contour = np.zeros((ny,nx))
     contour[apidx] = 1
 
-    # Add padding around the contour mask_pld so that the edges get drawn
+    # Add padding around the contour mask so that the edges get drawn
     contour = np.lib.pad(contour, 1, PadWithZeros)
 
     # Zoom in to make the contours look vertical/horizontal

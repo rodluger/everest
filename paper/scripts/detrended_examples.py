@@ -20,8 +20,8 @@ from matplotlib.ticker import MaxNLocator
 
 for i, EPIC, per, t0, ylim, yticks, ylimf, yticksf in \
                         zip([0,1], [201367065, 205071984], 
-                            [10.05448, 8.9919156], 
-                            [2456813.4177, 2456900.927],
+                            [(10.05448, 24.64745, 44.571), (8.9919156, 20.660987, 31.715868)], 
+                            [(2456813.4177, 2456812.2759, 2456826.227), (2456900.927, 2456899.423, 2456903.792)],
                             [[0.997, 1.004], [0.988, 1.012]],
                             [[0.998, 0.999, 1., 1.001, 1.002, 1.003], 
                              [0.99, 0.995, 1., 1.005, 1.01]],
@@ -43,39 +43,63 @@ for i, EPIC, per, t0, ylim, yticks, ylimf, yticksf in \
   fwhite_sff = data['fwhite_sff'] / np.median(data['fwhite_sff'])
   tsff, fsff, _ = np.loadtxt(os.path.join('npz', '%s.sff' % EPIC), unpack = True, skiprows = 14)
   fsff /= np.median(fsff)
-  F = lambda t: (t - (t0 - 2454833) - per / 2.) % per - per / 2.
+  
+  F1 = lambda t: (t - (t0[0] - 2454833) - per[0] / 2.) % per[0] - per[0] / 2.
+  F2 = lambda t: (t - (t0[1] - 2454833) - per[1] / 2.) % per[1] - per[1] / 2.
+  F3 = lambda t: (t - (t0[2] - 2454833) - per[2] / 2.) % per[2] - per[2] / 2.
   
   fig = pl.figure(figsize = (16, 6))
-  fig.subplots_adjust(wspace = 0.1, hspace = 0.05)
-  ax = [pl.subplot2grid((2, 10), (0, 0), colspan=7, rowspan=1),
-        pl.subplot2grid((2, 10), (1, 0), colspan=7, rowspan=1),
-        pl.subplot2grid((2, 10), (0, 7), colspan=3, rowspan=1),
-        pl.subplot2grid((2, 10), (1, 7), colspan=3, rowspan=1)]
+  fig.subplots_adjust(wspace = 1., hspace = 0.5)
+  ax = [pl.subplot2grid((40, 130), (0, 0), colspan=90, rowspan=20),
+        pl.subplot2grid((40, 130), (20, 0), colspan=90, rowspan=20),
+        pl.subplot2grid((40, 130), (0, 94), colspan=20, rowspan=20),
+        pl.subplot2grid((40, 130), (20, 94), colspan=20, rowspan=20),
+        pl.subplot2grid((40, 130), (0, 114), colspan=20, rowspan=10),
+        pl.subplot2grid((40, 130), (20, 114), colspan=20, rowspan=10),
+        pl.subplot2grid((40, 130), (10, 114), colspan=20, rowspan=10),
+        pl.subplot2grid((40, 130), (30, 114), colspan=20, rowspan=10)]
 
   ax[0].plot(tsff, fsff, 'r.', alpha = 0.3)
   ax[1].plot(time, fpld, 'k.', alpha = 0.3)
-  ax[2].plot(F(time_k2sff), fwhite_sff, 'r.', alpha = 0.75)
-  ax[3].plot(F(time), fwhite, 'k.', alpha = 0.75)
+  ax[2].plot(F1(time_k2sff), fwhite_sff, 'r.', alpha = 0.75)
+  ax[3].plot(F1(time), fwhite, 'k.', alpha = 0.75)
+  ax[4].plot(F2(time_k2sff), fwhite_sff, 'r.', alpha = 0.75)
+  ax[5].plot(F2(time), fwhite, 'k.', alpha = 0.75)
+  ax[6].plot(F3(time_k2sff), fwhite_sff, 'r.', alpha = 0.75)
+  ax[7].plot(F3(time), fwhite, 'k.', alpha = 0.75)
+  
+  ax[2].annotate('b', xy = (0.05, 0.05), ha = 'left', va = 'bottom', xycoords = 'axes fraction', fontweight = 'bold', color = 'r')
+  ax[3].annotate('b', xy = (0.05, 0.05), ha = 'left', va = 'bottom', xycoords = 'axes fraction', fontweight = 'bold')
+  
+  ax[4].annotate('c', xy = (0.05, 0.05), ha = 'left', va = 'bottom', xycoords = 'axes fraction', fontweight = 'bold', color = 'r')
+  ax[5].annotate('c', xy = (0.05, 0.05), ha = 'left', va = 'bottom', xycoords = 'axes fraction', fontweight = 'bold')
+  
+  ax[6].annotate('d', xy = (0.05, 0.05), ha = 'left', va = 'bottom', xycoords = 'axes fraction', fontweight = 'bold', color = 'r')
+  ax[7].annotate('d', xy = (0.05, 0.05), ha = 'left', va = 'bottom', xycoords = 'axes fraction', fontweight = 'bold')
   
   for n in [0,1]:
     ax[n].ticklabel_format(useOffset=False)
     ax[n].margins(0.01, None)
     ax[n].set_ylim(ylim)
     ax[n].set_yticks(yticks)
-  for n in [2,3]:
+  for n in [2,3,4,5,6,7]:
     ax[n].ticklabel_format(useOffset=False)
     ax[n].set_xlim(-0.35, 0.35)
-    ax[n].yaxis.tick_right()
+    if n > 3:
+      ax[n].yaxis.tick_right()
     ax[n].set_xticks([-0.25, 0., 0.25])
+    for tick in ax[n].get_yticklabels() + ax[n].get_xticklabels():
+      tick.set_fontsize(8)
     ax[n].set_yticks(yticksf)
     ax[n].set_ylim(ylimf)
   ax[0].set_xticklabels([])
   ax[2].set_xticklabels([])
-  
+  ax[4].set_xticklabels([])
+  ax[6].set_xticklabels([])
   ax[0].set_ylabel('K2SFF Flux', fontsize = 18)
   ax[1].set_ylabel('EVEREST Flux', fontsize = 18)
   ax[1].set_xlabel('Time (days)', fontsize = 18)
-  ax[3].set_xlabel('Time (days)', fontsize = 18)
-
+  
+  fig.text(0.795, 0.03, 'Time (days)', ha = 'center', va = 'center', fontsize = 18)
   fig.savefig(os.path.join(IMG_PATH, 'detrended%s.png' % i), bbox_inches = 'tight')
   fig.savefig(os.path.join(IMG_PATH, 'detrended%s.pdf' % i) , bbox_inches = 'tight')

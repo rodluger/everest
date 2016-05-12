@@ -16,7 +16,7 @@ import re
 
 # The campaigns we'll use for the synthesis plots
 campaigns = [0,1,2,3,4,5]
-figures = [4] #[1,2,3,4,5,6]
+figures = [1] #[1,2,3,4,5,6]
 
 # Get the raw **Kepler** rms
 kep_star, kep_kepmag, _, kep_raw = np.loadtxt(os.path.join('CDPP', 'kepler.tsv'), unpack = True)
@@ -81,15 +81,27 @@ def fig_comp_kepler(fig, ax, campaigns, errorbars = True, labels = True):
   if errorbars:
     bins = np.arange(10.5,16,0.5)
     b_kep = np.zeros_like(bins) * np.nan
+    b_kep_sig_l = np.zeros_like(bins) * np.nan
+    b_kep_sig_u = np.zeros_like(bins) * np.nan
     b_k2 = np.zeros_like(bins) * np.nan
+    b_k2_sig_l = np.zeros_like(bins) * np.nan
+    b_k2_sig_u = np.zeros_like(bins) * np.nan
     for b, bin in enumerate(bins):
+    
+      # Kepler
       i = np.where((kep_kepmag >= bin - 0.5) & (kep_kepmag < bin + 0.5))[0]
       b_kep[b] = np.nanmedian(kep_raw[i])
+      b_kep_sig_l[b] = b_kep[b] - sorted(kep_raw[i])[int(len(kep_raw[i]) * 0.1585)]
+      b_kep_sig_u[b] = sorted(kep_raw[i])[int(len(kep_raw[i]) * 0.8415)] - b_kep[b]
+      
+      # Everest
       i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
       b_k2[b] = np.nanmedian(y[i])
-    
-    ax.errorbar(bins - 0.025, b_kep, 1.4826 * np.median(np.abs(b_kep - np.median(b_kep))), color = 'y', fmt = 'o', lw = 1, ecolor = 'k', capthick = 1, zorder = 99)
-    ax.errorbar(bins + 0.025, b_k2, 1.4826 * np.median(np.abs(b_k2 - np.median(b_k2))), color = 'b', fmt = 'o', lw = 1, ecolor = 'k', capthick = 1, zorder = 99)
+      b_k2_sig_l[b] = b_k2[b] - sorted(y[i])[int(len(y[i]) * 0.1585)]
+      b_k2_sig_u[b] = sorted(y[i])[int(len(y[i]) * 0.8415)] - b_k2[b]
+
+    ax.errorbar(bins - 0.025, b_kep, [b_kep_sig_l, b_kep_sig_u], color = 'y', fmt = 'o', lw = 1, ecolor = 'k', capthick = 1, zorder = 99)
+    ax.errorbar(bins + 0.025, b_k2, [b_k2_sig_l, b_k2_sig_u], color = 'b', fmt = 'o', lw = 1, ecolor = 'k', capthick = 1, zorder = 99)
 
 def fig_precision(fig, ax, campaigns, labels = True):
   '''
@@ -397,7 +409,7 @@ if 1 in figures:
                    ha = 'left', va = 'top', fontsize = 14)
   fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 22)
   fig.text(0.08, 0.5, '6-hr CDPP (ppm)', fontsize = 22, 
-           ha='center', va='center', rotation='vertical')
+           ha='center', va='center', rotation='vertical')  
   fig.savefig('../tex/images/comparison_kepler_by_campaign.png', bbox_inches = 'tight')
   pl.close()
 
