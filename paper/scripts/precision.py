@@ -16,7 +16,7 @@ import re
 
 # The campaigns we'll use for the synthesis plots
 campaigns = [0,1,2,3,4,5]
-figures = [1,2,3,4,5,6]
+figures = [4] #[1,2,3,4,5,6]
 
 # Get the raw **Kepler** rms
 kep_star, kep_kepmag, _, kep_raw = np.loadtxt(os.path.join('CDPP', 'kepler.tsv'), unpack = True)
@@ -27,15 +27,25 @@ k2_kepmag = [[] for i in range(8)]
 k2_raw = [[] for i in range(8)]
 k2_ever = [[] for i in range(8)]
 k2_phot = [[] for i in range(8)]
+satsev = [[] for i in range(8)]
+crwdsev = [[] for i in range(8)]
 for c in range(8):
   try:
-    k2_star[c], k2_kepmag[c], _, k2_raw[c], k2_phot[c] = np.loadtxt(os.path.join('CDPP', 'k2raw_C%02d.tsv' % c), unpack = True)
+    k2_star[c], k2_kepmag[c], _, k2_raw[c], k2_phot[c], satsev[c], crwdsev[c] = np.loadtxt(os.path.join('CDPP', 'k2raw_C%02d.tsv' % c), unpack = True)
     s, _, k2_ever[c] = np.loadtxt(os.path.join('CDPP', 'everest_C%02d.tsv' % c), unpack = True)
   except:
     continue
   if not np.allclose(k2_star[c], s):
     raise Exception("Input tables misaligned!")
   k2_star[c] = [int(e) for e in k2_star[c]]
+
+  # Now remove saturated and crowded stars
+  bad = np.where((satsev[c] > 2) | (crwdsev[c] > 2))
+  k2_star[c] = np.delete(k2_star[c], bad)
+  k2_kepmag[c] = np.delete(k2_kepmag[c], bad)
+  k2_raw[c] = np.delete(k2_raw[c], bad)
+  k2_phot[c] = np.delete(k2_phot[c], bad)
+  k2_ever[c] = np.delete(k2_ever[c], bad)
 
 # HACK: Campaign 0 magnitudes are reported to the nearest tenth
 # We'll add some artificial scatter to make it plot nicer
@@ -51,7 +61,7 @@ def fig_comp_kepler(fig, ax, campaigns, errorbars = True, labels = True):
   y = np.concatenate([k2_ever[c] for c in campaigns])
   
   ax.plot(kep_kepmag, kep_raw, 'y.', alpha = 0.025)
-  ax.plot(x, y, 'b.', alpha = 0.1)
+  ax.plot(x, y, 'b.', alpha = 0.05)
 
   if labels:
     # Dummy points for legend
@@ -93,34 +103,44 @@ def fig_precision(fig, ax, campaigns, labels = True):
 
   # Set up the figure
   ax.plot(x, r, 'r.', alpha = 0.025)
-  ax.plot(x, e, 'b.', alpha = 0.025)
+  ax.plot(x, e, 'b.', alpha = 0.015)
   
   # Plot the median values
   bins = np.arange(10.5,19.,0.5)
   b_raw = np.zeros_like(bins) * np.nan
   b_k2 = np.zeros_like(bins) * np.nan
-  mode = np.zeros_like(bins) * np.nan
+  mode_k2 = np.zeros_like(bins) * np.nan
+  mode_raw = np.zeros_like(bins) * np.nan
   b_pht = np.zeros_like(bins) * np.nan
   for b, bin in enumerate(bins):
     i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
+    
+    # Compute the median
     b_raw[b] = np.nanmedian(r[i])
     b_pht[b] = np.nanmedian(p[i])
     b_k2[b] = np.nanmedian(e[i])
     
-    # Compute the mode?
+    # Compute the mode
+    h, edg = np.histogram(np.log10(r[i]), range = (np.log10(0.1 * b_raw[b]), np.log10(10 * b_raw[b])), bins = 100)
+    j = np.argmax(h)
+    mode_raw[b] = 10 ** edg[j]
+    
+    # Compute the mode
     h, edg = np.histogram(np.log10(e[i]), range = (np.log10(b_pht[b]), np.log10(b_raw[b])), bins = 100)
     j = np.argmax(h)
-    mode[b] = 10 ** edg[j]
+    mode_k2[b] = 10 ** edg[j]
     
   # Let's fit a straight line to the photon limit curve
   phot_lin = 10 ** np.poly1d(np.polyfit(bins, np.log10(b_pht), 1))(bins)
-  
-  ax.plot(bins, b_raw, 'r--', label = 'Raw', lw = 2)
-  ax.plot(bins, b_k2, ls = '-', color = 'b', label = 'EVEREST', lw = 2)
   ax.plot(bins, phot_lin, 'y--', label = 'Photon limit', lw = 2)
   
-  # The mode... Perhaps someday.
-  #ax.plot(bins, mode, ls = '--', color = 'b', label = 'EVEREST (mode)', lw = 2)
+  # The median
+  ax.plot(bins, b_raw, 'r--', label = 'Raw', lw = 2)
+  ax.plot(bins, b_k2, ls = '-', color = 'b', label = 'EVEREST', lw = 2)
+  
+  # The mode... Maybe someday
+  #ax.plot(bins, mode_raw, ls = '--', color = 'r', label = 'Raw', lw = 2)
+  #ax.plot(bins, mode_k2, ls = '-', color = 'b', label = 'EVEREST', lw = 2)
   
   if labels:
     ax.legend(loc = 'upper left')
@@ -180,7 +200,8 @@ def fig_comp_k2sff(fig, ax, campaigns, labels = True):
   by = np.zeros_like(bins) * np.nan
   for b, bin in enumerate(bins):
     i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
-    by[b] = np.median(y[i])
+    if len(i) > 10:
+      by[b] = np.median(y[i])
   ax.plot(bins, by, 'k-', lw = 2)
 
   if labels:
@@ -441,16 +462,20 @@ if 4 in figures:
   fig.savefig('../tex/images/comparison_k2sc.png', bbox_inches = 'tight')
   pl.close()
   
-  fig, ax = pl.subplots(1, 2, figsize = (12, 3.5))
+  fig, ax = pl.subplots(1, 3, figsize = (14, 3.5))
   fig.subplots_adjust(wspace = 0.05, hspace = 0.075, bottom = 0.15)
   ax = ax.flatten()
-  fig_comp_k2sff(fig, ax[0], campaigns = [4], labels = False)
-  fig_comp_k2sff(fig, ax[1], campaigns = [5], labels = False)
+  fig_comp_k2sc(fig, ax[0], campaigns = [3], labels = False)
+  fig_comp_k2sc(fig, ax[1], campaigns = [4], labels = False)
+  fig_comp_k2sc(fig, ax[2], campaigns = [5], labels = False)
   ax[0].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
   ax[1].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+  ax[2].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
   ax[1].set_yticklabels([])
-  ax[0].annotate('C04', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
-  ax[1].annotate('C05', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  ax[2].set_yticklabels([])
+  ax[0].annotate('C03', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  ax[1].annotate('C04', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+  ax[2].annotate('C05', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
   fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 18)
   ax[0].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 18)
   fig.savefig('../tex/images/comparison_k2sc_by_campaign.png', bbox_inches = 'tight')
