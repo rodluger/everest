@@ -24,9 +24,9 @@ kwargs = dict(
                 ps_masks = 10, 
                 npc_arr = np.arange(25, 260, 10),
                 scatter_alpha = 0.,
-                gp_iter = 2,
+                gp_iter = 1,
                 inject = {}, 
                 jpeg_quality = 30,
                 log_level = logging.DEBUG, 
-                screen_level = logging.CRITICAL
+                screen_level = logging.DEBUG
              )
