@@ -9,6 +9,12 @@ import platform
 if platform.system() == "Linux":
   import matplotlib as mpl
   mpl.use("Agg", warn=False)
+else:
+  import matplotlib as mpl
+  try:
+    mpl.use("Qt4Agg", warn=False)
+  except:
+    pass
 
 # Add our submodules to the PATH
 import os, sys
