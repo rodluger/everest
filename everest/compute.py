@@ -32,7 +32,69 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
             screen_level = logging.CRITICAL, gp_iter = 2, 
             jpeg_quality = 30, fig_ext = 'jpg', **kwargs):
   '''
+  This is the main :py:mod:`everest` routine. Here we download and de-trend
+  a given `EPIC` target.
   
+  :param int EPIC: The 9-digit `EPIC` target number
+  :param str run_name: The name of the run. This will be the name of the subfolder \
+                       containing the output data. Default `default`
+  :param bool clobber: Re-run, even if an output file exists? Default `False`
+  :param int apnum: The number of the `K2SFF` aperture to use when computing both the \
+                    SAP flux and the PLD basis vectors. Default `15`
+  :param float outlier_sigma: The outlier tolerance in standard deviations. Default `5`
+  :param list mask_times: A list of timestamps to mask when computing the PLD model. Default `[]`
+  :param int pld_order: The order of PLD to use. Default `3`
+  :param bool optimize_npc: Perform the principal component optimization step (cross-validation)? \
+                            Default `True`. Depending on the PCA settings below, this could take up to \
+                            half an hour to run. You can set this to `False` to run without optimization, \
+                            and you'll get a de-trended light curve within a few minutes (the time it takes \
+                            to optimize the GP kernel).
+  :param bool mask_candidates: Mask known/new planet candidates, EBs, and injected transits? Default `False`
+  :param int ps_iter: The number of iterations used to compute the "predictive" scatter (the scatter in \
+                      the validation set). Default `50`
+  :param int ps_masks: The number of masks to apply per iteration. The set of all these masks \
+                       is the validation set
+  :param ndarray npc_arr: The array of principal component numbers to test during the cross-validation. \
+                          Default is the range `[25, 200)`, spaced by `10` components.
+  :param dict inject: A dictionary of injection keywords. These include `t0`, `per`, `depth`, `dur`, and \
+                      any other keywords passed directly to :py:func:`everest.pysyzygy.Transit`. The keyword \
+                      `mask` is also accepted. If `True`, the transits are masked during the PLD step
+  :param int log_level: The file logging level (`0-50`). Default `10` (debug)
+  :param int log_level: The screen logging level (`0-50`). Default `50` (critical)
+  :param float scatter_alpha: A parameter used during cross-validation. We actually minimize the quantity \
+                              :math:`\sigma_V + \\alpha |\sigma_V- \sigma_T|`, \
+                              where :math:`\sigma_V` is the validation set CDPP and \
+                              :math:`\sigma_T` is the training set CDPP. By default, `scatter_alpha` is `0`, \
+                              so we're just minimizing the validation set scatter.  
+  :param int gp_iter: The number of iterations during the GP optimization step. Default `2`
+  :param int jpeg_quality: If plotting JPEGs, this number (1-95) sets the image quality. Default `30`
+  :param str fig_ext: The figure extension. Default `jpg`. I found that this doesn't play nice with the \
+                      `MacOSX` :py:mod:`matplotlib` backend, so consider switching this to `png` or switching backends
+  
+  :returns: A very large dictionary:
+  
+    .. code-block:: python
+    
+      dict(time = time, flux = flux, ferr = ferr, fpix = fpix, perr = perr, 
+             fpix_full = k2star.fpix, apertures = k2star.apertures, mask = mask,
+             trn_mask = trn_mask, out_mask = out_mask, mask_candidates = mask_candidates,
+             apnum = apnum, bkg = bkg, inject = inject, new_candidates = new_candidates, 
+             kepmag = k2star.kepmag, EB = False if k2star.EB is False else k2star.EB.__dict__,
+             planets = [planet.__dict__ for planet in k2star.planets], 
+             nearby = k2star._nearby, fpld = fpld_norm, fwhite = fwhite_norm, 
+             C = C, X = X, gp = None, gpinfo = dict(knum = knum, kpars = kpars, 
+             white = white), fpldgp = fpldgp, pld_order = pld_order,
+             rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
+             rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
+             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
+             masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
+             msf = msf, usf = usf, besti = besti,
+             acor = acor, powerspec = powerspec, white = white, amp = amp, 
+             kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
+             git_hash = git_hash, git_branch = git_branch, outdir = outdir,
+             campaign = k2star.campaign, breakpoints = breakpoints, gp_iter = gp_iter,
+             jpeg_quality = jpeg_quality, fig_ext = fig_ext)
+             
   '''
   
   # Grab the data
@@ -333,6 +395,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
 def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4, r5,
                  time, fpld, ferr, outdir):
   '''
+  A routine called by :py:func:`Compute` to write the de-trended flux array to
+  a `.pld` file.
   
   '''
   
@@ -364,6 +428,13 @@ def GetCDPP(flux, fpld):
   Returns the 6-hr CDPP (RMS) of the raw and de-trended data, with and without
   a Savitsky-Golay filter applied, as well as the approximate photon limit
   
+  :param ndarray flux: The flux array
+  :param ndarray fpld: The PLD-de-trended flux array
+  
+  :returns: A tuple containing the raw CDPP, the raw CDPP after applying a SavGol filter, \
+            the CDPP of the de-trended data, the CDPP of the de-trended data after applying \
+            a SavGol filter, and the approximate photon noise CDPP
+  
   '''
   
   # 1. Raw flux
@@ -383,6 +454,19 @@ def GetCDPP(flux, fpld):
   
 def MinimizeScatter(npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha = 0.):
   '''
+  This is the cross-validation step, where we minimize the CDPP of the validation
+  set.
+  
+  :param list npc_arr: The list/array of numbers of principal components to test
+  :param list npc_pred: The list/array of principal components to train the GP on
+  :param ndarray masked_scatter: The scatter in the masked (validation) set on the \
+                                 `npc_arr` grid
+  :param ndarray unmasked_scatter: The scatter in the unmasked (training) set on the \
+                                   `npc_arr` grid
+  :param float alpha: We actually minimize the quantity :math:`\sigma_V + \\alpha |\sigma_V- \sigma_T|`, \
+                      where :math:`\sigma_V` is the validation set CDPP and \
+                      :math:`\sigma_T` is the training set CDPP. By default, `alpha` is `0`, \
+                      so we're just minimizing the validation set scatter.  
   
   '''
   
@@ -416,7 +500,16 @@ def MinimizeScatter(npc_arr, npc_pred, masked_scatter, unmasked_scatter, alpha =
 
 def GetTransitDepth(time, flux, inject, buf = 5, order = 3):
   '''
-  Recover the injected transit depth.
+  Recovers the injected transit depth with a simple LLS solver.
+  
+  :param ndarray time: The time array
+  :param ndarray flux: The flux array
+  :param dict inject: A dictionary containing the injection keywords
+  :param float buf: The size of the transit window in units of the transit duration
+  :param int order: The order of the polynomial used to fit the continuum
+  
+  :returns: A tuple containing the recovered depth, the error, the folded \
+            time array, and the de-trended flux array
   
   '''
   
@@ -521,6 +614,24 @@ def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
 def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [], 
              EB = None, mask_times = [], mask_candidates = False):
   '''
+  Returns lists containing the indices of points to be masked in the light curve.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  :param ndarray time: The time array
+  :param ndarray flux: The flux array
+  :param ndarray fpix: The pixel flux array, shape (`npts`, `npix`)
+  :param ndarray ferr: The standard errors on the flux
+  :param float outlier_sigma: The outlier tolerance in standard deviations
+  :param list planets: A list of :py:class:`everest.data.K2Planet` instances containing \
+                       any planet candidates orbiting this target
+  :param EB: If not `None`, a :py:class:`everest.data.K2EB` instance containing EB information \
+             for this target
+  :param list mask_times: User-provided timestamps to be masked
+  :param bool mask_candidates: Will we explicitly mask planet candidate transits? Default `False`
+  
+  :returns: The tuple `(mask, trn_mask, out_mask, new_candidates)` containign all the indices
+            to mask, the indices of any transits, the indices of any outliers, and the indices
+            of any new candidates present in the light curve
   
   '''
   

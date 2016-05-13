@@ -4,6 +4,8 @@
 utils.py
 --------
 
+General utility functions called from various parts of the code.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -17,6 +19,11 @@ log = logging.getLogger(__name__)
 class Mask(object):
   '''
   A simple masking object to remove transits, outliers, etc.
+  
+  :param list mask: The indices to mask
+  :param int axis: The axis to mask. Default `0`
+  
+  :returns: The array `x` with the indices `mask` masked
   
   '''
   
@@ -32,7 +39,8 @@ class Mask(object):
 
 class FunctionWrapper(object):
   '''
-  A simple function wrapper class.
+  A simple function wrapper class. Stores `args` and `kwargs` and
+  allows an arbitrary function to be called with a single parameter `x`
   
   '''
   
@@ -49,8 +57,7 @@ class FunctionWrapper(object):
 class NoPILFilter(logging.Filter):
   '''
   The PIL image module has a nasty habit of sending all sorts of 
-  unintelligible information to the logger. Let's filter that out
-  here.
+  unintelligible information to the logger. We filter that out here.
   
   '''
   
@@ -60,6 +67,10 @@ class NoPILFilter(logging.Filter):
 def InitLog(file_name = None, log_level = logging.DEBUG, screen_level = logging.CRITICAL):
   '''
   A little routine to initialize the logging functionality.
+  
+  :param str file_name: The name of the file to log to. Default `None` (set internally by :py:mod:`everest`)
+  :param int log_level: The file logging level (`0-50`). Default `10` (debug)
+  :param int log_level: The screen logging level (`0-50`). Default `50` (critical)
   
   '''
   
@@ -86,18 +97,24 @@ def InitLog(file_name = None, log_level = logging.DEBUG, screen_level = logging.
   root.addHandler(sh)
 
 def PadWithZeros(vector, pad_width, iaxis, kwargs):
-    '''
-    Pad an array with zeros.
-    
-    '''
-    
-    vector[:pad_width[0]] = 0
-    vector[-pad_width[1]:] = 0
-    return vector
+  '''
+  Pads an array with zeros. This is used primarily for plotting aperture contours.
+  
+  '''
+  
+  vector[:pad_width[0]] = 0
+  vector[-pad_width[1]:] = 0
+  return vector
 
 def Breakpoints(campaign, time, mask = []):
   '''
   Return the timestamp of the breakpoint for a given campaign, if any.
+  
+  :param int campaign: The `K2` campaign number
+  :param ndarray time: The array of timestamps
+  :param list mask: The light curve indices we're going to mask. You can provide this \
+                    to ensure that the breakpoint does not occur in a masked region \
+                    of the data. Useful if these regions contain transits!
   
   '''
   
@@ -114,8 +131,12 @@ def Breakpoints(campaign, time, mask = []):
 
 def RMS(y, win = 13, remove_outliers = False):
   '''
-  Return the CDPP (rms) in ppm based on the median running standard deviation for
+  Return the CDPP (the 6-hr rms) in ppm based on the median running standard deviation for
   a window size of 13 cadences (~6 hours) as in VJ14.
+  
+  :param ndarray y: The array whose CDPP is to be computed
+  :param int win: The window size in cadences. Default `13` (6.5 hours)
+  :param bool remove_outliers: Clip outliers at 5 sigma before computing the CDPP? Default `False`
   
   '''
 
@@ -136,6 +157,16 @@ def RMS(y, win = 13, remove_outliers = False):
 
 def MADOutliers(t, f, sigma = 5, kernel_size = 5):
   '''
+  Performs a `median absolute deviation <https://en.wikipedia.org/wiki/Median_absolute_deviation>`_
+  cut to identify outliers. A median filter is first applied to the data to remove
+  trends.
+  
+  :param ndarray t: The independent variable array (time)
+  :param ndarray t: The dependent variable array (flux)
+  :param int sigma: The tolerance in standard deviations. Default `5`
+  :param int kernel_size: The size of the kernel used in the median filter. Default `5`
+  
+  :returns: The indices of the outliers in `f`
   
   '''
   
@@ -152,8 +183,8 @@ def MADOutliers(t, f, sigma = 5, kernel_size = 5):
       
 def Chunks(l, n, all = False):
   '''
-  Returns a generator of consecutive ``n``-sized chunks of list ``l``.
-  If ``all`` is ``True``, returns **all** ``n``-sized chunks in ``l``
+  Returns a generator of consecutive `n`-sized chunks of list `l`.
+  If `all` is `True`, returns **all** `n`-sized chunks in `l`
   by iterating over the starting point.
   
   '''
@@ -175,7 +206,12 @@ def Chunks(l, n, all = False):
 def Smooth(x, window_len = 100, window = 'hanning'):
   '''
   Smooth data by convolving on a given timescale.
-    
+  
+  :param ndarray x: The data array
+  :param int window_len: The size of the smoothing window. Default `100`
+  :param str window: The window type. Default `hanning`
+  
+  
   '''
   
   if window_len == 0:
@@ -190,7 +226,7 @@ def Smooth(x, window_len = 100, window = 'hanning'):
 
 def MedianFilter(x, kernel_size = 5):
   '''
-  A wrapper around ``scipy.signal.medfilt``.
+  A silly wrapper around :py:func:`scipy.signal.medfilt`.
   
   '''
   
@@ -200,7 +236,11 @@ def MedianFilter(x, kernel_size = 5):
 
 def LatexExp(f, minexp = 3):
   '''
-  Returns the TeX version of a number in scientific notation.
+  Returns the TeX version of a number `f` in scientific notation.
+  
+  :param float f: The number
+  :param int minexp: The minimum absolute value of the log of `f` above which \
+                     scientific notation is used. Default `3`
   
   '''
   
@@ -218,8 +258,12 @@ def LatexExp(f, minexp = 3):
       
 def LatexExpSq(f, minexp = 3):
   '''
-  Same as ``LatexExp``, but specifically for printing a kernel
+  Same as :py:func:`LatexExp`, but specifically for printing a kernel
   amplitude or timescale, where the squaring is made explicit.
+  
+  :param float f: The number
+  :param int minexp: The minimum absolute value of the log of `f` above which \
+                     scientific notation is used. Default `3`
   
   '''
   
@@ -232,7 +276,7 @@ def LatexExpSq(f, minexp = 3):
 
 def ExceptionHook(exctype, value, tb):
   '''
-  A custom exception handler.
+  A custom exception handler that logs errors to file.
   
   '''
   

@@ -4,7 +4,9 @@
 kepler_cdpp.py
 --------------
 
-Copied over from the old directory; not tested!
+Computes the raw 6-hr CDPP for all original `Kepler` targets.
+
+..warning:: This was copied over from an older version, and may need to be tweaked slightly.
 
 '''
 

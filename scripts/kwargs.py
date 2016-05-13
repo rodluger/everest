@@ -4,9 +4,14 @@
 kwargs.py
 ---------
 
-This file contains the kwargs passed to ``everest.Compute()`` when
-running a cluster job with ``everest.RunCampaign()``.
+This file contains the kwargs passed to :py:func:`everest.compute.Compute()` when
+running a cluster job with :py:func:`everest.run.RunCampaign()`.
+See the :py:func:`everest.compute.Compute()` documentation for info on each
+of these values.
 
+.. literalinclude:: ../scripts/kwargs.py
+   :lines: 17-38
+   
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

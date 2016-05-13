@@ -4,10 +4,11 @@ Documentation
 =============
 
 .. toctree::
-   :maxdepth: 2   
+   :maxdepth: 1   
    
    overview
    modules
+   paper
    todo
 
 Indices and tables

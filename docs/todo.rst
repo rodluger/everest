@@ -1,5 +1,5 @@
-To-Do List
-==========
+The To-Do List
+==============
 
 - Easy EVEREST calling for masked transits.
 - Take median of unsaturated background!

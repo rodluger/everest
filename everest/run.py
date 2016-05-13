@@ -4,6 +4,8 @@
 run.py
 ------
 
+Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -21,10 +23,15 @@ import numpy as np
 import imp
 import time
 
-def DownloadCampaign(campaign, queue = 'build', email = 'rodluger@gmail.com', walltime = 8):
+def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
   Submits a cluster job to the build queue to download all TPFs for a given
   campaign.
+  
+  :param int campaign: The `K2` campaign to run
+  :param str queue: The name of the queue to submit to. Default `build`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `8`
   
   '''
           
@@ -39,18 +46,21 @@ def DownloadCampaign(campaign, queue = 'build', email = 'rodluger@gmail.com', wa
                '-o', str_out,
                '-j', 'oe', 
                '-N', 'DOWNLOAD_C%02d' % campaign,
-               '-l', str_w,
-               '-M', email,
-               '-m', 'ae']
-            
+               '-l', str_w]
+  if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def DownloadInjections(queue = 'build', email = 'rodluger@gmail.com', walltime = 8):
+def DownloadInjections(queue = 'build', email = None, walltime = 8):
   '''
   Submits a cluster job to the build queue to download all TPFs for a given
   campaign.
+  
+  :param int campaign: The `K2` campaign to run
+  :param str queue: The name of the queue to submit to. Default `build`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `8`
   
   '''
           
@@ -65,15 +75,14 @@ def DownloadInjections(queue = 'build', email = 'rodluger@gmail.com', walltime =
                '-o', str_out,
                '-j', 'oe', 
                '-N', 'DOWNLOAD_INJ',
-               '-l', str_w,
-               '-M', email,
-               '-m', 'ae']
+               '-l', str_w]
+  if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
             
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def Run(EPIC, **kwargs):
+def _Run(EPIC, **kwargs):
   '''
   Wrapper around ``Compute()`` and ``Plot()``.
   
@@ -90,6 +99,12 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
   '''
   Compute and plot data for a given target.
   
+  :param int EPIC: The 9-digit `K2` EPIC number
+  :param bool debug: Debug mode? Default `False`. If `True`, enters `pdb` post-mortem when an error is raised
+  :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
+                          Default `/scripts/kwargs.py`
+
+  
   '''
   
   # Get the kwargs
@@ -102,15 +117,25 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
     sys.excepthook = ExceptionHook
   
   # Run
-  Run(EPIC, **kwargs)
+  _Run(EPIC, **kwargs)
 
 def RunInjections(depth = 0.01, mask = False, queue = None,
                   nodes = 5, ppn = 12, walltime = 100, 
-                  email = 'rodluger@gmail.com', 
+                  email = None, 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Submits a cluster job to compute and plot data for a sample
   of targets chosen for transit injection tests.
+  
+  :param float depth: The fractional transit depth to inject. Default `0.01`
+  :param bool mask: Mask injected transits? Default `False`.
+  :param str queue: The queue to submit to. Default `None` (default queue)
+  :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
+                          Default `/scripts/kwargs.py`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `100`
+  :param int nodes: The number of nodes to request. Default `5`
+  :param int ppn: The number of processors per node to request. Default `12`
   
   '''
   
@@ -128,9 +153,9 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
                '-j', 'oe', 
                '-N', name, 
                '-l', str_n,
-               '-l', str_w,
-               '-M', email,
-               '-m', 'ae']
+               '-l', str_w]
+  if email is not None: 
+    qsub_args.append(['-M', email, '-m', 'ae'])
   if queue is not None:
     qsub_args += ['-q', queue]
   # Now we submit the job
@@ -138,11 +163,19 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   subprocess.call(qsub_args)
 
 def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
-                  email = 'rodluger@gmail.com', 
+                  email = None, 
                   kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Submits a cluster job to compute and plot data for all targets hosting
   confirmed planets or planet candidates.
+  
+  :param str queue: The queue to submit to. Default `None` (default queue)
+  :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
+                          Default `/scripts/kwargs.py`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `100`
+  :param int nodes: The number of nodes to request. Default `5`
+  :param int ppn: The number of processors per node to request. Default `12`
   
   '''
           
@@ -159,9 +192,9 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
                '-j', 'oe', 
                '-N', 'candidates', 
                '-l', str_n,
-               '-l', str_w,
-               '-M', email,
-               '-m', 'ae']
+               '-l', str_w]
+  if email is not None: 
+    qsub_args.append(['-M', email, '-m', 'ae'])
   if queue is not None:
     qsub_args += ['-q', queue]          
   # Now we submit the job
@@ -169,10 +202,19 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   subprocess.call(qsub_args)
 
 def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
-                email = 'rodluger@gmail.com', queue = None,
+                email = None, queue = None,
                 kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
+  
+  :param int campaign: The `K2` campaign to run
+  :param str queue: The queue to submit to. Default `None` (default queue)
+  :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
+                          Default `/scripts/kwargs.py`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `100`
+  :param int nodes: The number of nodes to request. Default `5`
+  :param int ppn: The number of processors per node to request. Default `12`
   
   '''
           
@@ -189,9 +231,9 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
                '-j', 'oe', 
                '-N', 'C%02d' % campaign, 
                '-l', str_n,
-               '-l', str_w,
-               '-M', email,
-               '-m', 'ae']
+               '-l', str_w]
+  if email is not None: 
+    qsub_args.append(['-M', email, '-m', 'ae'])
   if queue is not None:
     qsub_args += ['-q', queue]          
   # Now we submit the job
@@ -225,7 +267,7 @@ def _RunCandidates(kwargs_file):
     stars = list(set(stars + new))
   
     # Compute and plot
-    C = FunctionWrapper(Run, **kwargs)
+    C = FunctionWrapper(_Run, **kwargs)
     pool.map(C, stars)
 
 def _RunInjections(kwargs_file, depth, mask):
@@ -256,7 +298,7 @@ def _RunInjections(kwargs_file, depth, mask):
     kwargs['run_name'] = 'inject_%.4f%s' % (depth, ('m' if mask else 'u'))
 
     # Compute and plot
-    C = FunctionWrapper(Run, **kwargs)
+    C = FunctionWrapper(_Run, **kwargs)
     pool.map(C, stars)
 
 def _RunCampaign(campaign, kwargs_file):
@@ -279,7 +321,7 @@ def _RunCampaign(campaign, kwargs_file):
     stars = GetK2Stars()[campaign]
   
     # Compute and plot
-    C = FunctionWrapper(Run, **kwargs)
+    C = FunctionWrapper(_Run, **kwargs)
     pool.map(C, stars)
 
 def _DownloadCampaign(campaign):

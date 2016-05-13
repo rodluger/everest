@@ -4,6 +4,7 @@
 everest_cdpp.py
 ---------------
 
+Computes the 6-hr CDPP for all the `everest` de-trended light curves.
 
 '''
 

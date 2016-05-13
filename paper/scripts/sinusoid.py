@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-sinusoid.py
+Figure 2.py
 -----------
-This example shows how PLD can fail for variable stars. Even though the variable
+
+This script reproduces Figure 2 in the paper; the source code is available
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/sinusoid.py>`_.
+
+Here we show how regular PLD can fail for variable stars. Even though the variable
 signal is astrophysical -- i.e., present in all pixels -- PLD will try to fit out
 the variability by exploiting the white noise in each of the pixels. In other words,
 by inflating the white noise of the fit, PLD is able to find linear combinations of
@@ -11,6 +15,26 @@ the fractional pixel fluxes that approximate the astrophysical variability. This
 generally results in a poor fit with much higher noise than the original data.
 In order to fix this, we use a GP to fit the variability along the time dimension. 
 It works beautifully!
+
+.. figure:: ../paper/tex/images/sinusoid.png
+    :width: 600px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 2** Different de-trending techniques for quarter 4 of KIC 8583696 (KOI 1275), 
+    a planet candidate host from the original Kepler mission. The original data 
+    are shown in the left column; in the other columns we artificially injected 
+    a sinusoidal signal with a period of 25 days and an amplitude comparable to 
+    that of the instrumental variability. The top row shows the raw SAP data 
+    (black) and the first order PLD model (red); the residuals of the fit are 
+    indicated directly below. The third row shows the final residuals after 
+    smoothing with a GP to eliminate low-frequency stellar variability. Finally, 
+    the bottom row shows these residuals folded on the orbital period of the planet 
+    candidate (black), with the 1-hr median indicated in red. Combining PLD with a 
+    GP ensures PLD fits out only the instrumental variability without inflating the 
+    white noise.
 
 '''
 
@@ -30,6 +54,11 @@ import george
 from george.kernels import Matern32Kernel, WhiteKernel
 
 def TransitMedian(t, y):
+  '''
+  Get the 0.05-day median flux during transits
+  
+  '''
+  
   dt = 0.05
   bins = np.arange(-0.7, 0.7, dt)
   med = np.zeros_like(bins)
@@ -75,6 +104,7 @@ def GetKeplerData(koi, fnum):
 
 def GetDetrendedData():
   '''
+  Detrends the data several different ways.
   
   '''
   
@@ -158,130 +188,132 @@ def GetDetrendedData():
 
   return time, F1, F2, F3, F4, P1, P2, P3, P4, G1, G2, G3, G4
 
-# Grab the detrended data
-time, F1, F2, F3, F4, P1, P2, P3, P4, G1, G2, G3, G4 = GetDetrendedData()
+if __name__ == '__main__':
 
-# The folding function
-per = 50.28
-t0 = 368.77
-fold = lambda t: (t - t0 - per / 2.) % per - per / 2.
-fold2 = lambda t, y: np.array(sorted(zip(fold(t), y))).T
+  # Grab the detrended data
+  time, F1, F2, F3, F4, P1, P2, P3, P4, G1, G2, G3, G4 = GetDetrendedData()
 
-# Plot
-fig = pl.figure(figsize = (20,11))
-fig.subplots_adjust(wspace = 0.05, hspace = 0.125, left = 0.075, right = 0.95, top = 0.85)
-ax = np.array([[pl.subplot2grid((40, 4), (0, j), colspan=1, rowspan=9) for j in range(4)],
-               [pl.subplot2grid((40, 4), (10, j), colspan=1, rowspan=9) for j in range(4)],
-               [pl.subplot2grid((40, 4), (20, j), colspan=1, rowspan=9) for j in range(4)],
-               [pl.subplot2grid((40, 4), (32, j), colspan=1, rowspan=7) for j in range(4)]])
+  # The folding function
+  per = 50.28
+  t0 = 368.77
+  fold = lambda t: (t - t0 - per / 2.) % per - per / 2.
+  fold2 = lambda t, y: np.array(sorted(zip(fold(t), y))).T
 
-# 1a. Raw data
-ax[0,0].plot(time, F1, 'k.', alpha = 0.3, label = 'SAP Flux')
-ax[0,0].plot(time, P1, 'r-', label = 'PLD Model')
+  # Plot
+  fig = pl.figure(figsize = (20,11))
+  fig.subplots_adjust(wspace = 0.05, hspace = 0.125, left = 0.075, right = 0.95, top = 0.85)
+  ax = np.array([[pl.subplot2grid((40, 4), (0, j), colspan=1, rowspan=9) for j in range(4)],
+                 [pl.subplot2grid((40, 4), (10, j), colspan=1, rowspan=9) for j in range(4)],
+                 [pl.subplot2grid((40, 4), (20, j), colspan=1, rowspan=9) for j in range(4)],
+                 [pl.subplot2grid((40, 4), (32, j), colspan=1, rowspan=7) for j in range(4)]])
 
-# 1b. PLD-detrended data
-ax[1,0].plot(time, F1 - P1, 'k.', alpha = 0.3)
-ax[2,0].plot(time, F1 - P1 - G1, 'k.', alpha = 0.3)
-ax[3,0].plot(fold(time), F1 - P1 - G1, 'k.', alpha = 1)
-t, y = fold2(time, F1 - P1 - G1)
-t, y = TransitMedian(t, y)
-ax[3,0].plot(t, y, 'r-', lw = 2)
+  # 1a. Raw data
+  ax[0,0].plot(time, F1, 'k.', alpha = 0.3, label = 'SAP Flux')
+  ax[0,0].plot(time, P1, 'r-', label = 'PLD Model')
 
-# 2a. Raw data times sinusoid
-ax[0,1].plot(time, F2, 'k.', alpha = 0.3, label = 'SAP Flux')
-ax[0,1].plot(time, P2, 'r-', label = 'PLD Model')
+  # 1b. PLD-detrended data
+  ax[1,0].plot(time, F1 - P1, 'k.', alpha = 0.3)
+  ax[2,0].plot(time, F1 - P1 - G1, 'k.', alpha = 0.3)
+  ax[3,0].plot(fold(time), F1 - P1 - G1, 'k.', alpha = 1)
+  t, y = fold2(time, F1 - P1 - G1)
+  t, y = TransitMedian(t, y)
+  ax[3,0].plot(t, y, 'r-', lw = 2)
 
-# 2b. PLD-detrended sinusoidal data
-ax[1,1].plot(time, F2 - P2, 'k.', alpha = 0.3)
-ax[2,1].plot(time, F2 - P2 - G2, 'k.', alpha = 0.3)
-ax[3,1].plot(fold(time), F2 - P2 - G2, 'k.', alpha = 1)
-t, y = fold2(time, F2 - P2 - G2)
-t, y = TransitMedian(t, y)
-ax[3,1].plot(t, y, 'r-', lw = 2)
+  # 2a. Raw data times sinusoid
+  ax[0,1].plot(time, F2, 'k.', alpha = 0.3, label = 'SAP Flux')
+  ax[0,1].plot(time, P2, 'r-', label = 'PLD Model')
 
-# 3a. Raw data times sinusoid
-ax[0,2].plot(time, F3, 'k.', alpha = 0.3, label = 'SAP Flux')
-ax[0,2].plot(time, P3, 'r-', label = 'PLD Model')
+  # 2b. PLD-detrended sinusoidal data
+  ax[1,1].plot(time, F2 - P2, 'k.', alpha = 0.3)
+  ax[2,1].plot(time, F2 - P2 - G2, 'k.', alpha = 0.3)
+  ax[3,1].plot(fold(time), F2 - P2 - G2, 'k.', alpha = 1)
+  t, y = fold2(time, F2 - P2 - G2)
+  t, y = TransitMedian(t, y)
+  ax[3,1].plot(t, y, 'r-', lw = 2)
 
-# 3b. PLD-detrended sinusoidal data
-ax[1,2].plot(time, F3 - P3, 'k.', alpha = 0.3)
-ax[2,2].plot(time, F3 - P3 - G3, 'k.', alpha = 0.3)
-ax[3,2].plot(fold(time), F3 - P3 - G3, 'k.', alpha = 1)
-t, y = fold2(time, F3 - P3 - G3)
-t, y = TransitMedian(t, y)
-ax[3,2].plot(t, y, 'r-', lw = 2)
+  # 3a. Raw data times sinusoid
+  ax[0,2].plot(time, F3, 'k.', alpha = 0.3, label = 'SAP Flux')
+  ax[0,2].plot(time, P3, 'r-', label = 'PLD Model')
 
-# 4a. Raw data times sinusoid
-ax[0,3].plot(time, F4, 'k.', alpha = 0.3, label = 'SAP Flux')
-ax[0,3].plot(time, P4, 'r-', label = 'PLD Model')
+  # 3b. PLD-detrended sinusoidal data
+  ax[1,2].plot(time, F3 - P3, 'k.', alpha = 0.3)
+  ax[2,2].plot(time, F3 - P3 - G3, 'k.', alpha = 0.3)
+  ax[3,2].plot(fold(time), F3 - P3 - G3, 'k.', alpha = 1)
+  t, y = fold2(time, F3 - P3 - G3)
+  t, y = TransitMedian(t, y)
+  ax[3,2].plot(t, y, 'r-', lw = 2)
 
-# 4b. PLD + GP-detrended sinusoidal data
-ax[1,3].plot(time, F4 - P4, 'k.', alpha = 0.3)
-ax[2,3].plot(time, F4 - P4 - G4, 'k.', alpha = 0.3)
-ax[3,3].plot(fold(time), F4 - P4 - G4, 'k.', alpha = 1)
-t, y = fold2(time, F4 - P4 - G4)
-t, y = TransitMedian(t, y)
-ax[3,3].plot(t, y, 'r-', lw = 2)
+  # 4a. Raw data times sinusoid
+  ax[0,3].plot(time, F4, 'k.', alpha = 0.3, label = 'SAP Flux')
+  ax[0,3].plot(time, P4, 'r-', label = 'PLD Model')
 
-# Fix plot ranges
-for n in [0,1,2]:
-  ylim = ax[n,0].get_ylim() + ax[n,1].get_ylim() + ax[n,2].get_ylim() + ax[n,3].get_ylim()
-  ax[n,0].set_ylim(min(ylim), max(ylim))
-  ax[n,1].set_ylim(min(ylim), max(ylim))
-  ax[n,2].set_ylim(min(ylim), max(ylim))
-  ax[n,3].set_ylim(min(ylim), max(ylim))
-ax[0,0].margins(0.01, None)
-xlim = ax[0,0].get_xlim()
-for axis in ax.flatten():
-  axis.set_xlim(*xlim)
-for axis in [ax[3,0], ax[3,1], ax[3,2], ax[3,3]]:
-  axis.set_xlim(-0.75, 0.75)
-  axis.set_ylim(-100, 100)
+  # 4b. PLD + GP-detrended sinusoidal data
+  ax[1,3].plot(time, F4 - P4, 'k.', alpha = 0.3)
+  ax[2,3].plot(time, F4 - P4 - G4, 'k.', alpha = 0.3)
+  ax[3,3].plot(fold(time), F4 - P4 - G4, 'k.', alpha = 1)
+  t, y = fold2(time, F4 - P4 - G4)
+  t, y = TransitMedian(t, y)
+  ax[3,3].plot(t, y, 'r-', lw = 2)
 
-# Ticks and tick labels
-for i in [0,1,2,3]:
-  for j in [1,2,3]:
-    ax[i,j].set_yticklabels([])
-for i in [0,1]:
-  for j in [0,1,2,3]:
-    ax[i,j].set_xticklabels([])
+  # Fix plot ranges
+  for n in [0,1,2]:
+    ylim = ax[n,0].get_ylim() + ax[n,1].get_ylim() + ax[n,2].get_ylim() + ax[n,3].get_ylim()
+    ax[n,0].set_ylim(min(ylim), max(ylim))
+    ax[n,1].set_ylim(min(ylim), max(ylim))
+    ax[n,2].set_ylim(min(ylim), max(ylim))
+    ax[n,3].set_ylim(min(ylim), max(ylim))
+  ax[0,0].margins(0.01, None)
+  xlim = ax[0,0].get_xlim()
+  for axis in ax.flatten():
+    axis.set_xlim(*xlim)
+  for axis in [ax[3,0], ax[3,1], ax[3,2], ax[3,3]]:
+    axis.set_xlim(-0.75, 0.75)
+    axis.set_ylim(-100, 100)
 
-# Print the RMS
-ax[2,0].annotate("%.1f ppm" % RMS((F1 - P1 - G1 + np.median(F1)) / np.median(F1)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
-ax[2,1].annotate("%.1f ppm" % RMS((F2 - P2 - G2 + np.median(F2)) / np.median(F2)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
-ax[2,2].annotate("%.1f ppm" % RMS((F3 - P3 - G3 + np.median(F3)) / np.median(F3)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
-ax[2,3].annotate("%.1f ppm" % RMS((F4 - P4 - G4 + np.median(F4)) / np.median(F4)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
+  # Ticks and tick labels
+  for i in [0,1,2,3]:
+    for j in [1,2,3]:
+      ax[i,j].set_yticklabels([])
+  for i in [0,1]:
+    for j in [0,1,2,3]:
+      ax[i,j].set_xticklabels([])
 
-# Labels
-#pl.suptitle('KOI 1275.01 Q4', fontsize = 25)
-ax[0,0].set_title(r'a. Original', fontsize = 24, y = 1.03)
-ax[0,1].set_title(r'b. PLD', fontsize = 24, y = 1.03)
-ax[0,2].set_title(r'c. PLD + Polynomial', fontsize = 24, y = 1.03)
-ax[0,3].set_title(r'd. PLD + GP', fontsize = 24, y = 1.03)
-ax[0,0].set_ylabel('SAP Flux', fontsize = 14)
-ax[1,0].set_ylabel('PLD Residuals', fontsize = 14)
-ax[2,0].set_ylabel('Final Residuals', fontsize = 14)
-ax[3,0].set_ylabel('Folded Residuals', fontsize = 12)
-ax[2,0].set_xlabel('Time (days)', fontsize = 14)
-ax[2,1].set_xlabel('Time (days)', fontsize = 14)
-ax[2,2].set_xlabel('Time (days)', fontsize = 14)
-ax[2,3].set_xlabel('Time (days)', fontsize = 14)
-ax[3,0].set_xlabel('Time from transit center (days)', fontsize = 12)
-ax[3,1].set_xlabel('Time from transit center (days)', fontsize = 12)
-ax[3,2].set_xlabel('Time from transit center (days)', fontsize = 12)
-ax[3,3].set_xlabel('Time from transit center (days)', fontsize = 12)
+  # Print the RMS
+  ax[2,0].annotate("%.1f ppm" % RMS((F1 - P1 - G1 + np.median(F1)) / np.median(F1)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
+  ax[2,1].annotate("%.1f ppm" % RMS((F2 - P2 - G2 + np.median(F2)) / np.median(F2)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
+  ax[2,2].annotate("%.1f ppm" % RMS((F3 - P3 - G3 + np.median(F3)) / np.median(F3)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
+  ax[2,3].annotate("%.1f ppm" % RMS((F4 - P4 - G4 + np.median(F4)) / np.median(F4)), xy = (0.05,0.9), xycoords = 'axes fraction', horizontalalignment = 'left', verticalalignment = 'top', bbox = dict(fc = "w"))
 
-# Legends
-ax[0,0].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
-ax[0,1].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
-ax[0,2].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
-ax[0,3].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
+  # Labels
+  #pl.suptitle('KOI 1275.01 Q4', fontsize = 25)
+  ax[0,0].set_title(r'a. Original', fontsize = 24, y = 1.03)
+  ax[0,1].set_title(r'b. PLD', fontsize = 24, y = 1.03)
+  ax[0,2].set_title(r'c. PLD + Polynomial', fontsize = 24, y = 1.03)
+  ax[0,3].set_title(r'd. PLD + GP', fontsize = 24, y = 1.03)
+  ax[0,0].set_ylabel('SAP Flux', fontsize = 14)
+  ax[1,0].set_ylabel('PLD Residuals', fontsize = 14)
+  ax[2,0].set_ylabel('Final Residuals', fontsize = 14)
+  ax[3,0].set_ylabel('Folded Residuals', fontsize = 12)
+  ax[2,0].set_xlabel('Time (days)', fontsize = 14)
+  ax[2,1].set_xlabel('Time (days)', fontsize = 14)
+  ax[2,2].set_xlabel('Time (days)', fontsize = 14)
+  ax[2,3].set_xlabel('Time (days)', fontsize = 14)
+  ax[3,0].set_xlabel('Time from transit center (days)', fontsize = 12)
+  ax[3,1].set_xlabel('Time from transit center (days)', fontsize = 12)
+  ax[3,2].set_xlabel('Time from transit center (days)', fontsize = 12)
+  ax[3,3].set_xlabel('Time from transit center (days)', fontsize = 12)
 
-for n in range(4):
-  ax[0,n].yaxis.set_major_locator(MaxNLocator(5))
-  ax[1,n].yaxis.set_major_locator(MaxNLocator(5))
-  ax[2,n].yaxis.set_major_locator(MaxNLocator(5))
+  # Legends
+  ax[0,0].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
+  ax[0,1].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
+  ax[0,2].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
+  ax[0,3].legend(loc = 'upper left', fontsize = 10, numpoints = 3)
 
-# Save
-fig.savefig(os.path.join(IMG_PATH, 'sinusoid.png'), bbox_inches = 'tight')
-fig.savefig(os.path.join(IMG_PATH, 'sinusoid.pdf'), bbox_inches = 'tight')
+  for n in range(4):
+    ax[0,n].yaxis.set_major_locator(MaxNLocator(5))
+    ax[1,n].yaxis.set_major_locator(MaxNLocator(5))
+    ax[2,n].yaxis.set_major_locator(MaxNLocator(5))
+
+  # Save
+  fig.savefig(os.path.join(IMG_PATH, 'sinusoid.png'), bbox_inches = 'tight')
+  fig.savefig(os.path.join(IMG_PATH, 'sinusoid.pdf'), bbox_inches = 'tight')

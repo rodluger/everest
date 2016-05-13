@@ -38,14 +38,14 @@
 \title{EVEREST: Pixel Level Decorrelation of \emph{K2} Light curves}
 
 \author{Rodrigo Luger\altaffilmark{1,2}, Eric Agol\altaffilmark{1,2}, Ethan Kruse\altaffilmark{1}, Rory Barnes\altaffilmark{1,2},\\
-Andrew Becker\altaffilmark{1}, Daniel Foreman-Mackey\altaffilmark{1}, and Drake Deming\altaffilmark{3}}
+Andrew Becker\altaffilmark{1}, Daniel Foreman-Mackey\altaffilmark{1,4}, and Drake Deming\altaffilmark{3}}
 %\affil{\footnotemark[1]Astronomy Department, University of Washington, Box 351580, Seattle, WA 98195, USA; rodluger@uw.edu\\
 %\footnotemark[2]Virtual Planetary Laboratory, Seattle, WA 98195, USA\\
 %\footnotemark[3]Department of Astronomy, University of Maryland, College Park, MD 20742, USA}
 \altaffiltext{1}{Astronomy Department, University of Washington, Box 351580, Seattle, WA 98195, USA; \href{mailto:rodluger@uw.edu}{rodluger@uw.edu}}
 \altaffiltext{2}{Virtual Planetary Laboratory, Seattle, WA 98195, USA}
 \altaffiltext{3}{Department of Astronomy, University of Maryland, College Park, MD 20742, USA}
-
+\altaffiltext{4}{Sagan Fellow}
 \begin{abstract}
 We present \texttt{EVEREST}, an open-source pipeline for removing instrumental noise
 from \emph{K2} light curves. \texttt{EVEREST} employs a variant of pixel level decorrelation (PLD) 
@@ -233,7 +233,7 @@ the added complexity, the model remains linear and may be solved in a similar fa
 as before.
 
 In Figure~\ref{fig:third_order}, we illustrate the de-trending technique for EPIC
-201367065 (K2-3), a star host to at least two transiting planets \citep{CRO15}. The top
+201367065 (K2-3), a star host to three known transiting planets \citep{CRO15}. The top
 panel shows the normalized raw aperture-summed flux after subtracting off the 
 background; note the large systematics at very short ($\sim$ 6 hr) timescales. The
 next panel shows the flux de-trended with first order PLD (Equation~\ref{eq:demingmodel}).
@@ -423,6 +423,8 @@ stellar signal is generally unknown \emph{a priori}, and any attempt to estimate
 will be subject to how well one can discriminate between instrumental and stellar effects.
 In \S\ref{sec:methods} we describe our iterative procedure for optimizing the GP kernel.
 
+\pagebreak
+
 \section{Methods}
 \label{sec:methods}
 In \S\ref{sec:pld} we outlined the basics of principal component regression
@@ -486,7 +488,8 @@ other outliers that could affect the quality of the PLD fit.
 \end{figure*}
 
 The next step is to compute the covariance matrix $\mathbf{K}$, which we do using
-the \texttt{george}\footnote{\texttt{\url{http://dan.iel.fm/george/current/}}} Python package. We parametrize 
+the \texttt{george}\footnote{\texttt{\url{http://dan.iel.fm/george/current/}}} Python package
+\citep{GEORGE}. We parametrize 
 it as
 \begin{align}
 \label{eq:covariance}
@@ -530,7 +533,7 @@ as well as the amplitude of the white noise kernel $k_w$
 by maximizing the marginal likelihood $\mathcal{L}$ of the data given the model,
 \begin{align}
 \label{eq:like}
-\log\mathcal{L} = \frac{1}{2}\mathbf{y}^\top\cdot\mathbf{K^{-1}}\cdot\mathbf{y} - \frac{1}{2}\log\left|\mathbf{K}\right| - \frac{n}{2}\log 2\pi
+\log\mathcal{L} = -\frac{1}{2}\mathbf{y}^\top\cdot\mathbf{K^{-1}}\cdot\mathbf{y} - \frac{1}{2}\log\left|\mathbf{K}\right| - \frac{n}{2}\log 2\pi
 \end{align}
 where $\mathbf{y}$ is the de-trended flux and $n$ is the number of data points 
 in $\mathbf{y}$ \citep{RW06}. In principle, one may optimize the parameters of each
@@ -613,7 +616,7 @@ The minimum in the red curve, which occurs for $n_{pc} \sim 80$, is the best we 
 is likely to begin fitting out white noise.
 
 We employ this cross-validation method for each EPIC target. In practice, we compute the 6-hr precision
-(see \S\ref{sec:precision}) in the validation sets thirty times for each value of $n_{pc}$ and take the median. 
+(see \S\ref{sec:precision}) in the validation sets fifty times for each value of $n_{pc}$ and take the median. 
 Each validation set is a group of 10 non-overlapping chunks that are masked when computing the PLD coefficients; each
 chunk is chosen randomly from the set of all contiguous 13-cadence segments of the light curve. 
 Our grid in $n_{pc}$ typically ranges from 1 to 250 principal components, with a spacing of ten components.
@@ -655,8 +658,10 @@ significant enough to justify the breakpoint.
 
 \subsection{De-trending}
 After optimizing the GP and choosing the order of the PLD, the number of principal components, and the 
-number of light curve subdivisions, we de-trend each EPIC light curve using
-Equations~\ref{eq:pcamodel} and \ref{eq:pcacoefficients}.
+number of light curve subdivisions, we de-trend each EPIC light curve by subtracting the
+model given by
+Equations~\ref{eq:pcamodel} and \ref{eq:pcacoefficients}. We then add the median value of the
+SAP flux to the result to obtain our final, de-trended light curves.
 
 \section{Results}
 \label{sec:results}
@@ -1089,7 +1094,9 @@ targets and for those in very crowded fields.
   \begin{center}
       \psfig{file=images/comparison_k2sff.png,width=3.5in}
        \caption{Same as Figure~\ref{fig:comparison_k2varcat}, but comparing 
-                \texttt{EVEREST} to \texttt{K2SFF}. Our pipeline yields higher
+                \texttt{EVEREST} to \texttt{K2SFF}. Once again, negative values
+                correspond to higher precision in the \texttt{EVEREST} light curves.
+                Our pipeline yields higher
                 precision light curves for most \emph{K2} stars and does
                 better on average for all Kepler magnitudes $K_p > 11$.}
      \label{fig:comparison_k2sff}
@@ -1114,16 +1121,21 @@ targets and for those in very crowded fields.
                 are on the same footing, the \texttt{K2SC} CDPP
                 is computed from the PDC flux corrected for the instrumental 
                 systematics \emph{only}. As before, a Savitsky-Golay filter
-                is then applied to both sets of light curves.}
+                is then applied to both sets of light curves. The median relative difference
+                is once again negative everywhere, indicating that \texttt{EVEREST} yields higher
+                precision light curves at all magnitudes, with the exception of the range $16 \lesssim K_p \lesssim 17$,
+                where the precision is comparable in both light curves.}
      \label{fig:comparison_k2sc}
   \end{center}
 \end{figure}
+
+\pagebreak
 
 \subsubsection{Example Light Curves}
 \begin{figure*}[t]
   \begin{center}
     \leavevmode
-      \psfig{file=images/detrended0.png,width=6in}
+      \psfig{file=images/detrended0.png,width=7in}
        \caption{De-trended light curves for the campaign 1 star EPIC 201367065 \citep[K2-3,][]{CRO15}. \emph{Top}: The de-trended
                 \texttt{K2SFF} flux (left) and the GP-smoothed flux folded on the periods of 
                 the planets b, c, and d (right). \emph{Bottom}: The de-trended \texttt{EVEREST}
@@ -1135,7 +1147,7 @@ targets and for those in very crowded fields.
 \begin{figure*}[t]
   \begin{center}
     \leavevmode
-      \psfig{file=images/detrended1.png,width=6in}
+      \psfig{file=images/detrended1.png,width=7in}
        \caption{De-trended light curves for EPIC 205071984, a campaign 2 star with three
                 known planet candidates \citep{SIN15}. As in Figure~\ref{fig:detrended0}, the
                 \texttt{K2SFF} light curve and the folded transits of EPIC 205071984.01 (b),
@@ -1228,17 +1240,17 @@ including the upcoming \emph{TESS} mission \citep{RIC15}, to remove instrumental
 and enable the detection of small transiting planets.
 
 \begin{acknowledgments}
-R.L. and R.B. acknowledge support from the NASA Astrobiology
+R.L., R.B. and E.A. acknowledge support from NASA grant NNX14AK26G
+and from the NASA Astrobiology
 Institute's Virtual Planetary Laboratory Lead Team, funded
 through the NASA Astrobiology Institute under solicitation
 NNH12ZDA002C and Cooperative Agreement Number
-NNA13AA93A. E.A. acknowledges support from NASA grants NNX13AF20G, NNX13AF62G, and NASA
-Astrobiology Institute's Virtual Planetary Laboratory, supported by NASA
-under cooperative agreement NNH05ZDA001C.
+NNA13AA93A. E.A. acknowledges additional support from NASA grants 
+NNX13AF20G and NNX13AF62G. E.K. acknowledges support from an NSF 
+Graduate Student Research Fellowship.
 This research used the advanced computational,
 storage, and networking infrastructure provided by the
 Hyak supercomputer system at the University of Washington.
-
 \end{acknowledgments}
 
 \bibliographystyle{apj}

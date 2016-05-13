@@ -23,6 +23,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../scripts'))
 sys.path.insert(0, os.path.abspath('../paper/scripts'))
+sys.path.insert(0, os.path.abspath('../paper/tex/images'))
 
 # -- General configuration ------------------------------------------------
 
@@ -37,6 +38,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'sphinx.ext.pngmath'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -215,6 +217,8 @@ html_show_sourcelink = False
 htmlhelp_basename = 'everestdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
+
+latex_preamble = '\\usepackage{amsmath}\n\\usepackage{amssymb}'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').

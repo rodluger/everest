@@ -4,6 +4,9 @@
 plot.py
 -------
 
+These are routines for generating the output plots during an :py:mod:`everest`
+run.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -23,6 +26,9 @@ log = logging.getLogger(__name__)
 
 def Plot(data):
   '''
+  The main plotting function. This calls all other plotting functions below.
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -76,15 +82,20 @@ def Plot(data):
   # Plot the folded data
   if data['mask_candidates'] or len(data['inject'][()]):
     log.info('Plotting the folded data...')
-    #try:
-    PlotFolded(EPIC, data)
-    #except:
-    #  log.error('An error occurred while plotting the folded data.')
+    try:
+      PlotFolded(EPIC, data)
+    except:
+      log.error('An error occurred while plotting the folded data.')
   
   log.info('Done!')
 
 def PlotScatter(EPIC, data):
   '''
+  Plots the cross-validation scatter plot for a given run.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -128,6 +139,11 @@ def PlotScatter(EPIC, data):
 
 def PlotGP(EPIC, data):
   '''
+  Plots the GP optimization diagnostic plot for a given run.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -193,6 +209,11 @@ def PlotGP(EPIC, data):
 
 def PlotOutliers(EPIC, data):
   '''
+  Plots the results of the iterative outlier detection step.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
 
@@ -226,6 +247,14 @@ def PlotOutliers(EPIC, data):
 
 def PlotApertures(EPIC, data):
   '''
+  Plots the target postage stamp with the chosen aperture overlaid. The colors
+  (dark blue: low, dark red: high) represent the time-integrated flux over the
+  entire campaign. This gives us an idea of how suitable the chosen static aperture
+  is for capturing all the target's flux.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -302,6 +331,11 @@ def PlotApertures(EPIC, data):
 
 def PlotDetrended(EPIC, data):
   '''
+  Plots the de-trended data.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -500,6 +534,13 @@ def PlotDetrended(EPIC, data):
 
 def PlotFolded(EPIC, data):
   '''
+  Plots the data folded on the period(s) of any planet/EB candidates. This routine
+  typically won't get called, unless you're running a transit injection test or
+  you set `mask_candidates` to `True` when calling :py:func:`everest.compute.Compute`.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   

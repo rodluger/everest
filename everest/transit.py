@@ -4,6 +4,13 @@
 transit.py
 ----------
 
+Here be routines used to generate a transit model, primarily for
+transit injection/recovery tests. These are wrappers around
+:py:func:`everest.pysyzygy.Transit`, with the added feature that
+the transit `depth` and the transit `duration` can be specified
+as input variables (as opposed to the planet-star radius ratio
+and the stellar density, which `pysyzygy` expects).
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -57,6 +64,21 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   A `Mandel-Agol <http://adsabs.harvard.edu/abs/2002ApJ...580L.171M>`_ transit model, 
   but with the depth and the duration
   as primary input variables.
+  
+  :param numpy.ndarray time: The time array
+  
+  :param float t0: The time of first transit in `BJD - 2454833`.
+  
+  :param float dur: The transit duration in days. Don't go too crazy on this one -- very small \
+                    or very large values will break the inverter. Default `0.1`
+  
+  :param float per: The orbital period in days. Default `3.56789`
+  
+  :param float depth: The fractional transit depth. Default `0.001`
+  
+  :param dict kwargs: Any additional keyword arguments, passed directly to :py:func:`everest.pysyzygy.Transit`
+  
+  :returns tmod: The transit model evaluated at the same times as the `time` array
   
   '''
   
