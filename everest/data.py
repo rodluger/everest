@@ -4,6 +4,9 @@
 data.py
 -------
 
+These are routines for downloading and storing the raw `K2` data, as well
+as information about planet candidates and eclipsing binaries.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -175,7 +178,7 @@ adapter = {
 
 class k2data(object):
   '''
-  Generic K2 data container.
+  A generic `K2` data container. Nothing fancy here.
   
   '''
   
@@ -183,8 +186,41 @@ class k2data(object):
 
 def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
   '''
-  Download and save a single quarter of K2 data.
+  Download and save a single quarter of `K2` data.
   
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param apnum: The number of the aperture in the `K2SFF <https://archive.stsci.edu/prepds/k2sff/>`_ \
+                fits file to use for the photometry. Default `15`
+  :type apnum: int
+  
+  :param delete_kplr_data: Delete the fits file downloaded with :py:mod:`kplr` \
+                           after processing it? Default `True`
+  :type delete_kplr_data: bool
+  
+  :returns: 
+    A :class:`k2data` object containing the following attributes:
+  
+    - **campaign** - The `K2` campaign the target was observed in
+    - **time** - The array of timestamps, in `BJD - 245833`
+    - **cadn** - The long cadence number corresponding to each observation
+    - **fpix** - A 3-dimensional array of shape `(nt, nx, ny)` containing the \
+                 raw flux in the pixel at position `(x, y)` at each timestamp `t`
+    - **perr** - The standard error on each of the data points in `fpix`
+    - **apertures** - An array containing the 20 aperture images obtained from the \
+                      `K2SFF <https://archive.stsci.edu/prepds/k2sff/>`_ fits files
+    - **aperture** - *Deprecated*
+    - **bkg** - An estimate of the background flux at each cadence
+    - **bkgerr** - The standard error on `bkg`
+    - **kepmag** - The `Kepler` magnitude of the target
+    - **planets** - A list of :class:`K2Planets` objects containing known planets or \
+                    planet candidates for this target
+    - **EB** - `False` if target is not an eclipsing binary; otherwise, a :class:`K2EB` \
+               object containing EB info taken from the `Villanova <http://keplerebs.villanova.edu/>`_ \
+               eclipsing binary catalog
+    - **nearby** - A list of :class:`everest.sources.Source` instances containing \
+                   other `EPIC` targets within or close to this target's aperture
+    
   '''
   
   filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
@@ -355,7 +391,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
 
 class K2Planet(object):
   '''
-  Generic K2 planet candidate object.
+  A generic `K2` planet candidate object.
   
   '''
   
@@ -367,7 +403,7 @@ class K2Planet(object):
 
 class K2EB(object):
   '''
-  Generic K2 EB candidate object.
+  A generic `K2` EB candidate object.
   
   '''
   
@@ -379,7 +415,10 @@ class K2EB(object):
 
 def GetK2Stars(clobber = False):
   '''
-  Download and return a dict of all K2 stars organized by campaign.
+  Download and return a `dict` of all `K2` stars organized by campaign. Saves each
+  campaign to a `csv` file in the `/tables` directory.
+  
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   
@@ -404,9 +443,9 @@ def GetK2Stars(clobber = False):
 
 def GetK2InjectionTestStars(clobber = False):
   '''
-  Download and return a dict of 500 K2 stars from Campaigns 0-4,
-  with 50 stars per magnitude bin in the range 8-18. We use these
-  for injection tests.
+  Download and return a dict of 2000 `K2` stars, with 100 stars per magnitude 
+  bin in the range 8-18. These are used for injection tests. The stars are
+  saved in `tables/Injections.csv`.
   
   '''
   
@@ -424,10 +463,10 @@ def GetK2InjectionTestStars(clobber = False):
   
 def GetK2Planets():
   '''
-  The CSV file below was downloaded from 
-  `here <http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=k2candidates>`_.
-  I don't think there's currently a way to query the database, so this method will
-  have to do for now...
+  Returns a list of :class:`K2Planet` instances generated from the file
+  `/tables/k2candidates.csv`. This file was downloaded from the
+  `Exoplanet Archive <http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=k2candidates>`_
+  on February 26, 2016.
   
   '''
   
@@ -456,8 +495,10 @@ def GetK2Planets():
 
 def VillanovaBJDOffset(campaign):
   '''
-  There's a strange time offset in the Villanova EB catalog for 
-  some campaigns. The following hacks were determined empirically.
+  There's a strange time offset in the `Villanova` EB catalog for 
+  some campaigns. This function returns the time offset for a given
+  campaign, which was determined empirically. These numbers have not
+  been thoroughly verified.
   
   '''
   
@@ -474,16 +515,27 @@ class EclipseTimes(object):
   '''
   A simple class that determines the times of all eclipses for a given EB.
   
+  :param float t0: The time of first eclipse
+  :param float period: The period in days
+  :param float duration: The eclipse duration in days
+  
+  :returns: A :py:class:`numpy` array of the times of all transits between `start` \
+            and `stop`
+  
   '''
   
   def __init__(self, t0, period, duration):
+    '''
+    
+    '''
+    
     self.t0 = t0
     self.period = period
     self.duration = duration
     
   def __call__(self, start, end):
     '''
-  
+
     '''
     if self.duration > 0:
       return np.arange(self.t0 + np.ceil((start - self.duration - self.t0) / self.period) 
@@ -494,6 +546,11 @@ class EclipseTimes(object):
 class EclipseMask(object):
   '''
   An eclipse masking object for EBs.
+  
+  :param `EclipseTimes` primary: An instance containing the times of primary eclipse
+  :param `EclipseTimes` secondary: An instance containing the times of secondary eclipse
+  
+  :returns: The indices in `time` that contain the primary and secondary eclipses
   
   '''
   
@@ -516,7 +573,10 @@ class EclipseMask(object):
                    
 def GetK2EBs(clobber = False):
   '''
-  Grab all K2 EBs from the pre-downloaded Villanova catalog.
+  Grab all `K2` EBs from the pre-downloaded `Villanova` catalog, which is stored in
+  `/tables/k2ebs.tsv`.
+  
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   

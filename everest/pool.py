@@ -6,12 +6,12 @@ pool.py
 
 An implementation of three different types of pools:
     
-    - An MPI pool borrowed from ``emcee``. This pool passes Python objects
+    - An MPI pool borrowed from :py:mod:`emcee`. This pool passes Python objects
       back and forth to the workers and communicates once per task.
         
-    - A multiprocessing for local parallelization, borrowed from ``emcee``
+    - A multiprocessing for local parallelization, borrowed from :py:mod:`emcee`
     
-    - A serial pool, which uses the built-in ``map`` function
+    - A serial pool, which uses the built-in `map` function
     
 
 '''
@@ -31,7 +31,7 @@ import multiprocessing.pool
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['MPIPool', 'MultiPool', 'SerialPool']
+__all__ = ['MPIPool', 'MultiPool', 'SerialPool', 'Pool']
 
 class _close_pool_message(object):
     def __repr__(self):
@@ -55,7 +55,7 @@ def _error_function(*args):
 def _test_function(x):
     '''
     Wastes a random amount of time, then
-    returns the average of ``x``.
+    returns the average of `x`.
     
     '''
     
@@ -67,7 +67,7 @@ def _test_function(x):
 def _initializer_wrapper(actual_initializer, *rest):
     """
     We ignore SIGINT. It's up to our parent to kill us in the typical
-    condition of this arising from ``^C`` on a terminal. If someone is
+    condition of this arising from `^C` on a terminal. If someone is
     manually killing us with that signal, well... nothing will happen.
 
     """
@@ -159,10 +159,10 @@ class MPIPool(GenericPool):
     Contributed by `Joe Zuntz <https://github.com/joezuntz>`_.
 
     :param comm: (optional)
-        The ``mpi4py`` communicator.
+        The :py:mod:`mpi4py` communicator.
         
     :param loadbalance: (optional)
-        if ``True`` and ntask > Ncpus, tries to loadbalance by sending
+        if `True` and `ntask` > `Ncpus`, tries to loadbalance by sending
         out one task to each cpu first and then sending out the rest
         as the cpus get done.
     """
@@ -414,10 +414,10 @@ class SerialPool(GenericPool):
 
 class MultiPool(multiprocessing.pool.Pool):
     """
-    This is simply ``emcee``'s :class:`InterruptiblePool`.
+    This is simply :py:mod:`emcee`'s :py:class:`InterruptiblePool`.
     
-    A modified version of :class:`multiprocessing.pool.Pool` that has better
-    behavior with regard to ``KeyboardInterrupts`` in the :func:`map` method.
+    A modified version of :py:class:`multiprocessing.pool.Pool` that has better
+    behavior with regard to `KeyboardInterrupts` in the :func:`map` method.
     
     Contributed by Peter K. G. Williams <peter@newton.cx>.
     
@@ -425,15 +425,15 @@ class MultiPool(multiprocessing.pool.Pool):
         The number of worker processes to use; defaults to the number of CPUs.
 
     :param initializer: (optional)
-        Either ``None``, or a callable that will be invoked by each worker
+        Either `None`, or a callable that will be invoked by each worker
         process when it starts.
 
     :param initargs: (optional)
         Arguments for *initializer*; it will be called as
-        ``initializer(*initargs)``.
+        `initializer(*initargs)`.
 
     :param kwargs: (optional)
-        Extra arguments. Python 2.7 supports a ``maxtasksperchild`` parameter.
+        Extra arguments. Python 2.7 supports a `maxtasksperchild` parameter.
 
     """
     wait_timeout = 3600
@@ -455,8 +455,8 @@ class MultiPool(multiprocessing.pool.Pool):
     
     def map(self, func, iterable, chunksize=None):
         """
-        Equivalent of ``map()`` built-in, without swallowing
-        ``KeyboardInterrupt``.
+        Equivalent of `map()` built-in, without swallowing
+        `KeyboardInterrupt`.
 
         :param func:
             The function to apply to the items.
@@ -481,8 +481,8 @@ class MultiPool(multiprocessing.pool.Pool):
 
 def Pool(pool = 'AnyPool', **kwargs):
     '''
-    Chooses between the different pools (excluding the optimized MPI
-    pool). If ``pool == 'AnyPool'``, chooses based on availability.
+    Chooses between the different pools.
+    If `pool == 'AnyPool'`, chooses based on availability.
     
     '''
     

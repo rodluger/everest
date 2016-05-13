@@ -5,11 +5,14 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 # MPL backend: force Agg for all Everest modules if running on a Linux machine
 # In order for this to work, ``everest`` must be imported first!
+# If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
+# quite bugged (at least on my Mac!). In particular, it complains when trying
+# to save JPEGs.
 import platform
 if platform.system() == "Linux":
   import matplotlib as mpl
   mpl.use("Agg", warn=False)
-else:
+elif platform.system() == "Darwin":
   import matplotlib as mpl
   try:
     mpl.use("Qt4Agg", warn=False)

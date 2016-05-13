@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 
 def Get_RpRs(d, **kwargs):
   '''
-  Returns the value of Rp/Rs for a given depth, given
-  the ``pysyzygy`` transit **kwargs.
+  Returns the value of the planet radius over the stellar radius for a given depth `d`, given
+  the :py:class:`everest.pysyzygy` transit `kwargs`.
   
   '''
   
@@ -31,8 +31,8 @@ def Get_RpRs(d, **kwargs):
 
 def Get_rhos(dur, **kwargs):
   '''
-  Returns the value of rhos for a given transit duration, given
-  the ``pysyzygy`` transit **kwargs.
+  Returns the value of the stellar density for a given transit duration `dur`, given
+  the :py:class:`everest.pysyzygy` transit `kwargs`.
   
   '''
   
@@ -54,7 +54,8 @@ def Get_rhos(dur, **kwargs):
 
 def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   '''
-  A Mandel-Agol transit model, but with the depth and the duration
+  A `Mandel-Agol <http://adsabs.harvard.edu/abs/2002ApJ...580L.171M>`_ transit model, 
+  but with the depth and the duration
   as primary input variables.
   
   '''
@@ -71,7 +72,7 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
 
 def TopHat(time, t0 = 0., per = 3.56789, dur = 0.1, depth = 0.001, **kwargs):
   '''
-  A simple top-hat transit model.
+  A simple top-hat transit model. Not currently used.
   
   '''
   

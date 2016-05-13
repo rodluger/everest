@@ -30,7 +30,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
             ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.CRITICAL, gp_iter = 2, 
-            jpeg_quality = 30, **kwargs):
+            jpeg_quality = 30, fig_ext = 'jpg', **kwargs):
   '''
   
   '''
@@ -316,7 +316,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              kernfunc = kernfunc, EPIC = EPIC, run_name = run_name, 
              git_hash = git_hash, git_branch = git_branch, outdir = outdir,
              campaign = k2star.campaign, breakpoints = breakpoints, gp_iter = gp_iter,
-             jpeg_quality = jpeg_quality)
+             jpeg_quality = jpeg_quality, fig_ext = fig_ext)
   np.savez_compressed(os.path.join(outdir, 'data.npz'), **data)
   
   # Finally, delete the old .npz files

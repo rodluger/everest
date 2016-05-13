@@ -4,8 +4,9 @@
 sources.py
 ----------
 
-Adapted from some of the PyKE tools:
-http://keplergo.arc.nasa.gov/PyKE.shtml
+Adapted from some of the `PyKE tools <http://keplergo.arc.nasa.gov/PyKE.shtml>`_.
+Queries the `MAST` archive for sources within or near the aperture of a given
+target and returns their magnitudes and positions on the detector.
 
 '''
 
@@ -32,6 +33,8 @@ class Source(object):
 def MASTRADec(ra, dec, darcsec):
   '''
   Detector location retrieval based upon RA and Dec.
+  Adapted from 
+  `PyKE <http://keplergo.arc.nasa.gov/PyKE.shtml>`_.
   
   '''
   
@@ -87,7 +90,13 @@ def MASTRADec(ra, dec, darcsec):
 
 def sex2dec(ra, dec):
   '''
-  Convert sexadecimal hours to decimal degrees.
+  Convert sexadecimal hours to decimal degrees. Adapted from 
+  `PyKE <http://keplergo.arc.nasa.gov/PyKE.shtml>`_.
+  
+  :param float ra: The right ascension
+  :param float dec: The declination
+  
+  :returns: The same values, but in decimal degrees
   
   '''
 
@@ -117,6 +126,10 @@ def GetSources(EPIC):
   Grabs the EPIC coordinates from the TPF and searches MAST
   for other EPIC targets within the same aperture.
   
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :returns: A list of :py:class:`Source` instances containing \
+            other `EPIC` targets within or close to this target's aperture
   '''
   
   client = kplr.API()

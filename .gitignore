@@ -14,3 +14,4 @@ paper/tex/k2.pdf
 _*.py
 _*.tsv
 *.pyc
+docs/.build

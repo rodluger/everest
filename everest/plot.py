@@ -30,41 +30,47 @@ def Plot(data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
+  try:
+    ext = data['fig_ext'][()]
+    if (ext != 'jpg') or (ext != 'jpeg'):
+      jpeg_quality = None
+  except:
+    ext = 'jpg'
   
   # Plot the apertures
   log.info('Plotting the apertures...')
-  if not os.path.exists(os.path.join(outdir, 'aper.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
     fig, ax = PlotApertures(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'aper.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'aper.%s' % ext), quality = jpeg_quality)
     pl.close()
 
   # Plot the outliers
   log.info('Plotting the outliers...')
-  if not os.path.exists(os.path.join(outdir, 'outliers.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'outliers.%s' % ext)):
     fig, ax = PlotOutliers(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'outliers.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'outliers.%s' % ext), quality = jpeg_quality)
     pl.close()  
 
   # Plot the apertures
   log.info('Plotting the GP...')
-  if not os.path.exists(os.path.join(outdir, 'acor.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'acor.%s' % ext)):
     fig, ax = PlotGP(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'acor.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'acor.%s' % ext), quality = jpeg_quality)
     pl.close()
 
   # Plot the scatter curves
   if len(data['masked_scatter']):
     log.info('Plotting the scatter curve...')
-    if not os.path.exists(os.path.join(outdir, 'scatter.jpg')):
+    if not os.path.exists(os.path.join(outdir, 'scatter.%s' % ext)):
       fig, ax = PlotScatter(EPIC, data)
-      fig.savefig(os.path.join(outdir, 'scatter.jpg'), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'scatter.%s' % ext), quality = jpeg_quality)
       pl.close()
 
   # Plot the detrended data
   log.info('Plotting the detrended data...')
-  if not os.path.exists(os.path.join(outdir, 'detrended.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'detrended.%s' % ext)):
     fig, ax = PlotDetrended(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'detrended.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'detrended.%s' % ext), quality = jpeg_quality)
     pl.close()
   
   # Plot the folded data
@@ -526,7 +532,13 @@ def PlotFolded(EPIC, data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-      
+  try:
+    ext = data['fig_ext'][()]
+    if (ext != 'jpg') or (ext != 'jpeg'):
+      jpeg_quality = None
+  except:
+    ext = 'jpg'
+    
   # Is the star is an eclipsing binary?
   if EB:
     for n, eclipse, t0, dur in zip([1,2], ['Primary', 'Secondary'], ['p0', 's0'], ['pdur', 'sdur']):
@@ -558,7 +570,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
 
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_EB%02d.jpg' % n), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_EB%02d.%s' % (n, ext)), quality = jpeg_quality)
       pl.close()
 
   # Is this a planet host?
@@ -611,7 +623,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_%02d.%s' % (pcount, ext)), quality = jpeg_quality)
       pcount += 1
       pl.close()
     
@@ -661,7 +673,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_%02d.%s' % (pcount, ext)), quality = jpeg_quality)
       pcount += 1
       pl.close()
     
@@ -701,6 +713,6 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_%02d.%s' % (pcount, ext)), quality = jpeg_quality)
       pcount += 1
       pl.close() 
