@@ -14,8 +14,8 @@ import logging
 import numpy as np
 
 kwargs = dict(
-                run_name = 'default',
-                apnum = 15, 
+                run_name = 'ap10',
+                apnum = 10, 
                 outlier_sigma = 5,
                 mask_times = [], 
                 pld_order = 3,
