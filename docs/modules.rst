@@ -3,6 +3,10 @@ The Code
 
 Contents:
 
+
+everest
+-------
+
 .. toctree::
    :maxdepth: 2   
    
@@ -18,3 +22,11 @@ Contents:
    sources.py <sources>
    transit.py <transit>
    utils.py <utils>
+   
+pysyzygy
+--------
+
+.. toctree::
+   :maxdepth: 2   
+   
+   transit.py <pstransit>
