@@ -130,7 +130,7 @@ if __name__ == '__main__':
   
   # The campaigns we'll use for the synthesis plots
   campaigns = [0,1,2,3,4,5]
-  figures = [1,2,3,4,5,6]
+  figures = [1] #[1,2,3,4,5,6]
 
   # Get the raw **Kepler** rms
   kep_star, kep_kepmag, _, kep_raw = np.loadtxt(os.path.join('CDPP', 'kepler.tsv'), unpack = True)
@@ -211,11 +211,13 @@ if __name__ == '__main__':
         # Everest
         i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
         b_k2[b] = np.nanmedian(y[i])
-        b_k2_sig_l[b] = b_k2[b] - sorted(y[i])[int(len(y[i]) * 0.1585)]
-        b_k2_sig_u[b] = sorted(y[i])[int(len(y[i]) * 0.8415)] - b_k2[b]
-
-      ax.errorbar(bins - 0.025, b_kep, [b_kep_sig_l, b_kep_sig_u], color = 'y', fmt = 'o', lw = 1, ecolor = 'k', capthick = 1, zorder = 99)
-      ax.errorbar(bins + 0.025, b_k2, [b_k2_sig_l, b_k2_sig_u], color = 'b', fmt = 'o', lw = 1, ecolor = 'k', capthick = 1, zorder = 99)
+        b_k2_sig_l[b] = sorted(y[i])[int(len(y[i]) * 0.1585)]
+        b_k2_sig_u[b] = sorted(y[i])[int(len(y[i]) * 0.8415)]
+      
+      # The error bars don't make much physical sense, since the distributions
+      # are far from gaussian. I'm just going to indicate the median on the plot
+      ax.plot(bins - 0.025, b_kep, 'yo', zorder = 99)
+      ax.plot(bins + 0.025, b_k2, 'bo', zorder = 99)
 
   def fig_precision(fig, ax, campaigns, labels = True):
     '''
