@@ -29,4 +29,5 @@ pysyzygy
 .. toctree::
    :maxdepth: 2   
    
+   plot.py <psplot>
    transit.py <pstransit>

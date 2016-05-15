@@ -15,9 +15,10 @@ from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
 import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-from kplr.config import KPLR_ROOT
 import sys
+EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEF_KWARGS_FILE = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')
+from kplr.config import KPLR_ROOT
 import subprocess
 import numpy as np
 import imp
@@ -95,7 +96,7 @@ def _Run(EPIC, **kwargs):
   else:
     return False
 
-def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
+def RunSingle(EPIC, debug = False, kwargs_file = None):
   '''
   Compute and plot data for a given target.
   
@@ -108,6 +109,8 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
   '''
   
   # Get the kwargs
+  if kwargs_file is None:
+    kwargs_file = DEF_KWARGS_FILE
   kwargs = imp.load_source("kwargs", kwargs_file).kwargs
   
   # Set up our custom exception handlers
@@ -122,7 +125,7 @@ def RunSingle(EPIC, debug = False, kwargs_file = os.path.join(EVEREST_ROOT, 'scr
 def RunInjections(depth = 0.01, mask = False, queue = None,
                   nodes = 5, ppn = 12, walltime = 100, 
                   email = None, 
-                  kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
+                  kwargs_file = None):
   '''
   Submits a cluster job to compute and plot data for a sample
   of targets chosen for transit injection tests.
@@ -140,6 +143,8 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   '''
   
   # Submit the cluster job   
+  if kwargs_file is None:
+    kwargs_file = DEF_KWARGS_FILE
   name = 'inject_%.4f%s' % (depth, ('m' if mask else 'u'))   
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runinjections.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
@@ -164,7 +169,7 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
 
 def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
                   email = None, 
-                  kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
+                  kwargs_file = None):
   '''
   Submits a cluster job to compute and plot data for all targets hosting
   confirmed planets or planet candidates.
@@ -179,7 +184,9 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   
   '''
           
-  # Submit the cluster job      
+  # Submit the cluster job  
+  if kwargs_file is None:
+    kwargs_file = DEF_KWARGS_FILE    
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcandidates.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
@@ -203,7 +210,7 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
 
 def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
                 email = None, queue = None,
-                kwargs_file = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')):
+                kwargs_file = None):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
   
@@ -218,7 +225,9 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   
   '''
           
-  # Submit the cluster job      
+  # Submit the cluster job 
+  if kwargs_file is None:
+    kwargs_file = DEF_KWARGS_FILE     
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
