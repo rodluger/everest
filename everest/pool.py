@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-pool.py
--------
+:py:mod:`pool.py` - Multiprocessing
+-----------------------------------
 
 An implementation of three different types of pools:
     

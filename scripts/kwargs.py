@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-kwargs.py
----------
+:py:mod:`kwargs.py` - User options
+----------------------------------
 
 This file contains the kwargs passed to :py:func:`everest.compute.Compute()` when
 running a cluster job with :py:func:`everest.run.RunCampaign()`.

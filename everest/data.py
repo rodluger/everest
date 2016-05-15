@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-data.py
--------
+:py:mod:`data.py` - Download routines
+-------------------------------------
 
 These are routines for downloading and storing the raw `K2` data, as well
 as information about planet candidates and eclipsing binaries.

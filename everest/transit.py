@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-transit.py
-----------
+:py:mod:`transit.py` - Transit models
+-------------------------------------
 
 Here be routines used to generate a transit model, primarily for
 transit injection/recovery tests. These are wrappers around

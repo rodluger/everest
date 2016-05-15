@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-plot.py
--------
+:py:mod:`plot.py` - Plotting routines
+-------------------------------------
 
 These are routines for generating the output plots during an :py:mod:`everest`
 run.

@@ -1,33 +1,26 @@
 The Code
 ========
 
-Contents:
-
-
-everest
--------
+.. toctree::
+   :maxdepth: 2  
+   :caption: everest 
+   
+   compute
+   data
+   detrend
+   gp
+   kernels
+   kwargs
+   plot
+   pool
+   run
+   sources
+   transit
+   utils
 
 .. toctree::
    :maxdepth: 2   
+   :caption: pysyzygy
    
-   compute.py <compute>
-   data.py <data>
-   detrend.py <detrend>
-   gp.py <gp>
-   kernels.py <kernels>
-   kwargs.py <kwargs>
-   plot.py <plot>
-   pool.py <pool>
-   run.py <run>
-   sources.py <sources>
-   transit.py <transit>
-   utils.py <utils>
-   
-pysyzygy
---------
-
-.. toctree::
-   :maxdepth: 2   
-   
-   plot.py <psplot>
-   transit.py <pstransit>
+   psplot
+   pstransit

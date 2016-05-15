@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-utils.py
---------
+:py:mod:`utils.py` - General utils
+----------------------------------
 
 General utility functions called from various parts of the code.
 

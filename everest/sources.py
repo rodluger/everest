@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-sources.py
-----------
+:py:mod:`sources.py` - Nearby sources
+-------------------------------------
 
 Adapted from some of the `PyKE tools <http://keplergo.arc.nasa.gov/PyKE.shtml>`_.
 Queries the `MAST` archive for sources within or near the aperture of a given

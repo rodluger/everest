@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-gp.py
------
+:py:mod:`compute.py` - Gaussian Processes
+-----------------------------------------
 
 This module optimizes the GP used to obtain the PLD coefficients.
 

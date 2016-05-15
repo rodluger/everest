@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-kernels.py
-----------
+:py:mod:`kernels.py` - GP kernels
+---------------------------------
 
 Here we define all the kernels we use to match the data autocorrelation
 during the GP-tuning step. These are implemented in a similar fashion

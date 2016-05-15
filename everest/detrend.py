@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-detrend.py
-----------
+:py:mod:`detrend.py` - Linear algebra
+-------------------------------------
 
 This is the heart of :py:mod:`everest`. These routines compute the principal components
 of the fractional pixel flux functions and solves the GLS problem with a GP to

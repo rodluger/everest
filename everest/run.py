@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-run.py
-------
+:py:mod:`run.py` - User-facing routines
+---------------------------------------
 
 Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
 

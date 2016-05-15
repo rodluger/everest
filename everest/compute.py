@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-compute.py
-----------
+:py:mod:`compute.py` - Main routines
+------------------------------------
 
 '''
 
