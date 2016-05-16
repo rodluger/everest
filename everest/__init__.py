@@ -3,6 +3,9 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
+# Version number
+__version__ = "1.0.0"
+
 # MPL backend: force Agg for all Everest modules if running on a Linux machine
 # In order for this to work, ``everest`` must be imported first!
 # If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
