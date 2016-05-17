@@ -12,7 +12,13 @@ EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from . import __version__ as EVEREST_VERSION
 import kplr
 from kplr.config import KPLR_ROOT
-import pyfits
+try:
+  import pyfits
+except ImportError:
+  try:
+    import astropy.io.fits as pyfits
+  except ImportError:
+    raise Exception('Please install the `pyfits` package.')
 import numpy as np
 from time import strftime
 import logging
