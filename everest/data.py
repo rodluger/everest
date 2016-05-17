@@ -244,7 +244,7 @@ def _UpdateDataFile(EPIC):
   
   return True
 
-def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
+def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   '''
   Download and save a single quarter of `K2` data.
   
@@ -257,6 +257,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
   :param delete_kplr_data: Delete the fits file downloaded with :py:mod:`kplr` \
                            after processing it? Default `True`
   :type delete_kplr_data: bool
+  
+  :param clobber: Overwrite existing `.npz` file? Default `False`
+  :type clobber: bool
   
   :returns: 
     A :class:`k2data` object containing the following attributes:
@@ -285,21 +288,22 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
   
   filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
   
-  try:
-    data = np.load(filename)
-    time = data['time']
-    fpix = data['fpix']
-    perr = data['perr']
-    campaign = data['campaign']
-    aperture = data['aperture']
-    cadn = data['cadn']
-    _nearby = data['nearby']
-    nearby = [Source(**s) for s in _nearby]
-    fitsheader = data['fitsheader']
-    apertures = data['apertures']
-    clobber = False
-  except:
-    clobber = True
+  if not clobber:
+    try:
+      data = np.load(filename)
+      time = data['time']
+      fpix = data['fpix']
+      perr = data['perr']
+      campaign = data['campaign']
+      aperture = data['aperture']
+      cadn = data['cadn']
+      _nearby = data['nearby']
+      nearby = [Source(**s) for s in _nearby]
+      fitsheader = data['fitsheader']
+      apertures = data['apertures']
+      clobber = False
+    except:
+      clobber = True
       
   if clobber:
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):

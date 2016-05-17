@@ -38,12 +38,12 @@ def _UpdateCampaign(campaign):
   # Download the TPF data for each one
   for i, EPIC in enumerate(stars):
     print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    try:
-      _UpdateDataFile(EPIC)
-    except KeyboardInterrupt:
-      return
-    except:
-      print("Error updating EPIC %d." % EPIC)
+    res = _UpdateDataFile(EPIC)
+    if res is False:
+      try:
+        GetK2Data(EPIC)
+      except:
+        
 
 def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
