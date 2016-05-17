@@ -38,10 +38,10 @@ def _UpdateCampaign(campaign):
   # Download the TPF data for each one
   for i, EPIC in enumerate(stars):
     print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    try:
-      _UpdateDataFile(EPIC)
-    except:
-      print("Error updating EPIC %d." % EPIC)
+    #try:
+    _UpdateDataFile(EPIC)
+    #except:
+    #  print("Error updating EPIC %d." % EPIC)
 
 def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
