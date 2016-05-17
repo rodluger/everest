@@ -198,6 +198,19 @@ def _UpdateDataFile(EPIC):
   
   '''
   
+  # Have we done this already?
+  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+  try:
+    data = np.load(filename)
+  except:
+    return False
+  try:
+    data['fitsheader']
+    data['apertures']
+    return True
+  except:
+    pass
+  
   # Apertures
   k2sff = kplr.K2SFF(EPIC)
   apertures = k2sff.apertures
@@ -217,9 +230,7 @@ def _UpdateDataFile(EPIC):
   os.remove(ftpf)
   os.remove(k2sff._file)
   
-  # Append to npz file
-  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
-  data = np.load(filename)
+  # Append to the npz file
   time = data['time']
   fpix = data['fpix']
   perr = data['perr']
