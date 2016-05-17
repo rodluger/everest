@@ -24,6 +24,30 @@ import numpy as np
 import imp
 import time
 
+def UpdateCampaign(campaign, queue = 'build', email = None, walltime = 8):
+  '''
+  A **temporary** hack to add fits header info and K2SFF aperture info to 
+  previously saved .npz tpf files
+  
+  '''
+          
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'updatecampaign.pbs')
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
+  str_out = os.path.join(EVEREST_ROOT, 'UPDATE_C%02d.log' % campaign)
+  qsub_args = ['qsub', pbsfile, 
+               '-q', queue,
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', 'UPDATE_C%02d' % campaign,
+               '-l', str_w]
+  if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
 def _UpdateCampaign(campaign):
   '''
   A **temporary** hack to add fits header info and K2SFF aperture info to 
