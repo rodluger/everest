@@ -43,7 +43,7 @@ def _UpdateCampaign(campaign):
       try:
         GetK2Data(EPIC)
       except:
-        
+        print("Error downloading EPIC %d." % EPIC)
 
 def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
