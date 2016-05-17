@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 # Version number
-__version__ = "1.0.0"
+__version__ = "1.0"
 
 # MPL backend: force Agg for all Everest modules if running on a Linux machine
 # In order for this to work, ``everest`` must be imported first!
@@ -35,8 +35,9 @@ except Exception as e:
     raise Exception("Please compile ``pysyzygy`` by running ``make`` in '/everest/pysyzygy'.")
 
 # Import modules
-from . import compute, data, detrend, gp, kernels, pool, sources, transit, utils
+from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, utils
 from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars
 from .pool import Pool
 from .compute import Compute
 from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
+from .fits import MakeFITS

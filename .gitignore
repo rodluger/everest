@@ -16,3 +16,4 @@ _*.py
 _*.tsv
 *.pyc
 docs/.build
+fits

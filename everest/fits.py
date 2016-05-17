@@ -11,19 +11,20 @@ import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from . import __version__ as EVEREST_VERSION
 import kplr
+from kplr.config import KPLR_ROOT
 import pyfits
 import numpy as np
 from time import strftime
 import logging
 log = logging.getLogger(__name__)
 
-def PrimaryHDU(tpf):
+def PrimaryHDU(data, fitsheader):
   '''
   
   '''
   
   # Get info from the TPF Primary HDU Header
-  pri_header = pyfits.getheader(tpf, 0)
+  tpf_header = fitsheader[0]
   entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'CHANNEL', 'MODULE', 
              'OUTPUT', 'CAMPAIGN', 'DATA_REL', 'OBSMODE', 'MISSION', 'TTABLEID',
              'RADESYS', 'RA_OBJ', 'DEC_OBJ',  'EQUINOX', 'KEPMAG']  
@@ -32,7 +33,7 @@ def PrimaryHDU(tpf):
   cards.append(('COMMENT', '*      KEPLER INFO     *'))
   cards.append(('COMMENT', '************************'))
   for entry in entries:
-    cards.append(pri_header.cards[entry])
+    cards.append(tpf_header[entry])
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -47,13 +48,13 @@ def PrimaryHDU(tpf):
 
   return hdu
 
-def DataHDU(tpf, data):
+def DataHDU(data, fitsheader):
   '''
   
   '''
   
   # Get info from the TPF BinTable HDU Header
-  pri_header = pyfits.getheader(tpf, 1)
+  tpf_header = fitsheader[1]
   entries = ['WCSN4P', 'WCAX4P', '1CTY4P', '2CTY4P', '1CUN4P', '2CUN4P', '1CRV4P', 
              '2CRV4P', '1CDL4P', '2CDL4P', '1CRP4P', '2CRP4P', 'WCAX4', '1CTYP4', 
              '2CTYP4', '1CRPX4', '2CRPX4', '1CRVL4', '2CRVL4', '1CUNI4', '2CUNI4', 
@@ -90,7 +91,7 @@ def DataHDU(tpf, data):
   cards.append(('COMMENT', '*      KEPLER INFO     *'))
   cards.append(('COMMENT', '************************'))
   for entry in entries:
-    cards.append(pri_header.cards[entry])
+    cards.append(tpf_header[entry])
   
   # Generate some EVEREST data/info
   outliers = np.zeros_like(data['time'])
@@ -138,7 +139,7 @@ def DataHDU(tpf, data):
 
   return hdu
 
-def CHDU(tpf, data):
+def CHDU(data, fitsheader):
   '''
   
   '''
@@ -162,7 +163,7 @@ def CHDU(tpf, data):
 
   return hdu
 
-def XHDU(tpf, data):
+def XHDU(data, fitsheader):
   '''
   
   '''
@@ -186,13 +187,13 @@ def XHDU(tpf, data):
 
   return hdu
 
-def ApertureHDU(tpf, data):
+def ApertureHDU(data, fitsheader):
   '''
   
   '''
   
   # Get info from the TPF BinTable HDU Header
-  pri_header = pyfits.getheader(tpf, 2)
+  tpf_header = fitsheader[2]
   entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'RADESYS', 'RA_OBJ', 
              'DEC_OBJ', 'EQUINOX', 'WCSAXES', 'CTYPE1', 'CTYPE2', 'CRPIX1', 
              'CRPIX2', 'CRVAL1', 'CRVAL2', 'CUNIT1', 'CUNIT2', 'CDELT1', 
@@ -204,7 +205,7 @@ def ApertureHDU(tpf, data):
   cards.append(('COMMENT', '*      KEPLER INFO     *'))
   cards.append(('COMMENT', '************************'))
   for entry in entries:
-    cards.append(pri_header.cards[entry])
+    cards.append(tpf_header[entry])
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -219,29 +220,43 @@ def ApertureHDU(tpf, data):
 
   return hdu
 
-def HDUList(EPIC, data, delete_kplr_data = True):
+def MakeFITS(EPIC, campaign, run_name = 'default', clobber = False):
   '''
   
   '''
   
-  # Get the tpf
-  client = kplr.API()
-  star = client.k2_star(EPIC)
-  with star.get_target_pixel_files()[0].open() as f:
-    tpf = f.filename()
+  # Set up the output directory
+  folder = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
+                       ('%09d' % EPIC)[:4] + '00000')
+  if not os.path.exists(folder):
+    os.makedirs(folder)
+  outfile = os.path.join(folder, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % 
+                        (EPIC, campaign, EVEREST_VERSION))
+  if os.path.exists(outfile) and not clobber:
+    return
+  elif os.path.exists(outfile):
+    os.remove(outfile)
   
-  # The HDUs
-  primary = PrimaryHDU(tpf)
-  arrays = DataHDU(tpf, data)
-  c = CHDU(tpf, data)
-  x = XHDU(tpf, data)
-  aperture = ApertureHDU(tpf, data)
+  # Get the EVEREST input data and grab the fits header
+  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+  indata = np.load(filename)
+  fitsheader = indata['fitsheader']
+  
+  # Get the EVEREST output data
+  outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, str(EPIC), run_name)
+  data = dict(np.load(os.path.join(outdir, 'data.npz')))
+  
+  # Create the HDUs
+  primary = PrimaryHDU(data, fitsheader)
+  arrays = DataHDU(data, fitsheader)
+  c = CHDU(data, fitsheader)
+  x = XHDU(data, fitsheader)
+  aperture = ApertureHDU(data, fitsheader)
 
-  # Combine
+  # Combine to get the HDUList
   hdulist = pyfits.HDUList([primary, arrays, c, x, aperture])
   
-  # Delete original data?
-  if delete_kplr_data:
-    os.remove(tpf)
+  # Output to the FITS file
+  hdulist.writeto(outfile)
   
-  return hdulist
+  return

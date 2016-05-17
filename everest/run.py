@@ -10,7 +10,7 @@ Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .plot import Plot
-from .data import GetK2Stars, GetK2Data, GetK2Planets, GetK2InjectionTestStars
+from .data import GetK2Stars, GetK2Data, GetK2Planets, GetK2InjectionTestStars, _UpdateDataFile
 from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
@@ -23,6 +23,25 @@ import subprocess
 import numpy as np
 import imp
 import time
+
+def _UpdateCampaign(campaign):
+  '''
+  A **temporary** hack to add fits header info and K2SFF aperture info to 
+  previously saved .npz tpf files
+  
+  '''
+  
+  # Get all star IDs for this campaign
+  stars = GetK2Stars()[campaign]
+  nstars = len(stars)
+  
+  # Download the TPF data for each one
+  for i, EPIC in enumerate(stars):
+    print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    try:
+      _UpdateDataFile(EPIC)
+    except:
+      print("Error updating EPIC %d." % EPIC)
 
 def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
