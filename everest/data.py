@@ -492,20 +492,20 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
-def Progress(run_name = 'default', show_subcampaigns = False):
+def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
   '''
   
   '''
+  
   print("CAMP      DONE      FAIL    REMAIN      PERC")
   print("----      ----      ----    ------      ----")
-  for c in range(99):
+  for c in campaigns:
     if os.path.exists(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)):
       path = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)
       folders = os.listdir(path)
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
       total = len(GetK2Campaign(c))
-      
       
       if show_subcampaigns:
         print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 

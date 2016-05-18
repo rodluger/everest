@@ -352,7 +352,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   log.info('Saving detrended lightcurve to disk...') 
   WritePLDFile(EPIC, k2star.kepmag, satsev, crwdsev, crwdinfo, chisq, 
                rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, 
-               rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), outdir)
+               rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), mask, outdir)
 
   # Get the git info (if we're in a git repo)
   try:
@@ -399,7 +399,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   return data
 
 def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4, r5,
-                 time, fpld, ferr, outdir):
+                 time, fpld, ferr, mask, outdir):
   '''
   A routine called by :py:func:`Compute` to write the de-trended flux array to
   a `.pld` file.
@@ -421,14 +421,19 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
    "# PHOTON LIMIT:      {:8.2f} ppm".format(r5),
    "#"
   ]
+  
+  # Flag the outliers
+  outliers = np.zeros_like(time, dtype = np.int32)
+  outliers[mask] = 1
 
+  # Write to file
   with open(os.path.join(outdir, '%d.pld' % EPIC), 'w') as pldfile:
     for line in header:
       print(line, file = pldfile)
     print(crwdinfo, file = pldfile)
-    for t, f, s in zip(time, fpld, ferr):
-      print('%.10e\t%.10e\t%.10e' % (t, f, s), file = pldfile)  
-
+    for t, f, s, o in zip(time, fpld, ferr, outliers):
+      print("{:>20.10f} {:>20.10f} {:>20.10f} {:>1d}".format(t, f, s, o), file = pldfile)
+      
 def GetCDPP(flux, fpld):
   '''
   Returns the 6-hr CDPP (RMS) of the raw and de-trended data, with and without
@@ -590,7 +595,7 @@ def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
   contour[apidx] = 1
   contour = np.lib.pad(contour, 1, PadWithZeros)
   maxsev = 0
-  crwdinfo = ["#   EPIC      ΔKp (mag)   SEVERITY (0-5)",
+  crwdinfo = ["#   EPIC      dKp (mag)   SEVERITY (0-5)",
               "# ---------   ---------   --------------"]
   
   for source in [s for s in nearby if s.epic != EPIC]:

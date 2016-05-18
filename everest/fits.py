@@ -100,7 +100,7 @@ def DataHDU(data, fitsheader):
     cards.append(tpf_header[entry])
   
   # Generate some EVEREST data/info
-  outliers = np.zeros_like(data['time'])
+  outliers = np.zeros_like(data['time'], dtype = np.int32)
   outliers[data['mask']] = 1
   flux = data['fpld'] * np.nanmedian(data['flux'])
   cdpp_raw = data['rms'][1]
@@ -137,7 +137,7 @@ def DataHDU(data, fitsheader):
   header = pyfits.Header(cards = cards)
   cols = pyfits.ColDefs([pyfits.Column(name = 'TIME', format = 'D', array = data['time'], unit = 'BJD - 2454833'),
                          pyfits.Column(name = 'FLUX', format = 'D', array = flux),
-                         pyfits.Column(name = 'OUTLIER', format = 'D', array = outliers),
+                         pyfits.Column(name = 'OUTLIER', format = 'J', array = outliers),
                          pyfits.Column(name = 'BKG_FLUX', format = 'D', array = data['bkg']),
                          pyfits.Column(name = 'FWHITE', format = 'D', array = data['fwhite'])
                         ])
