@@ -56,7 +56,7 @@ def _UpdateCampaign(campaign):
   '''
   
   # Get all star IDs for this campaign
-  stars = GetK2Stars()[campaign]
+  stars = GetK2Campaign(campaign)
   nstars = len(stars)
   
   # Download the TPF data for each one
@@ -253,7 +253,7 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
+def RunCampaign(campaign, subcampaign = -1, nodes = 5, ppn = 12, walltime = 100, 
                 email = None, queue = None,
                 kwargs_file = None):
   '''
@@ -276,14 +276,14 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d' % (EVEREST_ROOT, 
-          nodes, os.path.abspath(kwargs_file), campaign)
-  str_out = os.path.join(EVEREST_ROOT, 'C%02d.log' % campaign)
+  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_ROOT, 
+          nodes, os.path.abspath(kwargs_file), campaign, subcampaign)
+  str_out = os.path.join(EVEREST_ROOT, 'C%02d_%d.log' % (campaign, subcampaign))
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
-               '-N', 'C%02d' % campaign, 
+               '-N', 'C%02d_%d' % (campaign, subcampaign),
                '-l', str_n,
                '-l', str_w]
   if email is not None: 
@@ -355,7 +355,7 @@ def _RunInjections(kwargs_file, depth, mask):
     C = FunctionWrapper(_Run, **kwargs)
     pool.map(C, stars)
 
-def _RunCampaign(campaign, kwargs_file):
+def _RunCampaign(campaign, subcampaign, kwargs_file):
   '''
   The actual function that runs a given campaign; this must
   be called from ``runcampaign.pbs``.
@@ -372,7 +372,7 @@ def _RunCampaign(campaign, kwargs_file):
     kwargs = imp.load_source("kwargs", kwargs_file).kwargs
         
     # Get all the stars
-    stars = GetK2Stars()[campaign]
+    stars = GetK2Campaign(campaign, subcampaign)
   
     # Compute and plot
     C = FunctionWrapper(_Run, **kwargs)
@@ -386,7 +386,7 @@ def _DownloadCampaign(campaign):
   '''
   
   # Get all star IDs for this campaign
-  stars = GetK2Stars()[campaign]
+  stars = GetK2Campaign(campaign)
   nstars = len(stars)
   
   # Download the TPF data for each one

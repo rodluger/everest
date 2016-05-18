@@ -217,9 +217,13 @@ def PlotOutliers(EPIC, data):
   '''
 
   time = data['time']
-  bkg = data['bkg']
   flux = data['flux']
   mask = data['mask']
+  campaign = data['campaign']
+  if RemoveBackground(campaign):
+    bkg = data['bkg']
+  else:
+    bkg = np.zeros_like(time)
   trn_mask = np.array(data['trn_mask'], dtype = int)
   remove = np.array(data['out_mask'], dtype = int)
   

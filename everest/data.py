@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .sources import GetSources, Source
-from .utils import MedianFilter
+from .utils import MedianFilter, Chunks
 import kplr
 from kplr.config import KPLR_ROOT
 import numpy as np
@@ -492,6 +492,36 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
+def Progress(run_name = 'default', show_subcampaigns = False):
+  '''
+  
+  '''
+  print("CAMP      DONE      FAIL    REMAIN      PERC")
+  print("----      ----      ----    ------      ----")
+  for c in range(99):
+    if os.path.exists(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)):
+      path = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)
+      folders = os.listdir(path)
+      done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
+      err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
+      total = len(GetK2Campaign(c))
+      
+      
+      if show_subcampaigns:
+        print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
+              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+        for subcampaign in range(10):
+          sub = GetK2Campaign(c, subcampaign)
+          d = len(set(done) & set(sub))
+          e = len(set(err) & set(sub))
+          print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
+                total - (d + e), 100 * (d + e) / total))
+      else:
+        print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
+              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+      
+  return
+  
 def GetK2Stars(clobber = False):
   '''
   Download and return a `dict` of all `K2` stars organized by campaign. Saves each
@@ -519,6 +549,27 @@ def GetK2Stars(clobber = False):
       res.update({campaign: stars})
   
   return res
+
+def GetK2Campaign(campaign, subcampaign = -1, clobber = False):
+  '''
+  Return all stars in a given K2 campaign.
+  
+  :param int campaign: The K2 campaign number
+  :param int subcampaign: The sub-campaign number. If `-1`, returns all targets in the \
+                          campaign. Otherwise returns the `n^th` sub-campaign, where \
+                          `0 <= n <= 9` are the ten equally-sized sub-campaigns
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
+  
+  '''
+  
+  all = GetK2Stars(clobber = clobber)[campaign]
+  
+  if subcampaign == -1:
+    return all
+  elif (subcampaign >= 0) and (subcampaign <= 9):
+    return list(Chunks(all, len(all) // 10))[subcampaign]
+  else:
+    raise Exception('Argument `subcampaign` must be equal to -1 or in the range [0,9].')
 
 def GetK2InjectionTestStars(clobber = False):
   '''

@@ -11,7 +11,7 @@ import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .data import GetK2Data
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
-from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers
+from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers, RemoveBackground
 from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
 from .gp import GetGP
@@ -135,10 +135,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Note that some K2SFF apertures include pixels that are always NaN, so we
   # remove those here.
   apidx = np.where(k2star.apertures[apnum] & 1 & ~np.isnan(k2star.fpix[0]))
-  fpix = np.array([f[apidx] for f in k2star.fpix], dtype='float64') - \
-                   bkg.reshape(bkg.shape[0], 1)
+  fpix = np.array([f[apidx] for f in k2star.fpix], dtype='float64')
   perr = np.array([f[apidx] for f in k2star.perr], dtype='float64')
-  perr = np.sqrt(perr ** 2 + bkgerr.reshape(bkgerr.shape[0], 1) ** 2)
+  if RemoveBackground(k2star.campaign):
+    fpix -= bkg.reshape(bkg.shape[0], 1)
+    perr = np.sqrt(perr ** 2 + bkgerr.reshape(bkgerr.shape[0], 1) ** 2)
   flux = np.sum(fpix, axis = 1)
   ferr = np.sqrt(np.sum(perr ** 2, axis = 1))
   npix_total = fpix.shape[1]

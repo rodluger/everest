@@ -96,6 +96,20 @@ def InitLog(file_name = None, log_level = logging.DEBUG, screen_level = logging.
   sh.addFilter(NoPILFilter()) 
   root.addHandler(sh)
 
+def RemoveBackground(campaign):
+  '''
+  Returns `True` or `False`, indicating whether or not to remove the background
+  flux for targets in a given campaign. Currently, if `campaign < 3`, returns
+  `True`, otherwise returns `False`.
+  
+  '''
+  
+  if campaign < 3:
+    return True
+  else:
+    return False
+  
+
 def PadWithZeros(vector, pad_width, iaxis, kwargs):
   '''
   Pads an array with zeros. This is used primarily for plotting aperture contours.

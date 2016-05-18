@@ -37,7 +37,7 @@ except Exception as e:
 
 # Import modules
 from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, utils
-from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars
+from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress
 from .pool import Pool
 from .compute import Compute
 from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
