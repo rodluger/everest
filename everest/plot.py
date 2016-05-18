@@ -12,7 +12,7 @@ run.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import FORCE_PNG
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
-from .utils import RMS, Mask, PadWithZeros, LatexExp
+from .utils import RMS, Mask, PadWithZeros, LatexExp, RemoveBackground
 from .transit import Transit
 from .sources import Source
 import os
