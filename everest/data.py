@@ -494,6 +494,11 @@ class K2EB(object):
 
 def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
   '''
+  Shows the progress of the de-trending runs for all campaigns.
+  
+  :param str run_name: The name of the desired run (sub-folder). Default `default`
+  :param iterable campaigns: The list of campaigns to check. Default `[0 - 99)`
+  :param bool show_sub: Show sub-campaign progress? Default `False`
   
   '''
   
@@ -507,7 +512,7 @@ def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
       total = len(GetK2Campaign(c))
       
-      if show_subcampaigns:
+      if show_sub:
         print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
               total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
         for subcampaign in range(10):
