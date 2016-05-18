@@ -10,7 +10,7 @@ Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .plot import Plot
-from .data import GetK2Stars, GetK2Data, GetK2Planets, GetK2InjectionTestStars, _UpdateDataFile
+from .data import GetK2Stars, GetK2Campaign, GetK2Data, GetK2Planets, GetK2InjectionTestStars, _UpdateDataFile
 from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
