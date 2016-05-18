@@ -97,6 +97,9 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              
   '''
   
+  # Grab the data
+  k2star = GetK2Data(EPIC, apnum = apnum)
+  
   # Setup the output directory
   outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % k2star.campaign, 
                         '%d' % EPIC, run_name)
@@ -107,8 +110,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   InitLog(os.path.join(outdir, 'compute.log'), log_level = log_level, 
           screen_level = screen_level)
   
-  # Grab the data
-  k2star = GetK2Data(EPIC, apnum = apnum)
+  # Check if data is valid
   if k2star is None:
     log.info('Call to `GetK2Data()` returned `None`.')
     with open(os.path.join(outdir, '%d.err' % EPIC), 'w') as f:
