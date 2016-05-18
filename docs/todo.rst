@@ -4,6 +4,7 @@ The To-Do List
 
 .. todo::
 
+  - Plot the **mode** of the distributions in Figure 10
   - Implement easy EVEREST calling for masked transits.
   - Take median of unsaturated background!
   - Plot the autocorrelation function and scatter in the binned residuals 

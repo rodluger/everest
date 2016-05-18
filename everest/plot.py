@@ -10,6 +10,7 @@ run.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import FORCE_PNG
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
 from .utils import RMS, Mask, PadWithZeros, LatexExp
 from .transit import Transit
@@ -36,12 +37,10 @@ def Plot(data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-  try:
+  if FORCE_PNG:
+    ext = 'png'
+  else:
     ext = data['fig_ext'][()]
-    if (ext != 'jpg') or (ext != 'jpeg'):
-      jpeg_quality = None
-  except:
-    ext = 'jpg'
   
   # Plot the apertures
   log.info('Plotting the apertures...')
@@ -573,12 +572,10 @@ def PlotFolded(EPIC, data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-  try:
+  if FORCE_PNG:
+    ext = 'png'
+  else:
     ext = data['fig_ext'][()]
-    if (ext != 'jpg') or (ext != 'jpeg'):
-      jpeg_quality = None
-  except:
-    ext = 'jpg'
     
   # Is the star is an eclipsing binary?
   if EB:

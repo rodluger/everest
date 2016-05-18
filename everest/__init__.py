@@ -11,6 +11,7 @@ __version__ = "1.0"
 # If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
 # quite bugged (at least on my Mac!). In particular, it complains when trying
 # to save JPEGs.
+FORCE_PNG = False
 import platform
 if platform.system() == "Linux":
   import matplotlib as mpl
@@ -20,7 +21,7 @@ elif platform.system() == "Darwin":
   try:
     mpl.use("Qt4Agg", warn=False)
   except:
-    pass
+    FORCE_PNG = True
 
 # Add our submodules to the PATH
 import os, sys

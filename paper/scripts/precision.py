@@ -213,11 +213,19 @@ if __name__ == '__main__':
         b_k2[b] = np.nanmedian(y[i])
         b_k2_sig_l[b] = sorted(y[i])[int(len(y[i]) * 0.1585)]
         b_k2_sig_u[b] = sorted(y[i])[int(len(y[i]) * 0.8415)]
-      
+            
       # The error bars don't make much physical sense, since the distributions
       # are far from gaussian. I'm just going to indicate the median on the plot
       ax.plot(bins - 0.025, b_kep, 'yo', zorder = 99)
       ax.plot(bins + 0.025, b_k2, 'bo', zorder = 99)
+
+      # DEBUG: Plot the distributions at a given magnitude.
+      #bin = 11
+      #pl.close()
+      #pl.hist(kep_raw[np.where((kep_kepmag >= bin - 0.5) & (kep_kepmag < bin + 0.5))[0]], color = 'y', range = (0,100), bins = 100)
+      #pl.hist(y[np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]], color = 'b', alpha = 0.25, range = (0,100), bins = 100)
+      #pl.show()
+      #quit()
 
   def fig_precision(fig, ax, campaigns, labels = True):
     '''
