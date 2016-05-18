@@ -515,7 +515,7 @@ def Progress(run_name = 'default', show_subcampaigns = False):
           d = len(set(done) & set(sub))
           e = len(set(err) & set(sub))
           print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
-                total - (d + e), 100 * (d + e) / total))
+                len(sub) - (d + e), 100 * (d + e) / len(sub)))
       else:
         print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
               total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))

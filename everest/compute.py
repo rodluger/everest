@@ -97,11 +97,6 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              
   '''
   
-  # Grab the data
-  k2star = GetK2Data(EPIC, apnum = apnum)
-  if k2star is None:
-    return None
-
   # Setup the output directory
   outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % k2star.campaign, 
                         '%d' % EPIC, run_name)
@@ -111,6 +106,14 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Setup logging
   InitLog(os.path.join(outdir, 'compute.log'), log_level = log_level, 
           screen_level = screen_level)
+  
+  # Grab the data
+  k2star = GetK2Data(EPIC, apnum = apnum)
+  if k2star is None:
+    log.info('Call to `GetK2Data()` returned `None`.')
+    with open(os.path.join(outdir, '%d.err' % EPIC), 'w') as f:
+      print('ERROR: Call to `GetK2Data()` returned `None`.', file = f)
+    return None
   
   # Check if we've done this already
   if os.path.exists(os.path.join(outdir, 'data.npz')) and not clobber:
@@ -273,6 +276,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
                           alpha = scatter_alpha)
       else:
         log.error("Unable to perform cross-validation for this target.")
+        with open(os.path.join(outdir, '%d.err' % EPIC), 'w') as f:
+          print('ERROR: Unable to perform cross-validation for this target.', file = f)
         return None
       npc = npc_pred[besti]
       X = SliceX(X, npc, npctot)
