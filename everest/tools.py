@@ -14,6 +14,7 @@ EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .kernels import KernelModels
 import george
 import numpy as np
+import matplotlib.pyplot as pl
 import glob
 try:
   import pyfits
@@ -48,8 +49,36 @@ def _FITSFile(EPIC):
     return files[-1]
   else:
     return _DownloadFITSFile(EPIC)
+
+class Mask(object):
+  '''
   
-def DetrendWithMask(EPIC):
+  '''
+  
+  def __init__(self, ranges = [], axis = 0, inds = [], time = None):
+    self._axis = axis
+    self._ranges = ranges
+    self.inds = inds
+    self.time = time
+  
+  def __call__(self, x):
+    
+    # Check that the user provided `time`
+    if self.time is None:
+      raise Exception("Please set the `time` property!")
+    
+    # Calculate time indices
+    inds = []
+    for lo, hi in self._ranges:
+      inds.extend(np.where((self.time >= lo) & (self.time <= hi))[0])
+    
+    # Add in the explicit indices
+    inds = list(set(self.inds + list(inds)))
+  
+    # Return the masked array
+    return np.delete(x, inds, axis = self._axis)
+  
+def Detrend(EPIC, mask = None):
   '''
   
   '''
@@ -60,17 +89,22 @@ def DetrendWithMask(EPIC):
     # Get the original arrays
     time = hdulist[1].data['TIME']
     flux = hdulist[1].data['RAW_FLUX']
+    ferr = hdulist[1].data['RAW_FERR']
     
-    # Get the outlier mask
+    # Get the outliers
     outliers = hdulist[1].data['OUTLIER']
-    M = Mask(np.where(outliers))
+    oinds = np.where(outliers)[0]
     
+    # Add the outliers to the mask object
+    if mask is None:
+      mask = Mask()
+    mask.inds = list(set(mask.inds + list(oinds)))
+    mask.time = time
+
     # Get the gaussian process kernel
     knum = hdulist[3].header['KNUM']
     kpars = [hdulist[3].header['KPAR%02d' % n] for n in range(10)]
-    
-    import pdb; pdb.set_trace()
-    
+    kpars = [k for k in kpars if k != '']
     kernel = KernelModels[knum]
     kernel[:] = kpars
     gp = george.GP(kernel.george_kernel())
@@ -78,11 +112,17 @@ def DetrendWithMask(EPIC):
     # Get the design matrix
     X = hdulist[3].data['X']
     
-    gp.compute(M(time), M(ferr))
-    A = np.dot(M(X).T, gp.solver.apply_inverse(M(X)))
-    B = np.dot(M(X).T, gp.solver.apply_inverse(M(flux)))
+    # Do some linear algebra to get the PLD coefficients `C`
+    # and the PLD `model`
+    gp.compute(mask(time), mask(ferr))
+    A = np.dot(mask(X).T, gp.solver.apply_inverse(mask(X)))
+    B = np.dot(mask(X).T, gp.solver.apply_inverse(mask(flux)))
     C = np.linalg.solve(A, B)
     model = np.dot(C, X.T)
-    fpld = flux - model
-    fpld += np.median(flux)
-    fpld_norm = fpld / np.median(M(fpld))
+    
+    # Subtract the model and add the median back in to get
+    # our final de-trended flux
+    fpld = flux - model + np.median(flux)
+
+    pl.plot(time, fpld)
+    pl.show()
