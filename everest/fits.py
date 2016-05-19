@@ -114,7 +114,7 @@ def DataHDU(data, fitsheader):
   cdpp_det = data['rms'][3]
   npc = data['npc_pred'][data['besti'][()]]
   breakpoints = (list(data['breakpoints']) + [None, None, None, None, None])[:5]
-  if RemoveBackground(campaign):
+  if RemoveBackground(data['campaign']):
     bkg = data['bkg']
   else:
     bkg = np.zeros_like(data['time'])
