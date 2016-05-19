@@ -19,6 +19,7 @@ including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
    pool
    run
    sources
+   tools
    transit
    utils
 

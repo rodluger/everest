@@ -4,7 +4,7 @@
 :py:mod:`tools.py` - User tools
 -------------------------------
 
-User tools.
+User tools to download, process, and plot the :py:class:`everest` light curves.
 
 '''
 
@@ -52,35 +52,120 @@ def _FITSFile(EPIC):
 
 class Mask(object):
   '''
+  An object containing information about which portions of the light curve to mask
+  when computing the PLD coefficients.
   
+  :param list ranges: A list of 2-tuples in the form `(low, high)`, where \
+                      `low` and `high` are the lower and upper bounds, respectively, \
+                      of the regions to be masked. These should be in units of \
+                      `BJD - 245833` (same as the `time` array). Default `[]`
+  :param list transits: Either a list of 3-tuples in the form `(per, t0, dur)` or a \
+                        list of 2-tuples in the form `(t, dur)` for any \
+                        transits/eclipses to be masked. In the first case, \
+                        the parameter `per` is the \
+                        transit period in days, `t0` is the time of first transit,
+                        and `dur` is the total transit duration in days. (For eclipsing \
+                        binaries with secondary eclipses, consider specifying two \
+                        separate tuples, one for primary eclipse and one for secondary \
+                        eclipse.) The second case is for non-periodic transits and allows \
+                        the user to specify the time `t` of *each* transit and its duration \
+                        `dur`.
+  
+  :param dict kwargs: Extra keyword arguments for this class (for internal use only)                
+  
+  :returns: When called with an array `x` as an argument, a :py:class:`Mask` instance \
+            returns the array `x` with the mask applied
+              
   '''
   
-  def __init__(self, ranges = [], axis = 0, inds = [], time = None):
-    self._axis = axis
+  def __init__(self, ranges = [], transits = [], **kwargs):
+    
+    # Check the ranges param
+    if len(ranges):
+      if np.all([hasattr(r, '__len__') for r in ranges]):
+        if np.any([len(r) != 2 for r in ranges]):
+          raise Exception('Param `ranges` must be a list of `(low, high)` pairs.')
+      elif np.all([not hasattr(r, '__len__') for r in ranges]):
+        ranges = [ranges]
+      else:
+        raise Exception('Param `ranges` must be a list of `(low, high)` pairs.')
     self._ranges = ranges
-    self.inds = inds
-    self.time = time
+    
+    # Check the transits param
+    if len(transits):
+      if np.all([hasattr(r, '__len__') for r in transits]):
+        if np.any([len(r) != 2 for r in transits]) and np.any([len(r) != 3 for r in transits]):
+          raise Exception('Invalid value for the `transits` param. Please consult the docs.')
+      elif np.all([not hasattr(r, '__len__') for r in transits]):
+        transits = [transits]
+      else:
+        raise Exception('Invalid value for the `transits` param. Please consult the docs.')
+    self._transits = transits
+    
+    # Internal
+    self.inds = kwargs.get('inds', [])
+    self.time = kwargs.get('time', None)
   
-  def __call__(self, x):
+  @property
+  def all_inds(self):
+    '''
+    Returns the indices of all points that will be masked.
+    
+    '''
     
     # Check that the user provided `time`
     if self.time is None:
       raise Exception("Please set the `time` property!")
     
-    # Calculate time indices
-    inds = []
+    # Calculate time indices from the ranges
+    rinds = []
     for lo, hi in self._ranges:
-      inds.extend(np.where((self.time >= lo) & (self.time <= hi))[0])
+      rinds.extend(np.where((self.time >= lo) & (self.time <= hi))[0])
     
+    # Calculate time indices from the transits
+    tinds = []
+    for transit in self._transits:
+      if len(transit) == 3:
+        per, t0, dur = transit
+        t0 += np.ceil((self.time[0] - dur - t0) / per) * per
+        for t in np.arange(t0, self.time[-1] + dur, per):
+          tinds.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
+      elif len(transit) == 2:
+        t, dur = transit
+        tinds.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
+      
     # Add in the explicit indices
-    inds = list(set(self.inds + list(inds)))
+    inds = list(set(self.inds + list(rinds) + list(tinds)))
+    
+    return inds
   
-    # Return the masked array
-    return np.delete(x, inds, axis = self._axis)
+  def inv(self, x):
+    '''
+    Returns the actual masked portion of the array `x`;
+    this is the inverse of what a call to a `Mask` object returns.
+    
+    '''
+    
+    return x[self.all_inds]
+  
+  def __call__(self, x):
+    '''
+    Returns the masked version of `x`.
+    
+    '''
+    
+    return np.delete(x, self.all_inds, axis = 0)
   
 def Detrend(EPIC, mask = None):
   '''
+  Detrends a given EPIC target with custom user options. If a local copy does not
+  exist, automatically downloads the :py:mod:`everest` FITS file from MAST.
   
+  :param everest.tools.Mask mask: A :py:class:`Mask` instance containing information \
+                                  on which portions of the light curve to mask.
+  
+  :returns: `(time, flux)`, the time and de-trended flux arrays
+   
   '''
   
   file = _FITSFile(EPIC)
@@ -123,6 +208,5 @@ def Detrend(EPIC, mask = None):
     # Subtract the model and add the median back in to get
     # our final de-trended flux
     fpld = flux - model + np.median(flux)
-
-    pl.plot(time, fpld)
-    pl.show()
+    
+    return time, fpld
