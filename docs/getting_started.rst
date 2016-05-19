@@ -11,11 +11,12 @@ Clone the git repository with
 to ensure you clone all the submodules. In the :py:mod:`everest.pysyzygy` subfolder, compile the
 transit code by running `make`.
 
-You'll also have to have the *astroML* and *george* Python packages installed. You can
+You'll also have to have the *pyfits*, *astroML* and *george* Python packages installed. You can
 do this easily with `pip <https://pypi.python.org/pypi/pip>`_:
 
 .. code-block:: bash
 
+   pip install pyfits
    pip install astroML
    pip install george --global-option=build_ext --global-option=-I/path/to/eigen3
 

@@ -36,7 +36,7 @@ except Exception as e:
     raise Exception("Please compile ``pysyzygy`` by running ``make`` in '/everest/pysyzygy'.")
 
 # Import modules
-from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, utils
+from . import compute, data, detrend, fits, gp, kernels, pool, sources, tools, transit, utils
 from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress
 from .pool import Pool
 from .compute import Compute

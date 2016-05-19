@@ -11,6 +11,7 @@ including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
    compute
    data
    detrend
+   fits
    gp
    kernels
    kwargs
