@@ -492,7 +492,7 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
-def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
+def Progress(run_name = 'default', campaigns = range(99), show_sub = False, nsc = 10):
   '''
   Shows the progress of the de-trending runs for all campaigns.
   
@@ -515,7 +515,7 @@ def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
       if show_sub:
         print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
               total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
-        for subcampaign in range(10):
+        for subcampaign in range(nsc):
           sub = GetK2Campaign(c, subcampaign)
           d = len(set(done) & set(sub))
           e = len(set(err) & set(sub))
@@ -566,14 +566,15 @@ def Campaign(EPIC):
       return campaign
   return None
   
-def GetK2Campaign(campaign, subcampaign = -1, clobber = False):
+def GetK2Campaign(campaign, subcampaign = -1, nsc = 10, clobber = False):
   '''
   Return all stars in a given K2 campaign.
   
   :param int campaign: The K2 campaign number
   :param int subcampaign: The sub-campaign number. If `-1`, returns all targets in the \
                           campaign. Otherwise returns the `n^th` sub-campaign, where \
-                          `0 <= n <= 9` are the ten equally-sized sub-campaigns
+                          `0 <= n < nsc` are the `nsc` equally-sized sub-campaigns
+  :param int nsc: The number of sub-campaigns. Default `10`
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
@@ -582,10 +583,10 @@ def GetK2Campaign(campaign, subcampaign = -1, clobber = False):
   
   if subcampaign == -1:
     return all
-  elif (subcampaign >= 0) and (subcampaign <= 9):
-    return list(Chunks(all, len(all) // 10))[subcampaign]
+  elif (subcampaign >= 0) and (subcampaign < nsc):
+    return list(Chunks(all, len(all) // nsc))[subcampaign]
   else:
-    raise Exception('Argument `subcampaign` must be equal to -1 or in the range [0,9].')
+    raise Exception('Argument `subcampaign` must be equal to `-1` or in the range [0,nsc).')
 
 def GetK2InjectionTestStars(clobber = False):
   '''
