@@ -516,7 +516,7 @@ def Progress(run_name = 'default', campaigns = range(99), show_sub = False, nsc 
         print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
               total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
         for subcampaign in range(nsc):
-          sub = GetK2Campaign(c, subcampaign)
+          sub = GetK2Campaign(c, subcampaign, nsc)
           d = len(set(done) & set(sub))
           e = len(set(err) & set(sub))
           print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
