@@ -555,6 +555,17 @@ def GetK2Stars(clobber = False):
   
   return res
 
+def Campaign(EPIC):
+  '''
+  Returns the campaign number for a given EPIC target.
+  
+  '''
+
+  for campaign, stars in GetK2Stars().items():
+    if EPIC in stars:
+      return campaign
+  return None
+  
 def GetK2Campaign(campaign, subcampaign = -1, clobber = False):
   '''
   Return all stars in a given K2 campaign.

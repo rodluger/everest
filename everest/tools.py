@@ -11,7 +11,9 @@ User tools to download, process, and plot the :py:class:`everest` light curves.
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from . import MAST_ROOT
 from .kernels import KernelModels
+from .data import Campaign
 import george
 import numpy as np
 import matplotlib.pyplot as pl
@@ -23,32 +25,83 @@ except ImportError:
     import astropy.io.fits as pyfits
   except ImportError:
     raise Exception('Please install the `pyfits` package.')
+from tempfile import NamedTemporaryFile
+import six
+from six.moves import urllib
+import shutil
 
-def _DownloadFITSFile(EPIC):
+def _EverestVersion():
+  '''
+  Returns the current :py:mod:`everest` version on MAST.
+  
+  '''
+  
+  url = MAST_ROOT + 'version.txt'
+  r = urllib.request.Request(url)
+  handler = urllib.request.urlopen(r)
+  code = handler.getcode()
+  if int(code) != 200:
+    raise Exception("Error code {0} for URL '{1}'".format(code, url))
+  data = handler.read().decode('utf-8')
+  
+  return data
+
+def _DownloadFITSFile(EPIC, clobber = False):
   '''
   Download a given :py:mod:`everest` FITS file from MAST.
   Returns the full local path to the FITS file.
   
   '''
+    
+  # Get the url
+  mast_version = _EverestVersion()
+  url = MAST_ROOT + 'c%02d' % campaign + ('%09d' % EPIC)[:4] + '00000' + \
+        'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version)
   
-  raise NotImplementedError('Downloading functionality coming soon!')
+  # Get the local file name
+  campaign = Campaign(EPIC)
+  filename = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
+                          ('%09d' % EPIC)[:4] + '00000',
+                          'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version))
+  if not os.path.exists(os.path.dirname(filename)):
+    os.makedirs(os.path.dirname(filename))
+  
+  # Download the data
+  r = urllib.request.Request(url)
+  handler = urllib.request.urlopen(r)
+  code = handler.getcode()
+  if int(code) != 200:
+    raise Exception("Error code {0} for URL '{1}'".format(code, url))
+  data = handler.read()
 
-def _FITSFile(EPIC):
+  # Atomically save to disk
+  f = NamedTemporaryFile("wb", delete=False)
+  f.write(data)
+  f.flush()
+  os.fsync(f.fileno())
+  f.close()
+  shutil.move(f.name, filename)
+  
+  return filename
+  
+def GetFITSFile(EPIC, clobber = False):
   '''
   Returns the path to a given :py:mod:`everest` FITS file.
   In case of multiple versions, returns the file corresponding to the
-  latest :py:mod:`everest` version.
+  latest :py:mod:`everest` version. In case a local copy does not exist,
+  downloads the most recent version from MAST.
   
   '''
   
-  path = os.path.join(EVEREST_ROOT, 'fits', 'c*', 
+  campaign = Campaign(EPIC)
+  path = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
                      ('%09d' % EPIC)[:4] + '00000',
-                      'hlsp_everest_k2_llc_%d-c*_kepler_v*.fits' % EPIC)
+                      'hlsp_everest_k2_llc_%d-c%02d_kepler_v*.fits' % (EPIC, campaign))
   files = glob.glob(path)
   if len(files):
     return files[-1]
   else:
-    return _DownloadFITSFile(EPIC)
+    return _DownloadFITSFile(EPIC, clobber = clobber)
 
 class Mask(object):
   '''
@@ -156,7 +209,7 @@ class Mask(object):
     
     return np.delete(x, self.all_inds, axis = 0)
   
-def Detrend(EPIC, mask = None):
+def Detrend(EPIC, mask = None, clobber = False):
   '''
   Detrends a given EPIC target with custom user options. If a local copy does not
   exist, automatically downloads the :py:mod:`everest` FITS file from MAST.
@@ -168,7 +221,7 @@ def Detrend(EPIC, mask = None):
    
   '''
   
-  file = _FITSFile(EPIC)
+  file = GetFITSFile(EPIC, clobber = clobber)
   with pyfits.open(file) as hdulist:
     
     # Get the original arrays

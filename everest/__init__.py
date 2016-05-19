@@ -6,6 +6,9 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 # Version number
 __version__ = "1.0"
 
+# MAST HLSP root
+MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+
 # MPL backend: force Agg for all Everest modules if running on a Linux machine
 # In order for this to work, ``everest`` must be imported first!
 # If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
@@ -37,7 +40,7 @@ except Exception as e:
 
 # Import modules
 from . import compute, data, detrend, fits, gp, kernels, pool, sources, tools, transit, utils
-from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress
+from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress, Campaign
 from .pool import Pool
 from .compute import Compute
 from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections

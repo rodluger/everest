@@ -15,6 +15,7 @@ import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from . import __version__ as EVEREST_VERSION
 from .utils import RemoveBackground
+from .data import Campaign
 import kplr
 from kplr.config import KPLR_ROOT
 try:
@@ -240,7 +241,7 @@ def ApertureHDU(data, fitsheader):
 
   return hdu
 
-def MakeFITS(EPIC, campaign, run_name = 'default', clobber = False):
+def MakeFITS(EPIC, run_name = 'default', clobber = False):
   '''
   Generate a FITS file for a given run.
   
@@ -252,6 +253,7 @@ def MakeFITS(EPIC, campaign, run_name = 'default', clobber = False):
   '''
   
   # Set up the output directory
+  campaign = Campaign(EPIC)
   folder = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
                        ('%09d' % EPIC)[:4] + '00000')
   if not os.path.exists(folder):
