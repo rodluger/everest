@@ -217,7 +217,8 @@ def Detrend(EPIC, mask = None, clobber = False):
   :param everest.tools.Mask mask: A :py:class:`Mask` instance containing information \
                                   on which portions of the light curve to mask.
   
-  :returns: `(time, flux)`, the time and de-trended flux arrays
+  :returns: `(time, flux, mask_inds)`, the time and de-trended flux arrays, as well as the \
+            indices corresponding to the points that were masked
    
   '''
   
@@ -262,4 +263,4 @@ def Detrend(EPIC, mask = None, clobber = False):
     # our final de-trended flux
     fpld = flux - model + np.median(flux)
     
-    return time, fpld
+    return time, fpld, mask.all_inds

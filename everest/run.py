@@ -62,10 +62,13 @@ def _UpdateCampaign(campaign):
   # Download the TPF data for each one
   for i, EPIC in enumerate(stars):
     print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    res = _UpdateDataFile(EPIC)
+    try:
+      res = _UpdateDataFile(EPIC)
+    except:
+      res = False
     if res is False:
       try:
-        GetK2Data(EPIC)
+        GetK2Data(EPIC, clobber = True)
       except:
         print("Error downloading EPIC %d." % EPIC)
 
