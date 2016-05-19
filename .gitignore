@@ -11,6 +11,9 @@ paper/tex/k2Notes.bib
 paper/tex/k2.bbl
 paper/tex/k2.blg
 paper/tex/k2.pdf
+paper/tex/texput.log
 _*.py
 _*.tsv
 *.pyc
+docs/.build
+fits

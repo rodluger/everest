@@ -1,8 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-kernels.py
-----------
+:py:mod:`kernels.py` - GP kernels
+---------------------------------
+
+Here we define all the kernels we use to match the data autocorrelation
+during the GP-tuning step. These are implemented in a similar fashion
+to the kernels in :py:class:`george`, which allow arbitrary sums and
+products of basis kernels. Here we define an additional attribute for
+each kernel, the :py:meth:`Kernel._function` method, which returns the functional
+form of the kernel in autocorrelation space. This is useful for fitting
+the data autocorrelation directly. Kernels can then be easily converted
+to the :py:class:`george` equivalent by calling the :py:meth:`Kernel.george_kernel`
+method.
+
+.. literalinclude:: ../everest/kernels.py
+   :lines: 283-307
 
 '''
 
@@ -17,7 +30,7 @@ class Kernel(object):
   '''
   A generic kernel class. This allows us to use a kernel
   for both fitting the autocorrelation function and instantiating
-  a ``george.GP`` object.
+  a :py:class:`george.GP` object.
   
   '''
   
@@ -53,12 +66,18 @@ class Kernel(object):
     return self._function(t)
   
   def george_kernel(self):
-    # Return the george equivalent
+    '''
+    Returns the :py:class:`george` equivalent of this kernel
+    
+    '''
+    
     return self._george()
   
 class Sum(Kernel):
   '''
   A kernel sum.
+  
+  :param \*kernels: The two or more kernels to add
   
   '''
   
@@ -105,6 +124,8 @@ class Prod(Kernel):
   '''
   A kernel product.
   
+  :param \*kernels: The two or more kernels to multiply
+  
   '''
     
   def __init__(self, *kernels):
@@ -150,6 +171,8 @@ class Const(Kernel):
   '''
   A constant kernel.
   
+  :param float amp: The constant amplitude. Default `1`
+  
   '''
     
   def __init__(self, amp = 1.):
@@ -170,6 +193,8 @@ class White(Kernel):
   '''
   A white noise kernel.
   
+  :param float amp: The white noise amplitude. Default `1`
+  
   '''
     
   def __init__(self, amp = 1.):
@@ -189,6 +214,8 @@ class White(Kernel):
 class Exp(Kernel): 
   '''
   An exponential kernel.
+  
+  :param float tau: The timescale in days. Default `1`
   
   '''
     
@@ -212,6 +239,8 @@ class Cos(Kernel):
   '''
   A cosine kernel.
   
+  :param float per: The period in days. Default `1`
+  
   '''
     
   def __init__(self, per = 1.):
@@ -231,6 +260,8 @@ class Cos(Kernel):
 class Mat32(Kernel):
   '''
   A Matern-3/2 kernel.
+  
+  :param float tau: The timescale in days. Default `1`
   
   '''
     

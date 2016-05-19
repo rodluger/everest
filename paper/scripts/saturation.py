@@ -1,9 +1,42 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-saturation.py
--------------
+Figure 8
+--------
 
+This script reproduces Figure 8 in the paper.
+The source code is available 
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/saturation.py>`_.
+
+.. figure:: ../paper/tex/images/saturation2.png
+    :width: 400px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 8** Fractional pixel fluxes :math:`p_{il} / \sum_k{p_{ik}}`
+    for quarter 3 of Kepler-3, a `K_p = 9.2` hot-Jupiter host
+    observed by the original `Kepler` mission. The panels
+    are arranged according to the positions of the pixels on
+    the detector, and the data is smoothed and folded on the orbital period
+    of Kepler-3b. Saturated pixels are highlighted in red and are labeled
+    with an **S**;
+    overflow pixels are highlighted in blue and labeled with an **O**. PLD fails for this
+    system because the transit signal is present in several of
+    the basis vectors.
+
+It also generates the **raw** pixel flux map (i.e., the unnormalized version of 
+**Figure 8**), which I think is just as cool looking:
+
+.. figure:: ../paper/tex/images/saturation1.png
+    :width: 400px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 8b** Same as above, but showing the unnormalized pixels.
 
 '''
 
@@ -70,50 +103,53 @@ def GetData():
     np.savez(os.path.join('npz', 'saturation.npz'), x = x, y = y, z = z)
   return x, y, z
 
-x, y, z = GetData()
+if __name__ == '__main__':
+  
+  # Grab the data
+  x, y, z = GetData()
 
-# Fluxes
-fig, ax = pl.subplots(15,11, sharex = True, sharey = True, figsize = (11,15))
-fig.subplots_adjust(hspace = 0, wspace = 0)
-for i in range(15):
-  for j in range(11):
-    ax[i,j].plot(x, y[i][j], 'k.', markersize = 0.75)
-    ax[i,j].set_xticks([])
-    ax[i,j].set_yticks([])
-    if np.all(np.isnan(y[i][j])):
-      ax[i,j].set_visible(False)
-for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
-  ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
-  ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
-                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
-for j,i in [[5,2],[5,12],[6,5],[6,8]]:
-  ax[i,j].set_axis_bgcolor((0.9, 0.9, 1.))
-  ax[i,j].annotate('O', xy = (0.1, 0.9), xycoords = 'axes fraction',
-                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
-ax[0,0].set_xlim(-0.15, 0.15)
-ax[0,0].set_ylim(0.95,1.05)
-fig.savefig(os.path.join(IMG_PATH, 'saturation1.png'), bbox_inches = 'tight')
-pl.close()
+  # Fluxes
+  fig, ax = pl.subplots(15,11, sharex = True, sharey = True, figsize = (11,15))
+  fig.subplots_adjust(hspace = 0, wspace = 0)
+  for i in range(15):
+    for j in range(11):
+      ax[i,j].plot(x, y[i][j], 'k.', markersize = 0.75)
+      ax[i,j].set_xticks([])
+      ax[i,j].set_yticks([])
+      if np.all(np.isnan(y[i][j])):
+        ax[i,j].set_visible(False)
+  for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
+    ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
+    ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                     ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
+  for j,i in [[5,2],[5,12],[6,5],[6,8]]:
+    ax[i,j].set_axis_bgcolor((0.9, 0.9, 1.))
+    ax[i,j].annotate('O', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                     ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
+  ax[0,0].set_xlim(-0.15, 0.15)
+  ax[0,0].set_ylim(0.95,1.05)
+  fig.savefig(os.path.join(IMG_PATH, 'saturation1.png'), bbox_inches = 'tight')
+  pl.close()
 
-# Fractions
-fig, ax = pl.subplots(15,11, sharex = True, sharey = True, figsize = (11,15))
-fig.subplots_adjust(hspace = 0, wspace = 0)
-for i in range(15):
-  for j in range(11):
-    ax[i,j].plot(x, z[i][j], 'k.', markersize = 0.75)
-    ax[i,j].set_xticks([])
-    ax[i,j].set_yticks([])
-    if np.all(np.isnan(y[i][j])):
-      ax[i,j].set_visible(False)
-for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
-  ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
-  ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
-                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
-for j,i in [[5,2],[5,12],[6,5],[6,8]]:
-  ax[i,j].set_axis_bgcolor((0.9, 0.9, 1.))
-  ax[i,j].annotate('O', xy = (0.1, 0.9), xycoords = 'axes fraction',
-                   ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
-ax[0,0].set_xlim(-0.15, 0.15)
-ax[0,0].set_ylim(0.95,1.05)
-fig.savefig(os.path.join(IMG_PATH, 'saturation2.png'), bbox_inches = 'tight')
-pl.close()
+  # Fractions
+  fig, ax = pl.subplots(15,11, sharex = True, sharey = True, figsize = (11,15))
+  fig.subplots_adjust(hspace = 0, wspace = 0)
+  for i in range(15):
+    for j in range(11):
+      ax[i,j].plot(x, z[i][j], 'k.', markersize = 0.75)
+      ax[i,j].set_xticks([])
+      ax[i,j].set_yticks([])
+      if np.all(np.isnan(y[i][j])):
+        ax[i,j].set_visible(False)
+  for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
+    ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
+    ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                     ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
+  for j,i in [[5,2],[5,12],[6,5],[6,8]]:
+    ax[i,j].set_axis_bgcolor((0.9, 0.9, 1.))
+    ax[i,j].annotate('O', xy = (0.1, 0.9), xycoords = 'axes fraction',
+                     ha = 'left', va = 'top', fontweight = 'bold', fontsize = 12)
+  ax[0,0].set_xlim(-0.15, 0.15)
+  ax[0,0].set_ylim(0.95,1.05)
+  fig.savefig(os.path.join(IMG_PATH, 'saturation2.png'), bbox_inches = 'tight')
+  pl.close()

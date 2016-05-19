@@ -1,0 +1,2 @@
+.. automodule:: pysyzygy.transit
+   :members:

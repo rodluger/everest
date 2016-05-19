@@ -1,0 +1,2 @@
+.. automodule:: scatter
+   :members:

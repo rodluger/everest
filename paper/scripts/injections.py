@@ -1,9 +1,47 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-injections.py
--------------    
-        
+Figure 6
+--------   
+
+This script reproduces Figure 6 in the paper.
+The source code is available 
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/injections.py>`_.
+
+In order to run this script, you'll first have to run the transit injection/recovery
+runs with :py:mod:`everest.run.DownloadInjections` and :py:mod:`everest.run.RunInjections`,
+for each combination of `depth = [0.01, 0.001, 0.0001`] and `mask = [True, False]`.
+This will take a while (best to do it on a supercomputer cluster!) and will create 
+on the order of ~6000 output runs, whose statistics we use to generate the blue
+histograms in the figure. The red histograms (control runs) are obtained by running
+`inject_control.py <https://github.com/rodluger/everest/blob/master/paper/scripts/inject_control.py>`_,
+which inject transits into the de-trended data (so you'll have to have run those targets
+previously with :py:mod:`everest.run.RunCampaign`).
+
+Since this takes a really long time to run, you can keep `clobber = False` below to
+load my saved runs instead.
+
+.. figure:: ../paper/tex/images/injections.png
+    :width: 500px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 6** Transit injection results. Each panel shows the fraction of 
+    transits recovered with a certain depth ratio `D/D0` (recovered depth divided 
+    by true depth). Blue histograms correspond to the actual injection and recovery 
+    process performed with our pipeline; red histograms correspond to transits 
+    injected directly into the de- trended light curves and are shown for comparison. 
+    The values to the left and right of each histogram are the median `D/D0` for 
+    our pipeline and for the control run, respectively. The smaller values at the 
+    top indicate the fraction of transits recovered with depths lower and higher 
+    than the bounds of the plots. Finally, the two columns distinguish between 
+    the default runs (left) and runs where the transits were explicitly masked 
+    (right); the three rows correspond to different injected depths: 1e−2, 1e−3, and 
+    1e−4. PLD preserves transit depths if the transits are properly masked; 
+    otherwise, a small bias toward smaller depths is introduced.    
+      
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -108,75 +146,78 @@ def GetDepths(clobber = False):
   
   return D, E, DC, EC
 
-# Set up the figure
-fig, ax = pl.subplots(3,2, figsize = (10,12))
-fig.subplots_adjust(hspace = 0.25)
-ax = ax.flatten()
-ax[0].set_title(r'Default', fontsize = 18)
-ax[1].set_title(r'Masked', fontsize = 18)
-ax[0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
-ax[2].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
-ax[4].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
 
-# Get the depths
-D, E, DC, EC = GetDepths(clobber = True)
+if __name__ == '__main__':
 
-# Plot
-for i, axis in enumerate(ax): 
+  # Set up the figure
+  fig, ax = pl.subplots(3,2, figsize = (10,12))
+  fig.subplots_adjust(hspace = 0.25)
+  ax = ax.flatten()
+  ax[0].set_title(r'Default', fontsize = 18)
+  ax[1].set_title(r'Masked', fontsize = 18)
+  ax[0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
+  ax[2].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
+  ax[4].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
 
-  # Plot the histograms
-  everest_depth = np.array(D[i]) / depths[i]
-  control_depth = np.array(DC[i]) / depths[i]
+  # Get the depths
+  D, E, DC, EC = GetDepths(clobber = False)
 
-  try:
-    axis.hist(control_depth, bins = nbins[i], range = ranges[i], color = 'r', 
-              histtype = 'step', weights = np.ones_like(control_depth)/len(control_depth))
-  except:
-    pass
+  # Plot
+  for i, axis in enumerate(ax): 
+
+    # Plot the histograms
+    everest_depth = np.array(D[i]) / depths[i]
+    control_depth = np.array(DC[i]) / depths[i]
+
+    try:
+      axis.hist(control_depth, bins = nbins[i], range = ranges[i], color = 'r', 
+                histtype = 'step', weights = np.ones_like(control_depth)/len(control_depth))
+    except:
+      pass
   
-  try:
-    axis.hist(everest_depth, bins = nbins[i], range = ranges[i], color = 'b', 
-              histtype = 'step', weights = np.ones_like(everest_depth)/len(everest_depth))
-  except:
-    pass
+    try:
+      axis.hist(everest_depth, bins = nbins[i], range = ranges[i], color = 'b', 
+                histtype = 'step', weights = np.ones_like(everest_depth)/len(everest_depth))
+    except:
+      pass
 
-  axis.axvline(1., color = 'k', ls = '--')
+    axis.axvline(1., color = 'k', ls = '--')
   
-  # Indicate the fraction above and below
-  if len(everest_depth):
-    au = len(np.where(everest_depth > ranges[i][1])[0]) / len(everest_depth)
-    al = len(np.where(everest_depth < ranges[i][0])[0]) / len(everest_depth)
-    axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
-                  xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
-                  arrowprops = dict(arrowstyle="->",color='b'))
-    axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
-                  xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
-                  arrowprops = dict(arrowstyle="->",color='b'))
+    # Indicate the fraction above and below
+    if len(everest_depth):
+      au = len(np.where(everest_depth > ranges[i][1])[0]) / len(everest_depth)
+      al = len(np.where(everest_depth < ranges[i][0])[0]) / len(everest_depth)
+      axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
+                    xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
+                    arrowprops = dict(arrowstyle="->",color='b'))
+      axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
+                    xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
+                    arrowprops = dict(arrowstyle="->",color='b'))
   
-  if len(control_depth):  
-    cu = len(np.where(control_depth > ranges[i][1])[0]) / len(control_depth)
-    cl = len(np.where(control_depth < ranges[i][0])[0]) / len(control_depth)
-    axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
-                  xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
-                  arrowprops = dict(arrowstyle="->",color='r'))
-    axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
-                  xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
-                  arrowprops = dict(arrowstyle="->",color='r'))
+    if len(control_depth):  
+      cu = len(np.where(control_depth > ranges[i][1])[0]) / len(control_depth)
+      cl = len(np.where(control_depth < ranges[i][0])[0]) / len(control_depth)
+      axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
+                    xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
+                    arrowprops = dict(arrowstyle="->",color='r'))
+      axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
+                    xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
+                    arrowprops = dict(arrowstyle="->",color='r'))
                 
-  # Indicate the median
-  axis.annotate('M = %.2f' % np.median(everest_depth), xy = (0.3, 0.5), ha = 'right',
-                xycoords = 'axes fraction', color = 'b', fontsize = 14)
-  axis.annotate('M = %.2f' % np.median(control_depth), xy = (0.7, 0.5), ha = 'left',
-                xycoords = 'axes fraction', color = 'r', fontsize = 14)
+    # Indicate the median
+    axis.annotate('M = %.2f' % np.median(everest_depth), xy = (0.3, 0.5), ha = 'right',
+                  xycoords = 'axes fraction', color = 'b', fontsize = 14)
+    axis.annotate('M = %.2f' % np.median(control_depth), xy = (0.7, 0.5), ha = 'left',
+                  xycoords = 'axes fraction', color = 'r', fontsize = 14)
   
-  # Tweaks
-  axis.set_xticks(xticks[i])
-  axis.set_xlim(xticks[i][0], xticks[i][-1])
-  axis.set_ylim(0, ymax[i])
-  axis.set_xlabel(r'D/D$_0$', fontsize = 14)
+    # Tweaks
+    axis.set_xticks(xticks[i])
+    axis.set_xlim(xticks[i][0], xticks[i][-1])
+    axis.set_ylim(0, ymax[i])
+    axis.set_xlabel(r'D/D$_0$', fontsize = 14)
 
-if save:
-  fig.savefig('../tex/images/injections.png', bbox_inches = 'tight')
-  fig.savefig('../tex/images/injections.pdf', bbox_inches = 'tight')
-else:
-  pl.show()
+  if save:
+    fig.savefig('../tex/images/injections.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/injections.pdf', bbox_inches = 'tight')
+  else:
+    pl.show()

@@ -3,18 +3,25 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
+# Version number
+__version__ = "1.0"
+
 # MPL backend: force Agg for all Everest modules if running on a Linux machine
 # In order for this to work, ``everest`` must be imported first!
+# If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
+# quite bugged (at least on my Mac!). In particular, it complains when trying
+# to save JPEGs.
+FORCE_PNG = False
 import platform
 if platform.system() == "Linux":
   import matplotlib as mpl
   mpl.use("Agg", warn=False)
-else:
+elif platform.system() == "Darwin":
   import matplotlib as mpl
   try:
     mpl.use("Qt4Agg", warn=False)
   except:
-    pass
+    FORCE_PNG = True
 
 # Add our submodules to the PATH
 import os, sys
@@ -29,8 +36,9 @@ except Exception as e:
     raise Exception("Please compile ``pysyzygy`` by running ``make`` in '/everest/pysyzygy'.")
 
 # Import modules
-from . import compute, data, detrend, gp, kernels, pool, sources, transit, utils
-from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars
+from . import compute, data, detrend, fits, gp, kernels, pool, sources, tools, transit, utils
+from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress
 from .pool import Pool
 from .compute import Compute
-from .run import DownloadCampaign, DownloadInjections, Run, RunSingle, RunCampaign, RunCandidates, RunInjections
+from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
+from .fits import MakeFITS

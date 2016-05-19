@@ -1,8 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-third_order.py
---------------
+Figure 1
+--------
+
+This script reproduces Figure 1 in the paper. It de-trends EPIC 201367065 with
+first, second, and third order PLD and using only the 10 brightest pixels.
+The source code is available 
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/third_order.py>`_.
+
+.. figure:: ../paper/tex/images/third_order.png
+    :width: 400px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 1** PLD applied to a portion of the data for EPIC 201367065 (K2-3). 
+    The top panel is the background-subtracted, normalized SAP flux in a large 
+    35-pixel aperture centered on the target. The bottom three panels show 
+    the normalized PLD-de-trended flux for 1st, 2nd, and 
+    3rd order PLD, respectively, using only the 10 brightest pixels. 
+    PLD increases the 6-hr photometric precision by factors of 2.9 (1st order), 4.7 
+    (2nd order), and 5.2 (3rd order).
 
 '''
 
@@ -22,6 +42,11 @@ import george
 from itertools import combinations_with_replacement as multichoose
 
 def PLDBasis(fpix, pld_order = 1, cross_terms = True):
+  '''
+  Adapted from :py:func:`everest.detrend.PLDBasis`.
+  
+  '''
+  
   frac = fpix / np.sum(fpix, axis = 1).reshape(-1, 1)
   if not cross_terms:
     x = np.hstack([frac ** (n + 1) for n in range(pld_order)])
@@ -32,9 +57,19 @@ def PLDBasis(fpix, pld_order = 1, cross_terms = True):
   return x
 
 def PLDModel(C, X):
+  '''
+  Adapted from :py:func:`everest.detrend.PLDModel`.
+  
+  '''
+  
   return np.dot(C, X.T)
 
 def PLDCoeffs(X, Y, time, errors, gp):
+  '''
+  Adapted from :py:func:`everest.detrend.PLDCoeffs`.
+  
+  '''
+
   gp.compute(time, errors)
   A = np.dot(X.T, gp.solver.apply_inverse(X))
   B = np.dot(X.T, gp.solver.apply_inverse(Y))
@@ -42,6 +77,11 @@ def PLDCoeffs(X, Y, time, errors, gp):
   return C
 
 def GetData(EPIC = 201367065):
+  '''
+  Downloads and returns data for a given target.
+  
+  '''
+  
   k2star = GetK2Data(EPIC, apnum = 15)
   time = k2star.time
   bkg = k2star.bkg
@@ -63,7 +103,11 @@ def GetData(EPIC = 201367065):
   return time, fpix, flux, ferr, M, gp
 
 def GetDetrended(EPIC = 201367065):
-
+  '''
+  Detrends with first, second, and third order PLD.
+  
+  '''
+  
   try:
     data = np.load(os.path.join('npz', 'third_order.npz'))
     time = data['time']
@@ -117,31 +161,32 @@ def GetDetrended(EPIC = 201367065):
              RMS2 = RMS2, RMS3 = RMS3)  
 
   return time, flux, Y1, Y2, Y3, RMS0, RMS1, RMS2, RMS3
-    
-fig, ax = pl.subplots(4, figsize = (6, 8))
-time, flux, Y1, Y2, Y3, RMS0, RMS1, RMS2, RMS3 = GetDetrended()
 
-ax[0].plot(time, flux / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS0)
-ax[1].plot(time, (Y1 + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS1)
-ax[2].plot(time, (Y2 + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS2)
-ax[3].plot(time, (Y3 + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS3)
+if __name__ == '__main__':    
+  fig, ax = pl.subplots(4, figsize = (6, 8))
+  time, flux, Y1, Y2, Y3, RMS0, RMS1, RMS2, RMS3 = GetDetrended()
 
-ax[0].set_ylabel('Raw Flux', fontsize = 14)
-ax[1].set_ylabel('1st Order PLD', fontsize = 14)
-ax[2].set_ylabel('2nd Order PLD', fontsize = 14)
-ax[3].set_ylabel('3rd Order PLD', fontsize = 14)
+  ax[0].plot(time, flux / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS0)
+  ax[1].plot(time, (Y1 + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS1)
+  ax[2].plot(time, (Y2 + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS2)
+  ax[3].plot(time, (Y3 + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % RMS3)
 
-for axis, rms in zip(ax, [RMS0, RMS1, RMS2, RMS3]):
-  axis.text(2014.4, 1.00425, "6-hr scatter: %.1f ppm" % rms, ha="right", va="top", fontsize=12,
-           bbox = dict(fc = 'w'))
-  axis.yaxis.set_major_locator(MaxNLocator(5))
-  axis.margins(0.01, None)
-  axis.set_ylim(0.996, 1.0050)
-  axis.ticklabel_format(useOffset=False)
-for axis in ax[:-1]:
-  axis.set_xticklabels([])
+  ax[0].set_ylabel('Raw Flux', fontsize = 14)
+  ax[1].set_ylabel('1st Order PLD', fontsize = 14)
+  ax[2].set_ylabel('2nd Order PLD', fontsize = 14)
+  ax[3].set_ylabel('3rd Order PLD', fontsize = 14)
 
-ax[-1].set_xlabel('Time (days)', fontsize = 18)
+  for axis, rms in zip(ax, [RMS0, RMS1, RMS2, RMS3]):
+    axis.text(2014.4, 1.00425, "6-hr scatter: %.1f ppm" % rms, ha="right", va="top", fontsize=12,
+             bbox = dict(fc = 'w'))
+    axis.yaxis.set_major_locator(MaxNLocator(5))
+    axis.margins(0.01, None)
+    axis.set_ylim(0.996, 1.0050)
+    axis.ticklabel_format(useOffset=False)
+  for axis in ax[:-1]:
+    axis.set_xticklabels([])
 
-fig.savefig(os.path.join(IMG_PATH, 'third_order.png'), bbox_inches = 'tight')
-fig.savefig(os.path.join(IMG_PATH, 'third_order.pdf'), bbox_inches = 'tight')
+  ax[-1].set_xlabel('Time (days)', fontsize = 18)
+
+  fig.savefig(os.path.join(IMG_PATH, 'third_order.png'), bbox_inches = 'tight')
+  fig.savefig(os.path.join(IMG_PATH, 'third_order.pdf'), bbox_inches = 'tight')

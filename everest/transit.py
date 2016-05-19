@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-transit.py
-----------
+:py:mod:`transit.py` - Transit models
+-------------------------------------
+
+Here be routines used to generate a transit model, primarily for
+transit injection/recovery tests. These are wrappers around
+:py:func:`everest.pysyzygy.Transit`, with the added feature that
+the transit `depth` and the transit `duration` can be specified
+as input variables (as opposed to the planet-star radius ratio
+and the stellar density, which `pysyzygy` expects).
 
 '''
 
@@ -16,8 +23,8 @@ log = logging.getLogger(__name__)
 
 def Get_RpRs(d, **kwargs):
   '''
-  Returns the value of Rp/Rs for a given depth, given
-  the ``pysyzygy`` transit **kwargs.
+  Returns the value of the planet radius over the stellar radius for a given depth `d`, given
+  the :py:class:`everest.pysyzygy` transit `kwargs`.
   
   '''
   
@@ -31,8 +38,8 @@ def Get_RpRs(d, **kwargs):
 
 def Get_rhos(dur, **kwargs):
   '''
-  Returns the value of rhos for a given transit duration, given
-  the ``pysyzygy`` transit **kwargs.
+  Returns the value of the stellar density for a given transit duration `dur`, given
+  the :py:class:`everest.pysyzygy` transit `kwargs`.
   
   '''
   
@@ -54,8 +61,24 @@ def Get_rhos(dur, **kwargs):
 
 def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   '''
-  A Mandel-Agol transit model, but with the depth and the duration
+  A `Mandel-Agol <http://adsabs.harvard.edu/abs/2002ApJ...580L.171M>`_ transit model, 
+  but with the depth and the duration
   as primary input variables.
+  
+  :param numpy.ndarray time: The time array
+  
+  :param float t0: The time of first transit in `BJD - 2454833`.
+  
+  :param float dur: The transit duration in days. Don't go too crazy on this one -- very small \
+                    or very large values will break the inverter. Default `0.1`
+  
+  :param float per: The orbital period in days. Default `3.56789`
+  
+  :param float depth: The fractional transit depth. Default `0.001`
+  
+  :param dict kwargs: Any additional keyword arguments, passed directly to :py:func:`everest.pysyzygy.Transit`
+  
+  :returns tmod: The transit model evaluated at the same times as the `time` array
   
   '''
   
@@ -71,7 +94,7 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
 
 def TopHat(time, t0 = 0., per = 3.56789, dur = 0.1, depth = 0.001, **kwargs):
   '''
-  A simple top-hat transit model.
+  A simple top-hat transit model. Not currently used.
   
   '''
   

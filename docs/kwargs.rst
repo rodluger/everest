@@ -1,0 +1,2 @@
+.. automodule:: kwargs
+   :members:

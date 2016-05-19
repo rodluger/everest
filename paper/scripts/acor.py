@@ -1,9 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-acor.py
--------
-Illustrates the GP optimization procedure for EPIC 201497682.
+Figure 3
+--------
+
+This script reproduces Figure 3 in the paper. It illustrates the
+GP optimization procedure for EPIC 201497682.
+The source code is available 
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/acor.py>`_.
+
+.. figure:: ../paper/tex/images/acor.png
+    :width: 600px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 3** GP optimization procedure for EPIC 201497682. In the top left panel 
+    we plot the raw SAP flux (black) and a ten chunk, first order PLD fit (red); 
+    the residuals are shown in the panel below. These are used to compute the power 
+    spectrum of the stellar signal (top right), and its autocorrelation function 
+    (bottom right, black curve). Different kernels are then fit to the autocorrelation 
+    function, and the one with the lowest :math:`\chi^2` value is chosen for the 
+    de-trending step (red curve). The grey envelope about the autocorrelation 
+    curve is the ad hoc standard error assumed to compute :math:`\chi^2`.
 
 '''
 
@@ -17,6 +37,7 @@ from matplotlib.ticker import MaxNLocator
 
 def PlotAcor():
   '''
+  Plots the data autocorrelation function, the periodogram, and the GP fit.
   
   '''
   
@@ -89,4 +110,6 @@ def PlotAcor():
   fig.savefig(os.path.join(IMG_PATH, 'acor.png'), bbox_inches = 'tight')
   fig.savefig(os.path.join(IMG_PATH, 'acor.pdf'), bbox_inches = 'tight')
 
-PlotAcor()
+if __name__ == '__main__':
+
+  PlotAcor()

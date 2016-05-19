@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-plot.py
--------
+:py:mod:`plot.py` - Plotting routines
+-------------------------------------
+
+These are routines for generating the output plots during an :py:mod:`everest`
+run.
 
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import FORCE_PNG
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
-from .utils import RMS, Mask, PadWithZeros, LatexExp
+from .utils import RMS, Mask, PadWithZeros, LatexExp, RemoveBackground
 from .transit import Transit
 from .sources import Source
 import os
@@ -23,6 +27,9 @@ log = logging.getLogger(__name__)
 
 def Plot(data):
   '''
+  The main plotting function. This calls all other plotting functions below.
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -30,55 +37,64 @@ def Plot(data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
+  if FORCE_PNG:
+    ext = 'png'
+  else:
+    ext = data['fig_ext'][()]
   
   # Plot the apertures
   log.info('Plotting the apertures...')
-  if not os.path.exists(os.path.join(outdir, 'aper.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
     fig, ax = PlotApertures(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'aper.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'aper.%s' % ext), quality = jpeg_quality)
     pl.close()
 
   # Plot the outliers
   log.info('Plotting the outliers...')
-  if not os.path.exists(os.path.join(outdir, 'outliers.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'outliers.%s' % ext)):
     fig, ax = PlotOutliers(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'outliers.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'outliers.%s' % ext), quality = jpeg_quality)
     pl.close()  
 
   # Plot the apertures
   log.info('Plotting the GP...')
-  if not os.path.exists(os.path.join(outdir, 'acor.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'acor.%s' % ext)):
     fig, ax = PlotGP(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'acor.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'acor.%s' % ext), quality = jpeg_quality)
     pl.close()
 
   # Plot the scatter curves
   if len(data['masked_scatter']):
     log.info('Plotting the scatter curve...')
-    if not os.path.exists(os.path.join(outdir, 'scatter.jpg')):
+    if not os.path.exists(os.path.join(outdir, 'scatter.%s' % ext)):
       fig, ax = PlotScatter(EPIC, data)
-      fig.savefig(os.path.join(outdir, 'scatter.jpg'), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'scatter.%s' % ext), quality = jpeg_quality)
       pl.close()
 
   # Plot the detrended data
   log.info('Plotting the detrended data...')
-  if not os.path.exists(os.path.join(outdir, 'detrended.jpg')):
+  if not os.path.exists(os.path.join(outdir, 'detrended.%s' % ext)):
     fig, ax = PlotDetrended(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'detrended.jpg'), quality = jpeg_quality)
+    fig.savefig(os.path.join(outdir, 'detrended.%s' % ext), quality = jpeg_quality)
     pl.close()
   
   # Plot the folded data
   if data['mask_candidates'] or len(data['inject'][()]):
     log.info('Plotting the folded data...')
-    #try:
-    PlotFolded(EPIC, data)
-    #except:
-    #  log.error('An error occurred while plotting the folded data.')
+    try:
+      PlotFolded(EPIC, data)
+    except:
+      log.error('An error occurred while plotting the folded data.')
   
   log.info('Done!')
 
 def PlotScatter(EPIC, data):
   '''
+  Plots the cross-validation scatter plot for a given run.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -122,6 +138,11 @@ def PlotScatter(EPIC, data):
 
 def PlotGP(EPIC, data):
   '''
+  Plots the GP optimization diagnostic plot for a given run.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -187,13 +208,22 @@ def PlotGP(EPIC, data):
 
 def PlotOutliers(EPIC, data):
   '''
+  Plots the results of the iterative outlier detection step.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
 
   time = data['time']
-  bkg = data['bkg']
   flux = data['flux']
   mask = data['mask']
+  campaign = data['campaign']
+  if RemoveBackground(campaign):
+    bkg = data['bkg']
+  else:
+    bkg = np.zeros_like(time)
   trn_mask = np.array(data['trn_mask'], dtype = int)
   remove = np.array(data['out_mask'], dtype = int)
   
@@ -220,6 +250,14 @@ def PlotOutliers(EPIC, data):
 
 def PlotApertures(EPIC, data):
   '''
+  Plots the target postage stamp with the chosen aperture overlaid. The colors
+  (dark blue: low, dark red: high) represent the time-integrated flux over the
+  entire campaign. This gives us an idea of how suitable the chosen static aperture
+  is for capturing all the target's flux.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -252,7 +290,7 @@ def PlotApertures(EPIC, data):
     contour = np.zeros((ny,nx))
     contour[apidx] = 1
 
-    # Add padding around the contour mask_pld so that the edges get drawn
+    # Add padding around the contour mask so that the edges get drawn
     contour = np.lib.pad(contour, 1, PadWithZeros)
 
     # Zoom in to make the contours look vertical/horizontal
@@ -296,6 +334,11 @@ def PlotApertures(EPIC, data):
 
 def PlotDetrended(EPIC, data):
   '''
+  Plots the de-trended data.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -494,6 +537,13 @@ def PlotDetrended(EPIC, data):
 
 def PlotFolded(EPIC, data):
   '''
+  Plots the data folded on the period(s) of any planet/EB candidates. This routine
+  typically won't get called, unless you're running a transit injection test or
+  you set `mask_candidates` to `True` when calling :py:func:`everest.compute.Compute`.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param dict data: The `data` dictionary returned by a call to :py:func:`everest.compute.Compute`
   
   '''
   
@@ -526,7 +576,11 @@ def PlotFolded(EPIC, data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-      
+  if FORCE_PNG:
+    ext = 'png'
+  else:
+    ext = data['fig_ext'][()]
+    
   # Is the star is an eclipsing binary?
   if EB:
     for n, eclipse, t0, dur in zip([1,2], ['Primary', 'Secondary'], ['p0', 's0'], ['pdur', 'sdur']):
@@ -558,7 +612,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
 
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_EB%02d.jpg' % n), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_EB%02d.%s' % (n, ext)), quality = jpeg_quality)
       pl.close()
 
   # Is this a planet host?
@@ -611,7 +665,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_%02d.%s' % (pcount, ext)), quality = jpeg_quality)
       pcount += 1
       pl.close()
     
@@ -661,7 +715,7 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_%02d.%s' % (pcount, ext)), quality = jpeg_quality)
       pcount += 1
       pl.close()
     
@@ -701,6 +755,6 @@ def PlotFolded(EPIC, data):
       ax.ticklabel_format(useOffset=False)
     
       # Save this figure
-      fig.savefig(os.path.join(outdir, 'folded_%02d.jpg' % pcount), quality = jpeg_quality)
+      fig.savefig(os.path.join(outdir, 'folded_%02d.%s' % (pcount, ext)), quality = jpeg_quality)
       pcount += 1
       pl.close() 

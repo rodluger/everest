@@ -1,12 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-scatter.py
-----------
+Figure 5
+--------
 
-Compute the scatter plot (3rd order PLD, 2 chunks) for EPIC 201497682.
+This script reproduces Figure 5 in the paper.
+It computes the cross-validation plot (3rd order PLD, 1 breakpoint) for EPIC 201497682.
 This may take up to half an hour to run, as I'm computing it on a very
 fine grid and over many iterations.
+The source code is available 
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/scatter.py>`_.
+
+.. figure:: ../paper/tex/images/scatter.png
+    :width: 500px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 5** De-trended light curve precision as a function of the number of principal 
+    components for EPIC 201497682. The blue dots are the median 6-hr precision (in ppm) 
+    of the unmasked sec- tions of the light curve (the training set); the red dots are 
+    the median precision in 6-hr chunks that were masked during the de-trending step 
+    (the validation set). Solid curves indicate our GP fit to the data points. Initially, 
+    the scatter decreases in both cases as the number of components is increased. 
+    However, above about 50 components, while the scatter in the training set continues 
+    to decrease, the scatter in the validation set (where the model is extrapolated) 
+    begins to grow. This is the signature of overfitting. We therefore choose 50 principal 
+    components for the de-trending, yielding a precision of 55 ppm (versus about 70 ppm for 
+    the K2SFF de-trended flux).
 
 '''
 
@@ -165,4 +187,5 @@ def PlotScatter(EPIC = 201497682):
   fig.savefig(os.path.join(IMG_PATH, 'scatter.png'), bbox_inches = 'tight')
   fig.savefig(os.path.join(IMG_PATH, 'scatter.pdf'), bbox_inches = 'tight')
 
-PlotScatter()
+if __name__ == '__main__':
+  PlotScatter()

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-data.py
--------
+:py:mod:`data.py` - Download routines
+-------------------------------------
+
+These are routines for downloading and storing the raw `K2` data, as well
+as information about planet candidates and eclipsing binaries.
 
 '''
 
@@ -10,7 +13,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from .sources import GetSources, Source
-from .utils import MedianFilter
+from .utils import MedianFilter, Chunks
 import kplr
 from kplr.config import KPLR_ROOT
 import numpy as np
@@ -18,6 +21,13 @@ import re
 import urllib
 from tempfile import NamedTemporaryFile
 import shutil
+try:
+  import pyfits
+except ImportError:
+  try:
+    import astropy.io.fits as pyfits
+  except ImportError:
+    raise Exception('Please install the `pyfits` package.')
 import logging
 log = logging.getLogger(__name__)
 
@@ -175,45 +185,139 @@ adapter = {
 
 class k2data(object):
   '''
-  Generic K2 data container.
+  A generic `K2` data container. Nothing fancy here.
   
   '''
   
   pass
 
-def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
+def _UpdateDataFile(EPIC):
   '''
-  Download and save a single quarter of K2 data.
+  A **temporary** hack to add fits header info and K2SFF aperture info to 
+  previously saved .npz tpf files
   
+  '''
+  
+  # Have we done this already?
+  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+  try:
+    data = np.load(filename)
+  except:
+    return False
+  try:
+    data['fitsheader']
+    data['apertures']
+    return True
+  except:
+    pass
+  
+  # Apertures
+  k2sff = kplr.K2SFF(EPIC)
+  apertures = k2sff.apertures
+  
+  # Get header info
+  client = kplr.API()
+  star = client.k2_star(EPIC)
+  tpf = star.get_target_pixel_files()[0]
+  with tpf.open() as f:
+    pass
+  ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
+  fitsheader = [pyfits.getheader(ftpf, 0).cards,
+                pyfits.getheader(ftpf, 1).cards,
+                pyfits.getheader(ftpf, 2).cards]
+
+  # Delete the kplr tpf
+  os.remove(ftpf)
+  os.remove(k2sff._file)
+  
+  # Append to the npz file
+  time = data['time']
+  fpix = data['fpix']
+  perr = data['perr']
+  campaign = data['campaign']
+  aperture = data['aperture']
+  cadn = data['cadn']
+  nearby = data['nearby']
+  np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                      aperture = aperture, nearby = nearby, campaign = campaign,
+                      apertures = apertures, fitsheader = fitsheader)
+  
+  return True
+
+def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
+  '''
+  Download and save a single quarter of `K2` data.
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  
+  :param apnum: The number of the aperture in the `K2SFF <https://archive.stsci.edu/prepds/k2sff/>`_ \
+                fits file to use for the photometry. Default `15`
+  :type apnum: int
+  
+  :param delete_kplr_data: Delete the fits file downloaded with :py:mod:`kplr` \
+                           after processing it? Default `True`
+  :type delete_kplr_data: bool
+  
+  :param clobber: Overwrite existing `.npz` file? Default `False`
+  :type clobber: bool
+  
+  :returns: 
+    A :class:`k2data` object containing the following attributes:
+  
+    - **campaign** - The `K2` campaign the target was observed in
+    - **time** - The array of timestamps, in `BJD - 245833`
+    - **cadn** - The long cadence number corresponding to each observation
+    - **fpix** - A 3-dimensional array of shape `(nt, nx, ny)` containing the \
+                 raw flux in the pixel at position `(x, y)` at each timestamp `t`
+    - **perr** - The standard error on each of the data points in `fpix`
+    - **apertures** - An array containing the 20 aperture images obtained from the \
+                      `K2SFF <https://archive.stsci.edu/prepds/k2sff/>`_ fits files
+    - **aperture** - *Deprecated*
+    - **bkg** - An estimate of the background flux at each cadence
+    - **bkgerr** - The standard error on `bkg`
+    - **kepmag** - The `Kepler` magnitude of the target
+    - **planets** - A list of :class:`K2Planets` objects containing known planets or \
+                    planet candidates for this target
+    - **EB** - `False` if target is not an eclipsing binary; otherwise, a :class:`K2EB` \
+               object containing EB info taken from the `Villanova <http://keplerebs.villanova.edu/>`_ \
+               eclipsing binary catalog
+    - **nearby** - A list of :class:`everest.sources.Source` instances containing \
+                   other `EPIC` targets within or close to this target's aperture
+    
   '''
   
   filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
   
-  try:
-    # Grab the K2SFF info, mainly to get the apertures
-    k2sff = kplr.K2SFF(EPIC)
-  except:
-    # If we can't get the K2SFF files, we can't run Everest (for now)
-    return None
-
-  try:
-    data = np.load(filename)
-    time = data['time']
-    fpix = data['fpix']
-    perr = data['perr']
-    campaign = data['campaign']
-    aperture = data['aperture']
-    cadn = data['cadn']
-    _nearby = data['nearby']
-    nearby = [Source(**s) for s in _nearby]
-    clobber = False
-  except:
-    clobber = True
+  if not clobber:
+    try:
+      data = np.load(filename)
+      time = data['time']
+      fpix = data['fpix']
+      perr = data['perr']
+      campaign = data['campaign']
+      aperture = data['aperture']
+      cadn = data['cadn']
+      _nearby = data['nearby']
+      nearby = [Source(**s) for s in _nearby]
+      fitsheader = data['fitsheader']
+      apertures = data['apertures']
+      clobber = False
+    except:
+      clobber = True
       
   if clobber:
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
       os.makedirs(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC)))
   
+    # Grab the K2SFF info, mainly to get the apertures
+    try:
+      k2sff = kplr.K2SFF(EPIC)
+      apertures = k2sff.apertures
+    except:
+      # If we can't get the K2SFF files, we can't run Everest (for now)
+      return None
+  
+    # Get the TPF
     client = kplr.API()
     star = client.k2_star(EPIC)
     tpf = star.get_target_pixel_files()[0]
@@ -237,7 +341,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
     t_nan_inds = list(np.where(np.isnan(time))[0])
     
     # Get bad flux values
-    apidx = np.where(k2sff.apertures[apnum] & 1 & ~np.isnan(fpix[0]))
+    apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0]))
     flux = np.sum(np.array([f[apidx] for f in fpix], dtype='float64'), axis = 1)
     f_nan_inds = list(np.where(np.isnan(flux))[0])
     
@@ -286,17 +390,25 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
     
     # Get nearby targets
     _nearby = [s.__dict__ for s in GetSources(EPIC)]
-  
-    # Save
-    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                        aperture = aperture, nearby = _nearby, campaign = campaign)
-  
+    
     # Make it into an object
     nearby = [Source(**s) for s in _nearby]
   
+    # Get header info
+    ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
+    fitsheader = [pyfits.getheader(ftpf, 0).cards,
+                  pyfits.getheader(ftpf, 1).cards,
+                  pyfits.getheader(ftpf, 2).cards]
+  
+    # Save
+    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                        aperture = aperture, nearby = _nearby, campaign = campaign,
+                        apertures = apertures, fitsheader = fitsheader)
+  
     # Delete the kplr tpf
     if delete_kplr_data:
-      os.remove(os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename))
+      os.remove(ftpf)
+      os.remove(k2sff._file)
   
   # Get any K2 planets associated with this EPIC
   planets = []
@@ -313,7 +425,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
   res.time = time
   res.cadn = cadn
   res.fpix = fpix
-  res.apertures = k2sff.apertures
+  res.apertures = apertures
   
   # Compute the background from the median outside the aperture
   binds = np.where(res.apertures[apnum] ^ 1)
@@ -351,11 +463,14 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True):
   res._nearby = _nearby
   res.nearby = nearby
 
+  # Fits header info
+  res.fitsheader = fitsheader
+  
   return res
 
 class K2Planet(object):
   '''
-  Generic K2 planet candidate object.
+  A generic `K2` planet candidate object.
   
   '''
   
@@ -367,7 +482,7 @@ class K2Planet(object):
 
 class K2EB(object):
   '''
-  Generic K2 EB candidate object.
+  A generic `K2` EB candidate object.
   
   '''
   
@@ -377,9 +492,47 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
+def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
+  '''
+  Shows the progress of the de-trending runs for all campaigns.
+  
+  :param str run_name: The name of the desired run (sub-folder). Default `default`
+  :param iterable campaigns: The list of campaigns to check. Default `[0 - 99)`
+  :param bool show_sub: Show sub-campaign progress? Default `False`
+  
+  '''
+  
+  print("CAMP      DONE      FAIL    REMAIN      PERC")
+  print("----      ----      ----    ------      ----")
+  for c in campaigns:
+    if os.path.exists(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)):
+      path = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)
+      folders = os.listdir(path)
+      done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
+      err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
+      total = len(GetK2Campaign(c))
+      
+      if show_sub:
+        print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
+              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+        for subcampaign in range(10):
+          sub = GetK2Campaign(c, subcampaign)
+          d = len(set(done) & set(sub))
+          e = len(set(err) & set(sub))
+          print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
+                len(sub) - (d + e), 100 * (d + e) / len(sub)))
+      else:
+        print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
+              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+      
+  return
+  
 def GetK2Stars(clobber = False):
   '''
-  Download and return a dict of all K2 stars organized by campaign.
+  Download and return a `dict` of all `K2` stars organized by campaign. Saves each
+  campaign to a `csv` file in the `/tables` directory.
+  
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   
@@ -402,11 +555,32 @@ def GetK2Stars(clobber = False):
   
   return res
 
+def GetK2Campaign(campaign, subcampaign = -1, clobber = False):
+  '''
+  Return all stars in a given K2 campaign.
+  
+  :param int campaign: The K2 campaign number
+  :param int subcampaign: The sub-campaign number. If `-1`, returns all targets in the \
+                          campaign. Otherwise returns the `n^th` sub-campaign, where \
+                          `0 <= n <= 9` are the ten equally-sized sub-campaigns
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
+  
+  '''
+  
+  all = GetK2Stars(clobber = clobber)[campaign]
+  
+  if subcampaign == -1:
+    return all
+  elif (subcampaign >= 0) and (subcampaign <= 9):
+    return list(Chunks(all, len(all) // 10))[subcampaign]
+  else:
+    raise Exception('Argument `subcampaign` must be equal to -1 or in the range [0,9].')
+
 def GetK2InjectionTestStars(clobber = False):
   '''
-  Download and return a dict of 500 K2 stars from Campaigns 0-4,
-  with 50 stars per magnitude bin in the range 8-18. We use these
-  for injection tests.
+  Download and return a dict of 2000 `K2` stars, with 100 stars per magnitude 
+  bin in the range 8-18. These are used for injection tests. The stars are
+  saved in `tables/Injections.csv`.
   
   '''
   
@@ -424,10 +598,10 @@ def GetK2InjectionTestStars(clobber = False):
   
 def GetK2Planets():
   '''
-  The CSV file below was downloaded from 
-  `here <http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=k2candidates>`_.
-  I don't think there's currently a way to query the database, so this method will
-  have to do for now...
+  Returns a list of :class:`K2Planet` instances generated from the file
+  `/tables/k2candidates.csv`. This file was downloaded from the
+  `Exoplanet Archive <http://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=k2candidates>`_
+  on February 26, 2016.
   
   '''
   
@@ -456,8 +630,10 @@ def GetK2Planets():
 
 def VillanovaBJDOffset(campaign):
   '''
-  There's a strange time offset in the Villanova EB catalog for 
-  some campaigns. The following hacks were determined empirically.
+  There's a strange time offset in the `Villanova` EB catalog for 
+  some campaigns. This function returns the time offset for a given
+  campaign, which was determined empirically. These numbers have not
+  been thoroughly verified.
   
   '''
   
@@ -474,16 +650,27 @@ class EclipseTimes(object):
   '''
   A simple class that determines the times of all eclipses for a given EB.
   
+  :param float t0: The time of first eclipse
+  :param float period: The period in days
+  :param float duration: The eclipse duration in days
+  
+  :returns: A :py:class:`numpy` array of the times of all transits between `start` \
+            and `stop`
+  
   '''
   
   def __init__(self, t0, period, duration):
+    '''
+    
+    '''
+    
     self.t0 = t0
     self.period = period
     self.duration = duration
     
   def __call__(self, start, end):
     '''
-  
+
     '''
     if self.duration > 0:
       return np.arange(self.t0 + np.ceil((start - self.duration - self.t0) / self.period) 
@@ -494,6 +681,11 @@ class EclipseTimes(object):
 class EclipseMask(object):
   '''
   An eclipse masking object for EBs.
+  
+  :param `EclipseTimes` primary: An instance containing the times of primary eclipse
+  :param `EclipseTimes` secondary: An instance containing the times of secondary eclipse
+  
+  :returns: The indices in `time` that contain the primary and secondary eclipses
   
   '''
   
@@ -516,7 +708,10 @@ class EclipseMask(object):
                    
 def GetK2EBs(clobber = False):
   '''
-  Grab all K2 EBs from the pre-downloaded Villanova catalog.
+  Grab all `K2` EBs from the pre-downloaded `Villanova` catalog, which is stored in
+  `/tables/k2ebs.tsv`.
+  
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   

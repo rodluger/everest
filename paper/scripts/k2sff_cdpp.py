@@ -4,6 +4,8 @@
 k2sff_cdpp.py
 -------------
 
+Computes the 6-hr CDPP for all the `K2SFF` de-trended light curves.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

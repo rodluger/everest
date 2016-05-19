@@ -1,8 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-overfitting.py
---------------
+Figure 4
+--------
+
+This script reproduces Figure 4 in the paper. It de-trends EPIC 201367065 with
+third order PLD, keeping all 8435 components, and leading to gross overfitting.
+The source code is available 
+`here <https://github.com/rodluger/everest/blob/master/paper/scripts/overfitting.py>`_.
+
+.. figure:: ../paper/tex/images/overfitting.png
+    :width: 500px
+    :align: center
+    :height: 100px
+    :alt: alternate text
+    :figclass: align-center
+
+    **Figure 4** *Top:* Third order PLD applied to EPIC 201367065, but this time 
+    keeping all basis vectors. Compare to Figure 1. While the median scatter improved 
+    by a factor of about 4, the scatter in the transits (which were masked during the 
+    de-trending) increased by a factor of several thousand. *Bottom:* The same figure, 
+    but zoomed out to show the in-transit scatter.
 
 '''
 
@@ -92,26 +110,27 @@ def GetDetrended(EPIC = 201367065):
              Y = Y, rms = rms, rms_in_transit = rms_in_transit)  
 
   return time, flux, Y, rms, rms_in_transit
-    
-fig, ax = pl.subplots(2, figsize = (7, 4), sharex = True)
-time, flux, Y, rms, rms_in_transit = GetDetrended()
 
-ax[0].plot(time, (Y + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % rms)
-ax[0].set_ylabel('De-trended Flux', fontsize = 12)
-ax[0].text(2014.4, 1.00425, "6-hr scatter: %.1f ppm" % rms, ha="right", va="top", fontsize=12,
-           bbox = dict(fc = 'w'))
-ax[0].yaxis.set_major_locator(MaxNLocator(5))
-ax[0].margins(0.01, None)
-ax[0].set_ylim(0.996, 1.0050)
-ax[0].ticklabel_format(useOffset=False)
+if __name__ == '__main__':
+  fig, ax = pl.subplots(2, figsize = (7, 4), sharex = True)
+  time, flux, Y, rms, rms_in_transit = GetDetrended()
 
-ax[1].plot(time, (Y + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % rms)
-ax[1].set_ylabel('De-trended Flux', fontsize = 12, labelpad = 20.5)
-ax[1].yaxis.set_major_locator(MaxNLocator(5))
-ax[1].margins(0.01, None)
-ax[1].set_ylim(0.86, 1.14)
-ax[1].ticklabel_format(useOffset=False)
-ax[1].set_xlabel('Time (days)', fontsize = 16)
+  ax[0].plot(time, (Y + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % rms)
+  ax[0].set_ylabel('De-trended Flux', fontsize = 12)
+  ax[0].text(2014.4, 1.00425, "6-hr scatter: %.1f ppm" % rms, ha="right", va="top", fontsize=12,
+             bbox = dict(fc = 'w'))
+  ax[0].yaxis.set_major_locator(MaxNLocator(5))
+  ax[0].margins(0.01, None)
+  ax[0].set_ylim(0.996, 1.0050)
+  ax[0].ticklabel_format(useOffset=False)
 
-fig.savefig(os.path.join(IMG_PATH, 'overfitting.png'), bbox_inches = 'tight')
-fig.savefig(os.path.join(IMG_PATH, 'overfitting.pdf'), bbox_inches = 'tight')
+  ax[1].plot(time, (Y + np.median(flux)) / np.median(flux), 'k.', alpha = 0.3, label = '%.1f ppm' % rms)
+  ax[1].set_ylabel('De-trended Flux', fontsize = 12, labelpad = 20.5)
+  ax[1].yaxis.set_major_locator(MaxNLocator(5))
+  ax[1].margins(0.01, None)
+  ax[1].set_ylim(0.86, 1.14)
+  ax[1].ticklabel_format(useOffset=False)
+  ax[1].set_xlabel('Time (days)', fontsize = 16)
+
+  fig.savefig(os.path.join(IMG_PATH, 'overfitting.png'), bbox_inches = 'tight')
+  fig.savefig(os.path.join(IMG_PATH, 'overfitting.pdf'), bbox_inches = 'tight')

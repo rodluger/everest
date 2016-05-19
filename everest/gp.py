@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-gp.py
------
+:py:mod:`compute.py` - Gaussian Processes
+-----------------------------------------
+
+This module optimizes the GP used to obtain the PLD coefficients.
 
 '''
 
@@ -32,7 +34,12 @@ log = logging.getLogger(__name__)
 
 def IsAlias(periods, p, tol = 0.05):
   '''
-  Is ``p`` a 1/2x or 2x alias of one of ``periods``?
+  Is `p` a 1/2x or 2x alias of one of `periods`?
+  Not a terribly robust routine...
+  
+  :param list periods: The list of periods to check against
+  :param float p: The period to check
+  :param float tol: The tolerance, as a fraction of the period
   
   '''
   
@@ -46,7 +53,35 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 2):
   '''
   Fit various kernels to the autocorrelation of the PLD-de-trended data
   and return a bunch of stuff.
-    
+  
+  :param int EPIC: The 9-digit `EPIC` number of the target
+  :param ndarray time: The time array
+  :param ndarray fpix: The pixel flux array, shape (`npts`, `npix`)
+  :param ndarray ferr: The errors on the flux array (the quadrature sum of the errors on `fpix`)
+  :param list mask: The indices to mask during this step. Default `[]`
+  :param int niter: The number of iterations to perform. Default `2`
+  
+  :returns: A dictionary containing the following keys:
+  
+    - **data** - The list `[knum, kpars, white, amp, chisq, fpld]`. `knum` is the \
+                 number of the kernel in the list :py:obj:`everest.kernels.KernelModels` \
+                 that was chosen as the best model. `kpars` is a list containing the \
+                 values of the parameters of this kernel. `white` is the white noise \
+                 amplitude, and `amp` is the red noise overall amplitude. `chisq` is \
+                 the value of the :math:`\chi^2` of the fit to the data autocorrelation, \
+                 and `fpld` is the de-trended data used to compute the autocorrelation
+    - **powerspec** - The list `[period, PS, sig1, pers]` containing (respectively) the \
+                      periodogram period array, the periodogram power, the 1-sigma significance \
+                      level, and the peak periods identified with Lomb-Scargle
+    - **acor** - The list `[acor, lags, sigma, count]` containing (respectively) the \
+                 data autocorrelation array (dependent variable), the data autocorrelation lags \
+                 (independent variable), the (somewhat arbitrary) standard errors assumed \
+                 to compute :math:`\chi^2`, and the number of times we iterated to get a \
+                 good value of :math:`\chi^2` (not the same as `niter`)
+    - **kernfunc** - A list containing (1) the kernel function in autocorrelation space, \
+                     evaluated at each element of `lags`, and (2) the string representation \
+                     of this kernel
+                     
   '''
   
   # Check if astroML is installed

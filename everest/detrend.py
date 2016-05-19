@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-detrend.py
-----------
+:py:mod:`detrend.py` - Linear algebra
+-------------------------------------
+
+This is the heart of :py:mod:`everest`. These routines compute the principal components
+of the fractional pixel flux functions and solves the GLS problem with a GP to
+obtain the PLD coefficients that best capture the instrumental noise signal.
 
 '''
 
@@ -16,13 +20,31 @@ from sklearn.decomposition import PCA
 import logging
 log = logging.getLogger(__name__)
       
-def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 1, cross_terms = True, 
+def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms = True, 
              max_components = 300):
   '''
-  Returns the basis vectors ``X`` we're going to use for the PLD model.
-  ``X`` has shape (``npts``, ``n_components``). The first column ([:,0])
+  Returns the basis vectors :math:`\mathbf{X}` we're going to use for the PLD model.
+  :math:`\mathbf{X}` has shape (`npts`, `n_components`). The first column (`[:,0]`)
   is a vector of ones. The following columns are the principal components,
-  in decreasing order of explained variance.
+  in decreasing order of explained variance. This is essentially Equation (6) in the paper.
+  
+  ::
+      
+                  [x00  x01  ...  x0N    1]
+       X  =       [x10  x11  ...  x1N    1] 
+                  [...  ...  ...  ...  ...]
+                  [xM0  xM1  ...  xMN    1]
+  
+  :param ndarray fpix: The pixel flux array, shape (`npts`, `npixels`)
+  :param ndarray time: The time array. Only necessary if `breakpoints` are specified. Default `None`
+  :param list breakpoints: The time(s) at which to split the light curve. Default `None`
+  :param int pld_order: The order of PLD to use. Default `3`
+  :param bool cross_terms: If `True`, includes the cross terms :math:`\prod_{k != j} p_{ij}p_{ik}`. Default `True`
+  :param int max_components: Maximum number of PCA components to produce. Default `300`
+  
+  :returns (X, n_components): The design matrix :math:`\mathbf{X}` and the number of \
+                              regressors in each submatrix (if no breakpoints are \
+                              specified, this is just the number of columns in :math:`\mathbf{X}`)
   
   '''
   
@@ -93,6 +115,10 @@ def PLDModel(C, X):
   '''
   The PLD model. It's really simple!
   
+  :param ndarray C: The coefficients returned by :py:func:`PLDCoeffs`
+  :param ndarray X: The design matrix returned by :py:func:`PLDBasis`
+  
+  :returns: :math:`\mathbf{X\cdot C}`
   '''
 
   return np.dot(C, X.T)
@@ -100,6 +126,15 @@ def PLDModel(C, X):
 def PLDCoeffs(X, Y, time, errors, gp, mask = []):
   '''
   Get the PLD coefficients by GLS regression with a GP.
+  
+  :param ndarray X: The design matrix returned by :py:func:`PLDBasis`
+  :param ndarray Y: The dependent variable array (the SAP flux)
+  :param ndarray time: The independent variable array (the timestamps)
+  :param ndarray errors: The standard errors on `Y`
+  :param george.GP gp: The pre-initialized :py:mod:`george` gaussian process object
+  :param list mask: The indices of points in `Y` to mask when computing the coefficients
+  
+  :returns C: The PLD coefficient array
   
   '''
   
@@ -115,9 +150,13 @@ def PLDCoeffs(X, Y, time, errors, gp, mask = []):
 
 def SliceX(X, n, npc):
   '''
-  Reduce the dimensionality of X from ``npc`` components to ``n`` components.
+  Reduce the dimensionality of :math:`\mathbf{X}` from `npc` components to `n` components.
   Trivial in the case where there's no breakpoints, slightly tricky when we have
-  submatrices in ``X``.
+  submatrices in :math:`\mathbf{X}`.
+  
+  :param ndarray X: The design matrix returned by :py:func:`PLDBasis`
+  :param int n: The desired number of components (per submatrix)
+  :param int npc: The original number of components (per submatrix)
   
   '''
   
@@ -128,9 +167,21 @@ def SliceX(X, n, npc):
 
 def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   '''
-  Compute the median scatter in the de-trended light curve and the 
-  median scatter in small masked portions of the light curve to
-  gauge overfitting.
+  Compute the median CDPP in the de-trended light curve and the 
+  median CDPP in small masked portions of the light curve to
+  gauge overfitting. This is the cross-validation step.
+  
+  :param ndarray X: The design matrix returned by :py:func:`PLDBasis`
+  :param ndarray Y: The dependent variable array (the SAP flux)
+  :param ndarray time: The independent variable array (the timestamps)
+  :param ndarray errors: The standard errors on `Y`
+  :param george.GP gp: The pre-initialized :py:mod:`george` gaussian process object
+  :param list mask: The indices of points in `Y` to mask when computing the coefficients
+  :param int niter: The number of iterations per principal component
+  :param int nmasks: The number of masks to apply per iteration. The set of all these masks \
+                     is our "validation" set
+  
+  :returns (masked_scatter, unmasked_scatter): A tuple containing the masked (validation) and unmasked (training) CDPP
   
   '''
   
@@ -187,7 +238,15 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
 def Outliers(time, flux, fpix, ferr, mask = [], sigma = 5):
   '''
   Return the indices of outliers we should remove from the light curve when computing
-  the PLD coeffs.
+  the PLD coeffs. This performs iterative sigma-clipping.
+  
+  :param ndarray time: The independent variable array (the timestamps)
+  :param ndarray flux: The dependent variable array (the SAP flux)
+  :param ndarray fpix: The pixel fluxes, shape `(npts, npix)`
+  :param ndarray ferr: The errors on the dependent variable array
+  :param list mask: The indices of points in `Y` to mask when computing the coefficients
+  :param float sigma: The outlier tolerance in standard deviations
+  
   
   '''
 

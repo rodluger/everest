@@ -8,8 +8,8 @@ cd ${EVEREST_ROOT}
 
 if [ $NODES -eq 1 ]; then
   # Run on a single node with Python multiprocessing
-  python -c "import everest; everest.run._RunCampaign($CAMPAIGN, '$KWARGS_FILE')"
+  python -c "import everest; everest.run._RunCampaign($CAMPAIGN, $SUBCAMPAIGN, '$KWARGS_FILE')"
 else
   # Run on multiple nodes with MPI
-  mpirun -np $PBS_NP python -c "import everest; everest.run._RunCampaign($CAMPAIGN, '$KWARGS_FILE')"
+  mpirun -np $PBS_NP python -c "import everest; everest.run._RunCampaign($CAMPAIGN, $SUBCAMPAIGN, '$KWARGS_FILE')"
 fi
