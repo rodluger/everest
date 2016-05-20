@@ -1,2 +1,0 @@
-.. automodule:: kplr.api
-   :members:

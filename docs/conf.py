@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath('../scripts'))
 sys.path.insert(0, os.path.abspath('../paper/scripts'))
 sys.path.insert(0, os.path.abspath('../paper/tex/images'))
 sys.path.insert(0, os.path.abspath('../pysyzygy'))
-sys.path.insert(0, os.path.abspath('../kplr'))
+sys.path.insert(0, os.path.abspath('../k2plr'))
 sys.path.insert(0, os.path.abspath('../pysyzygy/examples'))
 
 # -- General configuration ------------------------------------------------
