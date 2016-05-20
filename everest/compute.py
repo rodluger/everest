@@ -8,7 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .config import EVEREST_DAT, EVEREST_SRC
-from .data import GetK2Data
+from .data import GetK2Data, Campaign
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
 from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers, RemoveBackground
 from .quality import Saturation, Crowding, Autocorrelation
@@ -100,8 +100,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Grab the data
   k2star = GetK2Data(EPIC, apnum = apnum)
   
+  # Get the campaign
+  campaign = Campaign(EPIC)
+  
   # Setup the output directory
-  outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % k2star.campaign, 
+  outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, 
                         '%d' % EPIC, run_name)
   if not os.path.exists(outdir):
     os.makedirs(outdir)
