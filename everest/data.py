@@ -18,7 +18,8 @@ import kplr
 from kplr.config import KPLR_ROOT
 import numpy as np
 import re
-import urllib
+import six
+from six.moves import urllib
 from tempfile import NamedTemporaryFile
 import shutil
 try:

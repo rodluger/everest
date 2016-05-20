@@ -17,3 +17,5 @@ _*.tsv
 *.pyc
 docs/.build
 fits
+/dist
+/*.egg-info

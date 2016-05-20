@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import os, sys
 
 # Version number
 __version__ = "1.0"
@@ -26,17 +27,19 @@ elif platform.system() == "Darwin":
   except:
     FORCE_PNG = True
 
-# Add our submodules to the PATH
-import os, sys
-for submodule in ['kplr', 'pysyzygy']:
+# Import kplr submodule
+try:
+  import kplr
+except ImportError:
   sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
-                                  os.path.abspath(__file__))), submodule))
+                                  os.path.abspath(__file__))), 'kplr'))
 
+# Import pysyzygy submodule
 try:
   import pysyzygy
-except Exception as e:
-  if str(e).startswith("Can't find ``transitlib.so``"):
-    raise Exception("Please compile ``pysyzygy`` by running ``make`` in '/everest/pysyzygy'.")
+except ImportError:
+  sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
+                                  os.path.abspath(__file__))), 'pysyzygy'))
 
 # Import modules
 from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils
