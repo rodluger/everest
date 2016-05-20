@@ -263,8 +263,11 @@ def RunCampaign(campaign, subcampaign = -1, nsc = 10, nodes = 5, ppn = 12, wallt
   Submits a cluster job to compute and plot data for all targets in a given campaign.
   
   :param int campaign: The `K2` campaign to run
-  :param int subcampaign: The sub-campaign number to run
-  :param int nsc: The number of sub-campaigns in this campaign
+  :param int subcampaign: The sub-campaign number. If `-1`, runs all targets in the \
+                          campaign. Otherwise runs the `n^th` sub-campaign, where \
+                          `0 <= n < nsc` are the `nsc` equally-sized sub-campaigns. \
+                          Default `-1`
+  :param int nsc: The number of sub-campaigns. Default `10`
   :param str queue: The queue to submit to. Default `None` (default queue)
   :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
                           Default `/scripts/kwargs.py`

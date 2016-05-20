@@ -573,7 +573,8 @@ def GetK2Campaign(campaign, subcampaign = -1, nsc = 10, clobber = False):
   :param int campaign: The K2 campaign number
   :param int subcampaign: The sub-campaign number. If `-1`, returns all targets in the \
                           campaign. Otherwise returns the `n^th` sub-campaign, where \
-                          `0 <= n < nsc` are the `nsc` equally-sized sub-campaigns
+                          `0 <= n < nsc` are the `nsc` equally-sized sub-campaigns. \
+                          Default `-1`
   :param int nsc: The number of sub-campaigns. Default `10`
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   

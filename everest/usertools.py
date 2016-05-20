@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`tools.py` - User tools
--------------------------------
+:py:mod:`usertools.py` - User tools
+-----------------------------------
 
 User tools to download, process, and plot the :py:class:`everest` light curves.
 
