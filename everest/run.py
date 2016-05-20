@@ -256,18 +256,15 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunCampaign(campaign, subcampaign = -1, nsc = 10, nodes = 5, ppn = 12, walltime = 100, 
+def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100, 
                 email = None, queue = None,
                 kwargs_file = None):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
   
-  :param int campaign: The `K2` campaign to run
-  :param int subcampaign: The sub-campaign number. If `-1`, runs all targets in the \
-                          campaign. Otherwise runs the `n^th` sub-campaign, where \
-                          `0 <= n < nsc` are the `nsc` equally-sized sub-campaigns. \
-                          Default `-1`
-  :param int nsc: The number of sub-campaigns. Default `10`
+  :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
+                   all targets in that campaign. If a :py:class:`float` in the form \
+                   `X.Y`, runs the `Y^th` decile of campaign `X`.
   :param str queue: The queue to submit to. Default `None` (default queue)
   :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
                           Default `/scripts/kwargs.py`
@@ -277,6 +274,14 @@ def RunCampaign(campaign, subcampaign = -1, nsc = 10, nodes = 5, ppn = 12, wallt
   :param int ppn: The number of processors per node to request. Default `12`
   
   '''
+  
+  # Figure out the subcampaign
+  if type(campaign) is int:
+    subcampaign = -1
+  elif type(campaign) is float:
+    x, y = divmod(campaign)
+    campaign = int(x)
+    subcampaign = round(y * 10)
           
   # Submit the cluster job 
   if kwargs_file is None:
@@ -286,11 +291,11 @@ def RunCampaign(campaign, subcampaign = -1, nsc = 10, nodes = 5, ppn = 12, wallt
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d,NSC=%d' % (EVEREST_ROOT, 
           nodes, os.path.abspath(kwargs_file), campaign, subcampaign, nsc)
-  str_out = os.path.join(EVEREST_ROOT, 'C%02d_%d.log' % (campaign, subcampaign))
   if subcampaign == -1:
     str_name = 'C%02d' % campaign
   else:
-    str_name = 'C%02d_%d' % (campaign, subcampaign)
+    str_name = 'C%02d.%d' % (campaign, subcampaign)
+  str_out = os.path.join(EVEREST_ROOT, str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
@@ -367,7 +372,7 @@ def _RunInjections(kwargs_file, depth, mask):
     C = FunctionWrapper(_Run, **kwargs)
     pool.map(C, stars)
 
-def _RunCampaign(campaign, subcampaign, nsc, kwargs_file):
+def _RunCampaign(campaign, subcampaign, kwargs_file):
   '''
   The actual function that runs a given campaign; this must
   be called from ``runcampaign.pbs``.
@@ -383,8 +388,12 @@ def _RunCampaign(campaign, subcampaign, nsc, kwargs_file):
     # Get the kwargs
     kwargs = imp.load_source("kwargs", kwargs_file).kwargs
         
+    # Are we doing a subcampaign?
+    if subcampaign != -1:
+      campaign = campaign + 0.1 * subcampaign
+    
     # Get all the stars
-    stars = GetK2Campaign(campaign, subcampaign, nsc)
+    stars = GetK2Campaign(campaign)
   
     # Compute and plot
     C = FunctionWrapper(_Run, **kwargs)

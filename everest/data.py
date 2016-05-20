@@ -492,7 +492,7 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
-def Progress(run_name = 'default', campaigns = range(99), show_sub = False, nsc = 10):
+def Progress(run_name = 'default', campaigns = range(99)):
   '''
   Shows the progress of the de-trending runs for all campaigns.
   
@@ -511,19 +511,14 @@ def Progress(run_name = 'default', campaigns = range(99), show_sub = False, nsc 
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
       total = len(GetK2Campaign(c))
-      
-      if show_sub:
-        print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
-              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
-        for subcampaign in range(nsc):
-          sub = GetK2Campaign(c, subcampaign, nsc)
-          d = len(set(done) & set(sub))
-          e = len(set(err) & set(sub))
-          print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
-                len(sub) - (d + e), 100 * (d + e) / len(sub)))
-      else:
-        print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
-              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+      print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
+            total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+      for subcampaign in range(10):
+        sub = GetK2Campaign(c + 0.1 * subcampaign)
+        d = len(set(done) & set(sub))
+        e = len(set(err) & set(sub))
+        print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
+              len(sub) - (d + e), 100 * (d + e) / len(sub)))
       
   return
   
@@ -566,28 +561,28 @@ def Campaign(EPIC):
       return campaign
   return None
   
-def GetK2Campaign(campaign, subcampaign = -1, nsc = 10, clobber = False):
+def GetK2Campaign(campaign, clobber = False):
   '''
   Return all stars in a given K2 campaign.
   
-  :param int campaign: The K2 campaign number
-  :param int subcampaign: The sub-campaign number. If `-1`, returns all targets in the \
-                          campaign. Otherwise returns the `n^th` sub-campaign, where \
-                          `0 <= n < nsc` are the `nsc` equally-sized sub-campaigns. \
-                          Default `-1`
-  :param int nsc: The number of sub-campaigns. Default `10`
+  :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
+                   all targets in that campaign. If a :py:class:`float` in the form \
+                   `X.Y`, runs the `Y^th` decile of campaign `X`.
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   
   all = GetK2Stars(clobber = clobber)[campaign]
   
-  if subcampaign == -1:
+  if type(campaign) is int:
     return all
-  elif (subcampaign >= 0) and (subcampaign < nsc):
-    return list(Chunks(all, len(all) // nsc))[subcampaign]
+  elif type(campaign) is float:
+    x, y = divmod(campaign)
+    campaign = int(x)
+    subcampaign = round(y * 10)
+    return list(Chunks(all, len(all) // 10))[subcampaign]
   else:
-    raise Exception('Argument `subcampaign` must be equal to `-1` or in the range [0,nsc).')
+    raise Exception('Argument `subcampaign` must be an `int` or a `float` in the form `X.Y`')
 
 def GetK2InjectionTestStars(clobber = False):
   '''
