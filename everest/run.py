@@ -284,11 +284,15 @@ def RunCampaign(campaign, subcampaign = -1, nsc = 10, nodes = 5, ppn = 12, wallt
   str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d,NSC=%d' % (EVEREST_ROOT, 
           nodes, os.path.abspath(kwargs_file), campaign, subcampaign, nsc)
   str_out = os.path.join(EVEREST_ROOT, 'C%02d_%d.log' % (campaign, subcampaign))
+  if subcampaign == -1:
+    str_name = 'C%02d' % campaign
+  else:
+    str_name = 'C%02d_%d' % (campaign, subcampaign)
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
-               '-N', 'C%02d_%d' % (campaign, subcampaign),
+               '-N', str_name,
                '-l', str_n,
                '-l', str_w]
   if email is not None: 

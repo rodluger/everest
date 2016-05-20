@@ -40,8 +40,11 @@ def Plot(data):
   if FORCE_PNG:
     ext = 'png'
   else:
-    ext = data['fig_ext'][()]
-  
+    try:
+      ext = data['fig_ext'][()]
+    except KeyError:
+      ext = 'jpg'
+      
   # Plot the apertures
   log.info('Plotting the apertures...')
   if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
@@ -579,8 +582,11 @@ def PlotFolded(EPIC, data):
   if FORCE_PNG:
     ext = 'png'
   else:
-    ext = data['fig_ext'][()]
-    
+    try:
+      ext = data['fig_ext'][()]
+    except KeyError:
+      ext = 'jpg'
+      
   # Is the star is an eclipsing binary?
   if EB:
     for n, eclipse, t0, dur in zip([1,2], ['Primary', 'Secondary'], ['p0', 's0'], ['pdur', 'sdur']):
