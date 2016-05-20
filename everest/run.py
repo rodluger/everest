@@ -279,7 +279,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   if type(campaign) is int:
     subcampaign = -1
   elif type(campaign) is float:
-    x, y = divmod(campaign)
+    x, y = divmod(campaign, 1)
     campaign = int(x)
     subcampaign = round(y * 10)
           

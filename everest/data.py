@@ -498,7 +498,6 @@ def Progress(run_name = 'default', campaigns = range(99)):
   
   :param str run_name: The name of the desired run (sub-folder). Default `default`
   :param iterable campaigns: The list of campaigns to check. Default `[0 - 99)`
-  :param bool show_sub: Show sub-campaign progress? Default `False`
   
   '''
   
@@ -577,7 +576,7 @@ def GetK2Campaign(campaign, clobber = False):
   if type(campaign) is int:
     return all
   elif type(campaign) is float:
-    x, y = divmod(campaign)
+    x, y = divmod(campaign, 1)
     campaign = int(x)
     subcampaign = round(y * 10)
     return list(Chunks(all, len(all) // 10))[subcampaign]
