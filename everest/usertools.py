@@ -42,7 +42,8 @@ def _EverestVersion():
   if int(code) != 200:
     raise Exception("Error code {0} for URL '{1}'".format(code, url))
   data = handler.read().decode('utf-8')
-  
+  if data.endswith('\n'):
+    data = data[:-1]
   return data
 
 def _DownloadFITSFile(EPIC, clobber = False):
@@ -52,13 +53,15 @@ def _DownloadFITSFile(EPIC, clobber = False):
   
   '''
     
+  # Get the campaign
+  campaign = Campaign(EPIC)  
+    
   # Get the url
   mast_version = _EverestVersion()
-  url = MAST_ROOT + 'c%02d' % campaign + ('%09d' % EPIC)[:4] + '00000' + \
+  url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + \
         'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version)
   
   # Get the local file name
-  campaign = Campaign(EPIC)
   filename = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                           ('%09d' % EPIC)[:4] + '00000',
                           'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version))
@@ -208,7 +211,7 @@ class Mask(object):
     
     return np.delete(x, self.all_inds, axis = 0)
   
-def Detrend(EPIC, mask = None, clobber = False):
+def Detrend(EPIC, mask = None, clobber = False, plot = True):
   '''
   Detrends a given EPIC target with custom user options. If a local copy does not
   exist, automatically downloads the :py:mod:`everest` FITS file from MAST.
@@ -261,5 +264,10 @@ def Detrend(EPIC, mask = None, clobber = False):
     # Subtract the model and add the median back in to get
     # our final de-trended flux
     fpld = flux - model + np.median(flux)
+    
+    # Plot?
+    if plot:
+      pl.plot(time, fpld)
+      pl.show()
     
     return time, fpld, mask.all_inds
