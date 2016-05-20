@@ -1,7 +1,11 @@
 Troubleshooting
 ===============
 
-**I'm unable to import :py:mod:`everest`**
+.. contents::
+   :local:
+
+I'm unable to import :py:mod:`everest`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    Make sure :py:mod:`everest` is in your $PATH environment variable. This can be
    set in the `.bash_profile`, `.profile`, `.bashrc`, etc. config file in your home
@@ -13,7 +17,7 @@ Troubleshooting
       import sys
       sys.path.insert(1, '/full/path/to/everest')
    
-   where `/full/path/to/everest` is the path to the top-level :py:mod:`everest`
+   where ``/full/path/to/everest`` is the path to the top-level :py:mod:`everest`
    directory. You should then be able to call
    
    .. code-block:: python
@@ -22,8 +26,9 @@ Troubleshooting
    
    with no problem. 
     
-**I find that** :py:mod:`everest` **decreases transit depths!**
-   
+I find that :py:mod:`everest` decreases transit depths!
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
    This can happen if the transit isn't properly masked during the de-trending step, since
    PLD is trying as hard as it can to remove short-timescale features from the data. The way
    around this is to explicitly mask any known transits during de-trending. This can be
