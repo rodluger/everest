@@ -289,8 +289,8 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d,NSC=%d' % (EVEREST_ROOT, 
-          nodes, os.path.abspath(kwargs_file), campaign, subcampaign, nsc)
+  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_ROOT, 
+          nodes, os.path.abspath(kwargs_file), campaign, subcampaign)
   if subcampaign == -1:
     str_name = 'C%02d' % campaign
   else:
