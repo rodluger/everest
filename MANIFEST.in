@@ -1,4 +1,4 @@
 include README.rst
-include tables/*.csv
-include tables/*.tsv
+include everest/tables/*.csv
+include everest/tables/*.tsv
 include everest/*.pbs

@@ -12,7 +12,7 @@ import os
 __all__ = ["EVEREST_DAT", "EVEREST_SRC", "MAST_ROOT", "KWARGS_PY"]
 
 EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST_DATA_DIR", os.path.join("~", ".everest")))                               
-EVEREST_SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
 KWARGS_PY = \
 """

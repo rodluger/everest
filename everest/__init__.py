@@ -50,8 +50,6 @@ if not __EVEREST_SETUP__:
     os.makedirs(os.path.join(config.EVEREST_DAT, 'output'))
   if not os.path.exists(os.path.join(config.EVEREST_DAT, 'fits')):
     os.makedirs(os.path.join(config.EVEREST_DAT, 'fits'))
-  if not os.path.exists(os.path.join(config.EVEREST_DAT, 'scripts')):
-    os.makedirs(os.path.join(config.EVEREST_DAT, 'scripts'))
   if not os.path.exists(os.path.join(config.EVEREST_DAT, 'kwargs.py')):
     with open(os.path.join(config.EVEREST_DAT, 'kwargs.py'), 'w') as f:
       f.write(config.KWARGS_PY)

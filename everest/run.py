@@ -32,10 +32,10 @@ def UpdateCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'updatecampaign.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'updatecampaign.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_SRC=%s,CAMPAIGN=%d' % (EVEREST_SRC, campaign)
-  str_out = os.path.join(EVEREST_SRC, 'UPDATE_C%02d.log' % campaign)
+  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d' % (EVEREST_DAT, campaign)
+  str_out = os.path.join(EVEREST_DAT, 'UPDATE_C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
@@ -85,10 +85,10 @@ def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'download.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'download.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_SRC=%s,CAMPAIGN=%d' % (EVEREST_SRC, campaign)
-  str_out = os.path.join(EVEREST_SRC, 'DOWNLOAD_C%02d.log' % campaign)
+  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d' % (EVEREST_DAT, campaign)
+  str_out = os.path.join(EVEREST_DAT, 'DOWNLOAD_C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
@@ -114,10 +114,10 @@ def DownloadInjections(queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'downloadinj.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'downloadinj.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_SRC=%s' % (EVEREST_SRC)
-  str_out = os.path.join(EVEREST_SRC, 'DOWNLOAD_INJ.log')
+  str_v = 'EVEREST_DAT=%s' % (EVEREST_DAT)
+  str_out = os.path.join(EVEREST_DAT, 'DOWNLOAD_INJ.log')
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
@@ -194,12 +194,12 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE
   name = 'inject_%.4f%s' % (depth, ('m' if mask else 'u'))   
-  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'runinjections.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'runinjections.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_SRC=%s,NODES=%d,MASK=%d,DEPTH=%0.4f,KWARGS_FILE=%s' % (EVEREST_SRC, 
+  str_v = 'EVEREST_DAT=%s,NODES=%d,MASK=%d,DEPTH=%0.4f,KWARGS_FILE=%s' % (EVEREST_DAT, 
           nodes, int(mask), depth, os.path.abspath(kwargs_file))
-  str_out = os.path.join(EVEREST_SRC, '%s.log' % name)
+  str_out = os.path.join(EVEREST_DAT, '%s.log' % name)
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
@@ -235,12 +235,12 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   # Submit the cluster job  
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE    
-  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'runcandidates.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'runcandidates.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_SRC=%s,NODES=%d,KWARGS_FILE=%s' % (EVEREST_SRC, 
+  str_v = 'EVEREST_DAT=%s,NODES=%d,KWARGS_FILE=%s' % (EVEREST_DAT, 
           nodes, os.path.abspath(kwargs_file))
-  str_out = os.path.join(EVEREST_SRC, 'candidates.log')
+  str_out = os.path.join(EVEREST_DAT, 'candidates.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
@@ -286,16 +286,16 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   # Submit the cluster job 
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE     
-  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'runcampaign.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_SRC=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_SRC, 
+  str_v = 'EVEREST_DAT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_DAT, 
           nodes, os.path.abspath(kwargs_file), campaign, subcampaign)
   if subcampaign == -1:
     str_name = 'C%02d' % campaign
   else:
     str_name = 'C%02d.%d' % (campaign, subcampaign)
-  str_out = os.path.join(EVEREST_SRC, str_name + '.log')
+  str_out = os.path.join(EVEREST_DAT, str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
