@@ -11,9 +11,15 @@ import os
 
 __all__ = ["EVEREST_DAT", "EVEREST_SRC", "MAST_ROOT", "KWARGS_PY"]
 
+# Directories
 EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST_DATA_DIR", os.path.join("~", ".everest")))                               
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
-MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+
+# MAST url
+MAST_ROOT = 'http://staff.washington.edu/rodluger/everest_fits/'
+# TODO: MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+
+# Default kwargs file
 KWARGS_PY = \
 """
 #!/usr/bin/env python
