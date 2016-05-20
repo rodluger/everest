@@ -571,7 +571,7 @@ def GetK2Campaign(campaign, clobber = False):
   
   '''
   
-  all = GetK2Stars(clobber = clobber)[campaign]
+  all = GetK2Stars(clobber = clobber)[int(campaign)]
   
   if type(campaign) is int:
     return all
