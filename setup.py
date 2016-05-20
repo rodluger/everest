@@ -1,4 +1,18 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import division, print_function, absolute_import, unicode_literals
 from setuptools import setup, find_packages
+
+# Hackishly inject a constant into builtins to enable importing of the
+# module. Stolen from `kplr`
+import sys
+if sys.version_info[0] < 3:
+  import __builtin__ as builtins
+else:
+  import builtins
+builtins.__EVEREST_SETUP__ = True
+import everest
 
 # Check if the user has `pyfits` as part
 # of the `astropy` distribution...
@@ -15,20 +29,20 @@ def readme():
 
 # Setup!
 setup(name = 'everest',
-      version = '1.0',
+      version = everest.__version__,
       description = 'EPIC Variability Extraction and Removal for Exoplanet Science Targets',
       long_description = readme(),
       classifiers = [
                       'Development Status :: 3 - Alpha',
                       'License :: OSI Approved :: MIT License',
-                      'Programming Language :: Python :: 3.4',
+                      'Programming Language :: Python :: 3',
                       'Topic :: Scientific/Engineering :: Astronomy',
                     ],
       url = 'http://github.com/rodluger/everest',
       author = 'Rodrigo Luger',
       author_email = 'rodluger@uw.edu',
       license = 'MIT',
-      packages = find_packages(),
+      packages = ['everest'],
       install_requires = [
                           'numpy',
                           'scipy',

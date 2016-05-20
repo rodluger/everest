@@ -7,44 +7,53 @@ import os, sys
 # Version number
 __version__ = "1.0"
 
-# MAST HLSP root
-MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+# Was everest imported from setup.py?
+try:
+  __EVEREST_SETUP__
+except NameError:
+  __EVEREST_SETUP__ = False
 
-# MPL backend: force Agg for all Everest modules if running on a Linux machine
-# In order for this to work, ``everest`` must be imported first!
-# If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
-# quite bugged (at least on my Mac!). In particular, it complains when trying
-# to save JPEGs.
-FORCE_PNG = False
-import platform
-if platform.system() == "Linux":
-  import matplotlib as mpl
-  mpl.use("Agg", warn=False)
-elif platform.system() == "Darwin":
-  import matplotlib as mpl
+# This is a regular everest run
+if not __EVEREST_SETUP__:
+
+  # MAST HLSP root
+  MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+
+  # MPL backend: force Agg for all Everest modules if running on a Linux machine
+  # In order for this to work, ``everest`` must be imported first!
+  # If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
+  # quite bugged (at least on my Mac!). In particular, it complains when trying
+  # to save JPEGs.
+  FORCE_PNG = False
+  import platform
+  if platform.system() == "Linux":
+    import matplotlib as mpl
+    mpl.use("Agg", warn=False)
+  elif platform.system() == "Darwin":
+    import matplotlib as mpl
+    try:
+      mpl.use("Qt4Agg", warn=False)
+    except:
+      FORCE_PNG = True
+
+  # Import kplr submodule
   try:
-    mpl.use("Qt4Agg", warn=False)
-  except:
-    FORCE_PNG = True
+    import kplr
+  except ImportError:
+    sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
+                                    os.path.abspath(__file__))), 'kplr'))
 
-# Import kplr submodule
-try:
-  import kplr
-except ImportError:
-  sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
-                                  os.path.abspath(__file__))), 'kplr'))
+  # Import pysyzygy submodule
+  try:
+    import pysyzygy
+  except ImportError:
+    sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
+                                    os.path.abspath(__file__))), 'pysyzygy'))
 
-# Import pysyzygy submodule
-try:
-  import pysyzygy
-except ImportError:
-  sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
-                                  os.path.abspath(__file__))), 'pysyzygy'))
-
-# Import modules
-from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils
-from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress, Campaign
-from .pool import Pool
-from .compute import Compute
-from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
-from .fits import MakeFITS
+  # Import modules
+  from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils
+  from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress, Campaign
+  from .pool import Pool
+  from .compute import Compute
+  from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
+  from .fits import MakeFITS
