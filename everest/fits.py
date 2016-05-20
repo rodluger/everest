@@ -11,13 +11,12 @@ These FITS files make up the public :py:mod:`everest` catalog.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from . import __version__ as EVEREST_VERSION
+from .config import EVEREST_DAT, EVEREST_SRC
 from .utils import RemoveBackground
 from .data import Campaign
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 try:
   import pyfits
 except ImportError:
@@ -25,6 +24,7 @@ except ImportError:
     import astropy.io.fits as pyfits
   except ImportError:
     raise Exception('Please install the `pyfits` package.')
+import os
 import numpy as np
 from time import strftime
 import logging
@@ -254,7 +254,7 @@ def MakeFITS(EPIC, run_name = 'default', clobber = False):
   
   # Set up the output directory
   campaign = Campaign(EPIC)
-  folder = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
+  folder = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                        ('%09d' % EPIC)[:4] + '00000')
   if not os.path.exists(folder):
     os.makedirs(folder)
@@ -271,7 +271,7 @@ def MakeFITS(EPIC, run_name = 'default', clobber = False):
   fitsheader = indata['fitsheader']
   
   # Get the EVEREST output data
-  outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, str(EPIC), run_name)
+  outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), run_name)
   data = dict(np.load(os.path.join(outdir, 'data.npz')))
   
   # Create the HDUs

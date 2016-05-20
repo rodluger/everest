@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 import urllib
 import re
-import kplr
+import k2plr as kplr
 import logging
 log = logging.getLogger(__name__)
 

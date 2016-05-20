@@ -15,8 +15,8 @@ from .detrend import PLDCoeffs, PLDModel, PLDBasis
 from .utils import RMS, Mask, PadWithZeros, LatexExp, RemoveBackground
 from .transit import Transit
 from .sources import Source
+from .config import EVEREST_DAT, EVEREST_SRC
 import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator, ScalarFormatter
 from scipy.ndimage import zoom
@@ -35,7 +35,7 @@ def Plot(data):
   
   EPIC = data['EPIC']
   outdir = data['outdir'][()]
-  outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
+  outdir = os.path.join(EVEREST_DAT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
   if FORCE_PNG:
     ext = 'png'
@@ -577,7 +577,7 @@ def PlotFolded(EPIC, data):
   planets = data['planets']
   EB = data['EB'][()]
   outdir = data['outdir'][()]
-  outdir = os.path.join(EVEREST_ROOT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
+  outdir = os.path.join(EVEREST_DAT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
   if FORCE_PNG:
     ext = 'png'

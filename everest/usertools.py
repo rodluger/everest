@@ -9,15 +9,14 @@ User tools to download, process, and plot the :py:class:`everest` light curves.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-from . import MAST_ROOT
+from .config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT
 from .kernels import KernelModels
 from .data import Campaign
 import george
 import numpy as np
 import matplotlib.pyplot as pl
 import glob
+import os
 try:
   import pyfits
 except ImportError:
@@ -60,7 +59,7 @@ def _DownloadFITSFile(EPIC, clobber = False):
   
   # Get the local file name
   campaign = Campaign(EPIC)
-  filename = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
+  filename = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                           ('%09d' % EPIC)[:4] + '00000',
                           'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version))
   if not os.path.exists(os.path.dirname(filename)):
@@ -94,7 +93,7 @@ def GetFITSFile(EPIC, clobber = False):
   '''
   
   campaign = Campaign(EPIC)
-  path = os.path.join(EVEREST_ROOT, 'fits', 'c%02d' % campaign, 
+  path = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                      ('%09d' % EPIC)[:4] + '00000',
                       'hlsp_everest_k2_llc_%d-c%02d_kepler_v*.fits' % (EPIC, campaign))
   files = glob.glob(path)

@@ -10,14 +10,14 @@ as information about planet candidates and eclipsing binaries.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from .config import EVEREST_DAT, EVEREST_SRC
 from .sources import GetSources, Source
 from .utils import MedianFilter, Chunks
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 import numpy as np
 import re
+import os
 import six
 from six.moves import urllib
 from tempfile import NamedTemporaryFile
@@ -505,8 +505,8 @@ def Progress(run_name = 'default', campaigns = range(99)):
   print("CAMP      DONE      FAIL    REMAIN      PERC")
   print("----      ----      ----    ------      ----")
   for c in campaigns:
-    if os.path.exists(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)):
-      path = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)
+    if os.path.exists(os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)):
+      path = os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)
       folders = os.listdir(path)
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
@@ -536,14 +536,14 @@ def GetK2Stars(clobber = False):
     client = kplr.API()
     stars = client.k2_star_list()
     for campaign in stars.keys():
-      with open(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), 'w') as f:
+      with open(os.path.join(EVEREST_DAT, 'tables', 'C%02d.csv' % campaign), 'w') as f:
         for star in stars[campaign]:
           print(star, file = f)
   
   # Return
   res = {}
   for campaign in range(100):
-    f = os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign)
+    f = os.path.join(EVEREST_DAT, 'tables', 'C%02d.csv' % campaign)
     if os.path.exists(f):
       stars = np.loadtxt(f, dtype = int)
       res.update({campaign: stars})
@@ -596,11 +596,11 @@ def GetK2InjectionTestStars(clobber = False):
   if clobber:
     client = kplr.API()
     allstars = client.k2_star_mags(stars_per_mag = 200, mags = range(8,18))
-    with open(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 'w') as f:
+    with open(os.path.join(EVEREST_DAT, 'tables', 'Injections.csv'), 'w') as f:
       for stars in allstars: print(", ".join([str(s) for s in stars]), file = f)
   
   # Return the flattened list
-  stars = np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 
+  stars = np.loadtxt(os.path.join(EVEREST_DAT, 'tables', 'Injections.csv'), 
                      dtype = int, delimiter = ',')
   return [item for sublist in stars for item in sublist]
   
@@ -614,7 +614,7 @@ def GetK2Planets():
   '''
   
   # Read the CSV file
-  with open(os.path.join(EVEREST_ROOT, 'tables', 'k2candidates.csv'), 'r') as f:
+  with open(os.path.join(EVEREST_DAT, 'tables', 'k2candidates.csv'), 'r') as f:
     lines = f.readlines()
 
   # Get columns
@@ -724,7 +724,7 @@ def GetK2EBs(clobber = False):
   '''
   
   # Download a new CSV file?
-  if clobber or not os.path.exists(os.path.join(EVEREST_ROOT, 'tables', 'k2ebs.tsv')):
+  if clobber or not os.path.exists(os.path.join(EVEREST_DAT, 'tables', 'k2ebs.tsv')):
     url = 'http://keplerebs.villanova.edu/results/?q={"sort":"kic",' + \
           '"campaign":["0","1","2","3","4","5","6","7","8","9"],' + \
           '"kics":[],"etvlong":true,' + \
@@ -741,10 +741,10 @@ def GetK2EBs(clobber = False):
     f.flush()
     os.fsync(f.fileno())
     f.close()
-    shutil.move(f.name, os.path.join(EVEREST_ROOT, 'tables', 'k2ebs.tsv'))
+    shutil.move(f.name, os.path.join(EVEREST_DAT, 'tables', 'k2ebs.tsv'))
   
   # Read the CSV file
-  with open(os.path.join(EVEREST_ROOT, 'tables', 'k2ebs.tsv'), 'r') as f:
+  with open(os.path.join(EVEREST_DAT, 'tables', 'k2ebs.tsv'), 'r') as f:
     lines = f.readlines()
 
   # Create a list of EB objects
@@ -794,7 +794,7 @@ def GetK2EBs(clobber = False):
     EBs.append(EB)
   
   # Now read the user-defined list of updated EBs
-  with open(os.path.join(EVEREST_ROOT, 'tables', 'k2ebs_updated.tsv'), 'r') as f:
+  with open(os.path.join(EVEREST_DAT, 'tables', 'k2ebs_updated.tsv'), 'r') as f:
     lines = f.readlines()
   
   for line in lines:

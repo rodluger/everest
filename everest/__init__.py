@@ -16,9 +16,6 @@ except NameError:
 # This is a regular everest run
 if not __EVEREST_SETUP__:
 
-  # MAST HLSP root
-  MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
-
   # MPL backend: force Agg for all Everest modules if running on a Linux machine
   # In order for this to work, ``everest`` must be imported first!
   # If on MacOS, try the Qt4Agg backend before the MacOSX backend, which is
@@ -36,19 +33,9 @@ if not __EVEREST_SETUP__:
     except:
       FORCE_PNG = True
 
-  # Import kplr submodule
-  try:
-    import kplr
-  except ImportError:
-    sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
-                                    os.path.abspath(__file__))), 'kplr'))
-
-  # Import pysyzygy submodule
-  try:
-    import pysyzygy
-  except ImportError:
-    sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(
-                                    os.path.abspath(__file__))), 'pysyzygy'))
+  # Make sure we can import our submodules
+  import pysyzygy
+  import k2plr
 
   # Import modules
   from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils

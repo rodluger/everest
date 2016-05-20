@@ -9,6 +9,7 @@ Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from .config import EVEREST_DAT, EVEREST_SRC
 from .plot import Plot
 from .data import GetK2Stars, GetK2Campaign, GetK2Data, GetK2Planets, GetK2InjectionTestStars, _UpdateDataFile
 from .compute import Compute
@@ -16,9 +17,8 @@ from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
 import os
 import sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEF_KWARGS_FILE = os.path.join(EVEREST_ROOT, 'scripts', 'kwargs.py')
-from kplr.config import KPLR_ROOT
+DEF_KWARGS_FILE = os.path.join(EVEREST_SRC, 'scripts', 'kwargs.py')
+from k2plr.config import KPLR_ROOT
 import subprocess
 import numpy as np
 import imp
@@ -32,10 +32,10 @@ def UpdateCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'updatecampaign.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'updatecampaign.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
-  str_out = os.path.join(EVEREST_ROOT, 'UPDATE_C%02d.log' % campaign)
+  str_v = 'EVEREST_SRC=%s,CAMPAIGN=%d' % (EVEREST_SRC, campaign)
+  str_out = os.path.join(EVEREST_SRC, 'UPDATE_C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
@@ -85,10 +85,10 @@ def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'download.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'download.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,CAMPAIGN=%d' % (EVEREST_ROOT, campaign)
-  str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_C%02d.log' % campaign)
+  str_v = 'EVEREST_SRC=%s,CAMPAIGN=%d' % (EVEREST_SRC, campaign)
+  str_out = os.path.join(EVEREST_SRC, 'DOWNLOAD_C%02d.log' % campaign)
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
@@ -114,10 +114,10 @@ def DownloadInjections(queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'downloadinj.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'downloadinj.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s' % (EVEREST_ROOT)
-  str_out = os.path.join(EVEREST_ROOT, 'DOWNLOAD_INJ.log')
+  str_v = 'EVEREST_SRC=%s' % (EVEREST_SRC)
+  str_out = os.path.join(EVEREST_SRC, 'DOWNLOAD_INJ.log')
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
@@ -194,12 +194,12 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE
   name = 'inject_%.4f%s' % (depth, ('m' if mask else 'u'))   
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runinjections.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'runinjections.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,NODES=%d,MASK=%d,DEPTH=%0.4f,KWARGS_FILE=%s' % (EVEREST_ROOT, 
+  str_v = 'EVEREST_SRC=%s,NODES=%d,MASK=%d,DEPTH=%0.4f,KWARGS_FILE=%s' % (EVEREST_SRC, 
           nodes, int(mask), depth, os.path.abspath(kwargs_file))
-  str_out = os.path.join(EVEREST_ROOT, '%s.log' % name)
+  str_out = os.path.join(EVEREST_SRC, '%s.log' % name)
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
@@ -235,12 +235,12 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   # Submit the cluster job  
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE    
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcandidates.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'runcandidates.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s' % (EVEREST_ROOT, 
+  str_v = 'EVEREST_SRC=%s,NODES=%d,KWARGS_FILE=%s' % (EVEREST_SRC, 
           nodes, os.path.abspath(kwargs_file))
-  str_out = os.path.join(EVEREST_ROOT, 'candidates.log')
+  str_out = os.path.join(EVEREST_SRC, 'candidates.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
@@ -286,16 +286,16 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   # Submit the cluster job 
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE     
-  pbsfile = os.path.join(EVEREST_ROOT, 'everest', 'runcampaign.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'everest', 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_ROOT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_ROOT, 
+  str_v = 'EVEREST_SRC=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_SRC, 
           nodes, os.path.abspath(kwargs_file), campaign, subcampaign)
   if subcampaign == -1:
     str_name = 'C%02d' % campaign
   else:
     str_name = 'C%02d.%d' % (campaign, subcampaign)
-  str_out = os.path.join(EVEREST_ROOT, str_name + '.log')
+  str_out = os.path.join(EVEREST_SRC, str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
                '-o', str_out,
@@ -334,7 +334,7 @@ def _RunCandidates(kwargs_file):
   
     # Get all the stars
     stars = [int(p.epic_name[5:]) for p in GetK2Planets()]
-    new = [int(f[:9]) for f in os.listdir(os.path.join(EVEREST_ROOT, 'new')) if f.endswith('.npz')]
+    new = [int(f[:9]) for f in os.listdir(os.path.join(EVEREST_DAT, 'new')) if f.endswith('.npz')]
     stars = list(set(stars + new))
   
     # Compute and plot
