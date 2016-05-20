@@ -17,7 +17,7 @@ from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
 import os
 import sys
-DEF_KWARGS_FILE = os.path.join(EVEREST_SRC, 'scripts', 'kwargs.py')
+DEF_KWARGS_FILE = os.path.join(EVEREST_SRC, 'kwargs.py')
 from k2plr.config import KPLR_ROOT
 import subprocess
 import numpy as np
@@ -151,7 +151,7 @@ def RunSingle(EPIC, debug = False, kwargs_file = None):
   :param int EPIC: The 9-digit `K2` EPIC number
   :param bool debug: Debug mode? Default `False`. If `True`, enters `pdb` post-mortem when an error is raised
   :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
-                          Default `/scripts/kwargs.py`
+                          Default `~/.everest/kwargs.py`
 
   
   '''
@@ -182,7 +182,7 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   :param bool mask: Mask injected transits? Default `False`.
   :param str queue: The queue to submit to. Default `None` (default queue)
   :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
-                          Default `/scripts/kwargs.py`
+                          Default `~/.everest/kwargs.py`
   :param str email: The email to send job status notifications to. Default `None`
   :param int walltime: The number of hours to request. Default `100`
   :param int nodes: The number of nodes to request. Default `5`
@@ -224,7 +224,7 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   
   :param str queue: The queue to submit to. Default `None` (default queue)
   :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
-                          Default `/scripts/kwargs.py`
+                          Default `~/.everest/kwargs.py`
   :param str email: The email to send job status notifications to. Default `None`
   :param int walltime: The number of hours to request. Default `100`
   :param int nodes: The number of nodes to request. Default `5`
@@ -267,7 +267,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
                    `X.Y`, runs the `Y^th` decile of campaign `X`.
   :param str queue: The queue to submit to. Default `None` (default queue)
   :param str kwargs_file: The file containing the keyword arguments to pass to :py:func:`everest.compute.Compute`. \
-                          Default `/scripts/kwargs.py`
+                          Default `~/.everest/kwargs.py`
   :param str email: The email to send job status notifications to. Default `None`
   :param int walltime: The number of hours to request. Default `100`
   :param int nodes: The number of nodes to request. Default `5`

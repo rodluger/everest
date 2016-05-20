@@ -38,9 +38,20 @@ if not __EVEREST_SETUP__:
   import k2plr
 
   # Import modules
-  from . import compute, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils
+  from . import config, compute, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils
   from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress, Campaign
   from .pool import Pool
   from .compute import Compute
   from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
   from .fits import MakeFITS
+  
+  # Create the data directories if they don't exist
+  if not os.path.exists(os.path.join(config.EVEREST_DAT, 'output')):
+    os.makedirs(os.path.join(config.EVEREST_DAT, 'output'))
+  if not os.path.exists(os.path.join(config.EVEREST_DAT, 'fits')):
+    os.makedirs(os.path.join(config.EVEREST_DAT, 'fits'))
+  if not os.path.exists(os.path.join(config.EVEREST_DAT, 'scripts')):
+    os.makedirs(os.path.join(config.EVEREST_DAT, 'scripts'))
+  if not os.path.exists(os.path.join(config.EVEREST_DAT, 'kwargs.py')):
+    with open(os.path.join(config.EVEREST_DAT, 'kwargs.py'), 'w') as f:
+      f.write(config.KWARGS_PY)
