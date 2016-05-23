@@ -14,15 +14,17 @@ I find that :py:mod:`everest` decreases transit depths!
    
    .. code-block:: python
       
-      from everest import usertools as eu
+      from everest import usertools as ut
       
-      # Create a custom mask
-      mask = eu.Mask(transits = [( 8.992, 2067.93, 0.25),
+      # Create a custom mask by specifying the period, time
+      # of first transit, and transit duration for each of
+      # the planets transiting the target star
+      mask = ut.Mask(transits = [( 8.992, 2067.93, 0.25),
                                  (20.661, 2066.42, 0.25),
                                  (31.716, 2070.79, 0.25)])
       
-      # Detrend with this mask
-      time, flux, mask_inds = eu.Detrend(205071984, mask = mask)
+      # Now detrend with this mask
+      ut.Detrend(205071984, mask = mask, plot = True)
       
       
       

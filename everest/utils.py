@@ -10,6 +10,7 @@ General utility functions called from various parts of the code.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from scipy.signal import medfilt
+from scipy.special import erf
 import numpy as np
 import sys, traceback, pdb
 import george
@@ -288,6 +289,37 @@ def LatexExpSq(f, minexp = 3):
   else:
     return LatexExp(f, minexp)[:-1] + '^2$'
 
+def PlotBounds(y, sigma = 3, pad = 0.1, symmetrical = True):
+  '''
+  Returns the optimal lower and upper bounds for a plot.
+  
+  :param array_like y: The dependent (`y`-axis) array
+  :param float sigma: The number of standard deviations to clip outliers at. Default `3`
+  :param float buffer: Additional padding (as a fraction) to add at top and bottom. Default `0.1`
+  :param bool symmetrical: Symmetrical bounds about the median? Default `True`
+  
+  '''
+  
+  mf = y - MedianFilter(y, 3)
+  mf[np.where(mf == 0)] = np.nan
+  sigma = 3
+  MAD = 1.4826 * np.nanmedian(np.abs(mf))
+  crop = np.where(np.abs(mf) > sigma * MAD)[0]
+  yc = np.delete(y, crop)
+  mn, mx = np.nanmin(yc), np.nanmax(yc)
+  
+  if symmetrical:
+    m = np.nanmedian(yc)
+    r = max(mx - m, m - mn)
+    mn, mx = m - r, m + r
+  
+  if pad:
+    m = np.nanmedian(yc)
+    mx += pad * (mx - m)
+    mn += pad * (mn - m)
+  
+  return mn, mx
+  
 def ExceptionHook(exctype, value, tb):
   '''
   A custom exception handler that logs errors to file.
