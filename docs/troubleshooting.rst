@@ -24,7 +24,16 @@ I find that :py:mod:`everest` decreases transit depths!
                                  (31.716, 2070.79, 0.25)])
       
       # Now detrend with this mask
-      ut.Detrend(205071984, mask = mask, plot = True)
+      res = ut.Detrend(205071984, mask = mask, plot = True)
+  
+   This should result in the following output:
       
-      
-      
+   .. figure:: usertools_plot.png
+     :width: 600px
+     :align: center
+     :height: 100px
+     :figclass: align-center
+  
+   The :py:obj:`res` object returned by :py:func:`everest.tools.Detrend` is a
+   tuple containing the time array, the de-trended flux array, and the indices
+   of the light curve that were masked.

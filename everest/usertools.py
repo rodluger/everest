@@ -300,6 +300,7 @@ def _Plot(EPIC, time, flux, fpld, fwhite, mask):
   ax[1].set_ylabel('EVEREST Flux', fontsize = 18)
   ax[1].set_xlabel('Time (BJD - 2454833)', fontsize = 18)
   pl.suptitle('EPIC %d' % EPIC, fontsize = 22)
+  fig.canvas.set_window_title('EPIC %d' % EPIC)
   
   # Set the appropriate bounds (same for both plots)
   bounds = min(PlotBounds(flux), PlotBounds(fpld))
