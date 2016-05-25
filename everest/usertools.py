@@ -276,12 +276,12 @@ def _Plot(EPIC, time, flux, fpld, fwhite, mask):
                       top = 0.925, bottom = 0.1,
                       hspace = 0.05)
   # Plot                   
-  ax[0].plot(mask(time), mask(flux), 'k.', markersize = 5, alpha = 0.5)
-  ax[0].plot(mask.inv(time), mask.inv(flux), 'k.', markersize = 5, alpha = 0.5,
+  ax[0].plot(mask(time), mask(flux), 'k.', markersize = 3, alpha = 0.5)
+  ax[0].plot(mask.inv(time), mask.inv(flux), 'r.', markersize = 3, alpha = 0.5,
              label = 'Masked')
-  #ax[0].legend(loc = 'upper left', fontsize = 9, numpoints = 3)
-  ax[1].plot(mask(time), mask(fpld), 'b.', markersize = 5, alpha = 0.5)
-  ax[1].plot(mask.inv(time), mask.inv(fpld), 'b.', markersize = 5, alpha = 0.5)
+  ax[0].legend(loc = 'upper left', fontsize = 9, numpoints = 3)
+  ax[1].plot(mask(time), mask(fpld), 'b.', markersize = 3, alpha = 0.5)
+  ax[1].plot(mask.inv(time), mask.inv(fpld), 'r.', markersize = 3, alpha = 0.5)
 
   # Labels
   ax[0].set_ylabel('SAP Flux', fontsize = 18)
