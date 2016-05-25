@@ -129,8 +129,8 @@ import re
 if __name__ == '__main__':
   
   # The campaigns we'll use for the synthesis plots
-  campaigns = [0,1,2,3,4,5]
-  figures = [1] #[1,2,3,4,5,6]
+  campaigns = [0,1,2,3,4,5,6]
+  figures = [1,2,3,4,5,6]
 
   # Get the raw **Kepler** rms
   kep_star, kep_kepmag, _, kep_raw = np.loadtxt(os.path.join('CDPP', 'kepler.tsv'), unpack = True)
@@ -145,14 +145,34 @@ if __name__ == '__main__':
   crwdsev = [[] for i in range(8)]
   for c in range(8):
     try:
-      k2_star[c], k2_kepmag[c], _, k2_raw[c], k2_phot[c], satsev[c], crwdsev[c] = np.loadtxt(os.path.join('CDPP', 'k2raw_C%02d.tsv' % c), unpack = True)
-      s, _, k2_ever[c] = np.loadtxt(os.path.join('CDPP', 'everest_C%02d.tsv' % c), unpack = True)
+      k2_star_c, k2_kepmag_c, _, k2_raw_c, k2_phot_c, satsev_c, crwdsev_c = np.loadtxt(os.path.join('CDPP', 'k2raw_C%02d.tsv' % c), unpack = True)
+      s, _, k2_ever_c = np.loadtxt(os.path.join('CDPP', 'everest_C%02d.tsv' % c), unpack = True)
     except:
       continue
-    if not np.allclose(k2_star[c], s):
-      raise Exception("Input tables misaligned!")
-    k2_star[c] = [int(e) for e in k2_star[c]]
+    k2_star_c = [int(e) for e in k2_star_c]
 
+    # Now align raw with EVEREST for the one-to-one comparison
+    stars = list(set(k2_star_c) & set(s))
+    x = []
+    y = []
+    for star in stars:
+      i = np.argmax(k2_star_c == star)
+      j = np.argmax(s == star)
+      k2_star[c].append(k2_star_c[i])
+      k2_kepmag[c].append(k2_kepmag_c[i])
+      k2_raw[c].append(k2_raw_c[i])
+      k2_phot[c].append(k2_phot_c[i])
+      satsev[c].append(satsev_c[i])
+      crwdsev[c].append(crwdsev_c[i])
+      k2_ever[c].append(k2_ever_c[j])
+    k2_star[c] = np.array(k2_star[c], dtype = int)
+    k2_kepmag[c] = np.array(k2_kepmag[c])
+    k2_raw[c] = np.array(k2_raw[c])
+    k2_phot[c] = np.array(k2_phot[c])
+    satsev[c] = np.array(satsev[c], dtype = int)
+    crwdsev[c] = np.array(crwdsev[c], dtype = int)
+    k2_ever[c] = np.array(k2_ever[c])
+    
     # Now remove saturated and crowded stars
     bad = np.where((satsev[c] > 2) | (crwdsev[c] > 2))
     k2_star[c] = np.delete(k2_star[c], bad)
@@ -324,7 +344,6 @@ if __name__ == '__main__':
     y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-  
     ax.plot(x, y, 'b.', alpha = 0.1)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
@@ -335,7 +354,7 @@ if __name__ == '__main__':
     bins = np.arange(10,19.5,0.5)
     by = np.zeros_like(bins) * np.nan
     for b, bin in enumerate(bins):
-      i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
+      i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
       if len(i) > 10:
         by[b] = np.median(y[i])
     ax.plot(bins, by, 'k-', lw = 2)
@@ -388,8 +407,9 @@ if __name__ == '__main__':
     bins = np.arange(10,19.5,0.5)
     by = np.zeros_like(bins) * np.nan
     for b, bin in enumerate(bins):
-      i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
-      by[b] = np.median(y[i])
+      i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
+      if len(i) > 10:
+        by[b] = np.median(y[i])
     ax.plot(bins, by, 'k-', lw = 2)
 
     if labels:
@@ -440,10 +460,10 @@ if __name__ == '__main__':
     bins = np.arange(10,19.5,0.5)
     by = np.zeros_like(bins) * np.nan
     for b, bin in enumerate(bins):
-      i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
-      by[b] = np.median(y[i])
+      i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
+      if len(i) > 10:
+        by[b] = np.median(y[i])
     ax.plot(bins, by, 'k-', lw = 2)
-
     if labels:
       ax.set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2VARCAT}}}{\mathrm{CDPP}_{\mathrm{K2VARCAT}}}$', fontsize = 22)
       ax.set_xlabel('Kepler Magnitude', fontsize = 18)
@@ -503,8 +523,9 @@ if __name__ == '__main__':
     bins = np.arange(10,19.5,0.5)
     by = np.zeros_like(bins) * np.nan
     for b, bin in enumerate(bins):
-      i = np.where((x >= bin - 0.5) & (x < bin + 0.5))[0]
-      by[b] = np.median(y[i])
+      i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
+      if len(i) > 10:
+        by[b] = np.median(y[i])
     ax.plot(bins, by, 'k-', lw = 2)
 
     if labels:
