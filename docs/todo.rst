@@ -4,6 +4,7 @@ The To-Do List
 
 .. todo::
 
+  - Fix paths in the figure plots
   - Plot the **mode** of the distributions in Figure 10
   - Implement easy EVEREST calling for masked transits.
   - Take median of unsaturated background!

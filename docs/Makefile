@@ -59,7 +59,7 @@ html:
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 	@echo
 	@echo "Publishing changes..."
-	$(RSYNC) -rv --times $(BUILDDIR)/html* $(WEBDIR)
+	$(RSYNC) -rv --times $(BUILDDIR)/html/ $(WEBDIR)
 	@echo "Publishing finished!"
 	
 dirhtml:

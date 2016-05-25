@@ -1,0 +1,99 @@
+@import url("normalize.css");
+@import url(http://fonts.googleapis.com/css?family=Libre+Baskerville:400,700,400italic);
+@import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700);
+
+body {
+    font-family: 'Libre Baskerville', serif;
+    line-height: 2.1em;
+    color: #222;
+    background: #e5e8e8;
+    font-size: 12pt;
+}
+
+a {
+    color: steelblue;
+    text-decoration: none;
+}
+
+a:hover {
+    color: rgb(60, 160, 243);
+}
+
+.container {
+    width: 800px;
+    margin-left: 100px;
+}
+
+.title {
+    font-size: 36pt;
+    font-weight: bold;
+    padding: 100px 0 20px;
+}
+
+.title a {
+    color: #222;
+}
+
+.subtitle {
+    font-size: 21pt;
+    font-weight: normal;
+    line-height: 1;
+    color: #666;
+    padding-bottom: 30px;
+    margin-bottom: 50px;
+    border-bottom: 1px solid #888;
+}
+
+#footer {
+    margin-top: 20px;
+    padding: 20px 0;
+    font-size: 10pt;
+    font-style: italic;
+    line-height: 2;
+    border-top: 1px solid #888;
+}
+
+h1 {
+    display: none;
+}
+
+h2 {
+    font-size: 21pt;
+    color: #444;
+    padding: 30px 0 10px;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Invisibles */
+
+.headerlink {
+    font-size: 0.7em;
+    float: left;
+    position: relative;
+    width: 22px;
+    margin-left: -22px;
+    color: #bbb;
+}
+
+/* Code */
+
+.highlight {
+    border-left: 2px solid #ccc;
+    padding: 1px 0 1px 15px;
+    margin-left: -15px;
+    background: #ddd;
+    line-height: 1.2;
+    font-size: 14px;
+}
+
+@media all and (max-width: 1000px) {
+    .container {
+        width: auto;
+        margin: 20px 10%;
+        padding: 0;
+    }
+
+    .headerlink {
+        display: none;
+    }
+}

@@ -7,15 +7,15 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-from .data import GetK2Data
+from .config import EVEREST_DAT, EVEREST_SRC
+from .data import GetK2Data, Campaign
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
 from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers, RemoveBackground
 from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
 from .gp import GetGP
 from .transit import Transit
+import os
 import george
 import numpy as np
 from scipy.signal import savgol_filter
@@ -100,8 +100,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   # Grab the data
   k2star = GetK2Data(EPIC, apnum = apnum)
   
+  # Get the campaign
+  campaign = Campaign(EPIC)
+  
   # Setup the output directory
-  outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % k2star.campaign, 
+  outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, 
                         '%d' % EPIC, run_name)
   if not os.path.exists(outdir):
     os.makedirs(outdir)
@@ -683,7 +686,7 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   new_candidates = []
   if mask_candidates:
     for cnum in range(10):
-      f = os.path.join(EVEREST_ROOT, 'new', '%d.%02d.npz' % (EPIC, cnum))
+      f = os.path.join(EVEREST_DAT, 'new', '%d.%02d.npz' % (EPIC, cnum))
       if os.path.exists(f):
         tmp = np.load(f)
         new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 

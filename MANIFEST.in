@@ -1,0 +1,4 @@
+include README.rst
+include everest/tables/*.csv
+include everest/tables/*.tsv
+include everest/*.pbs

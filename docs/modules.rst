@@ -19,15 +19,15 @@ including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
    pool
    run
    sources
-   tools
+   usertools
    transit
    utils
 
 .. toctree::
    :maxdepth: 2   
-   :caption: kplr
+   :caption: k2plr
    
-   kplrapi
+   k2plrapi
 
 .. toctree::
    :maxdepth: 2   

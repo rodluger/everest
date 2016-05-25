@@ -10,15 +10,16 @@ as information about planet candidates and eclipsing binaries.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from .config import EVEREST_DAT, EVEREST_SRC
 from .sources import GetSources, Source
 from .utils import MedianFilter, Chunks
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 import numpy as np
 import re
-import urllib
+import os
+import six
+from six.moves import urllib
 from tempfile import NamedTemporaryFile
 import shutil
 try:
@@ -492,45 +493,39 @@ class K2EB(object):
   def __repr__(self):
     return "<K2EB: %s>" % self.epic
 
-def Progress(run_name = 'default', campaigns = range(99), show_sub = False):
+def Progress(run_name = 'default', campaigns = range(99)):
   '''
   Shows the progress of the de-trending runs for all campaigns.
   
   :param str run_name: The name of the desired run (sub-folder). Default `default`
   :param iterable campaigns: The list of campaigns to check. Default `[0 - 99)`
-  :param bool show_sub: Show sub-campaign progress? Default `False`
   
   '''
   
   print("CAMP      DONE      FAIL    REMAIN      PERC")
   print("----      ----      ----    ------      ----")
   for c in campaigns:
-    if os.path.exists(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)):
-      path = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % c)
+    if os.path.exists(os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)):
+      path = os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)
       folders = os.listdir(path)
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
       total = len(GetK2Campaign(c))
-      
-      if show_sub:
-        print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
-              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
-        for subcampaign in range(10):
-          sub = GetK2Campaign(c, subcampaign)
-          d = len(set(done) & set(sub))
-          e = len(set(err) & set(sub))
-          print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
-                len(sub) - (d + e), 100 * (d + e) / len(sub)))
-      else:
-        print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
-              total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+      print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
+            total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
+      for subcampaign in range(10):
+        sub = GetK2Campaign(c + 0.1 * subcampaign)
+        d = len(set(done) & set(sub))
+        e = len(set(err) & set(sub))
+        print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
+              len(sub) - (d + e), 100 * (d + e) / len(sub)))
       
   return
   
 def GetK2Stars(clobber = False):
   '''
   Download and return a `dict` of all `K2` stars organized by campaign. Saves each
-  campaign to a `csv` file in the `/tables` directory.
+  campaign to a `csv` file in the `everest/tables` directory.
   
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
@@ -541,46 +536,59 @@ def GetK2Stars(clobber = False):
     client = kplr.API()
     stars = client.k2_star_list()
     for campaign in stars.keys():
-      with open(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), 'w') as f:
+      with open(os.path.join(EVEREST_SRC, 'tables', 'C%02d.csv' % campaign), 'w') as f:
         for star in stars[campaign]:
           print(star, file = f)
   
   # Return
   res = {}
   for campaign in range(100):
-    f = os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign)
+    f = os.path.join(EVEREST_SRC, 'tables', 'C%02d.csv' % campaign)
     if os.path.exists(f):
       stars = np.loadtxt(f, dtype = int)
       res.update({campaign: stars})
-  
+
   return res
 
-def GetK2Campaign(campaign, subcampaign = -1, clobber = False):
+def Campaign(EPIC):
+  '''
+  Returns the campaign number for a given EPIC target.
+  
+  '''
+
+  for campaign, stars in GetK2Stars().items():
+    if EPIC in stars:
+      return campaign
+  return None
+  
+def GetK2Campaign(campaign, clobber = False):
   '''
   Return all stars in a given K2 campaign.
   
-  :param int campaign: The K2 campaign number
-  :param int subcampaign: The sub-campaign number. If `-1`, returns all targets in the \
-                          campaign. Otherwise returns the `n^th` sub-campaign, where \
-                          `0 <= n <= 9` are the ten equally-sized sub-campaigns
+  :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
+                   all targets in that campaign. If a :py:class:`float` in the form \
+                   `X.Y`, runs the `Y^th` decile of campaign `X`.
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   
-  all = GetK2Stars(clobber = clobber)[campaign]
+  all = GetK2Stars(clobber = clobber)[int(campaign)]
   
-  if subcampaign == -1:
+  if type(campaign) is int:
     return all
-  elif (subcampaign >= 0) and (subcampaign <= 9):
+  elif type(campaign) is float:
+    x, y = divmod(campaign, 1)
+    campaign = int(x)
+    subcampaign = round(y * 10)
     return list(Chunks(all, len(all) // 10))[subcampaign]
   else:
-    raise Exception('Argument `subcampaign` must be equal to -1 or in the range [0,9].')
+    raise Exception('Argument `subcampaign` must be an `int` or a `float` in the form `X.Y`')
 
 def GetK2InjectionTestStars(clobber = False):
   '''
   Download and return a dict of 2000 `K2` stars, with 100 stars per magnitude 
   bin in the range 8-18. These are used for injection tests. The stars are
-  saved in `tables/Injections.csv`.
+  saved in `everest/tables/Injections.csv`.
   
   '''
   
@@ -588,11 +596,11 @@ def GetK2InjectionTestStars(clobber = False):
   if clobber:
     client = kplr.API()
     allstars = client.k2_star_mags(stars_per_mag = 200, mags = range(8,18))
-    with open(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 'w') as f:
+    with open(os.path.join(EVEREST_SRC, 'tables', 'Injections.csv'), 'w') as f:
       for stars in allstars: print(", ".join([str(s) for s in stars]), file = f)
   
   # Return the flattened list
-  stars = np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'Injections.csv'), 
+  stars = np.loadtxt(os.path.join(EVEREST_SRC, 'tables', 'Injections.csv'), 
                      dtype = int, delimiter = ',')
   return [item for sublist in stars for item in sublist]
   
@@ -606,7 +614,7 @@ def GetK2Planets():
   '''
   
   # Read the CSV file
-  with open(os.path.join(EVEREST_ROOT, 'tables', 'k2candidates.csv'), 'r') as f:
+  with open(os.path.join(EVEREST_SRC, 'tables', 'k2candidates.csv'), 'r') as f:
     lines = f.readlines()
 
   # Get columns
@@ -709,14 +717,14 @@ class EclipseMask(object):
 def GetK2EBs(clobber = False):
   '''
   Grab all `K2` EBs from the pre-downloaded `Villanova` catalog, which is stored in
-  `/tables/k2ebs.tsv`.
+  `everest/tables/k2ebs.tsv`.
   
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
   '''
   
   # Download a new CSV file?
-  if clobber or not os.path.exists(os.path.join(EVEREST_ROOT, 'tables', 'k2ebs.tsv')):
+  if clobber or not os.path.exists(os.path.join(EVEREST_SRC, 'tables', 'k2ebs.tsv')):
     url = 'http://keplerebs.villanova.edu/results/?q={"sort":"kic",' + \
           '"campaign":["0","1","2","3","4","5","6","7","8","9"],' + \
           '"kics":[],"etvlong":true,' + \
@@ -733,10 +741,10 @@ def GetK2EBs(clobber = False):
     f.flush()
     os.fsync(f.fileno())
     f.close()
-    shutil.move(f.name, os.path.join(EVEREST_ROOT, 'tables', 'k2ebs.tsv'))
+    shutil.move(f.name, os.path.join(EVEREST_SRC, 'tables', 'k2ebs.tsv'))
   
   # Read the CSV file
-  with open(os.path.join(EVEREST_ROOT, 'tables', 'k2ebs.tsv'), 'r') as f:
+  with open(os.path.join(EVEREST_SRC, 'tables', 'k2ebs.tsv'), 'r') as f:
     lines = f.readlines()
 
   # Create a list of EB objects
@@ -786,7 +794,7 @@ def GetK2EBs(clobber = False):
     EBs.append(EB)
   
   # Now read the user-defined list of updated EBs
-  with open(os.path.join(EVEREST_ROOT, 'tables', 'k2ebs_updated.tsv'), 'r') as f:
+  with open(os.path.join(EVEREST_SRC, 'tables', 'k2ebs_updated.tsv'), 'r') as f:
     lines = f.readlines()
   
   for line in lines:
