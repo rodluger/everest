@@ -192,59 +192,6 @@ class k2data(object):
   
   pass
 
-def _UpdateDataFile(EPIC):
-  '''
-  A **temporary** hack to add fits header info and K2SFF aperture info to 
-  previously saved .npz tpf files
-  
-  '''
-  
-  # Have we done this already?
-  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
-  try:
-    data = np.load(filename)
-  except:
-    return False
-  try:
-    data['fitsheader']
-    data['apertures']
-    return True
-  except:
-    pass
-  
-  # Apertures
-  k2sff = kplr.K2SFF(EPIC)
-  apertures = k2sff.apertures
-  
-  # Get header info
-  client = kplr.API()
-  star = client.k2_star(EPIC)
-  tpf = star.get_target_pixel_files()[0]
-  with tpf.open() as f:
-    pass
-  ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
-  fitsheader = [pyfits.getheader(ftpf, 0).cards,
-                pyfits.getheader(ftpf, 1).cards,
-                pyfits.getheader(ftpf, 2).cards]
-
-  # Delete the kplr tpf
-  os.remove(ftpf)
-  os.remove(k2sff._file)
-  
-  # Append to the npz file
-  time = data['time']
-  fpix = data['fpix']
-  perr = data['perr']
-  campaign = data['campaign']
-  aperture = data['aperture']
-  cadn = data['cadn']
-  nearby = data['nearby']
-  np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                      aperture = aperture, nearby = nearby, campaign = campaign,
-                      apertures = apertures, fitsheader = fitsheader)
-  
-  return True
-
 def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   '''
   Download and save a single quarter of `K2` data.

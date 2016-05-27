@@ -24,54 +24,6 @@ import numpy as np
 import imp
 import time
 
-def UpdateCampaign(campaign, queue = 'build', email = None, walltime = 8):
-  '''
-  A **temporary** hack to add fits header info and K2SFF aperture info to 
-  previously saved .npz tpf files
-  
-  '''
-          
-  # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'updatecampaign.pbs')
-  str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d' % (EVEREST_DAT, campaign)
-  str_out = os.path.join(EVEREST_DAT, 'UPDATE_C%02d.log' % campaign)
-  qsub_args = ['qsub', pbsfile, 
-               '-q', queue,
-               '-v', str_v, 
-               '-o', str_out,
-               '-j', 'oe', 
-               '-N', 'UPDATE_C%02d' % campaign,
-               '-l', str_w]
-  if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
-  # Now we submit the job
-  print("Submitting the job...")
-  subprocess.call(qsub_args)
-
-def _UpdateCampaign(campaign):
-  '''
-  A **temporary** hack to add fits header info and K2SFF aperture info to 
-  previously saved .npz tpf files
-  
-  '''
-  
-  # Get all star IDs for this campaign
-  stars = GetK2Campaign(campaign)
-  nstars = len(stars)
-  
-  # Download the TPF data for each one
-  for i, EPIC in enumerate(stars):
-    print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    try:
-      res = _UpdateDataFile(EPIC)
-    except:
-      res = False
-    if res is False:
-      try:
-        GetK2Data(EPIC, clobber = True)
-      except:
-        print("Error downloading EPIC %d." % EPIC)
-
 def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
   Submits a cluster job to the build queue to download all TPFs for a given
