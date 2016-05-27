@@ -199,9 +199,9 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   log.info('Computing outlier masks...')
   try:
     maskdata = np.load(os.path.join(outdir, 'mask.npz'))
-    mask = maskdata['mask']
-    trn_mask = maskdata['trn_mask']
-    out_mask = maskdata['out_mask']
+    mask = np.array(maskdata['mask'], dtype = int)
+    trn_mask = np.array(maskdata['trn_mask'], dtype = int)
+    out_mask = np.array(maskdata['out_mask'], dtype = int)
     new_candidates = maskdata['new_candidates']
   except:
     mask, trn_mask, out_mask, new_candidates = \
@@ -429,11 +429,7 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
   
   # Flag the outliers
   outliers = np.zeros_like(time, dtype = np.int32)
-  try:
-    outliers[mask] = 1
-  except:
-    print(mask, type(mask))
-    raise Exception('BLAH') # DEBUG
+  outliers[mask] = 1
     
   # Write to file
   with open(os.path.join(outdir, '%d.pld' % EPIC), 'w') as pldfile:

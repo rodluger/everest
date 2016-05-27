@@ -17,6 +17,7 @@ from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
 import os
 import sys
+import traceback
 DEF_KWARGS_FILE = os.path.join(EVEREST_DAT, 'kwargs.py')
 from k2plr.config import KPLR_ROOT
 import subprocess
