@@ -361,10 +361,10 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
 
   # Get the git info (if we're in a git repo)
   try:
-    branches = subprocess.check_output(['git', 
+    branches = subprocess.check_output(['git', '-C', EVEREST_SRC,
                'branch']).decode('utf-8').replace('\n', '')
     git_branch = re.findall('\*\s([a-zA-Z0-9_]*)', branches)[0]
-    git_hash = subprocess.check_output(['git', 'rev-parse', 
+    git_hash = subprocess.check_output(['git', '-C', EVEREST_SRC, 'rev-parse', 
                '--verify', 'HEAD']).decode('utf-8').replace('\n', '')
   except:
     git_branch = None
@@ -708,4 +708,5 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   out_mask = Outliers(time, flux, fpix, ferr, mask = trn_mask, sigma = outlier_sigma)
   mask = sorted(set(trn_mask + list(out_mask)))
     
-  return mask, trn_mask, out_mask, new_candidates
+  return np.array(mask, dtype = int), np.array(trn_mask, dtype = int), \
+         np.array(out_mask, dtype = int), np.array(new_candidates, dtype = int)
