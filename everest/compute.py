@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_order = 3,
             optimize_npc = True, mask_candidates = False,
-            ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
+            ps_iter = 30, ps_masks = 10, npc_arr = np.arange(25, 260, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.CRITICAL, gp_iter = 2, 
             jpeg_quality = 30, fig_ext = 'jpg', **kwargs):
@@ -51,11 +51,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
                             to optimize the GP kernel).
   :param bool mask_candidates: Mask known/new planet candidates, EBs, and injected transits? Default `False`
   :param int ps_iter: The number of iterations used to compute the "predictive" scatter (the scatter in \
-                      the validation set). Default `50`
+                      the validation set). Default `30`
   :param int ps_masks: The number of masks to apply per iteration. The set of all these masks \
                        is the validation set
   :param ndarray npc_arr: The array of principal component numbers to test during the cross-validation. \
-                          Default is the range `[25, 200)`, spaced by `10` components.
+                          Default is the range `[25, 260)`, spaced by `10` components.
   :param dict inject: A dictionary of injection keywords. These include `t0`, `per`, `depth`, `dur`, and \
                       any other keywords passed directly to :py:func:`everest.pysyzygy.Transit`. The keyword \
                       `mask` is also accepted. If `True`, the transits are masked during the PLD step
