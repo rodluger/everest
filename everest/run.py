@@ -96,7 +96,7 @@ def _Run(EPIC, **kwargs):
       return True
     else:
       return False
-  except Exception, err:
+  except:
     log.error('ERROR detrending EPIC %d:' % EPIC)
     etype, value, tb = sys.exc_info()
     for line in traceback.format_exception_only(etype, value):
