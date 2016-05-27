@@ -97,12 +97,12 @@ def _Run(EPIC, **kwargs):
     else:
       return False
   except:
-    log.error('ERROR detrending EPIC %d:' % EPIC)
+    print('ERROR detrending EPIC %d:' % EPIC)
     etype, value, tb = sys.exc_info()
     for line in traceback.format_exception_only(etype, value):
-      log.error(line.replace('\n', ''))
+      print(line.replace('\n', ''))
     for line in traceback.format_tb(tb):
-      log.error(line.replace('\n', ''))
+      print(line.replace('\n', ''))
     return False
     
 def RunSingle(EPIC, debug = False, kwargs_file = None):

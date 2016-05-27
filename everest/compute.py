@@ -429,8 +429,12 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
   
   # Flag the outliers
   outliers = np.zeros_like(time, dtype = np.int32)
-  outliers[mask] = 1
-
+  try:
+    outliers[mask] = 1
+  except:
+    print(mask, type(mask))
+    raise Exception('BLAH') # DEBUG
+    
   # Write to file
   with open(os.path.join(outdir, '%d.pld' % EPIC), 'w') as pldfile:
     for line in header:
