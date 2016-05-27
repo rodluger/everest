@@ -361,10 +361,10 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
 
   # Get the git info (if we're in a git repo)
   try:
-    branches = subprocess.check_output(['git', '-C', EVEREST_SRC,
+    branches = subprocess.check_output(['git', '--git-dir', EVEREST_SRC,
                'branch']).decode('utf-8').replace('\n', '')
     git_branch = re.findall('\*\s([a-zA-Z0-9_]*)', branches)[0]
-    git_hash = subprocess.check_output(['git', '-C', EVEREST_SRC, 'rev-parse', 
+    git_hash = subprocess.check_output(['git', '--git-dir', EVEREST_SRC, 'rev-parse', 
                '--verify', 'HEAD']).decode('utf-8').replace('\n', '')
   except:
     git_branch = None
