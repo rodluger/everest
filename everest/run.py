@@ -383,6 +383,17 @@ def _DownloadCampaign(campaign):
         # Some targets could be corrupted
         continue  
 
+def _UpdateCampaign(campaign):
+  '''
+  DEBUG DEBUG DEBUG
+  '''
+  stars = GetK2Campaign(campaign)
+  nstars = len(stars)
+  for i, EPIC in enumerate(stars):
+    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), 'contamination.png')):
+      GetK2Data(EPIC)
+
 def _DownloadInjections():
   '''
   Download all stars for the injection tests. This is
