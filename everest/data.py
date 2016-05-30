@@ -11,6 +11,7 @@ as information about planet candidates and eclipsing binaries.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .config import EVEREST_DAT, EVEREST_SRC
+from .crowding import Contamination
 from .sources import GetSources, Source
 from .utils import MedianFilter, Chunks
 import k2plr as kplr
@@ -231,6 +232,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
                eclipsing binary catalog
     - **nearby** - A list of :class:`everest.sources.Source` instances containing \
                    other `EPIC` targets within or close to this target's aperture
+    - **contamination** - An estimate of the median contamination metric for the default \
+                          aperture
     
   '''
   
@@ -249,6 +252,18 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
       nearby = [Source(**s) for s in _nearby]
       fitsheader = data['fitsheader']
       apertures = data['apertures']
+      
+      # DEBUG
+      try:
+        contamination = data['contamination']
+      except:
+        contamination = Contamination(EPIC, fpix, perr, np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])), nearby, plot = True)
+        np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                        aperture = aperture, nearby = _nearby, campaign = campaign,
+                        apertures = apertures, fitsheader = fitsheader,
+                        contamination = contamination)
+      # / DEBUG
+      
       clobber = False
     except:
       clobber = True
@@ -342,6 +357,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     # Make it into an object
     nearby = [Source(**s) for s in _nearby]
   
+    # Get the contamination
+    contamination = Contamination(EPIC, fpix, perr, apidx, nearby)
+  
     # Get header info
     ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
     fitsheader = [pyfits.getheader(ftpf, 0).cards,
@@ -351,7 +369,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     # Save
     np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
                         aperture = aperture, nearby = _nearby, campaign = campaign,
-                        apertures = apertures, fitsheader = fitsheader)
+                        apertures = apertures, fitsheader = fitsheader,
+                        contamination = contamination)
   
     # Delete the kplr tpf
     if delete_kplr_data:
@@ -410,7 +429,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   # Get nearby sources
   res._nearby = _nearby
   res.nearby = nearby
-
+  res.contamination = contamination
+  
   # Fits header info
   res.fitsheader = fitsheader
   
