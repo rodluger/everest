@@ -109,7 +109,8 @@ def DataHDU(data, fitsheader):
   # Generate some EVEREST data/info
   time = data['time']
   outliers = np.zeros_like(time, dtype = np.int32)
-  outliers[data['mask']] = 1
+  mask = np.array(data['mask'], dtype = int)
+  outliers[mask] = 1
   flux = data['fpld'] * np.nanmedian(data['flux'])
   cdpp_raw = data['rms'][1]
   cdpp_det = data['rms'][3]
