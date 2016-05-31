@@ -401,23 +401,26 @@ def _UpdateCampaign(campaign):
       data = np.load(filename)
     except:
       continue
-    time = data['time']
-    fpix = data['fpix']
-    perr = data['perr']
-    _nearby = data['nearby']
-    cadn = data['cadn']
-    aperture = data['aperture']
-    campaign = data['campaign']
-    fitsheader = data['fitsheader']
-    nearby = [Source(**s) for s in _nearby]
-    apertures = data['apertures']
-    apidx = np.where(apertures[15] & 1 & ~np.isnan(fpix[0]))
-    bkidx = np.where(apertures[15] ^ 1)
-    contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
-    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                        aperture = aperture, nearby = _nearby, campaign = campaign,
-                        apertures = apertures, fitsheader = fitsheader,
-                        contamination = contamination)
+    try:
+      data['contamination']
+    except:
+      time = data['time']
+      fpix = data['fpix']
+      perr = data['perr']
+      _nearby = data['nearby']
+      cadn = data['cadn']
+      aperture = data['aperture']
+      campaign = data['campaign']
+      fitsheader = data['fitsheader']
+      nearby = [Source(**s) for s in _nearby]
+      apertures = data['apertures']
+      apidx = np.where(apertures[15] & 1 & ~np.isnan(fpix[0]))
+      bkidx = np.where(apertures[15] ^ 1)
+      contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False)
+      np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                          aperture = aperture, nearby = _nearby, campaign = campaign,
+                          apertures = apertures, fitsheader = fitsheader,
+                          contamination = contamination)
 
 def _DownloadInjections():
   '''
