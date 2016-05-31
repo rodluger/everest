@@ -133,13 +133,14 @@ def DataHDU(data, fitsheader):
   raw_flux_ = np.empty_like(time_) * np.nan
   raw_ferr_ = np.empty_like(time_) * np.nan
   for i in range(len(time_)):
-    if np.abs(time_[i] - time[j]) < tol:
-      flux_[i] = flux[j]
-      outliers_[i] = outliers[j]
-      bkg_[i] = bkg[j]
-      raw_flux_[i] = raw_flux[j]
-      raw_ferr_[i] = raw_ferr[j]
-      j += 1
+    if j < len(time):
+      if np.abs(time_[i] - time[j]) < tol:
+        flux_[i] = flux[j]
+        outliers_[i] = outliers[j]
+        bkg_[i] = bkg[j]
+        raw_flux_[i] = raw_flux[j]
+        raw_ferr_[i] = raw_ferr[j]
+        j += 1
   flux = np.array(flux_)
   time = np.array(time_)
   outliers = np.array(outliers_)
