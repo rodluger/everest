@@ -466,4 +466,4 @@ def _MakeFITS(campaign, subcampaign):
   
   for i, EPIC in enumerate(stars):
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    fits.MakeFITS(EPIC)
+    fits.MakeFITS(EPIC, campaign = campaign)
