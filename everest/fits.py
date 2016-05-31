@@ -119,6 +119,11 @@ def DataHDU(data, fitsheader):
   else:
     bkg = np.zeros_like(data['time'])
   
+  # Compute saturation and crowding flags
+  maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
+  satflag = min(5, max(0, round((maxmed - 135000) / 8000)))
+  crwdflag = min(5, max(0, round(10 * data['contamination'])))
+  
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
   cards.append(('COMMENT', '*     EVEREST INFO     *'))
@@ -131,9 +136,9 @@ def DataHDU(data, fitsheader):
   cards.append(('APNUM', data['apnum'][()], 'Number of K2SFF aperture used'))
   cards.append(('CDPP6RAW', cdpp_raw, 'Raw 6-hr CDPP estimate'))
   cards.append(('CDPP6', cdpp_det, 'EVEREST 6-hr CDPP estimate'))
-  cards.append(('SATFLAG', data['satsev'][()], 'Saturation flag (0-5)'))
-  cards.append(('CRWFLAG', data['crwdsev'][()], 'Crowding flag (0-5)'))
-  cards.append(('ACRFLAG', data['acorsev'][()], 'Autocorrelation fit flag (0-5)'))
+  cards.append(('SATFLAG', satflag, 'Saturation flag (0-5)'))
+  cards.append(('CRWDFLAG', crwdflag, 'Crowding flag (0-5)'))
+  cards.append(('CONTAM', data['contamination'], 'Median contamination metric'))
   cards.append(('ACRCHSQ', data['chisq'][()], 'Autocorrelation fit chi squared'))
   cards.append(('GPITER', data['gp_iter'][()], 'Number of GP iterations'))
   cards.append(('GITHASH', data['git_hash'][()], 'Everest git repo hash'))
@@ -264,7 +269,7 @@ def MakeFITS(EPIC, run_name = 'default', clobber = False):
   elif os.path.exists(outfile):
     os.remove(outfile)
   
-  # Get the EVEREST input data and grab the fits header
+  # Get the EVEREST input data and grab some info
   filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
   indata = np.load(filename)
   fitsheader = indata['fitsheader']
@@ -272,6 +277,7 @@ def MakeFITS(EPIC, run_name = 'default', clobber = False):
   # Get the EVEREST output data
   outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), run_name)
   data = dict(np.load(os.path.join(outdir, 'data.npz')))
+  data['contamination'] = indata['contamination']
   
   # Create the HDUs
   primary = PrimaryHDU(data, fitsheader)

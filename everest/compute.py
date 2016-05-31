@@ -11,7 +11,6 @@ from .config import EVEREST_DAT, EVEREST_SRC
 from .data import GetK2Data, Campaign, RemoveBackground
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
 from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers
-from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
 from .gp import GetGP
 from .transit import Transit
@@ -85,8 +84,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
      C = C, X = X, gp = None, gpinfo = dict(knum = knum, kpars = kpars, 
      white = white), fpldgp = fpldgp, pld_order = pld_order,
      rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
-     rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
-     acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
+     rms_evr_savgol, rms_pht], chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
      masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
      msf = msf, usf = usf, besti = besti,
      acor = acor, powerspec = powerspec, white = white, amp = amp, 
@@ -347,15 +345,12 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   rms_raw_simple, rms_raw_savgol, rms_evr_simple, \
   rms_evr_savgol, rms_pht = GetCDPP(flux, fpld)
   
-  # Gauge the saturation, crowding, and acor severity
-  crwdinfo, crwdsev = GetContaminants(EPIC, k2star.fpix, k2star.apertures, 
-                                      apnum, k2star.kepmag, k2star.nearby)
-  satsev = Saturation(fpix)
-  acorsev = Autocorrelation(chisq)
+  # Crowding info
+  crwdinfo = GetContaminants(EPIC, k2star.kepmag, k2star.nearby)
 
   # Write the .pld file to disk
   log.info('Saving detrended lightcurve to disk...') 
-  WritePLDFile(EPIC, k2star.kepmag, satsev, crwdsev, crwdinfo, chisq, 
+  WritePLDFile(EPIC, k2star.kepmag,
                rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, 
                rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), mask, outdir)
 
@@ -382,8 +377,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              C = C, X = X, gp = None, gpinfo = dict(knum = knum, kpars = kpars, 
              white = white), fpldgp = fpldgp, pld_order = pld_order,
              rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
-             rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
-             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
+             rms_evr_savgol, rms_pht], chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
              masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
              msf = msf, usf = usf, besti = besti,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
@@ -404,7 +398,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   
   return data
 
-def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4, r5,
+def WritePLDFile(EPIC, kepmag, r1, r2, r3, r4, r5,
                  time, fpld, ferr, mask, outdir):
   '''
   A routine called by :py:func:`Compute` to write the de-trended flux array to
@@ -417,10 +411,6 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
    "#",
    "# EPIC %d" % EPIC,
    "# Kp:  %.3f" % kepmag,
-   "#",
-   "# SATURATION FLAG:    %d" % satsev,
-   "# CROWDING SEVERITY:  %d" % crwdsev,
-   "# ACOR CHISQ:         %.2f" % kchisq,
    "#",
    "# RAW PRECISION:     {:8.2f} ppm / {:8.2f} ppm".format(r1, r2),
    "# EVEREST PRECISION: {:8.2f} ppm / {:8.2f} ppm".format(r3, r4),
@@ -589,44 +579,29 @@ def GetTransitDepth(time, flux, inject, buf = 5, order = 3):
   
   return depth, depth_err, fold(T), D
 
-def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
+def GetContaminants(EPIC, kepmag, nearby):
   '''
   Returns nearby sources that are at risk of contaminating a given target.
   
   '''
   
-  _, ny, nx = fpix.shape
-  apidx = np.where(apertures[apnum] & 1)
-  contour = np.zeros((ny,nx))
-  contour[apidx] = 1
-  contour = np.lib.pad(contour, 1, PadWithZeros)
-  maxsev = 0
-  crwdinfo = ["#   EPIC      dKp (mag)   SEVERITY (0-5)",
-              "# ---------   ---------   --------------"]
+  crwdinfo = ["#   EPIC      dKp (mag)",
+              "# ---------   ---------"]
   
   for source in [s for s in nearby if s.epic != EPIC]:
     dk = source.kepmag - kepmag
     if np.isnan(dk):
       dk = "????"
-      note = ""
     else:
       if dk < 0:
         dk = "%.3f" % dk
       else:
         dk = "+%.3f" % dk
-      crwdsev = Crowding(kepmag, source, ny, nx, contour)
-      if crwdsev > maxsev: maxsev = crwdsev
-      if crwdsev == 5: note = "5 (PLD FAILURE)"
-      elif crwdsev == 4: note = "4 (LIKELY OVERFITTING)"
-      elif crwdsev == 3: note = "3 (MINOR OVERFITTING)"
-      elif crwdsev == 2: note = "2"
-      elif crwdsev == 1: note = "1"
-      else: note = "0"
-    crwdinfo.append("# %d    %s      %s" % (source.epic, dk, note))
+    crwdinfo.append("# %d    %s" % (source.epic, dk))
   crwdinfo.append("#")
   crwdinfo = "\n".join(crwdinfo)
   
-  return crwdinfo, maxsev
+  return crwdinfo
 
 def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [], 
              EB = None, mask_times = [], mask_candidates = False):

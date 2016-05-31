@@ -364,9 +364,6 @@ def PlotDetrended(EPIC, data):
   pld_order = data['pld_order']
   fpld = data['fpld']
   fwhite = data['fwhite']
-  satsev = data['satsev']
-  crwdsev = data['crwdsev']
-  acorsev = data['acorsev']
   npars = '%d free parameters, %d data points' % (np.product(C.shape), fwhite.shape[0])
   r1, r2, r3, r4, r5 = data['rms']
   kepmag = data['kepmag']
@@ -511,18 +508,6 @@ def PlotDetrended(EPIC, data):
         axtn.set_xticks(xticks)
         axtn.set_xticklabels(xticklabels, fontsize = 8)
   
-  # Indicate crowding, saturation, and acor fitting metrics
-  def color(sev):
-    if sev <= 1:
-      return "g"
-    elif sev <= 3:
-      return "y"
-    else:
-      return "r"
-  fig.text(0.97, 0.975,"A%d" % acorsev, ha="right", va="top", fontsize=24, color=color(acorsev))
-  fig.text(0.94, 0.975,"C%d" % crwdsev, ha="right", va="top", fontsize=24, color=color(crwdsev))
-  fig.text(0.91, 0.975,"S%d" % satsev, ha="right", va="top", fontsize=24, color=color(satsev))
-
   # Indicate the campaign and Kp
   fig.text(0.03, 0.975,"C%02d" % campaign, ha="left", va="top", fontsize=24, color='b')
   fig.text(0.08, 0.975,"Kp%.1f" % kepmag, ha="left", va="top", fontsize=24, color='b')
@@ -568,9 +553,6 @@ def PlotFolded(EPIC, data):
   pld_order = data['pld_order']
   fpld = data['fpld']
   fwhite = data['fwhite']
-  satsev = data['satsev']
-  crwdsev = data['crwdsev']
-  acorsev = data['acorsev']
   npars = '%d free parameters, %d data points' % (np.product(C.shape), fwhite.shape[0])
   r1, r2, r3, r4, r5 = data['rms']
   kepmag = data['kepmag']

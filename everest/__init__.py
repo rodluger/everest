@@ -38,7 +38,7 @@ if not __EVEREST_SETUP__:
   import k2plr
 
   # Import modules
-  from . import config, compute, crowding, data, detrend, fits, gp, kernels, pool, quality, sources, transit, usertools, utils
+  from . import config, compute, crowding, data, detrend, fits, gp, kernels, pool, sources, transit, usertools, utils
   from .data import GetK2Data, GetK2Planets, GetK2EBs, GetK2Stars, Progress, Campaign
   from .pool import Pool
   from .compute import Compute
