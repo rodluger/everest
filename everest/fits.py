@@ -227,7 +227,9 @@ def XHDU(data, fitsheader):
   cards.append(('PLDORDER', data['pld_order'][()]))
   cards.append(('NPC', data['npc_pred'][data['besti'][()]], 'Number of principal components per submatrix'))
   cards.append(('NSMAT', len(data['breakpoints']) + 1, 'Number of submatrices'))
-  cards.append(('KNUM', data['gpinfo'][()]['knum'], 'GP kernel number'))
+  knum = data['gpinfo'][()]['knum']
+  if hasattr(knum, '__len__'): knum = knum[()]
+  cards.append(('KNUM', knum, 'GP kernel number'))
   kpars = (list(data['gpinfo'][()]['kpars']) + [None, None, None, None, None, None, None, None, None, None])[:10]
   for n in range(10):
     cards.append(('KPAR%02d' % n, kpars[n], 'Kernel param value'))
