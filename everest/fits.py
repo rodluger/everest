@@ -240,9 +240,10 @@ def XHDU(data, fitsheader):
   X = data['X']
   X_ = np.empty((len(time_), X.shape[1])) * np.nan
   for i in range(len(time_)):
-    if np.abs(time_[i] - time[j]) < tol:
-      X_[i] = X[j]
-      j += 1
+    if j < len(time):
+      if np.abs(time_[i] - time[j]) < tol:
+        X_[i] = X[j]
+        j += 1
   X = np.array(X_)
   
   # Create the HDU
