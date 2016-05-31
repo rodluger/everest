@@ -242,6 +242,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   if not clobber:
     try:
       data = np.load(filename)
+      raw_time = data['raw_time']
+      raw_cadn = data['raw_cadn']
       time = data['time']
       fpix = data['fpix']
       perr = data['perr']
@@ -280,7 +282,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
         
     # Get the arrays
     time = np.array(qdata.field('TIME'), dtype='float64')
+    raw_time = np.array(time)
     cadn = np.array(qdata.field('CADENCENO'), dtype='int32')
+    raw_cadn = np.array(cadn)
     fpix = np.array(qdata.field('FLUX'), dtype='float64')
     fpix_opt = np.array([f[np.where(aperture & 1)] for f in fpix], dtype='float64')
     rawc = np.array(qdata.field('RAW_CNTS'), dtype='int32')
@@ -360,7 +364,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
                         aperture = aperture, nearby = _nearby, campaign = campaign,
                         apertures = apertures, fitsheader = fitsheader,
-                        contamination = contamination)
+                        contamination = contamination, raw_time = raw_time,
+                        raw_cadn = raw_cadn)
   
     # Delete the kplr tpf
     if delete_kplr_data:
@@ -381,6 +386,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   res.campaign = campaign
   res.time = time
   res.cadn = cadn
+  res._raw_time = raw_time
+  res._raw_cadn = raw_cadn
   res.fpix = fpix
   res.apertures = apertures
   

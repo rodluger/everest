@@ -405,15 +405,15 @@ def Detrend(EPIC, mask = None, clobber = False, plot = False):
     
     # Subtract the model and add the median back in to get
     # our final de-trended flux
-    fpld = flux - model + np.median(flux)
+    fpld = flux - model + np.nanmedian(flux)
         
     # Plot?
     if plot:
       # Compute the fully whitened flux (only if we're plotting folded transits)
       if len(mask._transits):
         fwhite = flux - model
-        fwhite += np.median(flux)
-        med = np.median(mask(fwhite))
+        fwhite += np.nanmedian(flux)
+        med = np.nanmedian(mask(fwhite))
         outliers = MADOutliers(mask(time), mask(fwhite))  
         gp.compute(np.delete(mask(time), outliers), np.delete(mask(ferr), outliers))
         mu, _ = gp.predict(np.delete(mask(fwhite), outliers) - med, time)
