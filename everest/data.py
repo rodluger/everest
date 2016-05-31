@@ -366,7 +366,20 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
                         apertures = apertures, fitsheader = fitsheader,
                         contamination = contamination, raw_time = raw_time,
                         raw_cadn = raw_cadn)
-  
+    
+    # Atomically write to disk.
+    # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
+    f = NamedTemporaryFile("wb", delete=False)
+    np.savez_compressed(f, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                        aperture = aperture, nearby = _nearby, campaign = campaign,
+                        apertures = apertures, fitsheader = fitsheader,
+                        contamination = contamination, raw_time = raw_time,
+                        raw_cadn = raw_cadn)
+    f.flush()
+    os.fsync(f.fileno())
+    f.close()
+    shutil.move(f.name, filename)
+    
     # Delete the kplr tpf
     if delete_kplr_data:
       os.remove(ftpf)
