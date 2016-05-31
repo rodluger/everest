@@ -15,6 +15,7 @@ from .data import GetK2Stars, GetK2Campaign, GetK2Data, GetK2Planets, GetK2Injec
 from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
+from . import fits
 import os
 import sys
 import traceback
@@ -273,6 +274,35 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
+def MakeFITS(campaign, queue = 'build', email = None, walltime = 8):
+  '''
+  Submits a cluster job to make EVEREST FITS files for a given
+  campaign.
+  
+  :param int campaign: The `K2` campaign to run
+  :param str queue: The name of the queue to submit to. Default `build`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `8`
+  
+  '''
+          
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_SRC, 'fits.pbs')
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d' % (EVEREST_DAT, campaign)
+  str_out = os.path.join(EVEREST_DAT, 'FITS_C%02d.log' % campaign)
+  qsub_args = ['qsub', pbsfile, 
+               '-q', queue,
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', 'FITS_C%02d' % campaign,
+               '-l', str_w]
+  if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
 # ---- PBS routines ---- #
 
 def _RunCandidates(kwargs_file):
@@ -404,3 +434,18 @@ def _DownloadInjections():
       except:
         # Some targets could be corrupted
         continue  
+
+def _MakeFITS(campaign):
+  '''
+  Generates EVEREST FITS files for all stars in a given campaign. This is
+  called from ``fits.pbs``
+  
+  '''
+  
+  # Get all star IDs for this campaign
+  stars = GetK2Campaign(campaign)
+  nstars = len(stars)
+  
+  for i, EPIC in enumerate(stars):
+    print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    fits.MakeFITS(EPIC)

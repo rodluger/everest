@@ -310,11 +310,16 @@ def MakeFITS(EPIC, run_name = 'default', clobber = False):
   
   # Get the EVEREST input data and grab some info
   indata = GetK2Data(EPIC)
+  if indata is None:
+    return
   fitsheader = indata.fitsheader
   
   # Get the EVEREST output data
   outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), run_name)
-  data = dict(np.load(os.path.join(outdir, 'data.npz')))
+  try:
+    data = dict(np.load(os.path.join(outdir, 'data.npz')))
+  except:
+    return
   data['contamination'] = indata.contamination
   data['raw_time'] = indata._raw_time
   
