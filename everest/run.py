@@ -390,6 +390,7 @@ def _UpdateCampaign(campaign):
   '''
   
   from .crowding import Contamination
+  from .sources import Source
   
   stars = GetK2Campaign(campaign)
   nstars = len(stars)
