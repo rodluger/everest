@@ -30,37 +30,6 @@ import six
 from six.moves import urllib
 import shutil
 
-def _QtFigureLayout(n, nsub):
-  '''
-  Adapted from http://stackoverflow.com/a/29039755
-
-  '''
-  
-  # Figure manager
-  mgr = pl.get_current_fig_manager()
-  
-  # Toggle full screen to get size
-  mgr.full_screen_toggle()
-  py = mgr.canvas.height()
-  px = mgr.canvas.width()
-  mgr.full_screen_toggle()
-
-  # Width of the window border in pixels
-  d = 10  
-  if n == 0:
-    # x-top-left-corner, y-top-left-corner, x-width, y-width (in pixels)
-    mgr.window.setGeometry(d, 2 * d, 2 * px / 3 - d, py - 2 * d)
-  else:
-
-    
-    height = py / nsub - 4 * d
-    top = 2 * d + (n - 1) * height + 3 * d * n
-    
-    mgr.window.setGeometry(2 * px / 3 + d, top, px / 3 - 2 * d, height)
-
-  # Bring to front
-  mgr.window.raise_()
-  
 def _EverestVersion():
   '''
   Returns the current :py:mod:`everest` version on MAST.
@@ -265,7 +234,7 @@ class Mask(object):
     
     return np.delete(x, self.all_inds, axis = 0)
 
-def _Plot(EPIC, time, flux, fpld, fwhite, mask):
+def _Plot(EPIC, time, flux, fpld, fwhite, mask, crwdsev, satsev):
   '''
   Plot the raw and de-trended light curves.
   
@@ -294,10 +263,17 @@ def _Plot(EPIC, time, flux, fpld, fwhite, mask):
   bounds = min(PlotBounds(flux), PlotBounds(fpld))
   ax[0].set_ylim(*bounds)
   ax[1].set_ylim(*bounds)
-  try:
-    _QtFigureLayout(0, len(mask._transits))
-  except:
-    pass
+  
+  # Warning flags
+  def color(sev):
+    if sev <= 1:
+      return "g"
+    elif sev <= 3:
+      return "y"
+    else:
+      return "r"
+  ax[1].annotate("Crowding:   %d/5" % crwdsev, xy = (0.02, 0.95), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=color(crwdsev))
+  ax[1].annotate("Saturation: %d/5" % satsev, xy = (0.02, 0.885), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=color(satsev))
   
   # Plot folded transits?
   if fwhite is not None:
@@ -310,46 +286,38 @@ def _PlotFolded(EPIC, time, flux, fpld, fwhite, mask):
   Plot the raw and de-trended folded light curves.
   
   '''
-  
-  figs = []
-  
+     
+  # Instantiate
+  fig, ax = pl.subplots(len(mask._transits), figsize = (6, 5 + 1.5 * len(mask._transits) - 1), sharex = True)
+  ax = np.atleast_1d(ax)
+  fig.subplots_adjust(left = 0.2, right = 0.95, top = 0.95, bottom = 0.1)
+
   # Calculate time indices from the transits
   for n, transit in enumerate(mask._transits):
-    
-    # Instantiate
-    fig, ax = pl.subplots(1, figsize = (4,6), sharex = True)
-    fig.subplots_adjust(left = 0.15, right = 0.95, 
-                      top = 0.95, bottom = 0.1)
-    
     if np.all([not hasattr(r, '__len__') for r in transit]) and len(transit) == 3:
       # This is a 3-tuple for a single planet
       per, t0, dur = transit
       t0 += np.ceil((time[0] - dur - t0) / per) * per
       fold = lambda t: (t - t0 - per / 2.) % per - per / 2.
-      ax.plot(fold(time), fwhite, 'b.', alpha = 0.4)
-      ax.set_xlim(-dur * 0.75, dur * 0.75)
+      ax[n].plot(fold(time), fwhite, 'b.', alpha = 0.4)
+      ax[n].set_xlim(-dur * 0.75, dur * 0.75)
 
     else:
       # This is a list of 2-tuples corresponding to transit times
       ftime = np.array(time)
       for i, t in enumerate(time):
         ftime[i] -= transit[np.argmin([np.abs(t - tup[0]) for tup in transit])][0]
-      ax.plot(ftime, fwhite, 'b.', alpha = 0.4)
-      ax.set_xlim(-transit[0][1] * 0.75, transit[0][1] * 0.75)
+      ax[n].plot(ftime, fwhite, 'b.', alpha = 0.4)
+      ax[n].set_xlim(-transit[0][1] * 0.75, transit[0][1] * 0.75)
     
     # Labels
-    fig.canvas.set_window_title('EPIC %d.%02d' % (EPIC, n + 1))
-    
-    # Layout on screen
-    fmg = pl.get_current_fig_manager()
-    try:
-      _QtFigureLayout(n + 1, len(mask._transits))
-    except:
-      pass
-    
-    figs.append(fig)
+    ax[n].set_title('EPIC %d.%02d' % (EPIC, n + 1))
+    ax[n].set_ylabel('Norm. Flux', fontsize = 14)
   
-  return figs
+  ax[-1].set_xlabel('Time (days)', fontsize = 18)
+  fig.canvas.set_window_title('EPIC %d' % EPIC)
+  
+  return fig, ax
   
 def Detrend(EPIC, mask = None, clobber = False, plot = False):
   '''
@@ -371,6 +339,8 @@ def Detrend(EPIC, mask = None, clobber = False, plot = False):
     
     # Get the original arrays
     time = hdulist[1].data['TIME']
+    # Hack to prevent george from complaining below
+    time[np.isnan(time)] = 0 
     flux = hdulist[1].data['RAW_FLUX']
     ferr = hdulist[1].data['RAW_FERR']
     
@@ -383,7 +353,7 @@ def Detrend(EPIC, mask = None, clobber = False, plot = False):
       mask = Mask()
     mask.inds = list(set(mask.inds + list(oinds)))
     mask.time = time
-
+    
     # Get the gaussian process kernel
     knum = hdulist[3].header['KNUM']
     kpars = [hdulist[3].header['KPAR%02d' % n] for n in range(10)]
@@ -406,6 +376,10 @@ def Detrend(EPIC, mask = None, clobber = False, plot = False):
     # Subtract the model and add the median back in to get
     # our final de-trended flux
     fpld = flux - model + np.nanmedian(flux)
+      
+    # Warning flags
+    crwdsev = hdulist[1].header['CRWDFLAG']  
+    satsev = hdulist[1].header['SATFLAG']
         
     # Plot?
     if plot:
@@ -421,6 +395,6 @@ def Detrend(EPIC, mask = None, clobber = False, plot = False):
       else:
         fwhite = None
         frw = None
-      _Plot(EPIC, time, flux, fpld, fwhite, mask)
+      _Plot(EPIC, time, flux, fpld, fwhite, mask, crwdsev, satsev)
     
     return time, fpld, mask.all_inds
