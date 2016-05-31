@@ -279,24 +279,38 @@ def MakeFITS(campaign, queue = 'build', email = None, walltime = 8):
   Submits a cluster job to make EVEREST FITS files for a given
   campaign.
   
-  :param int campaign: The `K2` campaign to run
-  :param str queue: The name of the queue to submit to. Default `build`
+  :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
+                   all targets in that campaign. If a :py:class:`float` in the form \
+                   `X.Y`, runs the `Y^th` decile of campaign `X`.
+  :param str queue: The queue to submit to. Default `build`
   :param str email: The email to send job status notifications to. Default `None`
   :param int walltime: The number of hours to request. Default `8`
   
   '''
+  
+  # Figure out the subcampaign
+  if type(campaign) is int:
+    subcampaign = -1
+  elif type(campaign) is float:
+    x, y = divmod(campaign, 1)
+    campaign = int(x)
+    subcampaign = round(y * 10)
           
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_SRC, 'fits.pbs')
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d' % (EVEREST_DAT, campaign)
-  str_out = os.path.join(EVEREST_DAT, 'FITS_C%02d.log' % campaign)
+  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_DAT, campaign, subcampaign)
+  if subcampaign == -1:
+    str_name = 'C%02d' % campaign
+  else:
+    str_name = 'C%02d.%d' % (campaign, subcampaign)
+  str_out = os.path.join(EVEREST_DAT, str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
                '-q', queue,
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
-               '-N', 'FITS_C%02d' % campaign,
+               '-N', str_name,
                '-l', str_w]
   if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
   # Now we submit the job
@@ -435,12 +449,16 @@ def _DownloadInjections():
         # Some targets could be corrupted
         continue  
 
-def _MakeFITS(campaign):
+def _MakeFITS(campaign, subcampaign):
   '''
   Generates EVEREST FITS files for all stars in a given campaign. This is
   called from ``fits.pbs``
   
   '''
+  
+  # Are we doing a subcampaign?
+  if subcampaign != -1:
+    campaign = campaign + 0.1 * subcampaign
   
   # Get all star IDs for this campaign
   stars = GetK2Campaign(campaign)
