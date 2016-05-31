@@ -53,7 +53,7 @@ def Fit(img, err, xc, yc):
   params = res[0]
   return params
 
-def Plot(img, params, apidx, C):
+def Plot(EPIC, img, params, apidx, nearby, C):
   '''
   
   '''
@@ -71,7 +71,7 @@ def Plot(img, params, apidx, C):
   
   # Contamination metric
   cont = np.zeros_like(img)
-  cont[apidx] = np.abs(img - model)[apidx] / np.nansum(img[apidx])
+  cont[apidx] = np.abs(img - model)[apidx] / np.nanmax(img[apidx])
   
   # Plot
   fig, ax = pl.subplots(2,3, figsize = (12,8))
@@ -112,16 +112,35 @@ def Plot(img, params, apidx, C):
     axis.set_xlim(-0.7, nx - 0.3)
     axis.set_ylim(-0.7, ny - 0.3)
 
+  # Nearby sources
+  neighbors = []  
+  for source in nearby:
+    ax[0,0].scatter(source.x - source.x0, source.y - source.y0, 
+               s = 400, alpha = 0.5, 
+               c = ['g' if source.epic == EPIC else 'r'],
+               edgecolor = 'k', zorder = 99)
+    ax[0,0].scatter(source.x - source.x0, source.y - source.y0, 
+               marker = r'$%.1f$' % source.kepmag, color = 'w',
+               s = 300, zorder = 100)
+
   return fig, ax
 
-def Contamination(EPIC, fpix, perr, apidx, nearby, plot = False):
+def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
   '''
   
   '''
   
   # Get the source position according to MAST
   source = nearby[np.where([s.epic == EPIC for s in nearby])[0]]
-  xc, yc = source.x - source.x0, source.y - source.y0  
+  xc, yc = source.x - source.x0, source.y - source.y0 
+  
+  # Remove the background
+  from .data import RemoveBackground
+  if len(bkidx) and RemoveBackground(EPIC):
+    bkg = np.nanmedian(np.array([f[bkidx] for f in fpix], dtype='float64'), axis = 1)
+    bkgerr = np.nanmedian(np.array([p[bkidx] for p in perr], dtype='float64'), axis = 1)
+    fpix -= bkg.reshape(-1, 1, 1)
+    perr = np.sqrt(perr ** 2 + bkgerr.reshape(-1, 1, 1) ** 2)
 
   # Get the contamination evolution
   npts = 50
@@ -133,13 +152,13 @@ def Contamination(EPIC, fpix, perr, apidx, nearby, plot = False):
   for i, n in enumerate(np.linspace(0, len(fpix) - 1, npts)):
     params = Fit(fpix[int(n)], perr[int(n)], xc, yc)
     model = Erf2D(X, Y, *params)
-    cont[apidx] = np.abs(fpix[int(n)] - model)[apidx] / np.nansum(fpix[int(n)][apidx])
+    cont[apidx] = np.abs(fpix[int(n)] - model)[apidx] / np.nanmax(fpix[int(n)][apidx])
     C[i] = np.nanmax(cont)
 
   # Plot the first timestamp fit
   if plot:
     params = Fit(fpix[0], perr[0], xc, yc)
-    fig, ax = Plot(fpix[0], params, apidx, C)
+    fig, ax = Plot(EPIC, fpix[0], params, apidx, nearby, C)
     fig.savefig(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), 'contamination.png'))
     pl.close()
 

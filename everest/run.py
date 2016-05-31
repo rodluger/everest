@@ -386,13 +386,37 @@ def _DownloadCampaign(campaign):
 def _UpdateCampaign(campaign):
   '''
   DEBUG DEBUG DEBUG
+  
   '''
+  
+  from .crowding import Contamination
+  
   stars = GetK2Campaign(campaign)
   nstars = len(stars)
   for i, EPIC in enumerate(stars):
-    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), 'contamination.png')):
-      GetK2Data(EPIC)
+    print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+    try:
+      data = np.load(filename)
+    except:
+      continue
+    time = data['time']
+    fpix = data['fpix']
+    perr = data['perr']
+    _nearby = data['nearby']
+    cadn = data['cadn']
+    aperture = data['aperture']
+    campaign = data['campaign']
+    fitsheader = data['fitsheader']
+    nearby = [Source(**s) for s in _nearby]
+    apertures = data['apertures']
+    apidx = np.where(apertures[15] & 1 & ~np.isnan(fpix[0]))
+    bkidx = np.where(apertures[15] ^ 1)
+    contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
+    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                        aperture = aperture, nearby = _nearby, campaign = campaign,
+                        apertures = apertures, fitsheader = fitsheader,
+                        contamination = contamination)
 
 def _DownloadInjections():
   '''

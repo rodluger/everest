@@ -12,7 +12,8 @@ run.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import FORCE_PNG
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
-from .utils import RMS, Mask, PadWithZeros, LatexExp, RemoveBackground
+from .utils import RMS, Mask, PadWithZeros, LatexExp
+from .data import RemoveBackground
 from .transit import Transit
 from .sources import Source
 from .config import EVEREST_DAT, EVEREST_SRC
@@ -223,7 +224,7 @@ def PlotOutliers(EPIC, data):
   flux = data['flux']
   mask = data['mask']
   campaign = data['campaign']
-  if RemoveBackground(campaign):
+  if RemoveBackground(EPIC):
     bkg = data['bkg']
   else:
     bkg = np.zeros_like(time)

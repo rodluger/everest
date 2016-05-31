@@ -8,9 +8,9 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .config import EVEREST_DAT, EVEREST_SRC
-from .data import GetK2Data, Campaign
+from .data import GetK2Data, Campaign, RemoveBackground
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
-from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers, RemoveBackground
+from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers
 from .quality import Saturation, Crowding, Autocorrelation
 from .kernels import KernelModels
 from .gp import GetGP
@@ -145,7 +145,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   apidx = np.where(k2star.apertures[apnum] & 1 & ~np.isnan(k2star.fpix[0]))
   fpix = np.array([f[apidx] for f in k2star.fpix], dtype='float64')
   perr = np.array([f[apidx] for f in k2star.perr], dtype='float64')
-  if RemoveBackground(k2star.campaign):
+  if RemoveBackground(EPIC):
     fpix -= bkg.reshape(bkg.shape[0], 1)
     perr = np.sqrt(perr ** 2 + bkgerr.reshape(bkgerr.shape[0], 1) ** 2)
   flux = np.sum(fpix, axis = 1)

@@ -252,18 +252,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
       nearby = [Source(**s) for s in _nearby]
       fitsheader = data['fitsheader']
       apertures = data['apertures']
-      
-      # DEBUG
-      try:
-        contamination = data['contamination']
-      except:
-        contamination = Contamination(EPIC, fpix, perr, np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])), nearby, plot = True)
-        np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                        aperture = aperture, nearby = _nearby, campaign = campaign,
-                        apertures = apertures, fitsheader = fitsheader,
-                        contamination = contamination)
-      # / DEBUG
-      
+      contamination = data['contamination']
       clobber = False
     except:
       clobber = True
@@ -304,7 +293,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     t_nan_inds = list(np.where(np.isnan(time))[0])
     
     # Get bad flux values
-    apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0]))
+    apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
+    bkidx = np.where(apertures[apnum] ^ 1)   
     flux = np.sum(np.array([f[apidx] for f in fpix], dtype='float64'), axis = 1)
     f_nan_inds = list(np.where(np.isnan(flux))[0])
     
@@ -358,7 +348,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     nearby = [Source(**s) for s in _nearby]
   
     # Get the contamination
-    contamination = Contamination(EPIC, fpix, perr, apidx, nearby)
+    contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby)
   
     # Get header info
     ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
@@ -527,7 +517,20 @@ def Campaign(EPIC):
     if EPIC in stars:
       return campaign
   return None
+
+def RemoveBackground(EPIC):
+  '''
+  Returns `True` or `False`, indicating whether or not to remove the background
+  flux for the target. Currently, if `campaign < 3`, returns
+  `True`, otherwise returns `False`.
   
+  '''
+
+  if Campaign(EPIC) < 3:
+    return True
+  else:
+    return False
+
 def GetK2Campaign(campaign, clobber = False):
   '''
   Return all stars in a given K2 campaign.

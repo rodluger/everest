@@ -13,8 +13,7 @@ These FITS files make up the public :py:mod:`everest` catalog.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
 from .config import EVEREST_DAT, EVEREST_SRC
-from .utils import RemoveBackground
-from .data import Campaign
+from .data import Campaign, RemoveBackground
 import k2plr as kplr
 from k2plr.config import KPLR_ROOT
 try:
@@ -115,7 +114,7 @@ def DataHDU(data, fitsheader):
   cdpp_det = data['rms'][3]
   npc = data['npc_pred'][data['besti'][()]]
   breakpoints = (list(data['breakpoints']) + [None, None, None, None, None])[:5]
-  if RemoveBackground(data['campaign']):
+  if RemoveBackground(data['EPIC']):
     bkg = data['bkg']
   else:
     bkg = np.zeros_like(data['time'])
