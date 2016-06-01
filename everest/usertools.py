@@ -283,43 +283,22 @@ class Everest(object):
     self.EPIC = EPIC
     self.file = _GetFITSFile(self.EPIC, clobber = clobber)
     self.mask = Mask()
-    self.detrended = False
-    
-  def set_mask(self, **kwargs):
-    '''
-    
-    '''
-    
-    self.mask = Mask(**kwargs)
-    self.detrended = False
-
-  def detrend(self):
-    '''
-    Detrends with custom user options. If a local copy does not
-    exist, automatically downloads the :py:mod:`everest` FITS file from MAST.
-   
-    '''
-    
-    # Check if we've done this already
-    if self.detrended:
-      return
     
     # Open the FITS file
     with pyfits.open(self.file) as hdulist:
     
-      # Get the original arrays
+      # Get the arrays
       self.time = hdulist[1].data['TIME']
-      # Hack to prevent george from complaining below
+      # Hack to prevent george from complaining later
       self.time[np.isnan(self.time)] = 0 
+      self.flux = hdulist[1].data['FLUX']
+      self.model = None
       self.raw_flux = hdulist[1].data['RAW_FLUX']
       self.raw_ferr = hdulist[1].data['RAW_FERR']
     
-      # Get the outliers
-      outliers = hdulist[1].data['OUTLIER']
-      oinds = np.where(outliers)[0]
-    
-      # Add the outliers to the mask object
-      self.mask.inds = list(set(self.mask.inds + list(oinds)))
+      # Get the outliers and add them to the mask object
+      self.outlier_inds = np.where(hdulist[1].data['OUTLIER'])[0]
+      self.mask.inds = list(set(self.mask.inds + list(self.outlier_inds)))
       self.mask.time = self.time
     
       # Get the gaussian process kernel
@@ -330,21 +309,10 @@ class Everest(object):
       kernel[:] = kpars
       self.gp = george.GP(kernel.george_kernel())
     
-      # Get the design matrix
+      # Get the design matrix and coefficient array
       self.X = hdulist[3].data['X']
+      self.C = hdulist[2].data['C']
     
-      # Do some linear algebra to get the PLD coefficients `C`
-      # and the PLD `model`
-      self.gp.compute(self.mask(self.time), self.mask(self.raw_ferr))
-      A = np.dot(self.mask(self.X).T, self.gp.solver.apply_inverse(self.mask(self.X)))
-      B = np.dot(self.mask(self.X).T, self.gp.solver.apply_inverse(self.mask(self.raw_flux)))
-      self.C = np.linalg.solve(A, B)
-      self.model = np.dot(self.C, self.X.T)
-    
-      # Subtract the model and add the median back in to get
-      # our final de-trended flux
-      self.flux = self.raw_flux - self.model + np.nanmedian(self.raw_flux)
-      
       # Warning flags
       self.crwdflag = hdulist[1].header['CRWDFLAG']  
       self.satflag = hdulist[1].header['SATFLAG']
@@ -353,17 +321,43 @@ class Everest(object):
       self.cdpp6 = hdulist[1].header['CDPP6']
       self.cdpp6raw = hdulist[1].header['CDPP6RAW']
       
-      # Set flag
-      self.detrended = True
+  def set_mask(self, **kwargs):
+    '''
+    Set a custom transit/range mask.
+    
+    '''
+    
+    # Instantiate the mask
+    self.mask = Mask(**kwargs)
+    self.mask.inds = list(set(self.mask.inds + list(self.outlier_inds)))
+    self.mask.time = self.time
+    
+    # Detrend!
+    self.detrend()
 
+  def detrend(self):
+    '''
+    Detrend with the custom mask.
+   
+    '''
+    
+    # Do some linear algebra to get the PLD coefficients `C`
+    # and the PLD `model`
+    self.gp.compute(self.mask(self.time), self.mask(self.raw_ferr))
+    A = np.dot(self.mask(self.X).T, self.gp.solver.apply_inverse(self.mask(self.X)))
+    B = np.dot(self.mask(self.X).T, self.gp.solver.apply_inverse(self.mask(self.raw_flux)))
+    self.C = np.linalg.solve(A, B)
+    self.model = np.dot(self.C, self.X.T)
+  
+    # Subtract the model and add the median back in to get
+    # our final de-trended flux
+    self.flux = self.raw_flux - self.model + np.nanmedian(self.raw_flux)
+    
   def plot(self, pipeline = 'everest'):
     '''
     Plot the raw and de-trended light curves.
   
     '''
-    
-    if not self.detrended:
-      self.detrend()
     
     fig, ax = pl.subplots(2, figsize = (12,8), sharex = True)
     fig.subplots_adjust(left = 0.1, right = 0.95, 
@@ -429,6 +423,7 @@ class Everest(object):
                      xycoords = 'axes fraction', ha = 'right', va = 'top',
                      fontsize = 12, fontweight = 'bold')    
     else:
+      print("ERROR: Invalid pipeline name.")
       return
       
     # Labels
@@ -454,11 +449,9 @@ class Everest(object):
     '''
     
     if not len(self.mask._transits):
+      print("ERROR: No transits to plot!")
       return None, None
     
-    if not self.detrended:
-      self.detrend()
-  
     # Compute whitened flux
     med = np.nanmedian(self.mask(self.flux))
     outliers = MADOutliers(self.mask(self.time), self.mask(self.flux))  
