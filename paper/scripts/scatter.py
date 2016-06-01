@@ -35,9 +35,6 @@ The source code is available
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
-sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.detrend import PLDBasis, PLDCoeffs, PLDModel, ComputeScatter, SliceX
 from everest.gp import GetGP
@@ -45,6 +42,8 @@ from everest.utils import InitLog, Breakpoints, RMS, Mask
 from everest.compute import GetMasks
 from everest.data import GetK2Data
 from everest.kernels import KernelModels
+from everest.config import EVEREST_SRC
+IMG_PATH = os.path.join(os.path.dirname(EVEREST_SRC), 'paper', 'tex', 'images')
 import matplotlib.pyplot as pl
 import george
 import logging
@@ -77,7 +76,7 @@ def GetData(EPIC = 201497682):
 
   # Obtain transit and outlier masks
   log.info('Obtaining masks...')
-  mask, _, _, _ = GetMasks(time, flux, fpix, ferr, 5, planets = k2star.planets)
+  mask, _, _, _ = GetMasks(EPIC, time, flux, fpix, ferr, 5, planets = k2star.planets)
 
   # Get the GP  
   log.info('Computing the GP...')                                                

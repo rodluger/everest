@@ -9,6 +9,8 @@ including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
    :caption: everest 
    
    compute
+   config
+   crowding
    data
    detrend
    fits

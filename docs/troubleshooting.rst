@@ -14,21 +14,31 @@ I find that :py:mod:`everest` decreases transit depths!
    
    .. code-block:: python
       
-      from everest import usertools as ut
-      
-      # Create a custom mask by specifying the period, time
+      from everest import Everest
+      import matplotlib.pyplot as pl
+
+      # Instantiate to download the target's FITS file
+      star = Everest(205071984)
+
+      # Specify a custom mask with the period, time
       # of first transit, and transit duration for each of
       # the planets transiting the target star
-      mask = ut.Mask(transits = [( 8.992, 2067.93, 0.25),
-                                 (20.661, 2066.42, 0.25),
-                                 (31.716, 2070.79, 0.25)])
-      
-      # Now detrend with this mask
-      res = ut.Detrend(205071984, mask = mask, plot = True)
+      star.set_mask(transits = [( 8.992, 2067.93, 0.25),
+                                (20.661, 2066.42, 0.25),
+                                (31.716, 2070.79, 0.25)])
+
+      # Plot the de-trended light curve
+      star.plot()
+
+      # Plot the whitened, folded light curve
+      star.plot_folded()
+
+      # Show the plots
+      pl.show()
   
-   This should result in the following output:
+   This should result in the following plots:
       
-   .. figure:: usertools_plot.png
+   .. figure:: usertools.jpg
      :width: 600px
      :align: center
      :height: 100px

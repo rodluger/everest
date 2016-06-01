@@ -29,13 +29,12 @@ The source code is available
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
-sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.data import GetK2Data
 from everest.utils import RMS
 from everest.compute import GetMasks
+from everest.config import EVEREST_SRC
+IMG_PATH = os.path.join(os.path.dirname(EVEREST_SRC), 'paper', 'tex', 'images')
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import george
@@ -97,7 +96,7 @@ def GetData(EPIC = 201367065):
   fpix = fpix[:, sidx]
   # Keep only the 10 brightest pixels
   fpix = fpix[:, :10]
-  mask, _, _, _ = GetMasks(time, flux, fpix, ferr, 5., planets = k2star.planets)  
+  mask, _, _, _ = GetMasks(EPIC, time, flux, fpix, ferr, 5., planets = k2star.planets)  
   M = lambda x: np.delete(x, mask, axis = 0)
   gp = george.GP(np.std(flux) ** 2 * george.kernels.Matern32Kernel(2. ** 2))
   return time, fpix, flux, ferr, M, gp

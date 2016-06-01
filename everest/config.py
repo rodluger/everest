@@ -16,8 +16,9 @@ EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST_DATA_DIR", os.path.join
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 
 # MAST url
-MAST_ROOT = 'http://staff.washington.edu/rodluger/everest_fits/'
-# TODO: MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+HYAK_ROOT = 'rodluger@hyak.washington.edu:/usr/lusers/rodluger/.everest/fits/'
+ASTR_ROOT = 'http://staff.washington.edu/rodluger/everest_fits/'
+MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
 
 # Default kwargs file
 KWARGS_PY = \

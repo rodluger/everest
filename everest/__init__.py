@@ -6,6 +6,7 @@ import os, sys
 
 # Version number
 __version__ = "0.1"
+__published__ = False
 
 # Was everest imported from setup.py?
 try:
@@ -44,6 +45,7 @@ if not __EVEREST_SETUP__:
   from .compute import Compute
   from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, RunCandidates, RunInjections
   from .fits import MakeFITS
+  from .usertools import Everest
   
   # Create the data directories if they don't exist
   if not os.path.exists(os.path.join(config.EVEREST_DAT, 'output')):

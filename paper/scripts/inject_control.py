@@ -16,8 +16,7 @@ red histograms in the injection/recovery plot in the paper.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(1, EVEREST_ROOT)
+from everest.config import EVEREST_DAT
 from everest.data import GetK2InjectionTestStars
 from everest.transit import Transit
 from everest.compute import GetTransitDepth
@@ -30,7 +29,7 @@ for EPIC in GetK2InjectionTestStars():
   
   # Get the de-trended light curve (no injections)
   for campaign in range(10):
-    outdir = os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, '%s' % EPIC, 'default')
+    outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%s' % EPIC, 'default')
     if os.path.exists(os.path.join(outdir, 'data.npz')):
       break
   if campaign == 9:
