@@ -39,7 +39,7 @@ I find that :py:mod:`everest` decreases transit depths!
    This should result in the following plots:
       
    .. figure:: usertools.jpg
-     :width: 600px
+     :width: 700px
      :align: center
      :height: 100px
      :figclass: align-center
