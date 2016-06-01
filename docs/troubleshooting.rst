@@ -10,7 +10,7 @@ I find that :py:mod:`everest` decreases transit depths!
    This can happen if the transit isn't properly masked during the de-trending step, since
    PLD is trying as hard as it can to remove short-timescale features from the data. The way
    around this is to explicitly mask any known transits during de-trending. This can be
-   done by calling :py:func:`everest.usertools.Detrend` and specifying a mask:
+   done by instantiating a :py:obj`everest.Everest` object and specifying a transit mask:
    
    .. code-block:: python
       
@@ -43,7 +43,3 @@ I find that :py:mod:`everest` decreases transit depths!
      :align: center
      :height: 100px
      :figclass: align-center
-  
-   The :py:obj:`res` object returned by :py:func:`everest.usertools.Detrend` is a
-   tuple containing the time array, the de-trended flux array, and the indices
-   of the light curve that were masked.
