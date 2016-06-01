@@ -12,12 +12,18 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from . import __published__, __version__
 from .config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, HYAK_ROOT
 from .kernels import KernelModels
-from .data import Campaign
-from .utils import PlotBounds, MADOutliers
+from .data import Campaign, GetK2Data
+from .utils import PlotBounds, MADOutliers, RMS
+from .utils import PadWithZeros
+from scipy.ndimage import zoom
+from scipy.signal import savgol_filter
 import k2plr as kplr
 import george
 import numpy as np
 import matplotlib.pyplot as pl
+from matplotlib.widgets import Slider, Button, RadioButtons
+import matplotlib.ticker as ticker
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import glob
 import os, subprocess
 try:
@@ -343,6 +349,10 @@ class Everest(object):
       self.crwdflag = hdulist[1].header['CRWDFLAG']  
       self.satflag = hdulist[1].header['SATFLAG']
       
+      # CDPP
+      self.cdpp6 = hdulist[1].header['CDPP6']
+      self.cdpp6raw = hdulist[1].header['CDPP6RAW']
+      
       # Set flag
       self.detrended = True
 
@@ -364,12 +374,19 @@ class Everest(object):
     ax[0].plot(self.mask.inv(self.time), self.mask.inv(self.raw_flux), 'r.', markersize = 3, alpha = 0.5,
                label = 'Masked')
     ax[0].legend(loc = 'upper left', fontsize = 9, numpoints = 3)
-    
+    ax[0].annotate('6-hr CDPP: %.1f ppm' % self.cdpp6raw, xy = (0.98, 0.95), 
+                    xycoords = 'axes fraction', ha = 'right', va = 'top',
+                    fontsize = 12, fontweight = 'bold')
+                     
     if pipeline.lower() == 'everest':
       ax[1].plot(self.mask(self.time), self.mask(self.flux), 'b.', markersize = 3, alpha = 0.5)
       ax[1].plot(self.mask.inv(self.time), self.mask.inv(self.flux), 'r.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('EVEREST Flux', fontsize = 18)
       bounds = min(PlotBounds(self.raw_flux), PlotBounds(self.flux))
+      ax[1].annotate('6-hr CDPP: %.1f ppm' % self.cdpp6, xy = (0.98, 0.95), 
+                     xycoords = 'axes fraction', ha = 'right', va = 'top',
+                     fontsize = 12, fontweight = 'bold')
+      
     elif pipeline.lower() == 'k2sff':
       try:
         k2sff = kplr.K2SFF(self.EPIC)
@@ -378,8 +395,13 @@ class Everest(object):
       k2sff.fcor *= np.nanmedian(self.flux)
       ax[1].plot(k2sff.time, k2sff.fcor, 'b.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('K2SFF Flux', fontsize = 18)
-      bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2sff.fcor))      
-    elif pipeline.lower() == 'k2sff':
+      bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2sff.fcor))  
+      flux_savgol = k2sff.fcor - savgol_filter(k2sff.fcor, 49, 2) + np.nanmedian(k2sff.fcor)
+      cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      ax[1].annotate('6-hr CDPP: %.1f ppm' % cdpp6, xy = (0.98, 0.95), 
+                     xycoords = 'axes fraction', ha = 'right', va = 'top',
+                     fontsize = 12, fontweight = 'bold')    
+    elif pipeline.lower() == 'k2sc':
       try:
         k2sc = kplr.K2SC(self.EPIC)
       except:
@@ -387,6 +409,11 @@ class Everest(object):
       ax[1].plot(k2sc.time, k2sc.pdcflux, 'b.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('K2SC Flux', fontsize = 18)
       bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2sc.pdcflux))
+      flux_savgol = k2sc.pdcflux - savgol_filter(k2sc.pdcflux, 49, 2) + np.nanmedian(k2sc.pdcflux)
+      cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      ax[1].annotate('6-hr CDPP: %.1f ppm' % cdpp6, xy = (0.98, 0.95), 
+                     xycoords = 'axes fraction', ha = 'right', va = 'top',
+                     fontsize = 12, fontweight = 'bold')
     elif pipeline.lower() == 'k2varcat':
       try:
         k2varcat = kplr.K2VARCAT(self.EPIC)
@@ -395,7 +422,12 @@ class Everest(object):
       k2varcat.flux *= np.nanmedian(self.flux)
       ax[1].plot(k2varcat.time, k2varcat.flux, 'b.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('K2VARCAT Flux', fontsize = 18)
-      bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2varcat.flux))    
+      bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2varcat.flux))
+      flux_savgol = k2varcat.flux - savgol_filter(k2varcat.flux, 49, 2) + np.nanmedian(k2varcat.flux)
+      cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      ax[1].annotate('6-hr CDPP: %.1f ppm' % cdpp6, xy = (0.98, 0.95), 
+                     xycoords = 'axes fraction', ha = 'right', va = 'top',
+                     fontsize = 12, fontweight = 'bold')    
     else:
       return
       
@@ -464,4 +496,72 @@ class Everest(object):
     ax[-1].set_xlabel('Time (days)', fontsize = 18)
     fig.canvas.set_window_title('EPIC %d' % self.EPIC)
   
+    return fig, ax
+    
+  def postage_stamp(self):
+    '''
+    
+    '''
+    
+    # Download the raw K2 data
+    data = GetK2Data(self.EPIC)
+    n = 0
+    ny, nx = data.fpix[0].shape
+    
+    # Get the aperture from the FITS file
+    with pyfits.open(self.file) as hdulist:
+      apidx = np.where(hdulist[4].data & 1 & ~np.isnan(data.fpix[0]))
+
+    # Plot
+    fig, ax = pl.subplots(1, figsize = (6, 6 * (ny/nx)))
+    fig.subplots_adjust(left = 0.01, right = 0.9, top = 0.99, bottom = 0.01)
+    stamp = ax.imshow(data.fpix[n], interpolation = 'nearest', 
+                      vmin = 0, vmax = np.nanmax(data.fpix),
+                      cmap = pl.get_cmap('plasma'))
+    ax.xaxis.set_visible(False)
+    ax.yaxis.set_visible(False)
+  
+    # Apply the aperture contours  
+    contour = np.zeros((ny,nx))
+    contour[apidx] = 1
+    contour = np.lib.pad(contour, 1, PadWithZeros)
+    highres = zoom(contour, 100, order=0, mode='nearest') 
+    extent = np.array([0, nx, 0, ny]) + \
+             np.array([0, -1, 0, -1]) + \
+             np.array([-1, 1, -1, 1])
+    ax.contour(highres, levels=[0.5], extent=extent, 
+                 origin='lower', colors='k', linewidths=3)
+    ax.set_xlim(-0.7, nx - 0.3)
+    ax.set_ylim(-0.7, ny - 0.3)
+
+    # Nearby sources
+    neighbors = []  
+    for source in data.nearby:
+      ax.scatter(source.x - source.x0, source.y - source.y0, 
+                 s = 400, alpha = 0.5, 
+                 c = ['g' if source.epic == self.EPIC else 'r'],
+                 edgecolor = 'k', zorder = 99)
+      ax.scatter(source.x - source.x0, source.y - source.y0, 
+                 marker = r'$%.1f$' % source.kepmag, color = 'w',
+                 s = 300, zorder = 100)
+    
+    # Slider
+    divider = make_axes_locatable(ax)
+    axtime = divider.append_axes("bottom", size="5%", pad=0.05)
+    axcbar = divider.append_axes("right", size="5%", pad = 0.05)
+    sltime = Slider(axtime, '', 0, data.fpix.shape[0] - 1, valinit = 0,
+                    facecolor = 'gray')
+    def update(val):
+      n = sltime.val
+      stamp.set_data(data.fpix[n])
+      fig.canvas.draw_idle()
+    sltime.on_changed(update)
+    sltime.valtext.set_visible(False)
+    
+    # Colorbar
+    cbar = fig.colorbar(stamp, cax=axcbar)
+    cbar.ax.tick_params(labelsize=9)
+    
+    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
+    
     return fig, ax
