@@ -193,6 +193,56 @@ class k2data(object):
   
   pass
 
+def UpdateK2Data(campaign):
+  '''
+  DEBUG: TEMPORARY FIX TO UPDATE ALL DATA. REMOVE THIS LATER.
+  
+  '''
+  
+  # Get all star IDs for this campaign
+  stars = GetK2Campaign(campaign)
+  nstars = len(stars)
+  
+  # Update each one
+  for i, EPIC in enumerate(stars):
+    print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))  
+    filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+    try:
+      data = np.load(filename)
+      time = data['time']
+      fpix = data['fpix']
+      perr = data['perr']
+      campaign = data['campaign']
+      aperture = data['aperture']
+      cadn = data['cadn']
+      _nearby = data['nearby']
+      nearby = [Source(**s) for s in _nearby]
+      fitsheader = data['fitsheader']
+      apertures = data['apertures']
+      contamination = data['contamination']  
+    except:
+      GetK2Data(EPIC)
+      return
+    try:
+      raw_time = data['raw_time']
+      raw_cadn = data['raw_cadn']
+    except:
+      client = kplr.API()
+      star = client.k2_star(EPIC)
+      tpf = star.get_target_pixel_files()[0]
+      campaign = tpf.sci_campaign
+      with tpf.open() as f:
+        qdata = f[1].data
+        raw_time = np.array(qdata.field('TIME'), dtype='float64')
+        raw_cadn = np.array(qdata.field('CADENCENO'), dtype='int32')
+      ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
+      os.remove(ftpf)
+      np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                          aperture = aperture, nearby = _nearby, campaign = campaign,
+                          apertures = apertures, fitsheader = fitsheader,
+                          contamination = contamination, raw_time = raw_time,
+                          raw_cadn = raw_cadn)
+
 def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   '''
   Download and save a single quarter of `K2` data.
@@ -255,7 +305,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
       fitsheader = data['fitsheader']
       apertures = data['apertures']
       contamination = data['contamination']
-      clobber = False
+      clobber = False      
     except:
       clobber = True
       
