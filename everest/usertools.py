@@ -454,7 +454,7 @@ class Everest(object):
     # Set the appropriate bounds (same for both plots)
     ax[0].set_ylim(*bounds)
     ax[1].set_ylim(*bounds)
-    ax[0].set_xlim(self.time[0], self.time[-1])
+    ax[0].set_xlim(self.mask(self.time)[0], self.mask(self.time)[-1])
   
     # Warning flags
     ax[1].annotate("Crowding:   %d/5" % self.crwdflag, xy = (0.02, 0.95), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.crwdflag))

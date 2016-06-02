@@ -5,7 +5,7 @@
 -------------------------------------
 
 This is the heart of :py:mod:`everest`. These routines compute the principal components
-of the fractional pixel flux functions and solves the GLS problem with a GP to
+of the fractional pixel flux functions and solve the GLS problem with a GP to
 obtain the PLD coefficients that best capture the instrumental noise signal.
 
 '''
@@ -21,7 +21,7 @@ import logging
 log = logging.getLogger(__name__)
       
 def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms = True, 
-             max_components = 300):
+             do_pca = True, max_components = 300):
   '''
   Returns the basis vectors :math:`\mathbf{X}` we're going to use for the PLD model.
   :math:`\mathbf{X}` has shape (`npts`, `n_components`). The first column (`[:,0]`)
@@ -55,7 +55,7 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms =
   npts, npix = fpix.shape
   frac = fpix / np.sum(fpix, axis = 1).reshape(-1, 1)
   
-  # The number of signals (equation 6 in the paper)
+  # The number of signals
   nsignals = int(np.sum([nchoosek(npix + k - 1, k) for k in range(1, pld_order + 1)]))
   
   # Add the breakpoints
@@ -95,13 +95,14 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms =
         x = np.hstack([x, xn])
         
     # Perform PCA on them
-    pca = PCA(n_components = n_components - 1)
-    xpca = pca.fit_transform(x)
+    if do_pca:
+      pca = PCA(n_components = n_components - 1)
+      xpca = pca.fit_transform(x)
 
-    # Prepend a column vector of ones, since PCA transform removes 
-    # the property that the basis vectors all sum to one.
-    x = np.hstack([np.ones(xpca.shape[0]).reshape(-1, 1), xpca])
-  
+      # Prepend a column vector of ones, since PCA transform removes 
+      # the property that the basis vectors all sum to one.
+      x = np.hstack([np.ones(xpca.shape[0]).reshape(-1, 1), xpca])
+    
     # Pad with zeros on the left and right so that the chunks are
     # all independent of each other
     lzeros = np.zeros((x.shape[0], i * x.shape[1]))
