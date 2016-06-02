@@ -9,7 +9,7 @@ selector.py
 from __future__ import division, print_function, absolute_import, unicode_literals
 import matplotlib
 import matplotlib.pyplot as pl
-from matplotlib.widgets import RectangleSelector
+from matplotlib.widgets import RectangleSelector, Button
 import numpy as np
 
 # Make this a global variable
@@ -70,8 +70,8 @@ class Selector(object):
     self.info = ""
     self.subt = False
     
-    # Initialize our selectors
-    self.Selector = RectangleSelector(ax, self.oselect,
+    # Initialize our widgets
+    self.Selector = RectangleSelector(ax, self.on_select,
                                       rectprops = dict(facecolor='red', 
                                                        edgecolor = 'black',
                                                        alpha=0.1, fill=True),
@@ -79,10 +79,28 @@ class Selector(object):
                                       minspanx = 0,
                                       minspany = 0)
     self.Selector.set_active(False)
-  
-    pl.connect('key_press_event', self.on_key_press)
-    pl.connect('key_release_event', self.on_key_release)
-                                         
+                                   
+    self.Unselector = RectangleSelector(ax, self.on_unselect,
+                                      rectprops = dict(facecolor='red', 
+                                                       edgecolor = 'black',
+                                                       alpha=0.1, fill=True),
+                                      useblit = True,
+                                      minspanx = 0,
+                                      minspany = 0)
+    self.Unselector.set_active(False)
+    
+    axsel = pl.axes([0.86, 0.12, 0.08, 0.04])
+    self.SelectButton = Button(axsel, 'Select')
+    self.SelectButton.on_clicked(self.on_select_button)
+    
+    axunsel = pl.axes([0.77, 0.12, 0.08, 0.04])
+    self.UnselectButton = Button(axunsel, 'Unselect')
+    self.UnselectButton.on_clicked(self.on_unselect_button)
+    
+    axrec = pl.axes([0.68, 0.12, 0.08, 0.04])
+    self.RecalcButton = Button(axrec, 'Recalc')
+    self.RecalcButton.on_clicked(self.on_recalc_button)
+                
     self.redraw()
     
   def redraw(self):
@@ -102,22 +120,7 @@ class Selector(object):
     t = self.selected
     p = self.ax.plot(self.x[t], self.y[t], 'r.', markersize = 3, alpha = 0.5)
     self._plots.append(p)
-           
-    # Labels
-    label = None
-    if self.Selector.active:
-      if self.subt:
-        label = '-'
-      else:
-        label = '+'
-    
-    if label is not None:
-      a = self.ax.text(0.975, 0.025, label, fontsize=42, transform=self.ax.transAxes, 
-                       va = 'bottom', ha = 'right',
-                       color = 'r', alpha = 0.25, fontweight = 'bold',
-                       fontname = 'monospace')
-      self._plots.append([a])
-      
+                 
     # Refresh
     self.fig.canvas.draw()
   
@@ -142,46 +145,69 @@ class Selector(object):
       xy = zip(self.x, self.y)
       return [i for i, pt in enumerate(xy) if x1<=pt[0]<=x2 and y1<=pt[1]<=y2] 
 
-  def oselect(self, eclick, erelease):
+  def on_select(self, eclick, erelease):
     '''
     
     '''
     
     inds = self.get_inds(eclick, erelease)
     for i in inds:
-      if self.subt:
-        if i in self._selected:
-          self._selected.remove(i)
-      else:
-        if i not in self._selected:
-          self._selected.append(i)   
+      if i not in self._selected:
+        self._selected.append(i)   
+    self.redraw()
+
+  def on_unselect(self, eclick, erelease):
+    '''
+    
+    '''
+    
+    inds = self.get_inds(eclick, erelease)
+    for i in inds:
+      if i in self._selected:
+        self._selected.remove(i) 
     self.redraw()
   
-  def on_key_release(self, event):
+  def on_select_button(self, event):
+    '''
     
-    # Alt
-    if event.key == self.key_sub:
-      self.subt = False
-      self.redraw()
-      
-  def on_key_press(self, event):
+    '''
     
-    # Deselect
-    if event.key == self.key_sub:
-      self.subt = True
-      self.redraw()
+    self.Unselector.set_active(False)
+    self.UnselectButton.label.set_weight('normal')
     
-    # Select
-    elif event.key == self.key_sel:
-      self.Selector.set_active(not self.Selector.active)
-      self.redraw()
+    self.Selector.set_active(not self.Selector.active)
+    if self.Selector.active:
+      self.SelectButton.label.set_weight('bold')
+    else:
+      self.SelectButton.label.set_weight('normal')
+    self.redraw()
+  
+  def on_unselect_button(self, event):
+    '''
     
-    # Recalculate
-    elif event.key == self.key_fxy:
-      self.Selector.set_active(False)
-      self.x, self.y = self.fxy(self.selected)
-      self.redraw()
-      
+    '''
+    
+    self.Selector.set_active(False)
+    self.SelectButton.label.set_weight('normal')
+    self.Unselector.set_active(not self.Unselector.active)
+    if self.Unselector.active:
+      self.UnselectButton.label.set_weight('bold')
+    else:
+      self.UnselectButton.label.set_weight('normal')
+    self.redraw()
+  
+  def on_recalc_button(self, event):
+    '''
+    
+    '''
+    
+    self.Selector.set_active(False)
+    self.Unselector.set_active(False)
+    self.UnselectButton.label.set_weight('normal')
+    self.SelectButton.label.set_weight('normal')
+    self.x, self.y = self.fxy(self.selected)
+    self.redraw()
+  
   @property
   def selected(self):
     return np.array(sorted(self._selected), dtype = int)
