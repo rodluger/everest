@@ -250,7 +250,7 @@ class Mask(object):
           tinds.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
         
     # Add in the explicit indices
-    inds = list(set(self.inds + list(rinds) + list(tinds)))
+    inds = list(set(list(self.inds) + list(rinds) + list(tinds)))
     
     return inds
   
@@ -321,6 +321,10 @@ class Everest(object):
       # CDPP
       self.cdpp6 = hdulist[1].header['CDPP6']
       self.cdpp6raw = hdulist[1].header['CDPP6RAW']
+  
+  @property
+  def masked_inds(self):
+    return self.mask.all_inds
       
   def set_mask(self, **kwargs):
     '''
@@ -354,7 +358,11 @@ class Everest(object):
     # our final de-trended flux
     self.flux = self.raw_flux - self.model + np.nanmedian(self.raw_flux)
     
-  def plot(self, pipeline = 'everest'):
+    # Re-calculate the cdpp
+    flux_savgol = self.flux - savgol_filter(self.flux, 49, 2) + np.nanmedian(self.flux)
+    self.cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+    
+  def plot(self, pipeline = 'everest', interactive = False):
     '''
     Plot the raw and de-trended light curves.
   
@@ -374,13 +382,23 @@ class Everest(object):
                     fontsize = 12, fontweight = 'bold')
                      
     if pipeline.lower() == 'everest':
-      ax[1].plot(self.mask(self.time), self.mask(self.flux), 'b.', markersize = 3, alpha = 0.5)
-      ax[1].plot(self.mask.inv(self.time), self.mask.inv(self.flux), 'r.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('EVEREST Flux', fontsize = 18)
       bounds = min(PlotBounds(self.raw_flux), PlotBounds(self.flux))
-      ax[1].annotate('6-hr CDPP: %.1f ppm' % self.cdpp6, xy = (0.98, 0.95), 
-                     xycoords = 'axes fraction', ha = 'right', va = 'top',
-                     fontsize = 12, fontweight = 'bold')
+      lcdpp = ax[1].annotate('6-hr CDPP: %.1f ppm' % self.cdpp6, xy = (0.98, 0.95), 
+                             xycoords = 'axes fraction', ha = 'right', va = 'top',
+                             fontsize = 12, fontweight = 'bold')
+      if not interactive:
+        ax[1].plot(self.mask(self.time), self.mask(self.flux), 'b.', markersize = 3, alpha = 0.5)
+        ax[1].plot(self.mask.inv(self.time), self.mask.inv(self.flux), 'r.', markersize = 3, alpha = 0.5)
+      else:
+      
+        def fxy(selected):
+          self.mask.inds = selected
+          self.detrend()
+          lcdpp.set_text('6-hr CDPP: %.1f ppm' % self.cdpp6)
+          return self.time, self.flux
+          
+        sel = Selector(fig, ax[1], fxy, selected = self.mask.all_inds)
       
     elif pipeline.lower() == 'k2sff':
       try:
@@ -442,11 +460,10 @@ class Everest(object):
     ax[1].annotate("Crowding:   %d/5" % self.crwdflag, xy = (0.02, 0.95), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.crwdflag))
     ax[1].annotate("Saturation: %d/5" % self.satflag, xy = (0.02, 0.885), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.satflag))
   
-    # Selector?
-    # TODO TODO TODO
-    #sel = Selector(fig, ax[1], self.time, self.flux)
-  
-    return fig, ax
+    if interactive:
+      pl.show()
+    else:
+      return fig, ax
 
   def plot_folded(self):
     '''
