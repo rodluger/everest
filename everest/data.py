@@ -202,13 +202,29 @@ def UpdateK2Data(campaign):
   # Get all star IDs for this campaign
   stars = GetK2Campaign(campaign)
   nstars = len(stars)
+  client = kplr.API()
   
   # Update each one
   for i, EPIC in enumerate(stars):
     print("Updating EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))  
     filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+    
+    # Does the .npz file exist?
     try:
       data = np.load(filename)
+    except KeyboardInterrupt:
+      return
+    except:
+      GetK2Data(EPIC)
+      return
+    
+    # Does it have raw_time and raw_cadn?
+    try:
+      raw_time = data['raw_time']
+      raw_cadn = data['raw_cadn']
+    except KeyboardInterrupt:
+      return
+    except:      
       time = data['time']
       fpix = data['fpix']
       perr = data['perr']
@@ -220,14 +236,6 @@ def UpdateK2Data(campaign):
       fitsheader = data['fitsheader']
       apertures = data['apertures']
       contamination = data['contamination']  
-    except:
-      GetK2Data(EPIC)
-      return
-    try:
-      raw_time = data['raw_time']
-      raw_cadn = data['raw_cadn']
-    except:
-      client = kplr.API()
       star = client.k2_star(EPIC)
       tpf = star.get_target_pixel_files()[0]
       campaign = tpf.sci_campaign
