@@ -9,42 +9,50 @@ selector.py
 from __future__ import division, print_function, absolute_import, unicode_literals
 import matplotlib
 import matplotlib.pyplot as pl
-from matplotlib.widgets import RectangleSelector, Button
+from matplotlib.widgets import RectangleSelector, Button, Slider
 import numpy as np
 
 # Make this a global variable
 rcParams = None
 
-def DisableShortcuts():
+class TransitSelector(object):
   '''
-  Disable MPL keyboard shortcuts and the plot toolbar.
-
-  '''
-  
-  global rcParams
-  rcParams = dict(pl.rcParams)
-  pl.rcParams['keymap.all_axes'] = ''
-  pl.rcParams['keymap.back'] = ''
-  pl.rcParams['keymap.forward'] = ''
-  pl.rcParams['keymap.fullscreen'] = ''
-  pl.rcParams['keymap.grid'] = ''
-  pl.rcParams['keymap.home'] = ''
-  pl.rcParams['keymap.pan'] = ''
-  pl.rcParams['keymap.quit'] = ''
-  pl.rcParams['keymap.save'] = ''
-  pl.rcParams['keymap.xscale'] = ''
-  pl.rcParams['keymap.yscale'] = ''
-  pl.rcParams['keymap.zoom'] = ''
-
-def EnableShortcuts():
-  '''
-  Resets pl.rcParams to its original state.
   
   '''
   
-  global rcParams
-  pl.rcParams.update(rcParams)
+  def __init__(self, ti, tf):
+    self.ti = ti
+    self.tf = tf
+    self.set_active(False)
 
+  def set_active(self, active):
+    self.active = active
+    self._t0 = None
+    self._t1 = None
+    self.per = None
+    self.ttimes = []
+
+  @property
+  def t0(self):
+    return self._t0
+  
+  @t0.setter
+  def t0(self, v):
+    self._t0 = v
+    self.ttimes = [v]
+
+  @property
+  def t1(self):
+    return self._t1
+  
+  @t1.setter
+  def t1(self, v):
+    self._t1 = v
+    self.per = np.abs(self._t1 - self._t0) 
+    self.ttimes = np.arange(self._t0 + 
+                            np.ceil((self.ti - 1. - self._t0) / self.per) * self.per, 
+                            self.tf + 1., self.per)
+    
 class Selector(object):
   '''
   
@@ -55,7 +63,6 @@ class Selector(object):
                key_fxy = 'r'):
   
     # Initialize
-    DisableShortcuts()
     self.fig = fig
     self.ax = ax    
     self.fxy = fxy
@@ -65,10 +72,14 @@ class Selector(object):
     self.key_fxy = key_fxy
         
     # Initialize arrays
+    self._original_selected = list(selected)
     self._selected = selected
     self._plots = []
     self.info = ""
     self.subt = False
+    
+    # Connect the mouse
+    pl.connect('button_press_event', self.on_mouse_click) 
     
     # Initialize our widgets
     self.Selector = RectangleSelector(ax, self.on_select,
@@ -81,7 +92,7 @@ class Selector(object):
     self.Selector.set_active(False)
                                    
     self.Unselector = RectangleSelector(ax, self.on_unselect,
-                                      rectprops = dict(facecolor='red', 
+                                      rectprops = dict(facecolor='blue', 
                                                        edgecolor = 'black',
                                                        alpha=0.1, fill=True),
                                       useblit = True,
@@ -89,18 +100,47 @@ class Selector(object):
                                       minspany = 0)
     self.Unselector.set_active(False)
     
-    axsel = pl.axes([0.86, 0.12, 0.08, 0.04])
+    self.TransitSelector = TransitSelector(self.x[0], self.x[-1])
+    self.TransitSelector.set_active(False)
+    
+    axtrn = pl.axes([0.86, 0.12, 0.08, 0.04])
+    self.TransitButton = Button(axtrn, 'Transit')
+    self.TransitButton.on_clicked(self.on_transit_button)
+    
+    axsel = pl.axes([0.77, 0.12, 0.08, 0.04])
     self.SelectButton = Button(axsel, 'Select')
     self.SelectButton.on_clicked(self.on_select_button)
     
-    axunsel = pl.axes([0.77, 0.12, 0.08, 0.04])
+    axunsel = pl.axes([0.68, 0.12, 0.08, 0.04])
     self.UnselectButton = Button(axunsel, 'Unselect')
     self.UnselectButton.on_clicked(self.on_unselect_button)
     
-    axrec = pl.axes([0.68, 0.12, 0.08, 0.04])
-    self.RecalcButton = Button(axrec, 'Recalc')
+    axrec = pl.axes([0.59, 0.12, 0.08, 0.04])
+    self.RecalcButton = Button(axrec, 'Detrend')
     self.RecalcButton.on_clicked(self.on_recalc_button)
-                
+    
+    axres = pl.axes([0.50, 0.12, 0.08, 0.04])
+    self.ResetButton = Button(axres, 'Reset')
+    self.ResetButton.on_clicked(self.on_reset_button)
+    
+    axcancel = pl.axes([0.86, 0.17, 0.08, 0.04])
+    self.CancelButton = Button(axcancel, 'Cancel')
+    self.CancelButton.on_clicked(self.on_cancel_button)
+    axcancel.set_visible(False)
+    
+    axok = pl.axes([0.77, 0.17, 0.08, 0.04])
+    self.OKButton = Button(axok, 'OK')
+    self.OKButton.on_clicked(self.on_ok_button)
+    axok.set_visible(False)
+    
+    axslider = pl.axes([0.86, 0.22, 0.08, 0.02])
+    self.Slider = Slider(axslider, '', 0., 1., valinit = 0.25, facecolor = 'gray')
+    def update(val):
+      self.redraw()
+    self.Slider.on_changed(update)
+    self.Slider.valtext.set_visible(False)
+    axslider.set_visible(False)
+            
     self.redraw()
     
   def redraw(self):
@@ -120,9 +160,35 @@ class Selector(object):
     t = self.selected
     p = self.ax.plot(self.x[t], self.y[t], 'r.', markersize = 3, alpha = 0.5)
     self._plots.append(p)
+    
+    # Transits
+    if self.TransitSelector.active:
+      for t in self.TransitSelector.ttimes:
+        p = [self.ax.axvline(t, color = 'r', ls = '-', alpha = 1.0)]
+        self._plots.append(p)
+        p = [self.ax.axvspan(t - self.Slider.val / 2., t + self.Slider.val / 2.,
+                            color = 'r', alpha = 0.25)]
+        self._plots.append(p)
                  
     # Refresh
     self.fig.canvas.draw()
+  
+  def on_mouse_click(self, event):
+    '''
+    
+    '''
+    
+    if (event.inaxes is not None) and (self.TransitSelector.active):
+      s = np.argmin(np.abs(self.x - event.xdata))
+            
+      if self.TransitSelector.t0 is None:
+        self.TransitSelector.t0 = self.x[s]
+      elif self.TransitSelector.t1 is None:
+        self.TransitSelector.t1 = self.x[s]
+        self.OKButton.ax.set_visible(True)
+        self.CancelButton.ax.set_visible(True)
+        self.Slider.ax.set_visible(True)
+      self.redraw()
   
   def get_inds(self, eclick, erelease):
     '''
@@ -167,14 +233,64 @@ class Selector(object):
         self._selected.remove(i) 
     self.redraw()
   
+  def on_ok_button(self, event):
+    '''
+    
+    '''
+    if self.OKButton.ax.get_visible():
+      for t in self.TransitSelector.ttimes:
+        self._selected.extend(np.where(np.abs(self.x - t) < self.Slider.val / 2.)[0])
+      self.TransitSelector.set_active(False)
+      self.TransitButton.label.set_weight('normal')
+      self.OKButton.ax.set_visible(False)
+      self.CancelButton.ax.set_visible(False)
+      self.Slider.ax.set_visible(False)
+      self.redraw()
+  
+  def on_cancel_button(self, event):
+    '''
+    
+    '''
+    if self.CancelButton.ax.get_visible():
+      self.TransitSelector.set_active(False)
+      self.TransitButton.label.set_weight('normal')
+      self.OKButton.ax.set_visible(False)
+      self.CancelButton.ax.set_visible(False)
+      self.Slider.ax.set_visible(False)
+      self.redraw()
+  
+  def on_transit_button(self, event):
+    '''
+    
+    '''
+    
+    self.Selector.set_active(False)
+    self.Unselector.set_active(False)
+    self.OKButton.ax.set_visible(False)
+    self.CancelButton.ax.set_visible(False)
+    self.Slider.ax.set_visible(False)
+    self.SelectButton.label.set_weight('normal')
+    self.UnselectButton.label.set_weight('normal')
+    self.TransitSelector.set_active(not self.TransitSelector.active)
+    if self.TransitSelector.active:
+      self.TransitButton.label.set_weight('bold')
+    else:
+      self.TransitButton.label.set_weight('normal')
+    self.redraw()
+    
+  
   def on_select_button(self, event):
     '''
     
     '''
     
     self.Unselector.set_active(False)
+    self.TransitSelector.set_active(False)
+    self.OKButton.ax.set_visible(False)
+    self.CancelButton.ax.set_visible(False)
+    self.Slider.ax.set_visible(False)
     self.UnselectButton.label.set_weight('normal')
-    
+    self.TransitButton.label.set_weight('normal')
     self.Selector.set_active(not self.Selector.active)
     if self.Selector.active:
       self.SelectButton.label.set_weight('bold')
@@ -188,7 +304,12 @@ class Selector(object):
     '''
     
     self.Selector.set_active(False)
+    self.TransitSelector.set_active(False)
+    self.OKButton.ax.set_visible(False)
+    self.CancelButton.ax.set_visible(False)
+    self.Slider.ax.set_visible(False)
     self.SelectButton.label.set_weight('normal')
+    self.TransitButton.label.set_weight('normal')
     self.Unselector.set_active(not self.Unselector.active)
     if self.Unselector.active:
       self.UnselectButton.label.set_weight('bold')
@@ -203,8 +324,31 @@ class Selector(object):
     
     self.Selector.set_active(False)
     self.Unselector.set_active(False)
+    self.TransitSelector.set_active(False)
+    self.OKButton.ax.set_visible(False)
+    self.CancelButton.ax.set_visible(False)
+    self.Slider.ax.set_visible(False)
     self.UnselectButton.label.set_weight('normal')
     self.SelectButton.label.set_weight('normal')
+    self.TransitButton.label.set_weight('normal')
+    self.x, self.y = self.fxy(self.selected)
+    self.redraw()
+
+  def on_reset_button(self, event):
+    '''
+    
+    '''
+    
+    self._selected = self._original_selected
+    self.Selector.set_active(False)
+    self.Unselector.set_active(False)
+    self.TransitSelector.set_active(False)
+    self.OKButton.ax.set_visible(False)
+    self.CancelButton.ax.set_visible(False)
+    self.Slider.ax.set_visible(False)
+    self.UnselectButton.label.set_weight('normal')
+    self.SelectButton.label.set_weight('normal')
+    self.TransitButton.label.set_weight('normal')
     self.x, self.y = self.fxy(self.selected)
     self.redraw()
   
