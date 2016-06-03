@@ -12,8 +12,35 @@ import matplotlib.pyplot as pl
 from matplotlib.widgets import RectangleSelector, Button, Slider
 import numpy as np
 
-# Make this a global variable
-rcParams = None
+def ToggleAxis(ax):
+  '''
+  
+  '''
+  
+  pos = ax.get_position()
+  pos = [-pos.x0, -pos.y0, pos.width, pos.height]
+  ax.set_position(pos)
+  ax.set_visible(not ax.get_visible())
+
+def HideAxis(ax):
+  '''
+  
+  '''
+  
+  pos = ax.get_position()
+  pos = [-np.abs(pos.x0), -np.abs(pos.y0), pos.width, pos.height]
+  ax.set_position(pos)
+  ax.set_visible(False)
+
+def ShowAxis(ax):
+  '''
+  
+  '''
+  
+  pos = ax.get_position()
+  pos = [np.abs(pos.x0), np.abs(pos.y0), pos.width, pos.height]
+  ax.set_position(pos)
+  ax.set_visible(True)
 
 class TransitSelector(object):
   '''
@@ -73,7 +100,7 @@ class Selector(object):
         
     # Initialize arrays
     self._original_selected = list(selected)
-    self._selected = selected
+    self._selected = list(selected)
     self._plots = []
     self.info = ""
     self.subt = False
@@ -126,12 +153,12 @@ class Selector(object):
     axcancel = pl.axes([0.86, 0.17, 0.08, 0.04])
     self.CancelButton = Button(axcancel, 'Cancel')
     self.CancelButton.on_clicked(self.on_cancel_button)
-    axcancel.set_visible(False)
+    HideAxis(axcancel)
     
     axok = pl.axes([0.77, 0.17, 0.08, 0.04])
     self.OKButton = Button(axok, 'OK')
     self.OKButton.on_clicked(self.on_ok_button)
-    axok.set_visible(False)
+    HideAxis(axok)
     
     axslider = pl.axes([0.86, 0.22, 0.08, 0.02])
     self.Slider = Slider(axslider, '', 0., 1., valinit = 0.25, facecolor = 'gray')
@@ -139,7 +166,12 @@ class Selector(object):
       self.redraw()
     self.Slider.on_changed(update)
     self.Slider.valtext.set_visible(False)
-    axslider.set_visible(False)
+    axslider.set_xlim(0,1)
+    axslider.set_xticks([0,1])
+    axslider.set_xticklabels(["0.","1."], fontsize = 8)
+    axslider.xaxis.tick_top()
+    axslider.set_title('Duration (d)', fontsize = 8, y = 1.1)
+    HideAxis(axslider)
             
     self.redraw()
     
@@ -185,9 +217,9 @@ class Selector(object):
         self.TransitSelector.t0 = self.x[s]
       elif self.TransitSelector.t1 is None:
         self.TransitSelector.t1 = self.x[s]
-        self.OKButton.ax.set_visible(True)
-        self.CancelButton.ax.set_visible(True)
-        self.Slider.ax.set_visible(True)
+        ShowAxis(self.OKButton.ax)
+        ShowAxis(self.CancelButton.ax)
+        ShowAxis(self.Slider.ax)
       self.redraw()
   
   def get_inds(self, eclick, erelease):
@@ -242,9 +274,9 @@ class Selector(object):
         self._selected.extend(np.where(np.abs(self.x - t) < self.Slider.val / 2.)[0])
       self.TransitSelector.set_active(False)
       self.TransitButton.label.set_weight('normal')
-      self.OKButton.ax.set_visible(False)
-      self.CancelButton.ax.set_visible(False)
-      self.Slider.ax.set_visible(False)
+      HideAxis(self.OKButton.ax)
+      HideAxis(self.CancelButton.ax)
+      HideAxis(self.Slider.ax)
       self.redraw()
   
   def on_cancel_button(self, event):
@@ -254,9 +286,9 @@ class Selector(object):
     if self.CancelButton.ax.get_visible():
       self.TransitSelector.set_active(False)
       self.TransitButton.label.set_weight('normal')
-      self.OKButton.ax.set_visible(False)
-      self.CancelButton.ax.set_visible(False)
-      self.Slider.ax.set_visible(False)
+      HideAxis(self.OKButton.ax)
+      HideAxis(self.CancelButton.ax)
+      HideAxis(self.Slider.ax)
       self.redraw()
   
   def on_transit_button(self, event):
@@ -266,9 +298,9 @@ class Selector(object):
     
     self.Selector.set_active(False)
     self.Unselector.set_active(False)
-    self.OKButton.ax.set_visible(False)
-    self.CancelButton.ax.set_visible(False)
-    self.Slider.ax.set_visible(False)
+    HideAxis(self.OKButton.ax)
+    HideAxis(self.CancelButton.ax)
+    HideAxis(self.Slider.ax)
     self.SelectButton.label.set_weight('normal')
     self.UnselectButton.label.set_weight('normal')
     self.TransitSelector.set_active(not self.TransitSelector.active)
@@ -286,9 +318,9 @@ class Selector(object):
     
     self.Unselector.set_active(False)
     self.TransitSelector.set_active(False)
-    self.OKButton.ax.set_visible(False)
-    self.CancelButton.ax.set_visible(False)
-    self.Slider.ax.set_visible(False)
+    HideAxis(self.OKButton.ax)
+    HideAxis(self.CancelButton.ax)
+    HideAxis(self.Slider.ax)
     self.UnselectButton.label.set_weight('normal')
     self.TransitButton.label.set_weight('normal')
     self.Selector.set_active(not self.Selector.active)
@@ -305,9 +337,9 @@ class Selector(object):
     
     self.Selector.set_active(False)
     self.TransitSelector.set_active(False)
-    self.OKButton.ax.set_visible(False)
-    self.CancelButton.ax.set_visible(False)
-    self.Slider.ax.set_visible(False)
+    HideAxis(self.OKButton.ax)
+    HideAxis(self.CancelButton.ax)
+    HideAxis(self.Slider.ax)
     self.SelectButton.label.set_weight('normal')
     self.TransitButton.label.set_weight('normal')
     self.Unselector.set_active(not self.Unselector.active)
@@ -325,9 +357,9 @@ class Selector(object):
     self.Selector.set_active(False)
     self.Unselector.set_active(False)
     self.TransitSelector.set_active(False)
-    self.OKButton.ax.set_visible(False)
-    self.CancelButton.ax.set_visible(False)
-    self.Slider.ax.set_visible(False)
+    HideAxis(self.OKButton.ax)
+    HideAxis(self.CancelButton.ax)
+    HideAxis(self.Slider.ax)
     self.UnselectButton.label.set_weight('normal')
     self.SelectButton.label.set_weight('normal')
     self.TransitButton.label.set_weight('normal')
@@ -339,17 +371,18 @@ class Selector(object):
     
     '''
     
-    self._selected = self._original_selected
+    self._selected = list(self._original_selected)
     self.Selector.set_active(False)
     self.Unselector.set_active(False)
     self.TransitSelector.set_active(False)
-    self.OKButton.ax.set_visible(False)
-    self.CancelButton.ax.set_visible(False)
-    self.Slider.ax.set_visible(False)
+    HideAxis(self.OKButton.ax)
+    HideAxis(self.CancelButton.ax)
+    HideAxis(self.Slider.ax)
     self.UnselectButton.label.set_weight('normal')
     self.SelectButton.label.set_weight('normal')
     self.TransitButton.label.set_weight('normal')
-    self.x, self.y = self.fxy(self.selected)
+    self.x, self.y = self.fxy(self._selected)
+    self.TransitSelector = TransitSelector(self.x[0], self.x[-1])
     self.redraw()
   
   @property

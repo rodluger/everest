@@ -16,6 +16,7 @@ from .data import Campaign, GetK2Data
 from .utils import PlotBounds, MADOutliers, RMS
 from .utils import PadWithZeros
 from .selector import Selector
+from .ccd import CCD
 from scipy.ndimage import zoom
 from scipy.signal import savgol_filter
 import k2plr as kplr
@@ -273,6 +274,8 @@ class Mask(object):
 
 class Everest(object):
   '''
+  A user-friendly class for accessing and interacting with the EVEREST
+  de-trended light curves.
   
   '''
   
@@ -321,9 +324,18 @@ class Everest(object):
       # CDPP
       self.cdpp6 = hdulist[1].header['CDPP6']
       self.cdpp6raw = hdulist[1].header['CDPP6RAW']
-  
+      
+      # Channel
+      self.channel = hdulist[0].header['CHANNEL']
+      self.crval1p = hdulist[4].header['CRVAL1P']
+      self.crval2p = hdulist[4].header['CRVAL2P']
+      
   @property
   def masked_inds(self):
+    '''
+    
+    '''
+    
     return self.mask.all_inds
       
   def set_mask(self, **kwargs):
@@ -513,6 +525,8 @@ class Everest(object):
     
   def postage_stamp(self):
     '''
+    Plot the postage stamp for this target, with a slider for viewing
+    the time evolution of the stellar image.
     
     '''
     
@@ -578,3 +592,14 @@ class Everest(object):
     fig.canvas.set_window_title('EPIC %d' % self.EPIC)
     
     return fig, ax
+  
+  def ccd(self):
+    '''
+    Experimental!
+    
+    '''
+    
+    ccd = CCD()
+    ccd.add_source(self.channel, self.crval1p, self.crval2p)
+    return ccd.fig, ccd.ax
+    
