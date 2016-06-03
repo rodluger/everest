@@ -10,7 +10,7 @@ User tools to download, process, and plot the :py:class:`everest` light curves.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __published__, __version__
-from .config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, HYAK_ROOT
+from .config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, EVEREST_FITS
 from .kernels import KernelModels
 from .data import Campaign, GetK2Data
 from .utils import PlotBounds, MADOutliers, RMS
@@ -100,9 +100,12 @@ def _DownloadFITSFile(EPIC, clobber = False):
     shutil.move(f.name, filename)
     
   else:
-
+    
+    if EVEREST_FITS is None:
+      raise Exception('Please set the $EVEREST_FITS environment variable!')
+    
     # Get the url
-    url = HYAK_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + \
+    url = EVEREST_FITS + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + \
           'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, __version__)
   
     # Get the local file name
