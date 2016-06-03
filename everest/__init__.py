@@ -45,7 +45,7 @@ if not __EVEREST_SETUP__:
   from .pool import Pool
   from .compute import Compute
   from .run import DownloadCampaign, DownloadInjections, RunSingle, RunCampaign, \
-                   RunCandidates, RunInjections
+                   RunCandidates, RunInjections, RunFITS
   from .fits import MakeFITS
   from .usertools import Everest
   

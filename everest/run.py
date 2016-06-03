@@ -274,7 +274,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def MakeFITS(campaign, queue = 'build', email = None, walltime = 8):
+def RunFITS(campaign, queue = 'build', email = None, walltime = 8):
   '''
   Submits a cluster job to make EVEREST FITS files for a given
   campaign.

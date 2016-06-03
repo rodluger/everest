@@ -460,10 +460,7 @@ class Everest(object):
     ax[1].annotate("Crowding:   %d/5" % self.crwdflag, xy = (0.02, 0.95), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.crwdflag))
     ax[1].annotate("Saturation: %d/5" % self.satflag, xy = (0.02, 0.885), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.satflag))
   
-    if interactive:
-      pl.show()
-    else:
-      return fig, ax
+    return fig, ax
 
   def plot_folded(self):
     '''

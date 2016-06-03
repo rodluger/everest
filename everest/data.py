@@ -216,7 +216,7 @@ def UpdateK2Data(campaign):
       return
     except:
       GetK2Data(EPIC)
-      return
+      continue
     
     # Does it have raw_time and raw_cadn?
     try:
