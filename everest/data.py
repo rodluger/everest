@@ -235,7 +235,10 @@ def UpdateK2Data(campaign):
       nearby = [Source(**s) for s in _nearby]
       fitsheader = data['fitsheader']
       apertures = data['apertures']
-      contamination = data['contamination']  
+      try:
+        contamination = data['contamination']  
+      except:
+        contamination = None
       star = client.k2_star(EPIC)
       tpf = star.get_target_pixel_files()[0]
       campaign = tpf.sci_campaign
@@ -316,6 +319,19 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
       clobber = False      
     except:
       clobber = True
+  
+  # DEBUG
+  if not clobber:
+    if contamination is None:
+      apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
+      bkidx = np.where(apertures[apnum] ^ 1) 
+      contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby)
+      np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                          aperture = aperture, nearby = _nearby, campaign = campaign,
+                          apertures = apertures, fitsheader = fitsheader,
+                          contamination = contamination, raw_time = raw_time,
+                          raw_cadn = raw_cadn)
+  # /DEBUG                        
       
   if clobber:
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
