@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`config.py` - PATH settings
------------------------------------
+:py:mod:`config.py` - $PATH settings
+------------------------------------
 
 '''
 

@@ -9,7 +9,7 @@ User tools to download, process, and plot the :py:class:`everest` light curves.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from . import __published__, __version__
+from . import __develop__, __version__
 from .config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, EVEREST_FITS
 from .kernels import KernelModels
 from .data import Campaign, GetK2Data
@@ -69,7 +69,7 @@ def _DownloadFITSFile(EPIC, clobber = False):
   # Get the campaign
   campaign = Campaign(EPIC)  
   
-  if __published__:
+  if not __develop__:
   
     # Get the url
     mast_version = _EverestVersion()
@@ -101,8 +101,11 @@ def _DownloadFITSFile(EPIC, clobber = False):
     
   else:
     
+    # This section is for pre-publication/development use only!
     if EVEREST_FITS is None:
-      raise Exception('Please set the $EVEREST_FITS environment variable!')
+      raise Exception("The code has not yet been published to MAST. If you have access" + 
+                      "to a local or remote directory containing the FITS files, specify its" +
+                      "full path in the $EVEREST_FITS environment variable.")
     
     # Get the url
     url = EVEREST_FITS + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + \
@@ -474,8 +477,11 @@ class Everest(object):
     # Warning flags
     ax[1].annotate("Crowding:   %d/5" % self.crwdflag, xy = (0.02, 0.95), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.crwdflag))
     ax[1].annotate("Saturation: %d/5" % self.satflag, xy = (0.02, 0.885), xycoords = "axes fraction", ha="left", va="top", fontsize=12, color=_FlagColor(self.satflag))
-  
-    return fig, ax
+    
+    if interactive:
+      pl.show()
+    else:
+      return fig, ax
 
   def plot_folded(self):
     '''
@@ -523,7 +529,7 @@ class Everest(object):
   
     ax[-1].set_xlabel('Time (days)', fontsize = 18)
     fig.canvas.set_window_title('EPIC %d' % self.EPIC)
-  
+    
     return fig, ax
     
   def postage_stamp(self):
@@ -593,8 +599,7 @@ class Everest(object):
     cbar.ax.tick_params(labelsize=9)
     
     fig.canvas.set_window_title('EPIC %d' % self.EPIC)
-    
-    return fig, ax
+    pl.show()
   
   def ccd(self):
     '''
@@ -604,5 +609,6 @@ class Everest(object):
     
     ccd = CCD()
     ccd.add_source(self.channel, self.crval1p, self.crval2p)
+    
     return ccd.fig, ccd.ax
     

@@ -114,6 +114,43 @@ The following two plots should be generated:
   :height: 100px
   :figclass: align-center
 
+Interactive Mode
+~~~~~~~~~~~~~~~~
+
+Transit masks can also be applied interactively. To see how this works, call
+
+.. code-block:: python
+
+    star.plot(interactive = True)
+
+.. figure:: running_everest4.jpeg
+  :width: 700px
+  :align: center
+  :height: 100px
+  :figclass: align-center
+
+The buttons at the bottom right can be used to specify custom masks. Use
+``Select`` and ``Unselect`` to select/unselect ranges of data points to
+mask; these will appear in red. Once all masks have been selected, click
+``Detrend`` to de-trend the light curve. After a second or two, the
+new de-trended light curve will display. This new light curve can now
+be accessed via the :py:obj:`star.time` and :py:obj:`star.flux` arrays. To
+reset to the original masks, click ``Reset``.
+
+Alternatively, masks can be applied for periodic transits by clicking the
+``Transit`` button:
+
+.. figure:: running_everest5.jpeg
+  :width: 700px
+  :align: center
+  :height: 100px
+  :figclass: align-center
+
+Click on any two adjacent transits (you may want to zoom in for this) to 
+specify the mask. The transit duration can be adjusted with the slider
+above the ``OK`` and ``Cancel`` buttons. Click ``OK`` and then ``Detrend``
+to see the results.
+
 Additional Stuff
 ~~~~~~~~~~~~~~~~
 

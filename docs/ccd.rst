@@ -1,0 +1,2 @@
+.. automodule:: everest.ccd
+   :members:

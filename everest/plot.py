@@ -10,7 +10,6 @@ run.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from . import FORCE_PNG
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
 from .utils import RMS, Mask, PadWithZeros, LatexExp
 from .data import RemoveBackground
@@ -18,6 +17,7 @@ from .transit import Transit
 from .sources import Source
 from .config import EVEREST_DAT, EVEREST_SRC
 import os
+import matplotlib
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator, ScalarFormatter
 from scipy.ndimage import zoom
@@ -38,7 +38,7 @@ def Plot(data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_DAT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-  if FORCE_PNG:
+  if matplotlib.get_backend() == 'MacOSX':
     ext = 'png'
   else:
     try:
@@ -562,7 +562,7 @@ def PlotFolded(EPIC, data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_DAT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-  if FORCE_PNG:
+  if matplotlib.get_backend() == 'MacOSX':
     ext = 'png'
   else:
     try:

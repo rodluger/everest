@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-selector.py
------------
+:py:mod:`selector.py` - Interactive plotting
+--------------------------------------------
 
 '''
 

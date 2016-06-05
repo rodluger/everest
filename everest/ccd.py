@@ -4,6 +4,9 @@
 :py:mod:`ccd.py` - Plotting the CCD image
 -----------------------------------------
 
+Classes for constructing and plotting the
+`Kepler` detector.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -118,6 +121,7 @@ class CCD(object):
                            (2,0), (2,1), (2,2), (2,3), (2,4),
                            (3,0), (3,1), (3,2), (3,3), (3,4),
                            (4,0), (4,1), (4,2), (4,3), (4,4)])
+    self.fig = None
     self.draw()
     
   def __getitem__(self, n):
@@ -142,7 +146,8 @@ class CCD(object):
     
     '''
     
-    pl.close()
+    if self.fig is not None:
+      pl.close(self.fig)
     self.fig = pl.figure(figsize = (7,7))
     self.fig.subplots_adjust(top = 0.97, bottom = 0.03, left = 0.03, right = 0.97)
     self.ax = self.fig.add_subplot(111, aspect = 'equal')
