@@ -103,13 +103,13 @@ def _DownloadFITSFile(EPIC, clobber = False):
     
     # This section is for pre-publication/development use only!
     if EVEREST_FITS is None:
-      raise Exception("The code has not yet been published to MAST. If you have access" + 
-                      "to a local or remote directory containing the FITS files, specify its" +
+      raise Exception("The code has not yet been published to MAST. If you have access " + 
+                      "to a local or remote directory containing the FITS files, specify its " +
                       "full path in the $EVEREST_FITS environment variable.")
     
     # Get the url
-    url = EVEREST_FITS + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + \
-          'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, __version__)
+    url = os.path.join(EVEREST_FITS, 'c%02d' % campaign, ('%09d' % EPIC)[:4] + '00000',
+          'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, __version__))
   
     # Get the local file name
     filename = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
