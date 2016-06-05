@@ -377,9 +377,12 @@ class Everest(object):
     self.flux = self.raw_flux - self.model + np.nanmedian(self.raw_flux)
     
     # Re-calculate the cdpp
-    flux_savgol = self.flux - savgol_filter(self.flux, 49, 2) + np.nanmedian(self.flux)
-    self.cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
-    
+    try:
+      flux_savgol = self.flux - savgol_filter(self.flux, 49, 2) + np.nanmedian(self.flux)
+      self.cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+    except:
+      self.cdpp6 = np.nan
+      
   def plot(self, pipeline = 'everest', interactive = False):
     '''
     Plot the raw and de-trended light curves.
@@ -426,9 +429,12 @@ class Everest(object):
       k2sff.fcor *= np.nanmedian(self.flux)
       ax[1].plot(k2sff.time, k2sff.fcor, 'b.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('K2SFF Flux', fontsize = 18)
-      bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2sff.fcor))  
-      flux_savgol = k2sff.fcor - savgol_filter(k2sff.fcor, 49, 2) + np.nanmedian(k2sff.fcor)
-      cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2sff.fcor)) 
+      try: 
+        flux_savgol = k2sff.fcor - savgol_filter(k2sff.fcor, 49, 2) + np.nanmedian(k2sff.fcor)
+        cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      except:
+        cdpp6 = np.nan
       ax[1].annotate('6-hr CDPP: %.1f ppm' % cdpp6, xy = (0.98, 0.95), 
                      xycoords = 'axes fraction', ha = 'right', va = 'top',
                      fontsize = 12, fontweight = 'bold')    
@@ -440,8 +446,11 @@ class Everest(object):
       ax[1].plot(k2sc.time, k2sc.pdcflux, 'b.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('K2SC Flux', fontsize = 18)
       bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2sc.pdcflux))
-      flux_savgol = k2sc.pdcflux - savgol_filter(k2sc.pdcflux, 49, 2) + np.nanmedian(k2sc.pdcflux)
-      cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      try:
+        flux_savgol = k2sc.pdcflux - savgol_filter(k2sc.pdcflux, 49, 2) + np.nanmedian(k2sc.pdcflux)
+        cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      except:
+        cdpp6 = np.nan
       ax[1].annotate('6-hr CDPP: %.1f ppm' % cdpp6, xy = (0.98, 0.95), 
                      xycoords = 'axes fraction', ha = 'right', va = 'top',
                      fontsize = 12, fontweight = 'bold')
@@ -454,8 +463,11 @@ class Everest(object):
       ax[1].plot(k2varcat.time, k2varcat.flux, 'b.', markersize = 3, alpha = 0.5)
       ax[1].set_ylabel('K2VARCAT Flux', fontsize = 18)
       bounds = min(PlotBounds(self.raw_flux), PlotBounds(k2varcat.flux))
-      flux_savgol = k2varcat.flux - savgol_filter(k2varcat.flux, 49, 2) + np.nanmedian(k2varcat.flux)
-      cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      try:
+        flux_savgol = k2varcat.flux - savgol_filter(k2varcat.flux, 49, 2) + np.nanmedian(k2varcat.flux)
+        cdpp6 = RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True)
+      except:
+        cdpp6 = np.nan
       ax[1].annotate('6-hr CDPP: %.1f ppm' % cdpp6, xy = (0.98, 0.95), 
                      xycoords = 'axes fraction', ha = 'right', va = 'top',
                      fontsize = 12, fontweight = 'bold')    
