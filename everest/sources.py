@@ -30,7 +30,7 @@ class Source(object):
   def __repr__(self):
     return "<Source: EPIC %d>" % self.epic
     
-def MASTRADec(ra, dec, darcsec):
+def MASTRADec(ra, dec, darcsec, stars_only = False):
   '''
   Detector location retrieval based upon RA and Dec.
   Adapted from 
@@ -53,6 +53,9 @@ def MASTRADec(ra, dec, darcsec):
   url += '&max_records=10000'
   url += '&selectedColumnsCsv=id,k2_ra,k2_dec,kp'
   url += '&outputformat=CSV'
+  if stars_only:
+    url += '&ktc_target_type=LC'
+    url += '&objtype=star'
 
   # retrieve results from MAST
   try:
@@ -121,7 +124,7 @@ def sex2dec(ra, dec):
 
   return outra, outdec
 
-def GetSources(EPIC):
+def GetSources(EPIC, darcsec = None, stars_only = False):
   '''
   Grabs the EPIC coordinates from the TPF and searches MAST
   for other EPIC targets within the same aperture.
@@ -154,9 +157,10 @@ def GetSources(EPIC):
     crval2p = f[2].header['CRVAL2P'] 
     cdelt1p = f[2].header['CDELT1P']   
     cdelt2p = f[2].header['CDELT2P']
-    darcsec = 4 * max(f[2].data.shape)
-    
-  epicid, ra, dec, kepmag = MASTRADec(star.k2_ra, star.k2_dec, darcsec)
+    if darcsec is None:
+      darcsec = 4 * max(f[2].data.shape)
+
+  epicid, ra, dec, kepmag = MASTRADec(star.k2_ra, star.k2_dec, darcsec, stars_only)
   sources = []
   for i, epic in enumerate(epicid):
     dra = (ra[i] - crval1) * np.cos(np.radians(dec[i])) / cdelt1

@@ -131,7 +131,17 @@ def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
   '''
   
   # Get the source position according to MAST
-  source = nearby[np.where([s.epic == EPIC for s in nearby])[0]]
+  try:
+    source = nearby[np.where([s.epic == EPIC for s in nearby])[0]]
+  except:
+    # NOTE: I've seen the line above fail when the number of nearby sources
+    # is so large that the actual target doesn't end up being included in the
+    # list, raising a ``TypeError: only integer arrays with one element can 
+    # be converted to an index``. This happens for very, very bright sources
+    # (Kp < 7) with more than 10,000 sources within a radius equal to the
+    # size of the largest dimension of the aperture. We don't care about these
+    # sources anyways, so let's just return a bad contamination. 
+    return 1.0
   xc, yc = source.x - source.x0, source.y - source.y0 
   
   # Remove the background

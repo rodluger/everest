@@ -175,6 +175,15 @@ neighboring sources). Their `Kepler` magnitudes are also indicated. Finally, a
 slider is present at the bottom of the plot; this may be dragged to see the
 evolution of the postage stamp over the course of the full campaign.
 
+You can also call 
+
+.. code-block:: python
+
+  star.ccd() 
+  pl.show()
+
+to view the location of the target on the `Kepler` CCD.
+
 The Pipeline
 ------------
 

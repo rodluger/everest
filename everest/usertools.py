@@ -583,7 +583,6 @@ class Everest(object):
     ax.set_ylim(-0.7, ny - 0.3)
 
     # Nearby sources
-    neighbors = []  
     for source in data.nearby:
       ax.scatter(source.x - source.x0, source.y - source.y0, 
                  s = 400, alpha = 0.5, 
