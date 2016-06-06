@@ -88,3 +88,16 @@ def PlotPostageStamp(EPIC, apnum = 15):
   return
 
 PlotPostageStamp(201367065, apnum = 19)
+
+def GaussianFit(EPIC):
+  data = everest.GetK2Data(EPIC)
+  nearby = data.nearby
+  aperture = data.apertures[apnum]
+  fpix = data.fpix
+  kepmag = data.kepmag
+  _, ny, nx = fpix.shape
+
+def Gaus2D(x, y, xc, yc, a, sigma):
+  return a*np.exp((- (x - xc) ** 2 - (y - yc) ** 2) / (2 * sigma ** 2))
+
+
