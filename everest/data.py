@@ -315,7 +315,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
       nearby = [Source(**s) for s in _nearby]
       fitsheader = data['fitsheader']
       apertures = data['apertures']
-      contamination = data['contamination']
+      contamination = data['contamination'][()]
       clobber = False      
     except:
       clobber = True
