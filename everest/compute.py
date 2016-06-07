@@ -207,6 +207,13 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              EB = k2star.EB, mask_times = mask_times, mask_candidates = mask_candidates)
     np.savez(os.path.join(outdir, 'mask.npz'), mask = mask,
              trn_mask = trn_mask, out_mask = out_mask, new_candidates = new_candidates)
+  
+  # Check if we have too many outliers
+  if len(out_mask) > 500:
+    log.error("Too many outliers detected. Something is probably wrong with this target.")
+    with open(os.path.join(outdir, '%d.err' % EPIC), 'w') as f:
+      print('ERROR:Too many outliers detected. Something is probably wrong with this target.', file = f)
+    return None
 
   # Compute GP hyperparameters
   log.info('Computing the GP hyperparameters...')
