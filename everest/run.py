@@ -306,12 +306,13 @@ def RunFITS(campaign, queue = 'build', email = None, walltime = 8):
     str_name = 'C%02d.%d' % (campaign, subcampaign)
   str_out = os.path.join(EVEREST_DAT, str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
-               '-q', queue,
                '-v', str_v, 
                '-o', str_out,
                '-j', 'oe', 
                '-N', str_name,
                '-l', str_w]
+  if queue is not None:
+    qsub_args += ['-q', queue]
   if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
   # Now we submit the job
   print("Submitting the job...")
