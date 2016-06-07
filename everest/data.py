@@ -563,7 +563,7 @@ def Progress(run_name = 'default', campaigns = range(99)):
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
       all = GetK2Campaign(c)
-      remain[c] = list(set(all) - set(done))
+      remain[c] = list(set(all) - set(done) - set(err))
       total = len(all)
       print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
             total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
