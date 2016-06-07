@@ -433,7 +433,6 @@ def WritePLDFile(EPIC, kepmag, r1, r2, r3, r4, r5,
   with open(os.path.join(outdir, '%d.pld' % EPIC), 'w') as pldfile:
     for line in header:
       print(line, file = pldfile)
-    print(crwdinfo, file = pldfile)
     for t, f, s, o in zip(time, fpld, ferr, outliers):
       print("{:>20.10f} {:>20.10f} {:>20.10f}      {:>1d}".format(t, f, s, o), file = pldfile)
       
