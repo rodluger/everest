@@ -555,13 +555,16 @@ def Progress(run_name = 'default', campaigns = range(99)):
   
   print("CAMP      DONE      FAIL    REMAIN      PERC")
   print("----      ----      ----    ------      ----")
+  remain = {}
   for c in campaigns:
     if os.path.exists(os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)):
       path = os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)
       folders = os.listdir(path)
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
-      total = len(GetK2Campaign(c))
+      all = GetK2Campaign(c)
+      remain[c] = list(set(all) - set(done))
+      total = len(all)
       print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
             total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
       for subcampaign in range(10):
@@ -571,7 +574,7 @@ def Progress(run_name = 'default', campaigns = range(99)):
         print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
               len(sub) - (d + e), 100 * (d + e) / len(sub)))
       
-  return
+  return remain
   
 def GetK2Stars(clobber = False):
   '''
