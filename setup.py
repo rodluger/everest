@@ -24,7 +24,7 @@ except:
 
 # Get the long description from the README
 def readme():
-  with open('README.rst') as f:
+  with open('README.md') as f:
     return f.read()
 
 # Setup!
@@ -43,7 +43,7 @@ setup(name = 'everest',
       author = 'Rodrigo Luger',
       author_email = 'rodluger@uw.edu',
       license = 'MIT',
-      packages = ['everest'],
+      packages = ['everest', 'everest.usertools'],
       install_requires = [
                           'numpy',
                           'scipy',

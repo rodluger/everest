@@ -184,16 +184,19 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   
   :returns (masked_scatter, unmasked_scatter): A tuple containing the masked (validation) and unmasked (training) CDPP
   
-  .. warning:: \
+  .. note:: \
     This function had a bug when the :py:mod:`everest 0.1` catalog was generated. \
     The indices of all contiguous 13-cadence chunks, :py:obj:`inds`, are computed \
     from the **masked** time array, but in the earlier version of this function \
     we selected those indices from the **unmasked** arrays. As a result, the validation \
     sets weren't generally 13-cadence contiguous, especially for light curves with \
-    many outliers. However, this doesn't make a terribly big difference. It tends to \
+    many outliers. However, I found that this did not make any difference; \
+    the corrected version of the code yielded cross-validation plots that were \
+    qualitatively the same as before. If anything, this could \
     lead to slight underfitting, since the CDPP in the validation set is higher than \
     it should be (since the set spans a larger time window), forcing the code to select \ 
-    fewer principal components. Here is the earlier (bugged) version of the for loop:
+    fewer principal components. In practice, however, the difference is negligible. \
+    Here is the earlier (bugged) version of the for loop:
   
     .. code-block:: python
   

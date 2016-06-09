@@ -17,6 +17,7 @@ dx = 0.05
 
 class Output(object):
   '''
+  A single output/channel on the `Kepler` detector.
   
   '''
   
@@ -31,6 +32,11 @@ class Output(object):
     return "<Module %d: Output %d (Channel %d)>" % (self.module, self.output, self.channel)
   
   def draw(self, ax, xy):
+    '''
+    Render this channel.
+    
+    '''
+    
     ax.add_patch(Rectangle(xy, 0.5 - 2 * dx, 0.5 - 2 * dx, fill = False))
     ax.annotate('%d/%d' % (self.channel, self.output), xy = xy + [0.2, 0.2], 
                 va = 'center', ha = 'center', fontsize = 8)
@@ -44,6 +50,7 @@ class Output(object):
 
 class Module(object):
   '''
+  A generic `Kepler` module object containing four channels.
   
   '''
   
@@ -77,6 +84,11 @@ class Module(object):
     return "<Module %d>" % self.n
 
   def draw(self, ax, xy):
+    '''
+    Render this module.
+    
+    '''
+    
     ax.add_patch(Rectangle(xy, 1, 1, fill = False))
     ax.annotate('%02d' % self.n, xy = xy + [0.5, 0.5], 
                       va = 'center', ha = 'center',
@@ -93,6 +105,7 @@ class Module(object):
 
 class Empty(Module):
   '''
+  An empty module object.
   
   '''
   
@@ -107,6 +120,8 @@ class Empty(Module):
 
 class CCD(object):
   '''
+  An object containing the layout of the `Kepler` CCD, with
+  some basic plotting functionality.
   
   '''
   
@@ -131,6 +146,11 @@ class CCD(object):
       return None
   
   def channel(self, n):
+    '''
+    Returns the :py:class:`Output` object corresponding to the given channel.
+    
+    '''
+    
     if n in range(1, 85):
       modules = [m for m in self._modules.flatten() if type(m) is not Empty]
       i, j = divmod(n, 4)
@@ -143,6 +163,7 @@ class CCD(object):
   
   def draw(self):
     '''
+    Draws the detector image; the figure is stored in :py:obj:`CCD.fig`
     
     '''
     
@@ -162,6 +183,8 @@ class CCD(object):
   
   def add_source(self, channel, crval1p, crval2p):
     '''
+    Add a source to channel ``channel`` at the column ``crval1p``
+    and row ``crval2p``.
     
     '''
     
@@ -170,6 +193,7 @@ class CCD(object):
 
 def ModuleNumber(channel):
   '''
+  Returns the number of the module containing the given channel.
   
   '''
   
@@ -184,6 +208,7 @@ def ModuleNumber(channel):
 
 def Channels(module):
   '''
+  Returns the channels contained in the given module.
   
   '''
   

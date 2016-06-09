@@ -4,6 +4,16 @@
 :py:mod:`crowding.py` - Crowding metrics
 ----------------------------------------
 
+Computes a metric related to the crowding/contamination in a given
+aperture. Here we basically fit a 2D error function to the flux
+in the aperture and look at the residuals. If they are high, it
+generally means that either there are unmodeled sources in the 
+aperture, a bright sky background, or the target is very saturated, 
+leading to an asymmetric PSF. 
+
+.. note:: In the future, this can be improved by fitting the actual \
+          `Kepler` PRF instead of a Gaussian.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -18,7 +28,8 @@ import os
 
 def Erf2D(x, y, xc, yc, a, sigma):
   '''
-
+  A two-dimensional error function (the integral of a Gaussian over a pixel).
+  
   '''
   
   c = np.sqrt(2) * sigma
@@ -28,6 +39,7 @@ def Erf2D(x, y, xc, yc, a, sigma):
 
 def ChiSq(params, data, err, X, Y):
   '''
+  The goodness-of-fit of the :py:func:`Erf2D` model.
   
   '''
   
@@ -37,6 +49,7 @@ def ChiSq(params, data, err, X, Y):
   
 def Fit(img, err, xc, yc):
   '''
+  Fit the stellar image using :py:func:`scipy.optimize.fmin_l_bfgs_b`
   
   '''
   
@@ -55,6 +68,7 @@ def Fit(img, err, xc, yc):
 
 def Plot(EPIC, img, params, apidx, nearby, C):
   '''
+  Plot the PSF fit.
   
   '''
   
@@ -127,6 +141,7 @@ def Plot(EPIC, img, params, apidx, nearby, C):
 
 def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
   '''
+  Gauge the crowding/contamination of a given EPIC target.
   
   '''
   

@@ -8,7 +8,6 @@ including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
    :maxdepth: 2  
    :caption: everest 
    
-   ccd
    compute
    config
    crowding
@@ -21,11 +20,17 @@ including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
    plot
    pool
    run
-   selector
    sources
-   usertools
    transit
    utils
+
+.. toctree::
+   :maxdepth: 2  
+   :caption: everest.usertools
+   
+   ccd
+   selector
+   ui
 
 .. toctree::
    :maxdepth: 2   

@@ -4,6 +4,9 @@
 :py:mod:`config.py` - $PATH settings
 ------------------------------------
 
+Stores information on the location of the :py:mod:`everest` source code,
+the data files, and the MAST url.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

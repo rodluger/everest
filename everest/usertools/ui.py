@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`usertools.py` - User tools
------------------------------------
+:py:mod:`ui.py` - User interface
+--------------------------------
 
 User tools to download, process, and plot the :py:class:`everest` light curves.
 
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from . import __develop__, __version__
-from .config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, EVEREST_FITS
-from .kernels import KernelModels
-from .data import Campaign, GetK2Data
-from .utils import PlotBounds, MADOutliers, RMS
-from .utils import PadWithZeros
+from .. import __develop__, __version__
+from ..config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, EVEREST_FITS
+from ..kernels import KernelModels
+from ..data import Campaign, GetK2Data
+from ..utils import PlotBounds, MADOutliers, RMS
+from ..utils import PadWithZeros
 from .selector import Selector
 from .ccd import CCD
 from scipy.ndimage import zoom
@@ -614,7 +614,9 @@ class Everest(object):
   
   def ccd(self):
     '''
-    Experimental!
+    Plot the location of the target on the `Kepler` detector.
+    
+    .. warning:: This feature is still under development.
     
     '''
     

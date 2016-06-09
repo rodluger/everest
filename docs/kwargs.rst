@@ -1,2 +1,33 @@
-.. automodule:: kwargs
-   :members:
+:py:mod:`kwargs.py` - User options
+----------------------------------
+
+This file is located in ``~/.everest/`` and contains the kwargs passed to 
+:py:func:`everest.compute.Compute()` when
+running a cluster job with :py:func:`everest.run.RunCampaign()`.
+See the :py:func:`everest.compute.Compute()` documentation for info on each
+of these values.
+
+.. code-block:: python
+   
+  from __future__ import division, print_function, absolute_import, unicode_literals
+  import logging
+  import numpy as np
+
+  kwargs = dict(
+                  run_name = 'default',
+                  apnum = 15, 
+                  outlier_sigma = 5,
+                  mask_times = [], 
+                  pld_order = 3,
+                  optimize_npc = True,
+                  ps_iter = 30, 
+                  ps_masks = 10, 
+                  npc_arr = np.arange(25, 260, 10),
+                  scatter_alpha = 0.,
+                  gp_iter = 2,
+                  inject = {}, 
+                  fig_ext = 'jpg',
+                  jpeg_quality = 30,
+                  log_level = logging.DEBUG, 
+                  screen_level = logging.CRITICAL
+               )

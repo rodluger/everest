@@ -1,2 +1,2 @@
-.. automodule:: everest.ccd
+.. automodule:: everest.usertools.ccd
    :members:

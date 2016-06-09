@@ -1,2 +1,2 @@
-.. automodule:: everest.selector
+.. automodule:: everest.usertools.selector
    :members:

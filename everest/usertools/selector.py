@@ -4,6 +4,9 @@
 :py:mod:`selector.py` - Interactive plotting
 --------------------------------------------
 
+Tools for interactive selection of outliers and transits
+when plotting with :py:class:`everest.Everest`
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -14,6 +17,7 @@ import numpy as np
 
 def ToggleAxis(ax):
   '''
+  Toggle axis visibility.
   
   '''
   
@@ -24,6 +28,7 @@ def ToggleAxis(ax):
 
 def HideAxis(ax):
   '''
+  Hide a given axis.
   
   '''
   
@@ -34,6 +39,7 @@ def HideAxis(ax):
 
 def ShowAxis(ax):
   '''
+  Show a given axis.
   
   '''
   
@@ -44,6 +50,7 @@ def ShowAxis(ax):
 
 class TransitSelector(object):
   '''
+  Allows the user to select transits on a plot.
   
   '''
   
@@ -82,6 +89,7 @@ class TransitSelector(object):
     
 class Selector(object):
   '''
+  Adds selection functionality to a :py:mod:`matplotlib` plot using widgets.
   
   '''
   
@@ -176,7 +184,10 @@ class Selector(object):
     self.redraw()
     
   def redraw(self):
-  
+    '''
+    
+    '''
+    
     # Reset the figure
     for p in self._plots:
       if len(p): p.pop(0).remove()
@@ -283,6 +294,7 @@ class Selector(object):
     '''
     
     '''
+    
     if self.CancelButton.ax.get_visible():
       self.TransitSelector.set_active(False)
       self.TransitButton.label.set_weight('normal')
