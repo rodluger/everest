@@ -39,7 +39,7 @@ def DownloadCampaign(campaign, queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'download.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'pbs', 'download.pbs')
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d' % (EVEREST_DAT, campaign)
   str_out = os.path.join(EVEREST_DAT, 'DOWNLOAD_C%02d.log' % campaign)
@@ -68,7 +68,7 @@ def DownloadInjections(queue = 'build', email = None, walltime = 8):
   '''
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'downloadinj.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'pbs', 'downloadinj.pbs')
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s' % (EVEREST_DAT)
   str_out = os.path.join(EVEREST_DAT, 'DOWNLOAD_INJ.log')
@@ -157,7 +157,7 @@ def RunInjections(depth = 0.01, mask = False, queue = None,
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE
   name = 'inject_%.4f%s' % (depth, ('m' if mask else 'u'))   
-  pbsfile = os.path.join(EVEREST_SRC, 'runinjections.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'pbs', 'runinjections.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s,NODES=%d,MASK=%d,DEPTH=%0.4f,KWARGS_FILE=%s' % (EVEREST_DAT, 
@@ -198,7 +198,7 @@ def RunCandidates(nodes = 5, ppn = 12, walltime = 100, queue = None,
   # Submit the cluster job  
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE    
-  pbsfile = os.path.join(EVEREST_SRC, 'runcandidates.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'pbs', 'runcandidates.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s,NODES=%d,KWARGS_FILE=%s' % (EVEREST_DAT, 
@@ -249,7 +249,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   # Submit the cluster job 
   if kwargs_file is None:
     kwargs_file = DEF_KWARGS_FILE     
-  pbsfile = os.path.join(EVEREST_SRC, 'runcampaign.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'pbs', 'runcampaign.pbs')
   str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s,NODES=%d,KWARGS_FILE=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_DAT, 
@@ -297,7 +297,7 @@ def RunFITS(campaign, queue = 'build', email = None, walltime = 8):
     subcampaign = round(y * 10)
           
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'fits.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'pbs', 'fits.pbs')
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_DAT, campaign, subcampaign)
   if subcampaign == -1:
@@ -323,7 +323,7 @@ def RunFITS(campaign, queue = 'build', email = None, walltime = 8):
 def _RunCandidates(kwargs_file):
   '''
   The actual function that runs all candidates; this must
-  be called from ``runcandidates.pbs``.
+  be called from ``pbs/runcandidates.pbs``.
   
   '''
   
@@ -351,7 +351,7 @@ def _RunCandidates(kwargs_file):
 def _RunInjections(kwargs_file, depth, mask):
   '''
   The actual function that runs injection tests; this must
-  be called from ``runinjections.pbs``.
+  be called from ``pbs/runinjections.pbs``.
   
   '''
   
@@ -382,7 +382,7 @@ def _RunInjections(kwargs_file, depth, mask):
 def _RunCampaign(campaign, subcampaign, kwargs_file):
   '''
   The actual function that runs a given campaign; this must
-  be called from ``runcampaign.pbs``.
+  be called from ``pbs/runcampaign.pbs``.
   
   '''
   
@@ -409,7 +409,7 @@ def _RunCampaign(campaign, subcampaign, kwargs_file):
 def _DownloadCampaign(campaign):
   '''
   Download all stars from a given campaign. This is
-  called from ``download.pbs``
+  called from ``pbs/download.pbs``
   
   '''
   
@@ -453,7 +453,7 @@ def _DownloadInjections():
 def _MakeFITS(campaign, subcampaign):
   '''
   Generates EVEREST FITS files for all stars in a given campaign. This is
-  called from ``fits.pbs``
+  called from ``pbs/fits.pbs``
   
   '''
   
