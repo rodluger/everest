@@ -194,9 +194,9 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   # Mask transits and outliers
   M = Mask(mask_orig)
   mT = M(time)
-  mE = M(errors)
   mY = M(Y)
   mX = M(X)
+  mE = M(errors)
   med = np.median(mY)
   
   # The precision in the unmasked light curve
@@ -213,6 +213,28 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
     for i, t in enumerate(chunk[:-13]):
       if chunk[i + 13] - t <= 0.28:
         inds[c].append(i + c * sz)
+  
+  '''
+  EVEREST 0.1 BUG
+  ---------------
+  
+  I think there's a bug in the for loop below. Above, we identify the indices ``inds``
+  in the **masked** time array, but in the lines below we select those indices in the
+  **unmasked** arrays. So what ends up happening is our validation sets aren't
+  generally 13-cadence contiguous, especially if the light curve has many outliers.
+  However, this doesn't make a terribly big difference. If anything, it
+  leads to underfitting, since the CDPP in the validation set will be higher (since
+  the set spans a larger time window), forcing the code to select fewer principal
+  components. In the next version, the code below will be replaced with the following:
+  
+  for n in range(niter):
+    masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
+    mask_new = np.concatenate(masks)
+    C = PLDCoeffs(mX, mY, mT, mE, gp, mask_new)
+    M = [PLDModel(C, mX[m]) for m in masks]
+    masked_scatter.append(np.median([1.e6 * np.std((mY[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))  
+  
+  '''
   
   # Compute the precision several times and take the median
   for n in range(niter):
@@ -231,7 +253,7 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
     
     # The masked de-trended interval and its precision in ppm
     masked_scatter.append(np.median([1.e6 * np.std((Y[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))
-    
+      
   # Take the median and return
   masked_scatter = np.median(masked_scatter)
   return masked_scatter, unmasked_scatter
