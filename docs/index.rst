@@ -1,4 +1,4 @@
-Pixel level decorrelation of **K2** light curves
+.. image:: everest.png
 
 Documentation
 =============

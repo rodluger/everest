@@ -1,3 +1,5 @@
+.. image:: everest.png
+
 Introduction
 ============
 

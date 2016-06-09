@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/rodluger/everest/master/everest.png
+.. image:: http://staff.washington.edu/rodluger/everest_docs/_images/everest.png
 
 Pixel Level Decorrelation of K2 Light curves.
 
