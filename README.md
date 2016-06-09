@@ -1,4 +1,4 @@
- <p align="center">
+<p align="center">
   <img src="http://staff.washington.edu/rodluger/everest_docs/_images/everest.png"/>
 </p>
 
