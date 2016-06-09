@@ -440,8 +440,11 @@ def _DownloadCampaign(campaign, subcampaign):
                           str(EPIC), str(EPIC) + '.npz')):
       try:
         GetK2Data(EPIC)
+      except KeyboardInterrupt:
+        sys.exit()
       except:
         # Some targets could be corrupted
+        print("ERROR downloading EPIC %d." % EPIC)
         continue  
 
 def _DownloadInjections():
