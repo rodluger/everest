@@ -184,6 +184,26 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   
   :returns (masked_scatter, unmasked_scatter): A tuple containing the masked (validation) and unmasked (training) CDPP
   
+  .. warning:: \
+    This function had a bug when the :py:mod:`everest 0.1` catalog was generated. \
+    The indices of all contiguous 13-cadence chunks, :py:obj:`inds`, are computed \
+    from the **masked** time array, but in the earlier version of this function \
+    we selected those indices from the **unmasked** arrays. As a result, the validation \
+    sets weren't generally 13-cadence contiguous, especially for light curves with \
+    many outliers. However, this doesn't make a terribly big difference. It tends to \
+    lead to slight underfitting, since the CDPP in the validation set is higher than \
+    it should be (since the set spans a larger time window), forcing the code to select \ 
+    fewer principal components. Here is the earlier (bugged) version of the for loop:
+  
+    .. code-block:: python
+  
+      for n in range(niter):
+        masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
+        mask_new = list(np.append(mask_orig, np.concatenate(masks)))
+        C = PLDCoeffs(X, Y, time, errors, gp, mask_new)
+        M = [PLDModel(C, X[m]) for m in masks]
+        masked_scatter.append(np.median([1.e6 * np.std((Y[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))  
+  
   '''
   
   # Setup some variables
@@ -214,46 +234,24 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
       if chunk[i + 13] - t <= 0.28:
         inds[c].append(i + c * sz)
   
-  '''
-  EVEREST 0.1 BUG
-  ---------------
-  
-  I think there's a bug in the for loop below. Above, we identify the indices ``inds``
-  in the **masked** time array, but in the lines below we select those indices in the
-  **unmasked** arrays. So what ends up happening is our validation sets aren't
-  generally 13-cadence contiguous, especially if the light curve has many outliers.
-  However, this doesn't make a terribly big difference. If anything, it
-  leads to underfitting, since the CDPP in the validation set will be higher (since
-  the set spans a larger time window), forcing the code to select fewer principal
-  components. In the next version, the code below will be replaced with the following:
-  
-  for n in range(niter):
-    masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
-    mask_new = np.concatenate(masks)
-    C = PLDCoeffs(mX, mY, mT, mE, gp, mask_new)
-    M = [PLDModel(C, mX[m]) for m in masks]
-    masked_scatter.append(np.median([1.e6 * np.std((mY[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))  
-  
-  '''
-  
   # Compute the precision several times and take the median
   for n in range(niter):
     
     # Get all our masks
     masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
-
+    
     # Redefine the mask function
-    mask_new = list(np.append(mask_orig, np.concatenate(masks)))
+    mask_new = np.concatenate(masks)
     
     # Get coefficients based on the masked data
-    C = PLDCoeffs(X, Y, time, errors, gp, mask_new)
+    C = PLDCoeffs(mX, mY, mT, mE, gp, mask_new)
     
     # Predict the model in that interval
-    M = [PLDModel(C, X[m]) for m in masks]
+    M = [PLDModel(C, mX[m]) for m in masks]
     
     # The masked de-trended interval and its precision in ppm
-    masked_scatter.append(np.median([1.e6 * np.std((Y[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))
-      
+    masked_scatter.append(np.median([1.e6 * np.std((mY[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))  
+
   # Take the median and return
   masked_scatter = np.median(masked_scatter)
   return masked_scatter, unmasked_scatter
