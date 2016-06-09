@@ -439,7 +439,7 @@ def _DownloadCampaign(campaign, subcampaign):
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', 
                           str(EPIC), str(EPIC) + '.npz')):
       try:
-        GetK2Data(EPIC)
+        GetK2Data(EPIC, calculate_contamination = False)
       except KeyboardInterrupt:
         sys.exit()
       except:
