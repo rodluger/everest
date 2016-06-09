@@ -3,6 +3,7 @@
 '''
 crowding.py
 -----------
+
         
 '''
 
@@ -14,6 +15,7 @@ import everest
 import numpy as np
 import matplotlib.pyplot as pl
 from scipy.ndimage import zoom
+from scipy.optimize import fmin
 
 def AddApertureContour(ax, nx, ny, aperture):
   '''
@@ -87,7 +89,9 @@ def PlotPostageStamp(EPIC, apnum = 15):
   
   return
 
-PlotPostageStamp(201367065, apnum = 19)
+PlotPostageStamp(201367065, apnum = 15)
+data = everest.GetK2Data(201367065)
+total_flux = np.log10(np.nansum(fpix, axis = 0))
 
 def GaussianFit(EPIC):
   data = everest.GetK2Data(EPIC)
@@ -97,7 +101,33 @@ def GaussianFit(EPIC):
   kepmag = data.kepmag
   _, ny, nx = fpix.shape
 
+# generate 2 dimensional guassian plot
 def Gaus2D(x, y, xc, yc, a, sigma):
   return a*np.exp((- (x - xc) ** 2 - (y - yc) ** 2) / (2 * sigma ** 2))
 
+# define chi squared function
+def ChiSq(params):
+  xc, yc, a, sigma = params
+  result = 0
+  for x in range(100):
+    for y in range(100):
+      result += (Gaus2D(x,y,xc,yc,a,sigma) - data[x,y]) ** 2 / errors[x,y] ** 2
+  return result
 
+# Plot sample chi squared curve
+fig1 = pl.figure()
+sigma_arr = np.linspace(1,10,100)
+pl.plot(sigma_arr, [ChiSq([50., 50., 1., s]) for s in sigma_arr])
+pl.title('Chi squared', fontsize = 22)
+
+  # Minimize chi squared to find true parameters
+guess = [49., 51., 1.2, 7.]
+res = fmin(ChiSq, guess)
+print(res)
+
+# Generate the model matrix
+xc, yc, a, sigma = res
+model = np.zeros((100, 100))
+for x in range(100):
+  for y in range(100):
+    model[x,y] = Gaus2D(x, y, xc, yc, a, sigma)
