@@ -7,7 +7,11 @@ Known Issues
 Stars in crowded apertures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*TODO*
+.. figure:: 205728486.jpeg
+ :width: 600px
+ :align: center
+ :height: 100px
+ :figclass: align-center
 
 Highly saturated stars
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -17,11 +21,6 @@ Highly saturated stars
  :align: center
  :height: 100px
  :figclass: align-center
-
-Very faint stars
-~~~~~~~~~~~~~~~~
-
-*TODO*
 
 Ultrashort-period EBs
 ~~~~~~~~~~~~~~~~~~~~~
