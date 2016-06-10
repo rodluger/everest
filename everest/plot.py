@@ -90,15 +90,6 @@ def Plot(data):
     fig.savefig(os.path.join(outdir, 'detrended.%s' % ext), quality = jpeg_quality)
     pl.close()
   
-  # ----
-  # DEBUG: REPLOT OLD FIGURES
-  elif os.path.getmtime(os.path.join(outdir, 'detrended.%s' % ext)) < 1464740277:
-    fig, ax = PlotDetrended(EPIC, data)
-    fig.savefig(os.path.join(outdir, 'detrended.%s' % ext), quality = jpeg_quality)
-    pl.close()
-  # /DEBUG
-  # ----
-  
   # Plot the folded data
   if data['mask_candidates'] or len(data['inject'][()]):
     log.info('Plotting the folded data...')
