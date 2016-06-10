@@ -12,10 +12,12 @@ run.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
 from .utils import RMS, Mask, PadWithZeros, LatexExp
-from .data import RemoveBackground
+from .data import RemoveBackground, Campaign
 from .transit import Transit
 from .sources import Source
 from .config import EVEREST_DAT, EVEREST_SRC
+from .crowding import Contamination
+from k2plr.config import KPLR_ROOT
 import os
 import matplotlib
 import matplotlib.pyplot as pl
@@ -45,7 +47,13 @@ def Plot(data):
       ext = data['fig_ext'][()]
     except KeyError:
       ext = 'jpg'
-      
+  
+  # Plot the contamination
+  log.info('Plotting the contamination...')
+  if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
+    PlotContamination(EPIC, run_name = data['run_name'], apnum = data['apnum'], 
+                      fig_ext = ext, jpeg_quality = jpeg_quality)
+  
   # Plot the apertures
   log.info('Plotting the apertures...')
   if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
@@ -82,6 +90,15 @@ def Plot(data):
     fig.savefig(os.path.join(outdir, 'detrended.%s' % ext), quality = jpeg_quality)
     pl.close()
   
+  # ----
+  # DEBUG: REPLOT OLD FIGURES
+  elif os.path.getmtime(os.path.join(outdir, 'detrended.%s' % ext)) < 1464740277:
+    fig, ax = PlotDetrended(EPIC, data)
+    fig.savefig(os.path.join(outdir, 'detrended.%s' % ext), quality = jpeg_quality)
+    pl.close()
+  # /DEBUG
+  # ----
+  
   # Plot the folded data
   if data['mask_candidates'] or len(data['inject'][()]):
     log.info('Plotting the folded data...')
@@ -92,6 +109,27 @@ def Plot(data):
   
   log.info('Done!')
 
+def PlotContamination(EPIC, run_name = 'default', apnum = 15, 
+                      fig_ext = 'jpg', jpeg_quality = 30):
+  '''
+  
+  '''
+  
+  campaign = Campaign(EPIC)
+  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+  data = np.load(filename)
+  fpix = data['fpix']
+  perr = data['perr']
+  _nearby = data['nearby']
+  nearby = [Source(**s) for s in _nearby]
+  apertures = data['apertures']
+  apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
+  bkidx = np.where(apertures[apnum] ^ 1) 
+  contamination, fig, ax = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
+  fig.savefig(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % EPIC, 
+              run_name, 'contamination.%s' % fig_ext), quality = jpeg_quality)
+  pl.close()
+  
 def PlotScatter(EPIC, data):
   '''
   Plots the cross-validation scatter plot for a given run.

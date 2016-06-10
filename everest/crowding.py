@@ -139,7 +139,7 @@ def Plot(EPIC, img, params, apidx, nearby, C):
 
   return fig, ax
 
-def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
+def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True):
   '''
   Gauge the crowding/contamination of a given EPIC target.
   
@@ -184,7 +184,6 @@ def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
   if plot:
     params = Fit(fpix[0], perr[0], xc, yc)
     fig, ax = Plot(EPIC, fpix[0], params, apidx, nearby, C)
-    fig.savefig(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), 'contamination.png'))
-    pl.close()
-
-  return np.nanmedian(C)
+    return np.nanmedian(C), fig, ax
+  else:
+    return np.nanmedian(C)

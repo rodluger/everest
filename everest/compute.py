@@ -7,6 +7,7 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import __develop__
 from .config import EVEREST_DAT, EVEREST_SRC
 from .data import GetK2Data, Campaign, RemoveBackground
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
@@ -356,10 +357,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   crwdinfo = GetContaminants(EPIC, k2star.kepmag, k2star.nearby)
 
   # Write the .pld file to disk
-  log.info('Saving detrended lightcurve to disk...') 
-  WritePLDFile(EPIC, k2star.kepmag,
-               rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, 
-               rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), mask, outdir)
+  if __develop__:
+    log.info('Saving detrended lightcurve to disk...') 
+    WritePLDFile(EPIC, k2star.kepmag,
+                 rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, 
+                 rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), mask, outdir)
 
   # Get the git info (if we're in a git repo)
   try:
@@ -666,16 +668,17 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   # Are there any new planet candidates in this lightcurve?
   # This block was coded specifically for Ethan Kruse's search pipeline.
   new_candidates = []
-  if mask_candidates:
-    for cnum in range(10):
-      f = os.path.join(EVEREST_DAT, 'new', '%d.%02d.npz' % (EPIC, cnum))
-      if os.path.exists(f):
-        tmp = np.load(f)
-        new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
-                                    for tn in tmp['ttimes']])
-        mask_times = sorted(set(mask_times) | set(new_tmask))
-        new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
-                                'tmask': new_tmask}])  
+  if __develop__:
+    if mask_candidates:
+      for cnum in range(10):
+        f = os.path.join(EVEREST_DAT, 'new', '%d.%02d.npz' % (EPIC, cnum))
+        if os.path.exists(f):
+          tmp = np.load(f)
+          new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
+                                      for tn in tmp['ttimes']])
+          mask_times = sorted(set(mask_times) | set(new_tmask))
+          new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
+                                  'tmask': new_tmask}])  
     
   # Enforce user-defined masks
   if len(mask_times):
