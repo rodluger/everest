@@ -50,7 +50,7 @@ def Plot(data):
   
   # Plot the contamination
   log.info('Plotting the contamination...')
-  if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
+  if not os.path.exists(os.path.join(outdir, 'contamination.%s' % ext)):
     PlotContamination(EPIC, run_name = data['run_name'], apnum = data['apnum'], 
                       fig_ext = ext, jpeg_quality = jpeg_quality)
   
