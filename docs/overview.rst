@@ -1,5 +1,7 @@
 .. image:: everest.png
 
+.. image:: abstract.jpeg
+
 Introduction
 ============
 

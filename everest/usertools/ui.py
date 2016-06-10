@@ -5,6 +5,7 @@
 --------------------------------
 
 User tools to download, process, and plot the :py:class:`everest` light curves.
+For more information on these, check out the `usertools tutorial <running_everest.html#user-tools>`_.
 
 '''
 
@@ -13,8 +14,8 @@ from .. import __develop__, __version__
 from ..config import EVEREST_DAT, EVEREST_SRC, MAST_ROOT, EVEREST_FITS
 from ..kernels import KernelModels
 from ..data import Campaign, GetK2Data
-from ..utils import PlotBounds, MADOutliers, RMS
-from ..utils import PadWithZeros
+from ..utils import PlotBounds, MADOutliers, RMS, PadWithZeros
+from ..crowding import Contamination
 from .selector import Selector
 from .ccd import CCD
 from scipy.ndimage import zoom
@@ -335,10 +336,12 @@ class Everest(object):
       self.channel = hdulist[0].header['CHANNEL']
       self.crval1p = hdulist[4].header['CRVAL1P']
       self.crval2p = hdulist[4].header['CRVAL2P']
+      self.apnum = hdulist[1].header['APNUM']
       
   @property
   def masked_inds(self):
     '''
+    The indices of all points that were masked during de-trending.
     
     '''
     
@@ -346,7 +349,8 @@ class Everest(object):
       
   def set_mask(self, **kwargs):
     '''
-    Set a custom transit/range mask.
+    Set a custom transit/range mask. The *kwargs* accepted by this method
+    are the same as those accepted by :py:class:`Mask`.
     
     '''
     
@@ -360,7 +364,8 @@ class Everest(object):
 
   def detrend(self):
     '''
-    Detrend with the custom mask.
+    Detrend with the custom mask. The de-trended flux will be available
+    in the :py:obj:`flux` attribute of this class.
    
     '''
     
@@ -386,7 +391,15 @@ class Everest(object):
   def plot(self, pipeline = 'everest', interactive = False):
     '''
     Plot the raw and de-trended light curves.
-  
+    
+    :param str pipeline: The pipeline to plot. Default is ``everest``; other options are \
+                         ``k2sff``, ``k2sc``, and ``k2varcat``. These are downloaded from \
+                         MAST.
+    :param bool interactive: Plot in interactive mode? Default :py:obj:`False`.
+    
+    :returns: A figure and an axis object, unless :py:obj:`interactive = True`, in which case \
+              returns :py:obj:`None`.
+    
     '''
     
     fig, ax = pl.subplots(2, figsize = (12,8), sharex = True)
@@ -498,8 +511,19 @@ class Everest(object):
   def plot_folded(self):
     '''
     Plot the raw and de-trended folded light curves.
-  
+    
+    .. warning:: This routine is not yet working. 
+    
     '''
+    
+    # TODO!
+    raise NotImplementedError(
+      'Because we cut corners when we optimized the GP for each target,\n' +
+      'we should not use the GP to whiten the flux here: an improperly optimized kernel\n' + 
+      'can lead to weird transit overfitting. This routine needs to be changed to whiten\n' +
+      'the flux with a low-order polynomial in the vicinity of each transit. This feature\n' +
+      'will be added soon...'
+    )
     
     if not len(self.mask._transits):
       print("ERROR: No transits to plot!")
@@ -616,7 +640,7 @@ class Everest(object):
     '''
     Plot the location of the target on the `Kepler` detector.
     
-    .. warning:: This feature is still under development.
+    :returns: A figure and an axis object.
     
     '''
     
@@ -624,4 +648,46 @@ class Everest(object):
     ccd.add_source(self.channel, self.crval1p, self.crval2p)
     
     return ccd.fig, ccd.ax
+  
+  def contamination(self):
+    '''
+    Plot the contamination statistics.
+    
+    :returns: A figure and an axis object.
+    
+    The left four panels show the contamination statistics for the first
+    timestamp: the actual stellar image (top left), the optimized error function
+    PSF model (top center), the model binned to the pixels (bottom left), and the
+    difference between the data and the model (bottom center). The thick black
+    line is the aperture used to de-trend, and the circles in the first panel
+    show nearby EPIC sources (the green circle is the target); their `Kepler` band
+    magnitudes are indicated.
+
+    The top right panel shows the absolute value of the difference between the data
+    and the model divided by the flux in the brightest pixel within the aperture. The
+    largest value in this image is the contamination metric for this timestamp:
+    it is a measure of how well the aperture can be modeled with a single symmetrical
+    PSF. The bottom right panel shows the contamination metric evaluated 50 times throughout 
+    the campaign. The median value is indicated with a dashed line: this is the value
+    reported in the ``CONTAM`` field of the FITS file. Typically, :py:mod:`everest` 
+    performs well for targets with contamination less than about 0.3.
+
+    Note that sources with asymmetrical PSFs (due to distortions in the `Kepler` PRF)
+    or very saturated stars with bleeding trails will generally have large contamination
+    metrics, even if there are no other sources in the aperture.
+    
+    '''
+    
+    campaign = Campaign(self.EPIC)
+    data = GetK2Data(self.EPIC)
+    fpix = data.fpix
+    perr = data.perr
+    nearby = data.nearby
+    apertures = data.apertures
+    apidx = np.where(apertures[self.apnum] & 1 & ~np.isnan(fpix[0])) 
+    bkidx = np.where(apertures[self.apnum] ^ 1) 
+    contamination, fig, ax = Contamination(self.EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
+    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
+    
+    return fig, ax
     
