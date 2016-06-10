@@ -156,7 +156,10 @@ def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
     # (Kp < 7) with more than 10,000 sources within a radius equal to the
     # size of the largest dimension of the aperture. We don't care about these
     # sources anyways, so let's just return a bad contamination. 
-    return 1.0
+    if plot:
+      return 1.0, None, None
+    else:
+      return 1.0
   xc, yc = source.x - source.x0, source.y - source.y0 
   
   # Remove the background

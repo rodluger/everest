@@ -117,8 +117,9 @@ def PlotContamination(EPIC, run_name = 'default', apnum = 15,
   apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
   bkidx = np.where(apertures[apnum] ^ 1) 
   contamination, fig, ax = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
-  fig.savefig(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % EPIC, 
-              run_name, 'contamination.%s' % fig_ext), quality = jpeg_quality)
+  if fig is not None:
+    fig.savefig(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % EPIC, 
+                run_name, 'contamination.%s' % fig_ext), quality = jpeg_quality)
   pl.close()
   
 def PlotScatter(EPIC, data):
