@@ -19,3 +19,4 @@ docs/.build
 fits
 /dist
 /*.egg-info
+/paper/misc

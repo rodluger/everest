@@ -3,6 +3,14 @@ Troubleshooting
 
 .. contents::
    :local:
+
+The :py:mod:`george` package keeps raising errors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:py:mod:`everest` was coded using :py:mod:`george 0.2.1`. If you have the development
+version of :py:mod:`george` installed, you'll get tons of errors. Consider installing
+:py:mod:`george 0.2.1` in a separate directory and adding it to your :py:obj:`$PATH`
+before calling :py:mod:`everest`.
     
 I find that :py:mod:`everest` decreases transit depths!
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

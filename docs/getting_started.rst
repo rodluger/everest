@@ -12,3 +12,8 @@ Then, to install :py:mod:`everest`, all you need to do is run
    git clone --recursive https://github.com/rodluger/everest
    cd everest
    python setup.py install --user
+
+.. note:: :py:mod:`everest` was coded using :py:mod:`george 0.2.1`. If you have the development \
+          version of :py:mod:`george` installed, you'll get tons of errors. Consider installing \
+          :py:mod:`george 0.2.1` in a separate directory and adding it to your :py:obj:`$PATH` \
+          before calling :py:mod:`everest`.
