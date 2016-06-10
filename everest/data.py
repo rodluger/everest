@@ -259,9 +259,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
       clobber = False      
     except:
       clobber = True
-  
+    
   if not clobber:
-    if (contamination is None) and calculate_contamination:
+    if (not (type(contamination) is float)) and calculate_contamination:
       apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
       bkidx = np.where(apertures[apnum] ^ 1) 
       contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby)
@@ -270,7 +270,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
                           apertures = apertures, fitsheader = fitsheader,
                           contamination = contamination, raw_time = raw_time,
                           raw_cadn = raw_cadn)                   
-      
+        
   if clobber:
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
       os.makedirs(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC)))
@@ -458,7 +458,7 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
   
   # Fits header info
   res.fitsheader = fitsheader
-  
+    
   return res
 
 class K2Planet(object):

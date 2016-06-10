@@ -139,12 +139,12 @@ def Plot(EPIC, img, params, apidx, nearby, C):
 
   return fig, ax
 
-def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True):
+def Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = False):
   '''
   Gauge the crowding/contamination of a given EPIC target.
   
   '''
-  
+
   # Get the source position according to MAST
   try:
     source = nearby[np.where([s.epic == EPIC for s in nearby])[0]]
