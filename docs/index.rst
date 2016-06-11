@@ -21,7 +21,6 @@ Documentation
    catalog
    modules
    paper
-   todo
 
 Indices and tables
 ==================

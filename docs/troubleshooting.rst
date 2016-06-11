@@ -68,3 +68,14 @@ at the top of your script or by editing your ``.matplotlibrc`` file. I've had th
 most success with the ``QtAgg`` backend.
 If you're running :py:mod:`everest` non-interactively on a cluster, you might want
 to choose a non-interactive backend such as ``agg``.
+
+I'm unable to download the light curve for a certain EPIC target
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Most, but not all, `K2` stars are included in the **EVEREST** catalog. If a star
+is missing, it's likely that something went wrong during the de-trending step. This
+will happen, for example, for stars brighter than about magnitude 9.5, which are
+so saturated that their apertures include hundreds of pixels. Third order PLD on
+that many pixels takes a very, very long time (and a lot of memory); since PLD
+is certain to fail for these saturated stars anyways, they are not currently
+included in the catalog.

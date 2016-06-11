@@ -122,7 +122,10 @@ def _DownloadFITSFile(EPIC, clobber = False):
     # Download the data
     subprocess.call(['scp', url, filename])
   
-  return filename
+  if os.path.exists(filename):
+    return filename
+  else:
+    return None
 
 def _GetFITSFile(EPIC, clobber = False):
   '''
@@ -136,6 +139,8 @@ def _GetFITSFile(EPIC, clobber = False):
   '''
 
   campaign = Campaign(EPIC)
+  if campaign is None:
+    return None
   path = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                      ('%09d' % EPIC)[:4] + '00000',
                       'hlsp_everest_k2_llc_%d-c%02d_kepler_v*.fits' % (EPIC, campaign))
@@ -293,6 +298,8 @@ class Everest(object):
     
     self.EPIC = EPIC
     self.file = _GetFITSFile(self.EPIC, clobber = clobber)
+    if self.file is None:
+      raise Exception('Oops... Unable to download light curve for EPIC %d.' % EPIC)
     self.mask = Mask()
     
     # Open the FITS file
@@ -687,7 +694,9 @@ class Everest(object):
     apidx = np.where(apertures[self.apnum] & 1 & ~np.isnan(fpix[0])) 
     bkidx = np.where(apertures[self.apnum] ^ 1) 
     contamination, fig, ax = Contamination(self.EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
-    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
-    
+    if fig is not None:
+      fig.canvas.set_window_title('EPIC %d' % self.EPIC)
+    else:
+      raise Exception('Oops... something went wrong while plotting the contamination metric.')
     return fig, ax
     

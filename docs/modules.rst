@@ -2,7 +2,8 @@ The Code
 ========
 
 Documentation on each of the modules that make up :py:mod:`everest`,
-including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`.
+including the submodules :py:mod:`kplr` and :py:mod:`pysyzygy`. The actual
+code can be found on `github <https://github.com/rodluger/everest>`_.
 
 .. toctree::
    :maxdepth: 2  
