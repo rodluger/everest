@@ -129,7 +129,7 @@ import re
 if __name__ == '__main__':
   
   # The campaigns we'll use for the synthesis plots
-  campaigns = [0,1,2,3,4,5,6]
+  campaigns = [0,1,2,3,4,5,6,7]
   figures = [1,2,3,4,5,6]
 
   # Get the raw **Kepler** rms
@@ -539,16 +539,16 @@ if __name__ == '__main__':
     fig_comp_kepler(fig, ax, campaigns = campaigns)
     fig.savefig('../tex/images/comparison_kepler.png', bbox_inches = 'tight')
     pl.close()
-    fig, ax = pl.subplots(2, 3, figsize = (14, 6))
+    fig, ax = pl.subplots(2, 4, figsize = (17, 6))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_comp_kepler(fig, ax[n], campaigns = [n], errorbars = False, labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -565,16 +565,16 @@ if __name__ == '__main__':
     fig_precision(fig, ax, campaigns)
     fig.savefig('../tex/images/precision.png', bbox_inches = 'tight')
     pl.close()
-    fig, ax = pl.subplots(2, 3, figsize = (14, 6))
+    fig, ax = pl.subplots(2, 4, figsize = (17, 6))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_precision(fig, ax[n], campaigns = [n], labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -592,16 +592,16 @@ if __name__ == '__main__':
     fig.savefig('../tex/images/comparison_k2sff.png', bbox_inches = 'tight')
     pl.close()
   
-    fig, ax = pl.subplots(2, 3, figsize = (12, 8))
+    fig, ax = pl.subplots(2, 3, figsize = (15, 8))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_comp_k2sff(fig, ax[n], campaigns = [n], labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -611,28 +611,32 @@ if __name__ == '__main__':
     fig.savefig('../tex/images/comparison_k2sff_by_campaign.png', bbox_inches = 'tight')
     pl.close()
 
-  # 4. Comparison to K2SC
-  # ---------------------
+  # 4. Comparison to K2SC (C3 - C6 only)
+  # ------------------------------------
   if 4 in figures:
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sc(fig, ax, campaigns)
     fig.savefig('../tex/images/comparison_k2sc.png', bbox_inches = 'tight')
     pl.close()
   
-    fig, ax = pl.subplots(1, 3, figsize = (14, 3.5))
+    fig, ax = pl.subplots(1, 4, figsize = (18, 3.5))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, bottom = 0.15)
     ax = ax.flatten()
     fig_comp_k2sc(fig, ax[0], campaigns = [3], labels = False)
     fig_comp_k2sc(fig, ax[1], campaigns = [4], labels = False)
     fig_comp_k2sc(fig, ax[2], campaigns = [5], labels = False)
+    fig_comp_k2sc(fig, ax[3], campaigns = [6], labels = False)
     ax[0].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
     ax[1].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
     ax[2].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+    ax[3].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
     ax[1].set_yticklabels([])
     ax[2].set_yticklabels([])
+    ax[3].set_yticklabels([])
     ax[0].annotate('C03', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
     ax[1].annotate('C04', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
     ax[2].annotate('C05', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+    ax[3].annotate('C06', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
     fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 18)
     ax[0].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 18)
     fig.savefig('../tex/images/comparison_k2sc_by_campaign.png', bbox_inches = 'tight')
@@ -646,16 +650,16 @@ if __name__ == '__main__':
     fig.savefig('../tex/images/comparison_k2varcat.png', bbox_inches = 'tight')
     pl.close()
   
-    fig, ax = pl.subplots(2, 3, figsize = (12, 8))
+    fig, ax = pl.subplots(2, 4, figsize = (15, 8))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_comp_k2varcat(fig, ax[n], campaigns = [n], labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -665,8 +669,8 @@ if __name__ == '__main__':
     fig.savefig('../tex/images/comparison_k2varcat_by_campaign.png', bbox_inches = 'tight')
     pl.close()
 
-  # 6. Compare K2SC to K2SFF
-  # ------------------------
+  # 6. Compare K2SC to K2SFF (C4 and C5 only)
+  # -----------------------------------------
   if 6 in figures:
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sff_k2sc(fig, ax, campaigns)
