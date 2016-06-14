@@ -9,6 +9,7 @@ Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import __version__ as EVEREST_VERSION
 from .config import EVEREST_DAT, EVEREST_SRC
 from .plot import Plot
 from .data import GetK2Stars, GetK2Campaign, GetK2Data, GetK2Planets, GetK2InjectionTestStars
@@ -487,3 +488,29 @@ def _MakeFITS(campaign, subcampaign):
   for i, EPIC in enumerate(stars):
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
     fits.MakeFITS(EPIC, campaign = campaign)
+
+def _MoveFigures(campaign, ext = 'jpg'):
+  '''
+  
+  '''
+  
+  # Get all star IDs for this campaign
+  stars = GetK2Campaign(campaign)
+  nstars = len(stars)
+  
+  for i, EPIC in enumerate(stars):
+    print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    inpath = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, EPIC, 'default')
+    outpath = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
+                          ('%09d' % EPIC)[:4] + '00000')
+    if not os.path.exists(outpath):
+      os.makedirs(outpath)
+    prefix = 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s' % (EPIC, campaign, EVEREST_VERSION)
+    
+    for inimg, outimg in zip(['aper', 'contamination', 'outliers', 'acor', 'scatter', 'detrended'],
+                             ['aper', 'contam', 'outliers', 'acor', 'crossval', 'detrended']):
+      
+      import pdb; pdb.set_trace()
+      
+      os.rename(os.path.join(inpath, '%s.%s' % (inimg, ext)), 
+                os.path.join(outpath, '%s_%s.%s' % (prefix, outimg, ext)))
