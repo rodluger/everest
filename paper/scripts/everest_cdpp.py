@@ -26,7 +26,7 @@ from scipy.signal import savgol_filter
 
 run_name = 'default'
 
-for campaign in range(7):
+for campaign in range(8):
   
   print("\nRunning campaign %02d..." % campaign)
   
@@ -36,11 +36,6 @@ for campaign in range(7):
   
   # Get all EPIC stars
   stars = list(np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), dtype = int))  
-
-  # Now remove candidates and EBs
-  ebs = set([int(eb.epic) for eb in everest.GetK2EBs()])
-  planets = set([int(planet.epic_name[5:]) for planet in everest.GetK2Planets()])
-  stars = list(set(stars) - (planets | ebs))
   nstars = len(stars)
 
   # Remove ones we've done
