@@ -67,6 +67,9 @@ for campaign in range(8):
         try:
           data = np.load(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
           rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
+          
+          import pdb; pdb.set_trace()
+          
           kepmag = data['kepmag'][()]
           maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
           satflag = min(5, max(0, round((maxmed - 135000) / 8000)))
