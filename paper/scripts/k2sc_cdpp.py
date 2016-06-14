@@ -13,8 +13,8 @@ import os, sys
 import everest
 from everest.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 import random
 import numpy as np
 import shutil
