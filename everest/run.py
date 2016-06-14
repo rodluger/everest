@@ -509,8 +509,7 @@ def _MoveFigures(campaign, ext = 'jpg'):
     
     for inimg, outimg in zip(['aper', 'contamination', 'outliers', 'acor', 'scatter', 'detrended'],
                              ['aper', 'contam', 'outliers', 'acor', 'crossval', 'detrended']):
-      
-      import pdb; pdb.set_trace()
-      
-      os.rename(os.path.join(inpath, '%s.%s' % (inimg, ext)), 
-                os.path.join(outpath, '%s_%s.%s' % (prefix, outimg, ext)))
+      a = os.path.join(inpath, '%s.%s' % (inimg, ext))
+      b = os.path.join(outpath, '%s_%s.%s' % (prefix, outimg, ext))
+      if os.path.exists(a):
+        os.rename(a, b)
