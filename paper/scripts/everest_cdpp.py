@@ -69,9 +69,9 @@ for campaign in range(8):
           rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
           kepmag = data['kepmag'][()]
           maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
-          satflag = min(5, max(0, round((maxmed - 135000) / 8000)))
+          satflag = int(min(5, max(0, round((maxmed - 135000) / 8000))))
           indata = os.path.join(KPLR_ROOT, 'data', 'everest', str(star), str(star) + '.npz')
-          crwdflag = min(5, max(0, round(10 * np.load(indata)['contamination'][()])))
+          crwdflag = int(min(5, max(0, round(10 * np.load(indata)['contamination'][()]))))
         except KeyboardInterrupt:
           sys.exit()
         except:
