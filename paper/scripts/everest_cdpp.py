@@ -67,9 +67,10 @@ for campaign in range(8):
         try:
           data = np.load(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
           rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
-          satsev = data['satsev'][()]
-          crwdsev = data['crwdsev'][()]
           kepmag = data['kepmag'][()]
+          maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
+          satflag = min(5, max(0, round((maxmed - 135000) / 8000)))
+          crwdflag = min(5, max(0, round(10 * data['contamination'][()])))
         except KeyboardInterrupt:
           sys.exit()
         except:
@@ -78,4 +79,4 @@ for campaign in range(8):
           continue
       
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, rms_evr, rms_evr_savgol), file = feverest)
-        print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>01d} {:>01d}".format(star, kepmag, rms_raw, rms_raw_savgol, rms_pht, satsev, crwdsev), file = fraw)
+        print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>01d} {:>01d}".format(star, kepmag, rms_raw, rms_raw_savgol, rms_pht, satflag, crwdflag), file = fraw)
