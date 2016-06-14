@@ -13,8 +13,8 @@ import os, sys
 import everest
 from everest.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 import random
 import numpy as np
 import shutil
@@ -67,13 +67,11 @@ for campaign in range(8):
         try:
           data = np.load(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
           rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
-          
-          import pdb; pdb.set_trace()
-          
           kepmag = data['kepmag'][()]
           maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
           satflag = min(5, max(0, round((maxmed - 135000) / 8000)))
-          crwdflag = min(5, max(0, round(10 * data['contamination'][()])))
+          indata = os.path.join(KPLR_ROOT, 'data', 'everest', str(star), str(star) + '.npz')
+          crwdflag = min(5, max(0, round(10 * np.load(indata)['contamination'][()])))
         except KeyboardInterrupt:
           sys.exit()
         except:
