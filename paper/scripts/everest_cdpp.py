@@ -66,16 +66,16 @@ for campaign in range(8):
         # Get the cdpp
         try:
           data = np.load(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
+          rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
+          satsev = data['satsev'][()]
+          crwdsev = data['crwdsev'][()]
+          kepmag = data['kepmag'][()]
         except KeyboardInterrupt:
           sys.exit()
         except:
           with open(os.path.join('CDPP', 'everest_error.log'), 'a') as ferror:
             print(star, file = ferror)
           continue
-        rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
-        satsev = data['satsev'][()]
-        crwdsev = data['crwdsev'][()]
-        kepmag = data['kepmag'][()]
       
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, rms_evr, rms_evr_savgol), file = feverest)
         print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>01d} {:>01d}".format(star, kepmag, rms_raw, rms_raw_savgol, rms_pht, satsev, crwdsev), file = fraw)
