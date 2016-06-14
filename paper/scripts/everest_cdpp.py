@@ -69,7 +69,7 @@ for campaign in range(8):
         except KeyboardInterrupt:
           sys.exit()
         except:
-          with open(os.path.join('CDPP', 'everest_error.log' % campaign), 'a') as ferror:
+          with open(os.path.join('CDPP', 'everest_error.log'), 'a') as ferror:
             print(star, file = ferror)
           continue
         rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
