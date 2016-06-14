@@ -10,9 +10,8 @@ Computes the 6-hr CDPP for all the `everest` de-trended light curves.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(1, EVEREST_ROOT)
 import everest
+from everes.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
 import kplr
 from kplr.config import KPLR_ROOT
@@ -35,7 +34,7 @@ for campaign in range(8):
     open(os.path.join('CDPP', 'everest_C%02d.tsv' % campaign), 'a').close()
   
   # Get all EPIC stars
-  stars = list(np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), dtype = int))  
+  stars = list(np.loadtxt(os.path.join(EVEREST_SRC, 'tables', 'C%02d.csv' % campaign), dtype = int))  
   nstars = len(stars)
 
   # Remove ones we've done
@@ -66,7 +65,7 @@ for campaign in range(8):
       
         # Get the cdpp
         try:
-          data = np.load(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
+          data = np.load(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
         except:
           continue
         rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']

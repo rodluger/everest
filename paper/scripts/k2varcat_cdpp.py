@@ -10,9 +10,8 @@ Computes the 6-hr CDPP for all the `K2VARCAT` de-trended light curves.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(1, EVEREST_ROOT)
 import everest
+from everes.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
 import kplr
 from kplr.config import KPLR_ROOT
@@ -33,7 +32,7 @@ for campaign in range(0,8):
     open(os.path.join('CDPP', 'k2varcat_C%02d.tsv' % campaign), 'a').close()
   
   # Get all EPIC stars
-  stars = list(np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), dtype = int))  
+  stars = list(np.loadtxt(os.path.join(EVEREST_SRC, 'tables', 'C%02d.csv' % campaign), dtype = int))  
   nstars = len(stars)
 
   # Remove ones we've done
