@@ -11,7 +11,7 @@ Computes the 6-hr CDPP for all the `K2SC` de-trended light curves.
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
 import everest
-from everes.config import EVEREST_SRC, EVEREST_DAT
+from everest.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
 import kplr
 from kplr.config import KPLR_ROOT
