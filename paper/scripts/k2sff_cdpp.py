@@ -45,7 +45,7 @@ for campaign in range(0,8):
   n = len(done) + 1
 
   # Open the output file
-  with open(os.path.join('CDPP', 'k2sff_C%02d.tsv' % campaign), 'a') as outfile:
+  with open(os.path.join('CDPP', 'k2sff_C%02d.tsv' % campaign), 'a', 1) as outfile:
 
     # Loop over all to get the CDPP
     for star in stars:
