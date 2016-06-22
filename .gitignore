@@ -20,3 +20,4 @@ fits
 /dist
 /*.egg-info
 /paper/misc
+/build

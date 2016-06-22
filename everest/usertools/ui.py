@@ -661,6 +661,7 @@ class Everest(object):
     
     ccd = CCD()
     ccd.add_source(self.channel, self.crval1p, self.crval2p)
+    ccd.fig.canvas.set_window_title('EPIC %d' % self.EPIC)
     
     return ccd.fig, ccd.ax
   
