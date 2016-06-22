@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os, sys
 
 # Version number
-__version__ = "0.1"
+__version__ = "1.0"
 __develop__ = True
 
 # Was everest imported from setup.py?
@@ -44,6 +44,7 @@ if not __EVEREST_SETUP__:
                    RunCandidates, RunInjections, RunFITS
   from .fits import MakeFITS
   from .usertools import Everest
+  from matplotlib.pyplot import show
   
   # Create the data directories if they don't exist
   if not os.path.exists(os.path.join(config.EVEREST_DAT, 'output')):

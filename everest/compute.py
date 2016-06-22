@@ -664,9 +664,9 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   # Get eclipsing binary masks
   if mask_candidates and EB:
     mask = sorted(set(mask + EB.mask(time)))
-    
+  
+  # -!-!- DEPRECATED -!-!-
   # Are there any new planet candidates in this lightcurve?
-  # This block was coded specifically for Ethan Kruse's search pipeline.
   new_candidates = []
   if __develop__:
     if mask_candidates:

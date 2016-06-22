@@ -491,6 +491,8 @@ def _MakeFITS(campaign, subcampaign):
 
 def _MoveFigures(campaign, ext = 'jpg'):
   '''
+  Move all output plots from the 'output/' directory to the 'fits/' directory so
+  that they can be uploaded to MAST.
   
   '''
   

@@ -304,10 +304,10 @@ def MakeFITS(EPIC, campaign = None, run_name = 'default', clobber = False):
   if campaign is None:
     campaign = Campaign(EPIC)
   folder = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
-                       ('%09d' % EPIC)[:4] + '00000')
+                       ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:])
   if not os.path.exists(folder):
     os.makedirs(folder)
-  outfile = os.path.join(folder, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % 
+  outfile = os.path.join(folder, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % 
                         (EPIC, campaign, EVEREST_VERSION))
   if os.path.exists(outfile) and not clobber:
     return

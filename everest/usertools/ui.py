@@ -26,6 +26,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.widgets import Slider, Button, RadioButtons
 import matplotlib.ticker as ticker
+import matplotlib.image as mpimg
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import glob
 import os, subprocess
@@ -58,10 +59,10 @@ def _EverestVersion():
     data = data[:-1]
   return data
 
-def _DownloadFITSFile(EPIC, clobber = False):
+def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
   '''
-  Download a given :py:mod:`everest` FITS file from MAST.
-  Returns the full local path to the FITS file.
+  Download a given :py:mod:`everest` FITS/JPEG file from MAST.
+  Returns the full local path to the FITS/JPEG file.
   
   :param bool clobber: If `True`, download and overwrite existing files. Default `False`
   
@@ -74,13 +75,13 @@ def _DownloadFITSFile(EPIC, clobber = False):
   
     # Get the url
     mast_version = _EverestVersion()
-    url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + \
-          'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version)
+    url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + ('%09d' % EPIC)[4:] + \
+          'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, mast_version, name)
   
     # Get the local file name
     filename = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
-                            ('%09d' % EPIC)[:4] + '00000',
-                            'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, mast_version))
+                            ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
+                            'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, mast_version, name))
     if not os.path.exists(os.path.dirname(filename)):
       os.makedirs(os.path.dirname(filename))
   
@@ -110,12 +111,12 @@ def _DownloadFITSFile(EPIC, clobber = False):
     
     # Get the url
     url = os.path.join(EVEREST_FITS, 'c%02d' % campaign, ('%09d' % EPIC)[:4] + '00000',
-          'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, __version__))
+          ('%09d' % EPIC)[4:], 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, __version__, name))
   
     # Get the local file name
     filename = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
-                            ('%09d' % EPIC)[:4] + '00000',
-                            'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % (EPIC, campaign, __version__))
+                            ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
+                            'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, __version__, name))
     if not os.path.exists(os.path.dirname(filename)):
       os.makedirs(os.path.dirname(filename))
   
@@ -127,9 +128,9 @@ def _DownloadFITSFile(EPIC, clobber = False):
   else:
     return None
 
-def _GetFITSFile(EPIC, clobber = False):
+def _GetFile(EPIC, name = 'lc.fits', clobber = False):
   '''
-  Returns the path to a given :py:mod:`everest` FITS file.
+  Returns the path to a given :py:mod:`everest` FITS/JPG file.
   In case of multiple versions, returns the file corresponding to the
   latest :py:mod:`everest` version. In case a local copy does not exist,
   downloads the most recent version from MAST.
@@ -142,13 +143,13 @@ def _GetFITSFile(EPIC, clobber = False):
   if campaign is None:
     return None
   path = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
-                     ('%09d' % EPIC)[:4] + '00000',
-                      'hlsp_everest_k2_llc_%d-c%02d_kepler_v*.fits' % (EPIC, campaign))
+                     ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
+                      'hlsp_everest_k2_llc_%d-c%02d_kepler_v*_%s' % (EPIC, campaign, name))
   files = glob.glob(path)
   if len(files):
     return files[-1]
   else:
-    return _DownloadFITSFile(EPIC, clobber = clobber)
+    return _DownloadFile(EPIC, name, clobber = clobber) 
 
 def _FlagColor(flag):
   '''
@@ -297,9 +298,10 @@ class Everest(object):
     '''
     
     self.EPIC = EPIC
-    self.file = _GetFITSFile(self.EPIC, clobber = clobber)
+    self.clobber = clobber
+    self.file = _GetFile(self.EPIC, clobber = self.clobber)
     if self.file is None:
-      raise Exception('Oops... Unable to download light curve for EPIC %d.' % EPIC)
+      raise Exception('Oops... Unable to download light curve for EPIC %d.' % EPIC) 
     self.mask = Mask()
     
     # Open the FITS file
@@ -395,7 +397,7 @@ class Everest(object):
     except:
       self.cdpp6 = np.nan
       
-  def plot(self, pipeline = 'everest', interactive = False):
+  def plot(self, pipeline = 'everest', interactive = False, show_outliers = True):
     '''
     Plot the raw and de-trended light curves.
     
@@ -413,11 +415,14 @@ class Everest(object):
     fig.subplots_adjust(left = 0.1, right = 0.95, 
                         top = 0.925, bottom = 0.1,
                         hspace = 0.05)
-    # Plot                   
-    ax[0].plot(self.mask(self.time), self.mask(self.raw_flux), 'k.', markersize = 3, alpha = 0.5)
-    ax[0].plot(self.mask.inv(self.time), self.mask.inv(self.raw_flux), 'r.', markersize = 3, alpha = 0.5,
-               label = 'Masked')
-    ax[0].legend(loc = 'upper left', fontsize = 9, numpoints = 3)
+    # Plot 
+    if show_outliers:                  
+      ax[0].plot(self.mask(self.time), self.mask(self.raw_flux), 'k.', markersize = 3, alpha = 0.5)
+      ax[0].plot(self.mask.inv(self.time), self.mask.inv(self.raw_flux), 'r.', markersize = 3, alpha = 0.5,
+                 label = 'Masked')
+      ax[0].legend(loc = 'upper left', fontsize = 9, numpoints = 3)
+    else:
+      ax[0].plot(self.time, self.raw_flux, 'k.', markersize = 3, alpha = 0.5)
     ax[0].annotate('6-hr CDPP: %.1f ppm' % self.cdpp6raw, xy = (0.98, 0.95), 
                     xycoords = 'axes fraction', ha = 'right', va = 'top',
                     fontsize = 12, fontweight = 'bold')
@@ -429,8 +434,11 @@ class Everest(object):
                              xycoords = 'axes fraction', ha = 'right', va = 'top',
                              fontsize = 12, fontweight = 'bold')
       if not interactive:
-        ax[1].plot(self.mask(self.time), self.mask(self.flux), 'b.', markersize = 3, alpha = 0.5)
-        ax[1].plot(self.mask.inv(self.time), self.mask.inv(self.flux), 'r.', markersize = 3, alpha = 0.5)
+        if show_outliers:
+          ax[1].plot(self.mask(self.time), self.mask(self.flux), 'b.', markersize = 3, alpha = 0.5)
+          ax[1].plot(self.mask.inv(self.time), self.mask.inv(self.flux), 'r.', markersize = 3, alpha = 0.5)
+        else:
+          ax[1].plot(self.time, self.flux, 'b.', markersize = 3, alpha = 0.5)
       else:
       
         def fxy(selected):
@@ -525,7 +533,7 @@ class Everest(object):
     
     # TODO!
     raise NotImplementedError(
-      'Because we cut corners when we optimized the GP for each target,\n' +
+      'Because we cut corners when we optimize the GP for each target,\n' +
       'we should not use the GP to whiten the flux here: an improperly optimized kernel\n' + 
       'can lead to weird transit overfitting. This routine needs to be changed to whiten\n' +
       'the flux with a low-order polynomial in the vicinity of each transit. This feature\n' +
@@ -656,19 +664,49 @@ class Everest(object):
     
     return ccd.fig, ccd.ax
   
+  def cross_validation(self):
+    '''
+    Plot the results of the cross-validation step.
+    
+    :returns: A figure and an axis object.
+    
+    This plot shows how :py:mod:`everest` selected the optimal number of principal components
+    to use in the de-trending step. The CDPP in the training set as a function of the number
+    of components is shown as blue points; the blue curve is a GP fit to the points. The CDPP
+    in the validation set (which was masked during de-trending) is shown as red points, with the
+    corresponding GP fit indicated by the red curve. The minimum in the red curve is chosen
+    as the optimal number of components. Beyond this point, the validation CDPP increases because
+    of overfitting.
+
+    Note that some cross-validation plots may look very different from this one. In particular, if
+    the red curve falls sufficiently below the blue curve, or if the red curve monotonically
+    decreases past 250 components, this may be a sign that the target is saturated/contaminated.
+    Highly oscillating cross-validation curves may also indicate poor :py:mod:`everest` performance.
+    
+    '''
+    
+    file = _GetFile(self.EPIC, 'crossval.jpg', clobber = self.clobber)
+    if file is None:
+      raise Exception('Oops... Unable to download image file.') 
+    fig, ax = pl.subplots(1, figsize = (12,8))
+    pl.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    image = mpimg.imread(file)
+    pl.imshow(image, aspect = 'auto')
+    pl.axis('off')
+    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
+    return fig, ax
+
   def contamination(self):
     '''
-    Plot the contamination statistics.
+    Plot the contamination metric.
     
     :returns: A figure and an axis object.
     
     The left four panels show the contamination statistics for the first
     timestamp: the actual stellar image (top left), the optimized error function
     PSF model (top center), the model binned to the pixels (bottom left), and the
-    difference between the data and the model (bottom center). The thick black
-    line is the aperture used to de-trend, and the circles in the first panel
-    show nearby EPIC sources (the green circle is the target); their `Kepler` band
-    magnitudes are indicated.
+    difference between the data and the model (bottom center). As in the previous
+    figure, the thick black line is the aperture, and the circles are nearby EPIC targets.
 
     The top right panel shows the absolute value of the difference between the data
     and the model divided by the flux in the brightest pixel within the aperture. The
@@ -681,22 +719,81 @@ class Everest(object):
 
     Note that sources with asymmetrical PSFs (due to distortions in the `Kepler` PRF)
     or very saturated stars with bleeding trails will generally have large contamination
-    metrics, even if there are no other sources in the aperture.
-    
+    metrics, even if there are no other sources in the aperture.   
+     
     '''
     
-    campaign = Campaign(self.EPIC)
-    data = GetK2Data(self.EPIC)
-    fpix = data.fpix
-    perr = data.perr
-    nearby = data.nearby
-    apertures = data.apertures
-    apidx = np.where(apertures[self.apnum] & 1 & ~np.isnan(fpix[0])) 
-    bkidx = np.where(apertures[self.apnum] ^ 1) 
-    contamination, fig, ax = Contamination(self.EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
-    if fig is not None:
-      fig.canvas.set_window_title('EPIC %d' % self.EPIC)
-    else:
-      raise Exception('Oops... something went wrong while plotting the contamination metric.')
+    file = _GetFile(self.EPIC, 'contam.jpg', clobber = self.clobber)
+    if file is None:
+      raise Exception('Oops... Unable to download image file.') 
+    fig, ax = pl.subplots(1, figsize = (12,8))
+    pl.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    image = mpimg.imread(file)
+    pl.imshow(image, aspect = 'auto')
+    pl.axis('off')
+    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
     return fig, ax
+
+  def aperture(self):
+    '''
+    Plot the aperture used.
     
+    :returns: A figure and an axis object.
+    
+    The thumbnails at the left show each of the 20 apertures derived in the
+    `K2SFF <https://archive.stsci.edu/prepds/k2sff/>`_ pipeline. The first ten
+    are increasingly larger circular apertures centered on the target; the 
+    last ten are derived from PSF fitting. For all :py:mod:`everest 0.1` 
+    runs, aperture 15 was used; this aperture is enlarged at the right. The
+    color scale is logarithmic, and the image shown is the flux integrated
+    *over the entire campaign*, so that the total motion of the sources is
+    visible. EPIC sources are overlaid based on positions obtained from MAST;
+    the green circle is the target, and red circles are neighboring sources.
+    Their `Kepler` magnitudes are also indicated.  
+     
+    '''
+    
+    file = _GetFile(self.EPIC, 'aper.jpg', clobber = self.clobber)
+    if file is None:
+      raise Exception('Oops... Unable to download image file.') 
+    fig, ax = pl.subplots(1, figsize = (16,8))
+    pl.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    image = mpimg.imread(file)
+    pl.imshow(image, aspect = 'auto')
+    pl.axis('off')
+    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
+    return fig, ax
+
+  def autocorrelation(self):
+    '''
+    Plot the autocorrelation fitting step.
+    
+    :returns: A figure and an axis object.
+    
+    These plots show the GP fitting process. The top panel is the PLD-de-trended data after
+    a full iteration of the GP optimizer. The center panel is the Lomb-Scargle periodogram
+    of the de-trended data. Three main periods are highlighted; these are used as initial
+    guesses when fitting periodic kernels to the autocorrelation function (bottom panel).
+
+    In the bottom panel, the autocorrelation function is the black line, 
+    and the best-fit kernel is the blue line. Its functional form is indicated in the legend
+    at the top right.
+    The standard deviation of the autocorrelation function is indicated by the grey envelope,
+    and was arbitrarily selected to downweight points at large lags. The chi-squared of the
+    fit is indicated at the top left, along with the number of iterations performed.
+    Finally, the numbers at the bottom left indicate the amplitude of the white noise component
+    *W* in units of the data error bars and the amplitude of the red noise component *A* in
+    units of the standard deviation of the de-trended light curve.
+     
+    '''
+    
+    file = _GetFile(self.EPIC, 'acor.jpg', clobber = self.clobber)
+    if file is None:
+      raise Exception('Oops... Unable to download image file.') 
+    fig, ax = pl.subplots(1, figsize = (12,9))
+    pl.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    image = mpimg.imread(file)
+    pl.imshow(image, aspect = 'auto')
+    pl.axis('off')
+    fig.canvas.set_window_title('EPIC %d' % self.EPIC)
+    return fig, ax

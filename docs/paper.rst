@@ -1,6 +1,8 @@
 The Paper
 =========
 
+.. image:: abstract.jpeg
+
 Below we provide links to Python scripts to generate all the figures in the
 `paper <https://github.com/rodluger/everest/blob/master/paper/tex/k2.tex>`_.
 Most allow the user to generate the figures from scratch, but some load in `.npz`

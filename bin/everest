@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+everest
+-------
+
+Quick command-line lightcurve plotting.
+
+'''
+
+import argparse
+import everest
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(prog = 'everest', add_help = True)
+  parser.add_argument("epic", type = int)
+  parser.add_argument("-i", "--interactive", action = 'store_true', help = 'Plot in interactive mode')
+  args = parser.parse_args()
+
+  # Plot
+  star = everest.Everest(args.epic)
+  star.plot(interactive = args.interactive)
+  everest.show()
