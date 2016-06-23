@@ -10,13 +10,16 @@ run.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from . import FORCE_PNG
 from .detrend import PLDCoeffs, PLDModel, PLDBasis
-from .utils import RMS, Mask, PadWithZeros, LatexExp, RemoveBackground
+from .utils import RMS, Mask, PadWithZeros, LatexExp
+from .data import RemoveBackground, Campaign
 from .transit import Transit
 from .sources import Source
 from .config import EVEREST_DAT, EVEREST_SRC
+from .crowding import Contamination
+from k2plr.config import KPLR_ROOT
 import os
+import matplotlib
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator, ScalarFormatter
 from scipy.ndimage import zoom
@@ -37,14 +40,20 @@ def Plot(data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_DAT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-  if FORCE_PNG:
+  if matplotlib.get_backend() == 'MacOSX':
     ext = 'png'
   else:
     try:
       ext = data['fig_ext'][()]
     except KeyError:
       ext = 'jpg'
-      
+  
+  # Plot the contamination
+  log.info('Plotting the contamination...')
+  if not os.path.exists(os.path.join(outdir, 'contamination.%s' % ext)):
+    PlotContamination(EPIC, run_name = data['run_name'][()], apnum = data['apnum'], 
+                      fig_ext = ext, jpeg_quality = jpeg_quality)
+  
   # Plot the apertures
   log.info('Plotting the apertures...')
   if not os.path.exists(os.path.join(outdir, 'aper.%s' % ext)):
@@ -91,6 +100,28 @@ def Plot(data):
   
   log.info('Done!')
 
+def PlotContamination(EPIC, run_name = 'default', apnum = 15, 
+                      fig_ext = 'jpg', jpeg_quality = 30):
+  '''
+  
+  '''
+  
+  campaign = Campaign(EPIC)
+  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
+  data = np.load(filename)
+  fpix = data['fpix']
+  perr = data['perr']
+  _nearby = data['nearby']
+  nearby = [Source(**s) for s in _nearby]
+  apertures = data['apertures']
+  apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
+  bkidx = np.where(apertures[apnum] ^ 1) 
+  contamination, fig, ax = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby, plot = True)
+  if fig is not None:
+    fig.savefig(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % EPIC, 
+                run_name, 'contamination.%s' % fig_ext), quality = jpeg_quality)
+  pl.close()
+  
 def PlotScatter(EPIC, data):
   '''
   Plots the cross-validation scatter plot for a given run.
@@ -223,7 +254,7 @@ def PlotOutliers(EPIC, data):
   flux = data['flux']
   mask = data['mask']
   campaign = data['campaign']
-  if RemoveBackground(campaign):
+  if RemoveBackground(EPIC):
     bkg = data['bkg']
   else:
     bkg = np.zeros_like(time)
@@ -363,9 +394,6 @@ def PlotDetrended(EPIC, data):
   pld_order = data['pld_order']
   fpld = data['fpld']
   fwhite = data['fwhite']
-  satsev = data['satsev']
-  crwdsev = data['crwdsev']
-  acorsev = data['acorsev']
   npars = '%d free parameters, %d data points' % (np.product(C.shape), fwhite.shape[0])
   r1, r2, r3, r4, r5 = data['rms']
   kepmag = data['kepmag']
@@ -510,18 +538,6 @@ def PlotDetrended(EPIC, data):
         axtn.set_xticks(xticks)
         axtn.set_xticklabels(xticklabels, fontsize = 8)
   
-  # Indicate crowding, saturation, and acor fitting metrics
-  def color(sev):
-    if sev <= 1:
-      return "g"
-    elif sev <= 3:
-      return "y"
-    else:
-      return "r"
-  fig.text(0.97, 0.975,"A%d" % acorsev, ha="right", va="top", fontsize=24, color=color(acorsev))
-  fig.text(0.94, 0.975,"C%d" % crwdsev, ha="right", va="top", fontsize=24, color=color(crwdsev))
-  fig.text(0.91, 0.975,"S%d" % satsev, ha="right", va="top", fontsize=24, color=color(satsev))
-
   # Indicate the campaign and Kp
   fig.text(0.03, 0.975,"C%02d" % campaign, ha="left", va="top", fontsize=24, color='b')
   fig.text(0.08, 0.975,"Kp%.1f" % kepmag, ha="left", va="top", fontsize=24, color='b')
@@ -567,9 +583,6 @@ def PlotFolded(EPIC, data):
   pld_order = data['pld_order']
   fpld = data['fpld']
   fwhite = data['fwhite']
-  satsev = data['satsev']
-  crwdsev = data['crwdsev']
-  acorsev = data['acorsev']
   npars = '%d free parameters, %d data points' % (np.product(C.shape), fwhite.shape[0])
   r1, r2, r3, r4, r5 = data['rms']
   kepmag = data['kepmag']
@@ -579,7 +592,7 @@ def PlotFolded(EPIC, data):
   outdir = data['outdir'][()]
   outdir = os.path.join(EVEREST_DAT, outdir[outdir.find(os.path.join('everest', 'output')) + 8:])
   jpeg_quality = int(data['jpeg_quality'][()])
-  if FORCE_PNG:
+  if matplotlib.get_backend() == 'MacOSX':
     ext = 'png'
   else:
     try:

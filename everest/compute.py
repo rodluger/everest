@@ -7,11 +7,11 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import __develop__
 from .config import EVEREST_DAT, EVEREST_SRC
-from .data import GetK2Data, Campaign
+from .data import GetK2Data, Campaign, RemoveBackground
 from .detrend import PLDBasis, PLDModel, PLDCoeffs, ComputeScatter, SliceX, Outliers
-from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers, RemoveBackground
-from .quality import Saturation, Crowding, Autocorrelation
+from .utils import InitLog, Mask, Breakpoints, PadWithZeros, RMS, MADOutliers
 from .kernels import KernelModels
 from .gp import GetGP
 from .transit import Transit
@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15, 
             outlier_sigma = 5, mask_times = [], pld_order = 3,
             optimize_npc = True, mask_candidates = False,
-            ps_iter = 50, ps_masks = 10, npc_arr = np.arange(25, 200, 10),
+            ps_iter = 30, ps_masks = 10, npc_arr = np.arange(25, 260, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.CRITICAL, gp_iter = 2, 
             jpeg_quality = 30, fig_ext = 'jpg', **kwargs):
@@ -51,11 +51,11 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
                             to optimize the GP kernel).
   :param bool mask_candidates: Mask known/new planet candidates, EBs, and injected transits? Default `False`
   :param int ps_iter: The number of iterations used to compute the "predictive" scatter (the scatter in \
-                      the validation set). Default `50`
+                      the validation set). Default `30`
   :param int ps_masks: The number of masks to apply per iteration. The set of all these masks \
                        is the validation set
   :param ndarray npc_arr: The array of principal component numbers to test during the cross-validation. \
-                          Default is the range `[25, 200)`, spaced by `10` components.
+                          Default is the range `[25, 260)`, spaced by `10` components.
   :param dict inject: A dictionary of injection keywords. These include `t0`, `per`, `depth`, `dur`, and \
                       any other keywords passed directly to :py:func:`everest.pysyzygy.Transit`. The keyword \
                       `mask` is also accepted. If `True`, the transits are masked during the PLD step
@@ -85,8 +85,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
      C = C, X = X, gp = None, gpinfo = dict(knum = knum, kpars = kpars, 
      white = white), fpldgp = fpldgp, pld_order = pld_order,
      rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
-     rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
-     acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
+     rms_evr_savgol, rms_pht], chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
      masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
      msf = msf, usf = usf, besti = besti,
      acor = acor, powerspec = powerspec, white = white, amp = amp, 
@@ -145,7 +144,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   apidx = np.where(k2star.apertures[apnum] & 1 & ~np.isnan(k2star.fpix[0]))
   fpix = np.array([f[apidx] for f in k2star.fpix], dtype='float64')
   perr = np.array([f[apidx] for f in k2star.perr], dtype='float64')
-  if RemoveBackground(k2star.campaign):
+  if RemoveBackground(EPIC):
     fpix -= bkg.reshape(bkg.shape[0], 1)
     perr = np.sqrt(perr ** 2 + bkgerr.reshape(bkgerr.shape[0], 1) ** 2)
   flux = np.sum(fpix, axis = 1)
@@ -199,9 +198,9 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   log.info('Computing outlier masks...')
   try:
     maskdata = np.load(os.path.join(outdir, 'mask.npz'))
-    mask = maskdata['mask']
-    trn_mask = maskdata['trn_mask']
-    out_mask = maskdata['out_mask']
+    mask = np.array(maskdata['mask'], dtype = int)
+    trn_mask = np.array(maskdata['trn_mask'], dtype = int)
+    out_mask = np.array(maskdata['out_mask'], dtype = int)
     new_candidates = maskdata['new_candidates']
   except:
     mask, trn_mask, out_mask, new_candidates = \
@@ -209,6 +208,13 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              EB = k2star.EB, mask_times = mask_times, mask_candidates = mask_candidates)
     np.savez(os.path.join(outdir, 'mask.npz'), mask = mask,
              trn_mask = trn_mask, out_mask = out_mask, new_candidates = new_candidates)
+  
+  # Check if we have too many outliers
+  if len(out_mask) > 500:
+    log.error("Too many outliers detected. Something is probably wrong with this target.")
+    with open(os.path.join(outdir, '%d.err' % EPIC), 'w') as f:
+      print('ERROR:Too many outliers detected. Something is probably wrong with this target.', file = f)
+    return None
 
   # Compute GP hyperparameters
   log.info('Computing the GP hyperparameters...')
@@ -347,24 +353,23 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   rms_raw_simple, rms_raw_savgol, rms_evr_simple, \
   rms_evr_savgol, rms_pht = GetCDPP(flux, fpld)
   
-  # Gauge the saturation, crowding, and acor severity
-  crwdinfo, crwdsev = GetContaminants(EPIC, k2star.fpix, k2star.apertures, 
-                                      apnum, k2star.kepmag, k2star.nearby)
-  satsev = Saturation(fpix)
-  acorsev = Autocorrelation(chisq)
+  # Crowding info
+  crwdinfo = GetContaminants(EPIC, k2star.kepmag, k2star.nearby)
 
   # Write the .pld file to disk
-  log.info('Saving detrended lightcurve to disk...') 
-  WritePLDFile(EPIC, k2star.kepmag, satsev, crwdsev, crwdinfo, chisq, 
-               rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, 
-               rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), mask, outdir)
+  if __develop__:
+    log.info('Saving detrended lightcurve to disk...') 
+    WritePLDFile(EPIC, k2star.kepmag,
+                 rms_raw_simple, rms_raw_savgol, rms_evr_simple, rms_evr_savgol, 
+                 rms_pht, time, fpld, np.sqrt(ferr ** 2 + white ** 2), mask, outdir)
 
   # Get the git info (if we're in a git repo)
   try:
-    branches = subprocess.check_output(['git', 
+    GIT_DIR = os.path.join(os.path.dirname(EVEREST_SRC), '.git')
+    branches = subprocess.check_output(['git', '--git-dir', GIT_DIR,
                'branch']).decode('utf-8').replace('\n', '')
     git_branch = re.findall('\*\s([a-zA-Z0-9_]*)', branches)[0]
-    git_hash = subprocess.check_output(['git', 'rev-parse', 
+    git_hash = subprocess.check_output(['git', '--git-dir', GIT_DIR, 'rev-parse', 
                '--verify', 'HEAD']).decode('utf-8').replace('\n', '')
   except:
     git_branch = None
@@ -381,8 +386,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
              C = C, X = X, gp = None, gpinfo = dict(knum = knum, kpars = kpars, 
              white = white), fpldgp = fpldgp, pld_order = pld_order,
              rms = [rms_raw_simple, rms_raw_savgol, rms_evr_simple, 
-             rms_evr_savgol, rms_pht], satsev = satsev, crwdsev = crwdsev, 
-             acorsev = acorsev, chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
+             rms_evr_savgol, rms_pht], chisq = chisq, npc_arr = npc_arr, npc_pred = npc_pred,
              masked_scatter = masked_scatter, unmasked_scatter = unmasked_scatter, 
              msf = msf, usf = usf, besti = besti,
              acor = acor, powerspec = powerspec, white = white, amp = amp, 
@@ -403,7 +407,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   
   return data
 
-def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4, r5,
+def WritePLDFile(EPIC, kepmag, r1, r2, r3, r4, r5,
                  time, fpld, ferr, mask, outdir):
   '''
   A routine called by :py:func:`Compute` to write the de-trended flux array to
@@ -417,10 +421,6 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
    "# EPIC %d" % EPIC,
    "# Kp:  %.3f" % kepmag,
    "#",
-   "# SATURATION FLAG:    %d" % satsev,
-   "# CROWDING SEVERITY:  %d" % crwdsev,
-   "# ACOR CHISQ:         %.2f" % kchisq,
-   "#",
    "# RAW PRECISION:     {:8.2f} ppm / {:8.2f} ppm".format(r1, r2),
    "# EVEREST PRECISION: {:8.2f} ppm / {:8.2f} ppm".format(r3, r4),
    "# PHOTON LIMIT:      {:8.2f} ppm".format(r5),
@@ -430,12 +430,11 @@ def WritePLDFile(EPIC, kepmag, satsev, crwdsev, crwdinfo, kchisq, r1, r2, r3, r4
   # Flag the outliers
   outliers = np.zeros_like(time, dtype = np.int32)
   outliers[mask] = 1
-
+    
   # Write to file
   with open(os.path.join(outdir, '%d.pld' % EPIC), 'w') as pldfile:
     for line in header:
       print(line, file = pldfile)
-    print(crwdinfo, file = pldfile)
     for t, f, s, o in zip(time, fpld, ferr, outliers):
       print("{:>20.10f} {:>20.10f} {:>20.10f}      {:>1d}".format(t, f, s, o), file = pldfile)
       
@@ -588,44 +587,29 @@ def GetTransitDepth(time, flux, inject, buf = 5, order = 3):
   
   return depth, depth_err, fold(T), D
 
-def GetContaminants(EPIC, fpix, apertures, apnum, kepmag, nearby):
+def GetContaminants(EPIC, kepmag, nearby):
   '''
   Returns nearby sources that are at risk of contaminating a given target.
   
   '''
   
-  _, ny, nx = fpix.shape
-  apidx = np.where(apertures[apnum] & 1)
-  contour = np.zeros((ny,nx))
-  contour[apidx] = 1
-  contour = np.lib.pad(contour, 1, PadWithZeros)
-  maxsev = 0
-  crwdinfo = ["#   EPIC      dKp (mag)   SEVERITY (0-5)",
-              "# ---------   ---------   --------------"]
+  crwdinfo = ["#   EPIC      dKp (mag)",
+              "# ---------   ---------"]
   
   for source in [s for s in nearby if s.epic != EPIC]:
     dk = source.kepmag - kepmag
     if np.isnan(dk):
       dk = "????"
-      note = ""
     else:
       if dk < 0:
         dk = "%.3f" % dk
       else:
         dk = "+%.3f" % dk
-      crwdsev = Crowding(kepmag, source, ny, nx, contour)
-      if crwdsev > maxsev: maxsev = crwdsev
-      if crwdsev == 5: note = "5 (PLD FAILURE)"
-      elif crwdsev == 4: note = "4 (LIKELY OVERFITTING)"
-      elif crwdsev == 3: note = "3 (MINOR OVERFITTING)"
-      elif crwdsev == 2: note = "2"
-      elif crwdsev == 1: note = "1"
-      else: note = "0"
-    crwdinfo.append("# %d    %s      %s" % (source.epic, dk, note))
+    crwdinfo.append("# %d    %s" % (source.epic, dk))
   crwdinfo.append("#")
   crwdinfo = "\n".join(crwdinfo)
   
-  return crwdinfo, maxsev
+  return crwdinfo
 
 def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [], 
              EB = None, mask_times = [], mask_candidates = False):
@@ -680,20 +664,21 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   # Get eclipsing binary masks
   if mask_candidates and EB:
     mask = sorted(set(mask + EB.mask(time)))
-    
+  
+  # -!-!- DEPRECATED -!-!-
   # Are there any new planet candidates in this lightcurve?
-  # This block was coded specifically for Ethan Kruse's search pipeline.
   new_candidates = []
-  if mask_candidates:
-    for cnum in range(10):
-      f = os.path.join(EVEREST_DAT, 'new', '%d.%02d.npz' % (EPIC, cnum))
-      if os.path.exists(f):
-        tmp = np.load(f)
-        new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
-                                    for tn in tmp['ttimes']])
-        mask_times = sorted(set(mask_times) | set(new_tmask))
-        new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
-                                'tmask': new_tmask}])  
+  if __develop__:
+    if mask_candidates:
+      for cnum in range(10):
+        f = os.path.join(EVEREST_DAT, 'new', '%d.%02d.npz' % (EPIC, cnum))
+        if os.path.exists(f):
+          tmp = np.load(f)
+          new_tmask = np.concatenate([time[np.where(np.abs(time - tn) < tmp['tdur'])] 
+                                      for tn in tmp['ttimes']])
+          mask_times = sorted(set(mask_times) | set(new_tmask))
+          new_candidates.append([{'tdur': tmp['tdur'], 'ttimes': tmp['ttimes'], 
+                                  'tmask': new_tmask}])  
     
   # Enforce user-defined masks
   if len(mask_times):
@@ -708,4 +693,5 @@ def GetMasks(EPIC, time, flux, fpix, ferr, outlier_sigma, planets = [],
   out_mask = Outliers(time, flux, fpix, ferr, mask = trn_mask, sigma = outlier_sigma)
   mask = sorted(set(trn_mask + list(out_mask)))
     
-  return mask, trn_mask, out_mask, new_candidates
+  return np.array(mask, dtype = int), np.array(trn_mask, dtype = int), \
+         np.array(out_mask, dtype = int), np.array(new_candidates, dtype = int)

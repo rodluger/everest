@@ -10,12 +10,11 @@ Computes the 6-hr CDPP for all the `K2SFF` de-trended light curves.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(1, EVEREST_ROOT)
 import everest
+from everest.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 import random
 import numpy as np
 import shutil
@@ -24,7 +23,7 @@ import warnings
 from urllib.error import HTTPError
 from scipy.signal import savgol_filter
 
-for campaign in range(0,7):
+for campaign in range(0,8):
   
   print("\nRunning campaign %02d..." % campaign)
   
@@ -33,12 +32,7 @@ for campaign in range(0,7):
     open(os.path.join('CDPP', 'k2sff_C%02d.tsv' % campaign), 'a').close()
   
   # Get all EPIC stars
-  stars = list(np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), dtype = int))  
-
-  # Now remove candidates and EBs
-  ebs = set([int(eb.epic) for eb in everest.GetK2EBs()])
-  planets = set([int(planet.epic_name[5:]) for planet in everest.GetK2Planets()])
-  stars = list(set(stars) - (planets | ebs))
+  stars = list(np.loadtxt(os.path.join(EVEREST_SRC, 'tables', 'C%02d.csv' % campaign), dtype = int))  
   nstars = len(stars)
 
   # Remove ones we've done
@@ -51,7 +45,7 @@ for campaign in range(0,7):
   n = len(done) + 1
 
   # Open the output file
-  with open(os.path.join('CDPP', 'k2sff_C%02d.tsv' % campaign), 'a') as outfile:
+  with open(os.path.join('CDPP', 'k2sff_C%02d.tsv' % campaign), 'a', 1) as outfile:
 
     # Loop over all to get the CDPP
     for star in stars:

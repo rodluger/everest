@@ -11,6 +11,7 @@ as information about planet candidates and eclipsing binaries.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .config import EVEREST_DAT, EVEREST_SRC
+from .crowding import Contamination
 from .sources import GetSources, Source
 from .utils import MedianFilter, Chunks
 import k2plr as kplr
@@ -192,60 +193,8 @@ class k2data(object):
   
   pass
 
-def _UpdateDataFile(EPIC):
-  '''
-  A **temporary** hack to add fits header info and K2SFF aperture info to 
-  previously saved .npz tpf files
-  
-  '''
-  
-  # Have we done this already?
-  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
-  try:
-    data = np.load(filename)
-  except:
-    return False
-  try:
-    data['fitsheader']
-    data['apertures']
-    return True
-  except:
-    pass
-  
-  # Apertures
-  k2sff = kplr.K2SFF(EPIC)
-  apertures = k2sff.apertures
-  
-  # Get header info
-  client = kplr.API()
-  star = client.k2_star(EPIC)
-  tpf = star.get_target_pixel_files()[0]
-  with tpf.open() as f:
-    pass
-  ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
-  fitsheader = [pyfits.getheader(ftpf, 0).cards,
-                pyfits.getheader(ftpf, 1).cards,
-                pyfits.getheader(ftpf, 2).cards]
-
-  # Delete the kplr tpf
-  os.remove(ftpf)
-  os.remove(k2sff._file)
-  
-  # Append to the npz file
-  time = data['time']
-  fpix = data['fpix']
-  perr = data['perr']
-  campaign = data['campaign']
-  aperture = data['aperture']
-  cadn = data['cadn']
-  nearby = data['nearby']
-  np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                      aperture = aperture, nearby = nearby, campaign = campaign,
-                      apertures = apertures, fitsheader = fitsheader)
-  
-  return True
-
-def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
+def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
+              calculate_contamination = True):
   '''
   Download and save a single quarter of `K2` data.
   
@@ -284,6 +233,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
                eclipsing binary catalog
     - **nearby** - A list of :class:`everest.sources.Source` instances containing \
                    other `EPIC` targets within or close to this target's aperture
+    - **contamination** - An estimate of the median contamination metric for the default \
+                          aperture
     
   '''
   
@@ -292,6 +243,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   if not clobber:
     try:
       data = np.load(filename)
+      raw_time = data['raw_time']
+      raw_cadn = data['raw_cadn']
       time = data['time']
       fpix = data['fpix']
       perr = data['perr']
@@ -302,10 +255,22 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
       nearby = [Source(**s) for s in _nearby]
       fitsheader = data['fitsheader']
       apertures = data['apertures']
-      clobber = False
+      contamination = data['contamination'][()]
+      clobber = False      
     except:
       clobber = True
-      
+    
+  if not clobber:
+    if (not (type(contamination) is float)) and calculate_contamination:
+      apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
+      bkidx = np.where(apertures[apnum] ^ 1) 
+      contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby)
+      np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                          aperture = aperture, nearby = _nearby, campaign = campaign,
+                          apertures = apertures, fitsheader = fitsheader,
+                          contamination = contamination, raw_time = raw_time,
+                          raw_cadn = raw_cadn)                   
+        
   if clobber:
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
       os.makedirs(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC)))
@@ -329,7 +294,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
         
     # Get the arrays
     time = np.array(qdata.field('TIME'), dtype='float64')
+    raw_time = np.array(time)
     cadn = np.array(qdata.field('CADENCENO'), dtype='int32')
+    raw_cadn = np.array(cadn)
     fpix = np.array(qdata.field('FLUX'), dtype='float64')
     fpix_opt = np.array([f[np.where(aperture & 1)] for f in fpix], dtype='float64')
     rawc = np.array(qdata.field('RAW_CNTS'), dtype='int32')
@@ -342,7 +309,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     t_nan_inds = list(np.where(np.isnan(time))[0])
     
     # Get bad flux values
-    apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0]))
+    apidx = np.where(apertures[apnum] & 1 & ~np.isnan(fpix[0])) 
+    bkidx = np.where(apertures[apnum] ^ 1)   
     flux = np.sum(np.array([f[apidx] for f in fpix], dtype='float64'), axis = 1)
     f_nan_inds = list(np.where(np.isnan(flux))[0])
     
@@ -395,6 +363,12 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     # Make it into an object
     nearby = [Source(**s) for s in _nearby]
   
+    # Get the contamination
+    if calculate_contamination:
+      contamination = Contamination(EPIC, fpix, perr, apidx, bkidx, nearby)
+    else:
+      contamination = None
+  
     # Get header info
     ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % EPIC, tpf._filename)
     fitsheader = [pyfits.getheader(ftpf, 0).cards,
@@ -404,8 +378,23 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
     # Save
     np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
                         aperture = aperture, nearby = _nearby, campaign = campaign,
-                        apertures = apertures, fitsheader = fitsheader)
-  
+                        apertures = apertures, fitsheader = fitsheader,
+                        contamination = contamination, raw_time = raw_time,
+                        raw_cadn = raw_cadn)
+    
+    # Atomically write to disk.
+    # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
+    f = NamedTemporaryFile("wb", delete=False)
+    np.savez_compressed(f, time = time, fpix = fpix, perr = perr, cadn = cadn,
+                        aperture = aperture, nearby = _nearby, campaign = campaign,
+                        apertures = apertures, fitsheader = fitsheader,
+                        contamination = contamination, raw_time = raw_time,
+                        raw_cadn = raw_cadn)
+    f.flush()
+    os.fsync(f.fileno())
+    f.close()
+    shutil.move(f.name, filename)
+    
     # Delete the kplr tpf
     if delete_kplr_data:
       os.remove(ftpf)
@@ -425,6 +414,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   res.campaign = campaign
   res.time = time
   res.cadn = cadn
+  res._raw_time = raw_time
+  res._raw_cadn = raw_cadn
   res.fpix = fpix
   res.apertures = apertures
   
@@ -463,10 +454,11 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False):
   # Get nearby sources
   res._nearby = _nearby
   res.nearby = nearby
-
+  res.contamination = contamination
+  
   # Fits header info
   res.fitsheader = fitsheader
-  
+    
   return res
 
 class K2Planet(object):
@@ -504,13 +496,16 @@ def Progress(run_name = 'default', campaigns = range(99)):
   
   print("CAMP      DONE      FAIL    REMAIN      PERC")
   print("----      ----      ----    ------      ----")
+  remain = {}
   for c in campaigns:
     if os.path.exists(os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)):
       path = os.path.join(EVEREST_DAT, 'output', 'C%02d' % c)
       folders = os.listdir(path)
       done = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.pld' % f))]
       err = [int(f) for f in folders if os.path.exists(os.path.join(path, f, run_name, '%s.err' % f))] 
-      total = len(GetK2Campaign(c))
+      all = GetK2Campaign(c)
+      remain[c] = list(set(all) - set(done) - set(err))
+      total = len(all)
       print("{:>2d}. {:>10d}{:>10d}{:>10d}{:>10.2f}".format(c, len(done), len(err), 
             total - (len(done) + len(err)), 100 * (len(done) + len(err)) / total))
       for subcampaign in range(10):
@@ -520,7 +515,7 @@ def Progress(run_name = 'default', campaigns = range(99)):
         print("  {:>2d}{:>10d}{:>10d}{:>10d}{:>10.2f}".format(subcampaign, d, e, 
               len(sub) - (d + e), 100 * (d + e) / len(sub)))
       
-  return
+  return remain
   
 def GetK2Stars(clobber = False):
   '''
@@ -560,7 +555,20 @@ def Campaign(EPIC):
     if EPIC in stars:
       return campaign
   return None
+
+def RemoveBackground(EPIC):
+  '''
+  Returns `True` or `False`, indicating whether or not to remove the background
+  flux for the target. Currently, if `campaign < 3`, returns
+  `True`, otherwise returns `False`.
   
+  '''
+
+  if Campaign(EPIC) < 3:
+    return True
+  else:
+    return False
+
 def GetK2Campaign(campaign, clobber = False):
   '''
   Return all stars in a given K2 campaign.

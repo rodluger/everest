@@ -29,8 +29,8 @@ The source code is available
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
+from everest.config import EVEREST_SRC
+IMG_PATH = os.path.join(os.path.dirname(EVEREST_SRC), 'paper', 'tex', 'images')
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
@@ -42,7 +42,8 @@ def PlotAcor():
   '''
   
   # This .npz file was generated a while back in an older
-  # version of the EVEREST code...
+  # version of the EVEREST code... This next line might
+  # raise a strange error if you're not using Python 3.
   data = np.load(os.path.join('npz', 'acor.npz'))
   time = data['time']
   fpld = data['fpld']

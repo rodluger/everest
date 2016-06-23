@@ -4,4 +4,4 @@
 cd ${EVEREST_DAT}
 
 # Run on a single node with Python multiprocessing
-python -c "import everest; everest.run._DownloadCampaign($CAMPAIGN)"
+python -c "import everest; everest.run._DownloadCampaign($CAMPAIGN, $SUBCAMPAIGN)"

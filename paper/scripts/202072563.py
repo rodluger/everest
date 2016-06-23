@@ -32,9 +32,8 @@ your own script to plot this up from scratch.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
-sys.path.insert(1, EVEREST_ROOT)
+from everest.config import EVEREST_SRC
+IMG_PATH = os.path.join(os.path.dirname(EVEREST_SRC), 'paper', 'tex', 'images')
 import everest
 import argparse
 import numpy as np

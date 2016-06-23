@@ -129,7 +129,7 @@ import re
 if __name__ == '__main__':
   
   # The campaigns we'll use for the synthesis plots
-  campaigns = [0,1,2,3,4,5,6]
+  campaigns = [0,1,2,3,4,5,6,7]
   figures = [1,2,3,4,5,6]
 
   # Get the raw **Kepler** rms
@@ -144,6 +144,7 @@ if __name__ == '__main__':
   satsev = [[] for i in range(8)]
   crwdsev = [[] for i in range(8)]
   for c in range(8):
+    print("Loading campaign %d..." % c)
     try:
       k2_star_c, k2_kepmag_c, _, k2_raw_c, k2_phot_c, satsev_c, crwdsev_c = np.loadtxt(os.path.join('CDPP', 'k2raw_C%02d.tsv' % c), unpack = True)
       s, _, k2_ever_c = np.loadtxt(os.path.join('CDPP', 'everest_C%02d.tsv' % c), unpack = True)
@@ -195,7 +196,7 @@ if __name__ == '__main__':
     y = np.concatenate([k2_ever[c] for c in campaigns])
   
     ax.plot(kep_kepmag, kep_raw, 'y.', alpha = 0.025)
-    ax.plot(x, y, 'b.', alpha = 0.05)
+    ax.plot(x, y, 'b.', alpha = 0.025)
 
     if labels:
       # Dummy points for legend
@@ -258,8 +259,8 @@ if __name__ == '__main__':
     p = np.concatenate([k2_phot[c] for c in campaigns])
 
     # Set up the figure
-    ax.plot(x, r, 'r.', alpha = 0.025)
-    ax.plot(x, e, 'b.', alpha = 0.015)
+    ax.plot(x, r, 'r.', alpha = 0.0075)
+    ax.plot(x, e, 'b.', alpha = 0.00325)
   
     # Plot the median values
     bins = np.arange(10.5,19.,0.5)
@@ -344,7 +345,7 @@ if __name__ == '__main__':
     y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.1)
+    ax.plot(x, y, 'b.', alpha = 0.05)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -397,7 +398,7 @@ if __name__ == '__main__':
     y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.1)
+    ax.plot(x, y, 'b.', alpha = 0.05)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -441,29 +442,32 @@ if __name__ == '__main__':
     stars = list(set(evr_epic) & set(varcat_epic))
     x = []
     y = []
-    for star in stars:
-      i = np.argmax(evr_epic == star)
-      j = np.argmax(varcat_epic == star)
-      x.append(k[i])
-      y.append(((evr_cdpp[i] - varcat_cdpp[j]) / varcat_cdpp[j]))
-    x = np.array(x)
-    y = np.array(y)
+    
+    if len(varcat_epic):
+      for star in stars:
+        i = np.argmax(evr_epic == star)
+        j = np.argmax(varcat_epic == star)
+        x.append(k[i])
+        y.append(((evr_cdpp[i] - varcat_cdpp[j]) / varcat_cdpp[j]))
+      x = np.array(x)
+      y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.1)
+    ax.plot(x, y, 'b.', alpha = 0.05)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
     ax.axhline(0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
     ax.axhline(-0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
-
-    bins = np.arange(10,19.5,0.5)
-    by = np.zeros_like(bins) * np.nan
-    for b, bin in enumerate(bins):
-      i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
-      if len(i) > 10:
-        by[b] = np.median(y[i])
-    ax.plot(bins, by, 'k-', lw = 2)
+    
+    if len(x):
+      bins = np.arange(10,19.5,0.5)
+      by = np.zeros_like(bins) * np.nan
+      for b, bin in enumerate(bins):
+        i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
+        if len(i) > 10:
+          by[b] = np.median(y[i])
+      ax.plot(bins, by, 'k-', lw = 2)
     if labels:
       ax.set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2VARCAT}}}{\mathrm{CDPP}_{\mathrm{K2VARCAT}}}$', fontsize = 22)
       ax.set_xlabel('Kepler Magnitude', fontsize = 18)
@@ -513,7 +517,7 @@ if __name__ == '__main__':
     y = np.array(y)
   
     # Plot Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.1)
+    ax.plot(x, y, 'b.', alpha = 0.05)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -535,20 +539,23 @@ if __name__ == '__main__':
   # 1. Comparison to raw Kepler
   # ---------------------------
   if 1 in figures:
+    print("Plotting figure 1a...")
     fig, ax = pl.subplots(1, figsize = (8,6))
     fig_comp_kepler(fig, ax, campaigns = campaigns)
     fig.savefig('../tex/images/comparison_kepler.png', bbox_inches = 'tight')
     pl.close()
-    fig, ax = pl.subplots(2, 3, figsize = (14, 6))
+    
+    print("Plotting figure 1b...")
+    fig, ax = pl.subplots(2, 4, figsize = (17, 6))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_comp_kepler(fig, ax[n], campaigns = [n], errorbars = False, labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -561,20 +568,23 @@ if __name__ == '__main__':
   # 2. Overall CDPP
   # ---------------
   if 2 in figures:
+    print("Plotting figure 2a...")
     fig, ax = pl.subplots(1, figsize = (8,6))
     fig_precision(fig, ax, campaigns)
     fig.savefig('../tex/images/precision.png', bbox_inches = 'tight')
     pl.close()
-    fig, ax = pl.subplots(2, 3, figsize = (14, 6))
+    
+    print("Plotting figure 2b...")
+    fig, ax = pl.subplots(2, 4, figsize = (17, 6))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_precision(fig, ax[n], campaigns = [n], labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -587,21 +597,23 @@ if __name__ == '__main__':
   # 3. Comparison to K2SFF
   # ----------------------
   if 3 in figures:
+    print("Plotting figure 3a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sff(fig, ax, campaigns)
     fig.savefig('../tex/images/comparison_k2sff.png', bbox_inches = 'tight')
     pl.close()
-  
-    fig, ax = pl.subplots(2, 3, figsize = (12, 8))
-    fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
+    
+    print("Plotting figure 3b...")
+    fig, ax = pl.subplots(2, 4, figsize = (20, 8))
+    fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.13)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_comp_k2sff(fig, ax[n], campaigns = [n], labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -611,51 +623,59 @@ if __name__ == '__main__':
     fig.savefig('../tex/images/comparison_k2sff_by_campaign.png', bbox_inches = 'tight')
     pl.close()
 
-  # 4. Comparison to K2SC
-  # ---------------------
+  # 4. Comparison to K2SC (C3 - C6 only)
+  # ------------------------------------
   if 4 in figures:
+    print("Plotting figure 4a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sc(fig, ax, campaigns)
     fig.savefig('../tex/images/comparison_k2sc.png', bbox_inches = 'tight')
     pl.close()
-  
-    fig, ax = pl.subplots(1, 3, figsize = (14, 3.5))
-    fig.subplots_adjust(wspace = 0.05, hspace = 0.075, bottom = 0.15)
+    
+    print("Plotting figure 4b...")
+    fig, ax = pl.subplots(2, 2, figsize = (10, 8))
+    fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.18)
     ax = ax.flatten()
     fig_comp_k2sc(fig, ax[0], campaigns = [3], labels = False)
     fig_comp_k2sc(fig, ax[1], campaigns = [4], labels = False)
     fig_comp_k2sc(fig, ax[2], campaigns = [5], labels = False)
-    ax[0].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-    ax[1].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+    fig_comp_k2sc(fig, ax[3], campaigns = [6], labels = False)
     ax[2].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+    ax[3].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
+    ax[0].set_xticklabels([])
+    ax[1].set_xticklabels([])
     ax[1].set_yticklabels([])
-    ax[2].set_yticklabels([])
+    ax[3].set_yticklabels([])
     ax[0].annotate('C03', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
     ax[1].annotate('C04', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
     ax[2].annotate('C05', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
+    ax[3].annotate('C06', xy = (0.02, 0.96), xycoords = 'axes fraction', ha = 'left', va = 'top', fontsize = 14)
     fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 18)
-    ax[0].set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 18)
+    fig.text(0.08, 0.5, r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 28, 
+             ha='center', va='center', rotation='vertical')
     fig.savefig('../tex/images/comparison_k2sc_by_campaign.png', bbox_inches = 'tight')
     pl.close()
 
   # 5. Comparison to K2VARCAT
   # -------------------------
   if 5 in figures:
+    print("Plotting figure 5a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2varcat(fig, ax, campaigns)
     fig.savefig('../tex/images/comparison_k2varcat.png', bbox_inches = 'tight')
     pl.close()
   
-    fig, ax = pl.subplots(2, 3, figsize = (12, 8))
+    print("Plotting figure 5b...")
+    fig, ax = pl.subplots(2, 4, figsize = (15, 8))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
     ax = ax.flatten()
-    for n in range(6):
+    for n in range(8):
       fig_comp_k2varcat(fig, ax[n], campaigns = [n], labels = False)
-      if n not in [3,4,5]: 
+      if n not in [4,5,6,7]: 
         ax[n].set_xticklabels([])
       else:
         ax[n].xaxis.set_major_locator(MaxNLocator(prune='upper', integer=True))
-      if n not in [0,3]: 
+      if n not in [0,4]: 
         ax[n].set_yticklabels([])
       ax[n].annotate('C%02d' % n, xy = (0.02, 0.96), xycoords = 'axes fraction', 
                      ha = 'left', va = 'top', fontsize = 14)
@@ -665,14 +685,16 @@ if __name__ == '__main__':
     fig.savefig('../tex/images/comparison_k2varcat_by_campaign.png', bbox_inches = 'tight')
     pl.close()
 
-  # 6. Compare K2SC to K2SFF
-  # ------------------------
+  # 6. Compare K2SC to K2SFF (C4 and C5 only)
+  # -----------------------------------------
   if 6 in figures:
+    print("Plotting figure 6a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sff_k2sc(fig, ax, campaigns)
     fig.savefig('../tex/images/comparison_k2sff_k2sc.png', bbox_inches = 'tight')
     pl.close()
-  
+    
+    print("Plotting figure 6b...")
     fig, ax = pl.subplots(1, 2, figsize = (12, 3.5))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, bottom = 0.15)
     ax = ax.flatten()

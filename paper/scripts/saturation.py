@@ -42,12 +42,11 @@ It also generates the **raw** pixel flux map (i.e., the unnormalized version of
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
-sys.path.insert(1, EVEREST_ROOT)
+from everest.config import EVEREST_SRC
+IMG_PATH = os.path.join(os.path.dirname(EVEREST_SRC), 'paper', 'tex', 'images')
 import everest
 from everest.utils import Smooth
-import kplr
+import k2plr as kplr
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator

@@ -40,16 +40,15 @@ It works beautifully!
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-IMG_PATH = os.path.join(EVEREST_ROOT, 'paper', 'tex', 'images')
-sys.path.insert(1, EVEREST_ROOT)
 import everest
 from everest.detrend import PLDBasis, PLDCoeffs, PLDModel
 from everest.utils import RMS, MedianFilter, Smooth
+from everest.config import EVEREST_SRC
+IMG_PATH = os.path.join(os.path.dirname(EVEREST_SRC), 'paper', 'tex', 'images')
 import numpy as np
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
-import kplr
+import k2plr as kplr
 import george
 from george.kernels import Matern32Kernel, WhiteKernel
 

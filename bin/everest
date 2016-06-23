@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+everest
+-------
+
+Quick command-line lightcurve plotting.
+
+'''
+
+import argparse
+import everest
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(prog = 'everest', add_help = True)
+  parser.add_argument("epic", type = int, help = 'The EPIC target number (required)')
+  parser.add_argument("-a", "--aperture", action = 'store_true', help = 'Plot the aperture used for the photometry')
+  parser.add_argument("-c", "--ccd", action = 'store_true', help = 'Plot the location of the target on the CCD')
+  parser.add_argument("-i", "--interactive", action = 'store_true', help = 'Plot in interactive mode')
+  parser.add_argument("-n", "--contamination", action = 'store_true', help = 'Plot the contamination analysis')
+  parser.add_argument("-p", "--plot", action = 'store_true', help = 'Plot the everest de-trended light curve (default)')
+  parser.add_argument("-r", "--autocorrelation", action = 'store_true', help = 'Plot the autocorrelation/GP fitting result')
+  parser.add_argument("-s", "--postagestamp", action = 'store_true', help = 'Plot the postage stamp for the target')
+  parser.add_argument("-x", "--crossvalidation", action = 'store_true', help = 'Plot the cross-validation analysis')
+  parser.add_argument("--k2sff", action = 'store_true', help = 'Plot the k2sff light curve for the target')
+  parser.add_argument("--k2sc", action = 'store_true', help = 'Plot the k2sc light curve for the target')
+  parser.add_argument("--k2varcat", action = 'store_true', help = 'Plot the k2varcat light curve for the target')
+  args = parser.parse_args()
+  
+  # Plot is default
+  if not any([getattr(args, a) for a in ['aperture', 'ccd', 'contamination', 'autocorrelation', 
+                                         'postagestamp', 'crossvalidation', 'k2sff', 'k2sc', 'k2varcat']]):
+    args.plot = True
+  
+  # Get the data
+  star = everest.Everest(args.epic)
+  
+  # Plot stuff!
+  if args.aperture:
+    star.aperture()
+  if args.ccd:
+    star.ccd()
+  if args.contamination:
+    star.contamination()
+  if args.crossvalidation:
+    star.cross_validation()
+  if args.autocorrelation:
+    star.autocorrelation()
+  if args.postagestamp:
+    star.postage_stamp()
+  if args.k2sff:
+    star.plot(pipeline = 'k2sff')
+  if args.k2sc:
+    star.plot(pipeline = 'k2sc')
+  if args.k2varcat:
+    star.plot(pipeline = 'k2varcat')
+  if args.plot:
+    star.plot(interactive = args.interactive)
+  everest.show()

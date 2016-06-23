@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`config.py` - PATH settings
------------------------------------
+:py:mod:`config.py` - $PATH settings
+------------------------------------
+
+Stores information on the location of the :py:mod:`everest` source code,
+the data files, and the MAST url.
 
 '''
 
@@ -16,8 +19,8 @@ EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST_DATA_DIR", os.path.join
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 
 # MAST url
-MAST_ROOT = 'http://staff.washington.edu/rodluger/everest_fits/'
-# TODO: MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+EVEREST_FITS = os.environ.get('EVEREST_FITS', None)
+MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
 
 # Default kwargs file
 KWARGS_PY = \

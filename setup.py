@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 from setuptools import setup, find_packages
 
 # Hackishly inject a constant into builtins to enable importing of the
@@ -24,7 +24,7 @@ except:
 
 # Get the long description from the README
 def readme():
-  with open('README.rst') as f:
+  with open('README.md') as f:
     return f.read()
 
 # Setup!
@@ -43,12 +43,12 @@ setup(name = 'everest',
       author = 'Rodrigo Luger',
       author_email = 'rodluger@uw.edu',
       license = 'MIT',
-      packages = ['everest'],
+      packages = ['everest', 'everest.usertools'],
       install_requires = [
                           'numpy',
                           'scipy',
                           'matplotlib',
-                          'george',
+                          'george==0.2.1',
                           'sklearn',
                           'astroML',
                           'six',
@@ -60,5 +60,6 @@ setup(name = 'everest',
                           'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
                           'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.1'
                          ],
+      scripts=['bin/everest'],
       include_package_data = True,
       zip_safe = False)

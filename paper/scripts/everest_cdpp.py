@@ -10,12 +10,11 @@ Computes the 6-hr CDPP for all the `everest` de-trended light curves.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(1, EVEREST_ROOT)
 import everest
+from everest.config import EVEREST_SRC, EVEREST_DAT
 from everest.utils import RMS
-import kplr
-from kplr.config import KPLR_ROOT
+import k2plr as kplr
+from k2plr.config import KPLR_ROOT
 import random
 import numpy as np
 import shutil
@@ -26,7 +25,7 @@ from scipy.signal import savgol_filter
 
 run_name = 'default'
 
-for campaign in range(7):
+for campaign in range(8):
   
   print("\nRunning campaign %02d..." % campaign)
   
@@ -35,12 +34,7 @@ for campaign in range(7):
     open(os.path.join('CDPP', 'everest_C%02d.tsv' % campaign), 'a').close()
   
   # Get all EPIC stars
-  stars = list(np.loadtxt(os.path.join(EVEREST_ROOT, 'tables', 'C%02d.csv' % campaign), dtype = int))  
-
-  # Now remove candidates and EBs
-  ebs = set([int(eb.epic) for eb in everest.GetK2EBs()])
-  planets = set([int(planet.epic_name[5:]) for planet in everest.GetK2Planets()])
-  stars = list(set(stars) - (planets | ebs))
+  stars = list(np.loadtxt(os.path.join(EVEREST_SRC, 'tables', 'C%02d.csv' % campaign), dtype = int))  
   nstars = len(stars)
 
   # Remove ones we've done
@@ -71,13 +65,19 @@ for campaign in range(7):
       
         # Get the cdpp
         try:
-          data = np.load(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
+          data = np.load(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, '%d' % star, run_name, 'data.npz'))
+          rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
+          kepmag = data['kepmag'][()]
+          maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
+          satflag = int(min(5, max(0, round((maxmed - 135000) / 8000))))
+          indata = os.path.join(KPLR_ROOT, 'data', 'everest', str(star), str(star) + '.npz')
+          crwdflag = int(min(5, max(0, round(10 * np.load(indata)['contamination'][()]))))
+        except KeyboardInterrupt:
+          sys.exit()
         except:
+          with open(os.path.join('CDPP', 'everest_error.log'), 'a') as ferror:
+            print(star, file = ferror)
           continue
-        rms_raw, rms_raw_savgol, rms_evr, rms_evr_savgol, rms_pht = data['rms']
-        satsev = data['satsev'][()]
-        crwdsev = data['crwdsev'][()]
-        kepmag = data['kepmag'][()]
       
         print("{:>09d} {:>15.3f} {:>15.3f}".format(star, rms_evr, rms_evr_savgol), file = feverest)
-        print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>01d} {:>01d}".format(star, kepmag, rms_raw, rms_raw_savgol, rms_pht, satsev, crwdsev), file = fraw)
+        print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>01d} {:>01d}".format(star, kepmag, rms_raw, rms_raw_savgol, rms_pht, satflag, crwdflag), file = fraw)

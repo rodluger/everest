@@ -46,7 +46,7 @@ load my saved runs instead.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os, sys
-EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from everest.config import EVEREST_DAT
 import numpy as np
 import matplotlib.pyplot as pl
 import re
@@ -95,8 +95,8 @@ def GetDepths(clobber = False):
       for campaign in range(7):
       
         # Get the targets
-        stars = [s for s in os.listdir(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign)) if 
-                 os.path.exists(os.path.join(EVEREST_ROOT, 'output', 
+        stars = [s for s in os.listdir(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign)) if 
+                 os.path.exists(os.path.join(EVEREST_DAT, 'output', 
                  'C%02d' % campaign, s, folder, '%s.inj' % s))]
         nstars += len(stars)
 
@@ -104,7 +104,7 @@ def GetDepths(clobber = False):
         for star in stars:
         
           # Injection
-          with open(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
+          with open(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, star, 
                     folder, '%s.inj' % star), 'r') as f:
             lines = f.readlines()
             a, _, b = re.findall('([-0-9.]+)', lines[4])
@@ -115,8 +115,8 @@ def GetDepths(clobber = False):
       for campaign in range(7):
       
         # Get the targets
-        stars = [s for s in os.listdir(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign)) if 
-                 os.path.exists(os.path.join(EVEREST_ROOT, 'output', 
+        stars = [s for s in os.listdir(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign)) if 
+                 os.path.exists(os.path.join(EVEREST_DAT, 'output', 
                  'C%02d' % campaign, s, 'default', '%s.ctrl1.inj' % s))]
         nstars_ctrl += len(stars)
         
@@ -125,9 +125,9 @@ def GetDepths(clobber = False):
         for star in stars:
         
           # Control injection
-          if os.path.exists((os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
+          if os.path.exists((os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, star, 
                              'default', '%s.ctrl%d.inj' % (star, n)))):
-            with open(os.path.join(EVEREST_ROOT, 'output', 'C%02d' % campaign, star, 
+            with open(os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, star, 
                       'default', '%s.ctrl%d.inj' % (star, n)), 'r') as f:
               lines = f.readlines()
               a, _, b = re.findall('([-0-9.]+)', lines[4])

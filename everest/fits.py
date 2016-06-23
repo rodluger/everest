@@ -13,8 +13,7 @@ These FITS files make up the public :py:mod:`everest` catalog.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
 from .config import EVEREST_DAT, EVEREST_SRC
-from .utils import RemoveBackground
-from .data import Campaign
+from .data import Campaign, RemoveBackground, GetK2Data
 import k2plr as kplr
 from k2plr.config import KPLR_ROOT
 try:
@@ -108,17 +107,51 @@ def DataHDU(data, fitsheader):
     cards.append(tpf_header[entry])
   
   # Generate some EVEREST data/info
-  outliers = np.zeros_like(data['time'], dtype = np.int32)
-  outliers[data['mask']] = 1
+  time = data['time']
+  outliers = np.zeros_like(time, dtype = np.int32)
+  mask = np.array(data['mask'], dtype = int)
+  outliers[mask] = 1
   flux = data['fpld'] * np.nanmedian(data['flux'])
   cdpp_raw = data['rms'][1]
   cdpp_det = data['rms'][3]
   npc = data['npc_pred'][data['besti'][()]]
   breakpoints = (list(data['breakpoints']) + [None, None, None, None, None])[:5]
-  if RemoveBackground(data['campaign']):
+  if RemoveBackground(data['EPIC']):
     bkg = data['bkg']
   else:
-    bkg = np.zeros_like(data['time'])
+    bkg = np.zeros_like(time)
+  raw_flux = data['flux']
+  raw_ferr = data['ferr']
+  
+  # HACK: Add missing cadences back in as NaNs
+  j = 0
+  tol = 1e-4 # About 10 seconds
+  time_ = data['raw_time']
+  flux_ = np.empty_like(time_) * np.nan
+  outliers_ = np.ones_like(time_, dtype = np.int32)
+  bkg_ = np.empty_like(time_) * np.nan 
+  raw_flux_ = np.empty_like(time_) * np.nan
+  raw_ferr_ = np.empty_like(time_) * np.nan
+  for i in range(len(time_)):
+    if j < len(time):
+      if np.abs(time_[i] - time[j]) < tol:
+        flux_[i] = flux[j]
+        outliers_[i] = outliers[j]
+        bkg_[i] = bkg[j]
+        raw_flux_[i] = raw_flux[j]
+        raw_ferr_[i] = raw_ferr[j]
+        j += 1
+  flux = np.array(flux_)
+  time = np.array(time_)
+  outliers = np.array(outliers_)
+  bkg = np.array(bkg_)
+  raw_flux = np.array(raw_flux_)
+  raw_ferr = np.array(raw_ferr_)
+  
+  # Compute saturation and crowding flags
+  maxmed = np.nanmax(np.nanmedian(data['fpix'], axis = 0))
+  satflag = min(5, max(0, round((maxmed - 135000) / 8000)))
+  crwdflag = min(5, max(0, round(10 * data['contamination'])))
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -132,9 +165,9 @@ def DataHDU(data, fitsheader):
   cards.append(('APNUM', data['apnum'][()], 'Number of K2SFF aperture used'))
   cards.append(('CDPP6RAW', cdpp_raw, 'Raw 6-hr CDPP estimate'))
   cards.append(('CDPP6', cdpp_det, 'EVEREST 6-hr CDPP estimate'))
-  cards.append(('SATFLAG', data['satsev'][()], 'Saturation flag (0-5)'))
-  cards.append(('CRWFLAG', data['crwdsev'][()], 'Crowding flag (0-5)'))
-  cards.append(('ACRFLAG', data['acorsev'][()], 'Autocorrelation fit flag (0-5)'))
+  cards.append(('SATFLAG', satflag, 'Saturation flag (0-5)'))
+  cards.append(('CRWDFLAG', crwdflag, 'Crowding flag (0-5)'))
+  cards.append(('CONTAM', data['contamination'][()], 'Median contamination metric'))
   cards.append(('ACRCHSQ', data['chisq'][()], 'Autocorrelation fit chi squared'))
   cards.append(('GPITER', data['gp_iter'][()], 'Number of GP iterations'))
   cards.append(('GITHASH', data['git_hash'][()], 'Everest git repo hash'))
@@ -143,13 +176,12 @@ def DataHDU(data, fitsheader):
 
   # Create the HDU
   header = pyfits.Header(cards = cards)
-  cols = pyfits.ColDefs([pyfits.Column(name = 'TIME', format = 'D', array = data['time'], unit = 'BJD - 2454833'),
+  cols = pyfits.ColDefs([pyfits.Column(name = 'TIME', format = 'D', array = time, unit = 'BJD - 2454833'),
                          pyfits.Column(name = 'FLUX', format = 'D', array = flux),
                          pyfits.Column(name = 'OUTLIER', format = 'J', array = outliers),
                          pyfits.Column(name = 'BKG_FLUX', format = 'D', array = bkg),
-                         pyfits.Column(name = 'WHT_FLUX', format = 'D', array = data['fwhite']),
-                         pyfits.Column(name = 'RAW_FLUX', format = 'D', array = data['flux']),
-                         pyfits.Column(name = 'RAW_FERR', format = 'D', array = data['ferr']),
+                         pyfits.Column(name = 'RAW_FLUX', format = 'D', array = raw_flux),
+                         pyfits.Column(name = 'RAW_FERR', format = 'D', array = raw_ferr),
                         ])
   hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'EVEREST ARRAYS')
 
@@ -195,14 +227,30 @@ def XHDU(data, fitsheader):
   cards.append(('PLDORDER', data['pld_order'][()]))
   cards.append(('NPC', data['npc_pred'][data['besti'][()]], 'Number of principal components per submatrix'))
   cards.append(('NSMAT', len(data['breakpoints']) + 1, 'Number of submatrices'))
-  cards.append(('KNUM', data['gpinfo'][()]['knum'], 'GP kernel number'))
+  knum = data['gpinfo'][()]['knum']
+  if hasattr(knum, '__len__'): knum = knum[()]
+  cards.append(('KNUM', knum, 'GP kernel number'))
   kpars = (list(data['gpinfo'][()]['kpars']) + [None, None, None, None, None, None, None, None, None, None])[:10]
   for n in range(10):
     cards.append(('KPAR%02d' % n, kpars[n], 'Kernel param value'))
   
+  # HACK: Add missing cadences back in as NaNs
+  j = 0
+  tol = 1e-4 # About 10 seconds
+  time = data['time']
+  time_ = data['raw_time']
+  X = data['X']
+  X_ = np.empty((len(time_), X.shape[1])) * np.nan
+  for i in range(len(time_)):
+    if j < len(time):
+      if np.abs(time_[i] - time[j]) < tol:
+        X_[i] = X[j]
+        j += 1
+  X = np.array(X_)
+  
   # Create the HDU
   header = pyfits.Header(cards = cards)
-  cols = pyfits.ColDefs([pyfits.Column(name = 'X', format = '%dD' % data['X'].shape[1], array = data['X'])])
+  cols = pyfits.ColDefs([pyfits.Column(name = 'X', format = '%dD' % X.shape[1], array = X)])
   hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'PLD DESIGN MATRIX')
 
   return hdu
@@ -241,7 +289,7 @@ def ApertureHDU(data, fitsheader):
 
   return hdu
 
-def MakeFITS(EPIC, run_name = 'default', clobber = False):
+def MakeFITS(EPIC, campaign = None, run_name = 'default', clobber = False):
   '''
   Generate a FITS file for a given run.
   
@@ -253,26 +301,33 @@ def MakeFITS(EPIC, run_name = 'default', clobber = False):
   '''
   
   # Set up the output directory
-  campaign = Campaign(EPIC)
+  if campaign is None:
+    campaign = Campaign(EPIC)
   folder = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
-                       ('%09d' % EPIC)[:4] + '00000')
+                       ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:])
   if not os.path.exists(folder):
     os.makedirs(folder)
-  outfile = os.path.join(folder, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s.fits' % 
+  outfile = os.path.join(folder, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % 
                         (EPIC, campaign, EVEREST_VERSION))
   if os.path.exists(outfile) and not clobber:
     return
   elif os.path.exists(outfile):
     os.remove(outfile)
   
-  # Get the EVEREST input data and grab the fits header
-  filename = os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC), str(EPIC) + '.npz')
-  indata = np.load(filename)
-  fitsheader = indata['fitsheader']
+  # Get the EVEREST input data and grab some info
+  indata = GetK2Data(EPIC)
+  if indata is None:
+    return
+  fitsheader = indata.fitsheader
   
   # Get the EVEREST output data
   outdir = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), run_name)
-  data = dict(np.load(os.path.join(outdir, 'data.npz')))
+  try:
+    data = dict(np.load(os.path.join(outdir, 'data.npz')))
+  except:
+    return
+  data['contamination'] = indata.contamination
+  data['raw_time'] = indata._raw_time
   
   # Create the HDUs
   primary = PrimaryHDU(data, fitsheader)

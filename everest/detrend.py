@@ -5,7 +5,7 @@
 -------------------------------------
 
 This is the heart of :py:mod:`everest`. These routines compute the principal components
-of the fractional pixel flux functions and solves the GLS problem with a GP to
+of the fractional pixel flux functions and solve the GLS problem with a GP to
 obtain the PLD coefficients that best capture the instrumental noise signal.
 
 '''
@@ -21,7 +21,7 @@ import logging
 log = logging.getLogger(__name__)
       
 def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms = True, 
-             max_components = 300):
+             do_pca = True, max_components = 300):
   '''
   Returns the basis vectors :math:`\mathbf{X}` we're going to use for the PLD model.
   :math:`\mathbf{X}` has shape (`npts`, `n_components`). The first column (`[:,0]`)
@@ -55,7 +55,7 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms =
   npts, npix = fpix.shape
   frac = fpix / np.sum(fpix, axis = 1).reshape(-1, 1)
   
-  # The number of signals (equation 6 in the paper)
+  # The number of signals
   nsignals = int(np.sum([nchoosek(npix + k - 1, k) for k in range(1, pld_order + 1)]))
   
   # Add the breakpoints
@@ -95,13 +95,14 @@ def PLDBasis(fpix, time = None, breakpoints = None, pld_order = 3, cross_terms =
         x = np.hstack([x, xn])
         
     # Perform PCA on them
-    pca = PCA(n_components = n_components - 1)
-    xpca = pca.fit_transform(x)
+    if do_pca:
+      pca = PCA(n_components = n_components - 1)
+      xpca = pca.fit_transform(x)
 
-    # Prepend a column vector of ones, since PCA transform removes 
-    # the property that the basis vectors all sum to one.
-    x = np.hstack([np.ones(xpca.shape[0]).reshape(-1, 1), xpca])
-  
+      # Prepend a column vector of ones, since PCA transform removes 
+      # the property that the basis vectors all sum to one.
+      x = np.hstack([np.ones(xpca.shape[0]).reshape(-1, 1), xpca])
+    
     # Pad with zeros on the left and right so that the chunks are
     # all independent of each other
     lzeros = np.zeros((x.shape[0], i * x.shape[1]))
@@ -183,6 +184,29 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   
   :returns (masked_scatter, unmasked_scatter): A tuple containing the masked (validation) and unmasked (training) CDPP
   
+  .. note:: \
+    This function had a bug when the :py:mod:`everest 0.1` catalog was generated. \
+    The indices of all contiguous 13-cadence chunks, :py:obj:`inds`, are computed \
+    from the **masked** time array, but in the earlier version of this function \
+    we selected those indices from the **unmasked** arrays. As a result, the validation \
+    sets weren't generally 13-cadence contiguous, especially for light curves with \
+    many outliers. However, I found that this did not make any difference; \
+    the corrected version of the code yielded cross-validation plots that were \
+    qualitatively the same as before. If anything, this could \
+    lead to slight underfitting, since the CDPP in the validation set is higher than \
+    it should be (since the set spans a larger time window), forcing the code to select \ 
+    fewer principal components. In practice, however, the difference is negligible. \
+    Here is the earlier (bugged) version of the for loop:
+  
+    .. code-block:: python
+  
+      for n in range(niter):
+        masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
+        mask_new = list(np.append(mask_orig, np.concatenate(masks)))
+        C = PLDCoeffs(X, Y, time, errors, gp, mask_new)
+        M = [PLDModel(C, X[m]) for m in masks]
+        masked_scatter.append(np.median([1.e6 * np.std((Y[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))  
+  
   '''
   
   # Setup some variables
@@ -193,9 +217,9 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
   # Mask transits and outliers
   M = Mask(mask_orig)
   mT = M(time)
-  mE = M(errors)
   mY = M(Y)
   mX = M(X)
+  mE = M(errors)
   med = np.median(mY)
   
   # The precision in the unmasked light curve
@@ -218,19 +242,19 @@ def ComputeScatter(X, Y, time, errors, gp, mask = [], niter = 30, nmasks = 10):
     
     # Get all our masks
     masks = [np.arange(s, s + 13) for s in [np.random.choice(i) for i in inds if len(i)]]
-
+    
     # Redefine the mask function
-    mask_new = list(np.append(mask_orig, np.concatenate(masks)))
+    mask_new = np.concatenate(masks)
     
     # Get coefficients based on the masked data
-    C = PLDCoeffs(X, Y, time, errors, gp, mask_new)
+    C = PLDCoeffs(mX, mY, mT, mE, gp, mask_new)
     
     # Predict the model in that interval
-    M = [PLDModel(C, X[m]) for m in masks]
+    M = [PLDModel(C, mX[m]) for m in masks]
     
     # The masked de-trended interval and its precision in ppm
-    masked_scatter.append(np.median([1.e6 * np.std((Y[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))
-    
+    masked_scatter.append(np.median([1.e6 * np.std((mY[m] - M[i] + med) / med) / np.sqrt(13) for i, m in enumerate(masks)]))  
+
   # Take the median and return
   masked_scatter = np.median(masked_scatter)
   return masked_scatter, unmasked_scatter
