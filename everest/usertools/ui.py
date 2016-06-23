@@ -342,10 +342,20 @@ class Everest(object):
       self.cdpp6raw = hdulist[1].header['CDPP6RAW']
       
       # Channel
+      self.module = hdulist[0].header['MODULE']
+      self.output = hdulist[0].header['OUTPUT']
       self.channel = hdulist[0].header['CHANNEL']
       self.crval1p = hdulist[4].header['CRVAL1P']
       self.crval2p = hdulist[4].header['CRVAL2P']
       self.apnum = hdulist[1].header['APNUM']
+      
+      # Position info
+      self.crpix1p = hdulist[4].header['CRPIX1P']
+      self.crpix2p = hdulist[4].header['CRPIX2P']
+      self.crval1p = hdulist[4].header['CRVAL1P']
+      self.crval2p = hdulist[4].header['CRVAL2P']
+      self.cdelt1p = hdulist[4].header['CDELT1P']
+      self.cdelt2p = hdulist[4].header['CDELT2P']
       
   @property
   def masked_inds(self):
