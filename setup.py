@@ -54,7 +54,8 @@ setup(name = 'everest',
                           'six',
                           pyfits,
                           'pysyzygy>=0.0.1',
-                          'k2plr==0.2.1'
+                          'k2plr==0.2.1',
+                          'statsmodels'
                          ],
       dependency_links = [
                           'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
