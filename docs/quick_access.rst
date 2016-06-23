@@ -37,5 +37,5 @@ The :py:mod:`everest` command accepts several options, which we list below.
 :py:obj:`-x`          Plot the cross-validation analysis
 :py:obj:`--k2sff`     Plot the **K2SFF** light curve for the target
 :py:obj:`--k2sc`      Plot the **K2SC** light curve for the target
-:py:obj:`--k2varcat`  Plot the **K2SVARCAT** light curve for the target
+:py:obj:`--k2varcat`  Plot the **K2VARCAT** light curve for the target
 ====================  =================================================================================
