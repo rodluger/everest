@@ -112,9 +112,12 @@ class Selector(object):
     self._plots = []
     self.info = ""
     self.subt = False
+    self._xclick = None
+    self._yclick = None
     
     # Connect the mouse
-    pl.connect('button_press_event', self.on_mouse_click) 
+    pl.connect('button_press_event', self.on_mouse_press) 
+    pl.connect('button_release_event', self.on_mouse_release)
     
     # Initialize our widgets
     self.Selector = RectangleSelector(ax, self.on_select,
@@ -180,6 +183,10 @@ class Selector(object):
     axslider.xaxis.tick_top()
     axslider.set_title('Duration (d)', fontsize = 8, y = 1.1)
     HideAxis(axslider)
+    
+    self.msg = self.ax.annotate('', xy = (0.5, 0.95), 
+                                xycoords = 'axes fraction', ha = 'center', va = 'top',
+                                fontsize = 12, color = 'r')
             
     self.redraw()
     
@@ -216,14 +223,28 @@ class Selector(object):
     # Refresh
     self.fig.canvas.draw()
   
-  def on_mouse_click(self, event):
+  def on_mouse_press(self, event):
     '''
     
     '''
     
     if (event.inaxes is not None) and (self.TransitSelector.active):
+      self._xclick = event.xdata
+      self._yclick = event.ydata
+      self.msg.set_text('')
+
+  def on_mouse_release(self, event):
+    '''
+    
+    '''
+    
+    if (event.inaxes is not None) and (self.TransitSelector.active) and \
+       (event.xdata == self._xclick) and (event.ydata == self._yclick):
+      
       s = np.argmin(np.abs(self.x - event.xdata))
-            
+      self._xclick = None
+      self._yclick = None
+         
       if self.TransitSelector.t0 is None:
         self.TransitSelector.t0 = self.x[s]
       elif self.TransitSelector.t1 is None:
@@ -318,8 +339,10 @@ class Selector(object):
     self.TransitSelector.set_active(not self.TransitSelector.active)
     if self.TransitSelector.active:
       self.TransitButton.label.set_weight('bold')
+      self.msg.set_text('Click on any two adjacent transits')
     else:
       self.TransitButton.label.set_weight('normal')
+      self.msg.set_text('')
     self.redraw()
     
   
@@ -330,6 +353,7 @@ class Selector(object):
     
     self.Unselector.set_active(False)
     self.TransitSelector.set_active(False)
+    self.msg.set_text('')
     HideAxis(self.OKButton.ax)
     HideAxis(self.CancelButton.ax)
     HideAxis(self.Slider.ax)
@@ -349,6 +373,7 @@ class Selector(object):
     
     self.Selector.set_active(False)
     self.TransitSelector.set_active(False)
+    self.msg.set_text('')
     HideAxis(self.OKButton.ax)
     HideAxis(self.CancelButton.ax)
     HideAxis(self.Slider.ax)
@@ -369,6 +394,7 @@ class Selector(object):
     self.Selector.set_active(False)
     self.Unselector.set_active(False)
     self.TransitSelector.set_active(False)
+    self.msg.set_text('')
     HideAxis(self.OKButton.ax)
     HideAxis(self.CancelButton.ax)
     HideAxis(self.Slider.ax)
@@ -387,6 +413,7 @@ class Selector(object):
     self.Selector.set_active(False)
     self.Unselector.set_active(False)
     self.TransitSelector.set_active(False)
+    self.msg.set_text('')
     HideAxis(self.OKButton.ax)
     HideAxis(self.CancelButton.ax)
     HideAxis(self.Slider.ax)

@@ -14,7 +14,7 @@
   pointing precision required to detect the small light modulations caused by transiting
   exoplanets. <b>EVEREST</b> exploits correlations across the pixels on the <i>Kepler</i> CCD to
   remove systematics introduced by the spacecraft's pointing error, yielding light curves
-  with precision comparable to that of the original `Kepler` mission. Here we provide
+  with precision comparable to that of the original <i>Kepler</i> mission. Here we provide
   detailed documentation of the <b>EVEREST</b> pipeline, which was coded in Python and is
   freely available on <a href = "https://github.com/rodluger/everest">github</a>.
   <br><br>
