@@ -51,7 +51,7 @@ We present \texttt{EVEREST}, an open-source pipeline for removing instrumental n
 from \emph{K2} light curves. \texttt{EVEREST} employs a variant of pixel level decorrelation (PLD) 
 to remove systematics introduced by the spacecraft's 
 pointing error and a Gaussian process (GP) to capture astrophysical variability. We
-apply \texttt{EVEREST} to all \emph{K2} targets in campaigns 0-6, yielding light curves
+apply \texttt{EVEREST} to all \emph{K2} targets in campaigns 0-7, yielding light curves
 with precision comparable to that of the original \emph{Kepler} mission for stars brighter
 than $K_p \approx 13$, and within a factor of two of the \emph{Kepler} precision for fainter
 targets. We perform cross-validation and transit injection and recovery tests to validate
@@ -149,7 +149,7 @@ disentangle astrophysical and instrumental variability.
 % TODO: Provide the links in the published version
 %We apply our pipeline, \texttt{EVEREST}
 %(\emph{EPIC Variability Extraction and Removal for
-%Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from campaigns 0-6 and generate a 
+%Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from campaigns 0-7 and generate a 
 %publicly-available database\footnote{\texttt{\url{https://archive.stsci.edu/prepds/everest/}}}
 %of processed light curves. Our code is open-source and
 %available online.\footnote{\texttt{\url{https://github.com/rodluger/everest}}}
@@ -157,7 +157,7 @@ disentangle astrophysical and instrumental variability.
 %
 We apply our pipeline, \texttt{EVEREST}
 (\emph{EPIC Variability Extraction and Removal for
-Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from campaigns 0-6 and generate a 
+Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from campaigns 0-7 and generate a 
 publicly-available database of processed light curves. Our code is open-source and will be made
 available online.
 
@@ -319,7 +319,7 @@ mathematically equivalent to Equations~(\ref{eq:demingsolution}) and
   \end{center}
 \end{figure}
 
-\subsection{Gaussian Processes}
+\subsection{Gaussian Process Regression}
 \label{sec:gp}
 \begin{figure*}[t]
   \begin{center}
@@ -398,7 +398,8 @@ degraded when compared to that of the non-variable star.
 One might imagine that a higher order polynomial would do the trick. However, there
 is an alternate approach, one that naturally follows from Equation~\ref{eq:pcacoefficients}.
 Rather than model the stellar signal explicitly, we instead treat it non-parametrically
-with a GP, which we use to estimate the covariance matrix $\mathbf{K}$. Provided
+by performing Gaussian process regression, in
+which we use a GP to estimate the covariance matrix $\mathbf{K}$. Provided
 $\mathbf{K}$ is a reasonable approximation to the true covariance of the stellar signal,
 Equation~\ref{eq:pcacoefficients} will yield a set of PLD coefficients that 
 fit out only the instrumental component of the noise. We illustrate this in 
@@ -413,7 +414,7 @@ the final residuals (third panel) show a comparable (in fact, marginally smaller
 residuals of the original data. It is also clear from the bottom panel that the transit 
 shape and depth are well preserved.
 
-We note, finally, that another advantage of the GP approach is that the PLD model is
+We note that another advantage of GP regression is that the PLD model is
 relatively insensitive to the particular choice of kernel function and values of its
 hyperparameters. This can be seen in the example above; even though the stellar
 variability signal was generated from a 25-day period sinusoidal function, a radial
@@ -421,9 +422,13 @@ Mat\'ern-3/2 kernel with a timescale of 20 days was sufficient to ensure the ins
 signal was removed without inflating the white noise. This is important because the
 stellar signal is generally unknown \emph{a priori}, and any attempt to estimate it from the data
 will be subject to how well one can discriminate between instrumental and stellar effects.
-In \S\ref{sec:methods} we describe our iterative procedure for optimizing the GP kernel.
 
-\pagebreak
+Finally, we caution that GP regression assumes Gaussian noise. Deviations from Gaussianity,
+such as the presence of outliers, can invalidate the assumptions of the method and lead
+to poor fits to the data. Although we remove outliers prior to optimizing the GP, users
+accessing our de-trended light curves are encouraged to check for Gaussianity with
+methods such as an Anderson-Darling test. In \S\ref{sec:methods} we describe our 
+iterative procedure for removing outliers and optimizing the GP kernel.
 
 \section{Methods}
 \label{sec:methods}
@@ -466,6 +471,8 @@ We then re-compute the PLD model by masking those outliers and de-trend the full
 light curve, identifying a new set of outliers. This process is repeated until no new outliers
 are identified. We find that this identifies deep transits, eclipses, and
 other outliers that could affect the quality of the PLD fit.
+
+\pagebreak
 
 \subsection{GP Optimization}
 \label{sec:gpopt}
@@ -662,6 +669,8 @@ number of light curve subdivisions, we de-trend each EPIC light curve by subtrac
 model given by
 Equations~\ref{eq:pcamodel} and \ref{eq:pcacoefficients}. We then add the median value of the
 SAP flux to the result to obtain our final, de-trended light curves.
+
+\pagebreak
 
 \section{Results}
 \label{sec:results}
@@ -960,7 +969,7 @@ as the CDPP.
        \caption{6-hr photometric precision as a function of Kepler magnitude $K_p$
                 for all stars observed by \emph{Kepler} 
                 (yellow dots) and for all unsaturated, non-crowded \emph{K2} targets
-                in campaigns 0-5 de-trended with \texttt{EVEREST}
+                in campaigns 0-7 de-trended with \texttt{EVEREST}
                 (blue dots). The median values are indicated
                 for 0.5 magnitude-wide bins with filled circles.
                 Our pipeline recovers the original \emph{Kepler} precision for stars
@@ -980,7 +989,7 @@ as the CDPP.
   \end{center}
 \end{figure}
 
-In Figure~\ref{fig:precision1} we plot the CDPP of our de-trended fluxes for campaign 0-5 
+In Figure~\ref{fig:precision1} we plot the CDPP of our de-trended fluxes for campaign 0-7 
 stars, excluding saturated targets (stars whose brightest pixel's median flux $> 1.6\times 10^5 \mathrm{e/s}$) 
 and stars in highly crowded apertures (stars with $\Delta K_p < 5$ neighbors
 inside the aperture or brighter neighbors within 2 pixels of the edge of the aperture),
@@ -1018,7 +1027,7 @@ the MAST HLSP \emph{K2} archive.\footnote{https://archive.stsci.edu/k2/hlsp/}
 For each of the pipelines, we download all available de-trended light curves and
 compute the CDPP as described in \S\ref{sec:precision}. In 
 Figures~\ref{fig:comparison_k2varcat}-\ref{fig:comparison_k2sc}, we plot a pairwise
-comparison of the precision achieved for all campaign 0-5 light curves that are
+comparison of the precision achieved for all campaign 0-7 light curves that are
 available in both our catalog and that of the other pipeline. These plots are based
 on Figure 10 in \cite{AIG16}; the plots show the relative 6-hr CDPP difference between
 our light curves and those produced by the \texttt{K2VARCAT}, \texttt{K2SFF}, and \texttt{K2SC}
@@ -1059,17 +1068,9 @@ summing the \texttt{FLUX} and \texttt{TREND\_T} columns in the dataset. We then 
 a Savitsky-Golay filter, as we do to the \texttt{EVEREST} data, to remove the stellar 
 components of the variability. Since campaigns 0-2 are not available in the \texttt{K2SC}
 catalog, this plot shows the comparison for campaigns 3-5 only.
-
-\texttt{K2SC} light curves have a median precision comparable to that of \texttt{EVEREST} for 
-$16 \lesssim K_p \lesssim 17$. At all other magnitudes, however, \texttt{EVEREST}
-light curves have higher precision, by 5-10\%.
-\texttt{EVEREST} does not significantly outperform \texttt{K2SC} at the relatively faint
-magnitudes because the smaller PSF of faint
-stars results in fewer, noisier basis vectors for PLD. The \texttt{K2SC} pipeline, on 
-the other hand, uses the stellar motion information contained in the \texttt{POS\_CORR1}
-and \texttt{POS\_CORR2} arrays of the MAST light curves, which are computed from the
-motion of spacecraft as determined from the behavior of several bright stars in the field
-of view; these metrics are subject to less noise.
+Once again, \texttt{EVEREST} light curves have higher precision than those of
+\text{K2SC} by $\sim$ 10\% for bright stars and $\sim$ 5\% for stars in the range
+$16 \lesssim K_p \lesssim 11$.
 
 All plots shown here display a significant amount of scatter. While \texttt{EVEREST}
 yields the lowest median CDPP in all cases, we recommend comparing light curves from
@@ -1081,7 +1082,7 @@ targets and for those in very crowded fields.
   \begin{center}
       \psfig{file=images/comparison_k2varcat.png,width=3.5in}
        \caption{Relative 6-hr CDPP difference between \texttt{EVEREST}
-                and \texttt{K2VARCAT} light curves for campaigns 0-5. Blue dots
+                and \texttt{K2VARCAT} light curves for campaigns 0-7. Blue dots
                 show differences for individual stars, while the black line
                 indicates the median in 0.5 magnitude-wide bins. Negative
                 values indicate higher precision in the \texttt{EVEREST}
@@ -1102,17 +1103,18 @@ targets and for those in very crowded fields.
      \label{fig:comparison_k2sff}
   \end{center}
 \end{figure}
-\begin{figure}[h]
+\begin{figure*}[t]
   \begin{center}
-      \psfig{file=images/comparison_k2sff_by_campaign.png,width=3.5in}
+      \leavevmode
+      \psfig{file=images/comparison_k2sff_by_campaign.png,width=7in}
        \caption{A comparison of the \texttt{EVEREST} and \texttt{K2SFF} CDPP for
                 each individual campaign. Note the marked difference between
-                campaigns 3-5 and campaigns 0-2. For campaign 2, in particular,
-                the relative improvement is 0.5, corresponding to an average
+                campaigns 3-7 and campaigns 0-2. For campaign 2, in particular,
+                the relative improvement is close to 0.5, corresponding to an average
                 \texttt{EVEREST} precision a factor of 2 higher than \texttt{K2SFF}.}
      \label{fig:comparison_k2sff_by_campaign}
   \end{center}
-\end{figure}
+\end{figure*}
 \begin{figure}[h]
   \begin{center}
       \psfig{file=images/comparison_k2sc.png,width=3.5in}
@@ -1123,8 +1125,7 @@ targets and for those in very crowded fields.
                 systematics \emph{only}. As before, a Savitsky-Golay filter
                 is then applied to both sets of light curves. The median relative difference
                 is once again negative everywhere, indicating that \texttt{EVEREST} yields higher
-                precision light curves at all magnitudes, with the exception of the range $16 \lesssim K_p \lesssim 17$,
-                where the precision is comparable in both light curves.}
+                precision light curves at all magnitudes.}
      \label{fig:comparison_k2sc}
   \end{center}
 \end{figure}
@@ -1186,9 +1187,10 @@ In this paper we introduced \texttt{EVEREST}, a pipeline developed to yield the 
 precision light curves for \emph{K2} stars. \texttt{EVEREST} builds on the pixel level
 decorrelation (PLD) technique of \cite{DEM15}, extending it to third order in the pixel
 fluxes and combining it with principal component analysis to yield a set of basis
-vectors that together capture most of the instrumental variability in the data. A Gaussian
-process (GP) is then used to remove the instrumental
-systematics while preserving astrophysical signals. In order to prevent overfitting, we
+vectors that together capture most of the instrumental variability in the data. Gaussian
+process (GP) regression is then performed to remove the instrumental
+systematics while preserving astrophysical signals. 
+In order to prevent overfitting, we
 developed a method to determine the ideal number of principal components to use in the fit, yielding reliable,
 high precision de-trended light curves for all \emph{K2} campaigns to date.
 
@@ -1217,10 +1219,8 @@ photometric precision of the original \emph{Kepler} mission; for fainter stars, 
 median precision is within a factor of 2 of that of the original mission.
 We further compared our de-trended light curves to those produced by the other \emph{K2} pipelines
 available at the MAST HLSP \emph{K2} archive.
-\texttt{EVEREST} light curves have systematically higher precision than both \texttt{K2SFF}
-and \texttt{K2VARCAT} for all Kepler magnitudes $K_p > 11$. \texttt{EVEREST} also outperforms
-\texttt{K2SC} at all magnitudes except $16 \lesssim K_p \lesssim 17$, where \texttt{K2SC}
-yields similar median precision. Currently, \texttt{EVEREST}
+\texttt{EVEREST} light curves have systematically higher precision than \texttt{K2SFF},
+\texttt{K2VARCAT} and \texttt{K2SC} for all Kepler magnitudes $K_p > 11$. Currently, \texttt{EVEREST}
 performs poorly for saturated targets and for those in highly crowded fields.
 
 %
@@ -1231,9 +1231,12 @@ performs poorly for saturated targets and for those in highly crowded fields.
 %is open source and available at \texttt{\url{https://github.com/rodluger/everest}}.
 %
 %
-Our catalog of de-trended light curves will be made publicly available and will be constantly
-updated for new \emph{K2} campaigns. The source code used to de-trend the light curves
-is open source and will be made available shortly on \texttt{github}. Since the only
+Our catalog of de-trended light curves is publicly available at 
+\texttt{\url{https://archive.stsci.edu/prepds/everest/}} and will be constantly
+updated for new \emph{K2} campaigns. The code used to de-trend the light curves
+is open source under the MIT license and is available at \texttt{\url{https://github.com/rodluger/everest}},
+along with user-friendly routines for downloading and interacting with the de-trended light curves.
+Since the only
 inputs to \texttt{EVEREST} are the pixel level light curves, the techniques developed
 here can be generally applied to light curves produced by any photometry mission,
 including the upcoming \emph{TESS} mission \citep{RIC15}, to remove instrumental noise
@@ -1252,6 +1255,8 @@ This research used the advanced computational,
 storage, and networking infrastructure provided by the
 Hyak supercomputer system at the University of Washington.
 \end{acknowledgments}
+
+\pagebreak
 
 \bibliographystyle{apj}
 \bibliography{k2}
