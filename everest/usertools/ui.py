@@ -57,6 +57,7 @@ def _EverestVersion():
   data = handler.read().decode('utf-8')
   if data.endswith('\n'):
     data = data[:-1]
+
   return data
 
 def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
@@ -75,7 +76,7 @@ def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
   
     # Get the url
     mast_version = _EverestVersion()
-    url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + ('%09d' % EPIC)[4:] + \
+    url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + ('%09d/' % EPIC)[4:] + \
           'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, mast_version, name)
   
     # Get the local file name
@@ -84,7 +85,7 @@ def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
                             'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, mast_version, name))
     if not os.path.exists(os.path.dirname(filename)):
       os.makedirs(os.path.dirname(filename))
-  
+
     # Download the data
     r = urllib.request.Request(url)
     handler = urllib.request.urlopen(r)
