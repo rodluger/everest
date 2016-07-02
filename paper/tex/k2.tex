@@ -145,16 +145,7 @@ in the pixel fluxes and performing principal component analysis (PCA) on the bas
 vectors to limit the flexibility of the model and thus prevent overfitting. We further 
 couple PLD with a GP to 
 disentangle astrophysical and instrumental variability. 
-%
-% TODO: Provide the links in the published version
-%We apply our pipeline, \texttt{EVEREST}
-%(\emph{EPIC Variability Extraction and Removal for
-%Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from campaigns 0-7 and generate a 
-%publicly-available database\footnote{\texttt{\url{https://archive.stsci.edu/prepds/everest/}}}
-%of processed light curves. Our code is open-source and
-%available online.\footnote{\texttt{\url{https://github.com/rodluger/everest}}}
-%
-%
+
 We apply our pipeline, \texttt{EVEREST}
 (\emph{EPIC Variability Extraction and Removal for
 Exoplanet Science Targets}), to the entire set of \emph{K2} light curves from campaigns 0-7 and generate a 
@@ -1223,19 +1214,13 @@ available at the MAST HLSP \emph{K2} archive.
 \texttt{K2VARCAT} and \texttt{K2SC} for all Kepler magnitudes $K_p > 11$. Currently, \texttt{EVEREST}
 performs poorly for saturated targets and for those in highly crowded fields.
 
-%
-% TODO: Provide links in the published version
-%Our catalog of de-trended light curves will be made publicly available at
-%\texttt{\note{\url{https://archive.stsci.edu/prepds/everest/}}} and will be constantly
-%updated for new \emph{K2} campaigns. The source code used to de-trend the light curves
-%is open source and available at \texttt{\url{https://github.com/rodluger/everest}}.
-%
-%
 Our catalog of de-trended light curves is publicly available at 
 \texttt{\url{https://archive.stsci.edu/prepds/everest/}} and will be constantly
 updated for new \emph{K2} campaigns. The code used to de-trend the light curves
 is open source under the MIT license and is available at \texttt{\url{https://github.com/rodluger/everest}},
 along with user-friendly routines for downloading and interacting with the de-trended light curves.
+A static release of version \texttt{1.0} of the code is also available at 
+\texttt{\url{http://dx.doi.org/10.5281/zenodo.56577}}.
 Since the only
 inputs to \texttt{EVEREST} are the pixel level light curves, the techniques developed
 here can be generally applied to light curves produced by any photometry mission,
@@ -1255,6 +1240,8 @@ This research used the advanced computational,
 storage, and networking infrastructure provided by the
 Hyak supercomputer system at the University of Washington.
 \end{acknowledgments}
+
+\vfill
 
 \pagebreak
 
