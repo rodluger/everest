@@ -15,6 +15,6 @@
 </div>
 <br>
 <div align="justify" style="font-size:30px;">
-<b><i>NOTE: </div>The <a href="">catalog</a> will be available on July 5, 2016.</b></i>
+<b><i>NOTE: The <a href="">catalog</a> will be available on July 5, 2016.</b></i>
 </div>
 
