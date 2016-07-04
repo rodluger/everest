@@ -20,6 +20,12 @@
   <br><br>
   </div>
 
+.. figure:: everest_example.jpg
+   :width: 800px
+   :align: center
+   :height: 100px
+   :figclass: align-center
+
 .. raw:: html
 
   <script>
