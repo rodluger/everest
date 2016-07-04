@@ -3,6 +3,7 @@
 </p>
 <p align="center">
   <a href="https://travis-ci.com/rodluger/everest"><img src="https://travis-ci.com/rodluger/everest.svg?token=jABaFLLgJNHTWSqkT7CM&branch=master"/></a>
+  <a href="https://github.com/rodluger/everest/blob/master/paper/tex/k2.pdf"><img src="http://staff.washington.edu/rodluger/paper_badge.svg"/></a>
   <a href="http://dx.doi.org/10.5281/zenodo.56577"><img src="https://zenodo.org/badge/doi/10.5281/zenodo.56577.svg" alt="10.5281/zenodo.56577"></a>
   <a href="https://raw.githubusercontent.com/rodluger/everest/master/LICENSE?token=AI5FKwMJER1BTPmm_2e_4VhVh3x3dfXHks5XfBCiwA%3D%3D"><img src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
 </p>
