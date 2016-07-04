@@ -13,3 +13,8 @@
 <div align="justify" style="font-size:30px;">
 <b>Please read <a href="http://staff.washington.edu/rodluger/everest_docs">the documentation</a>!</b>
 </div>
+<br>
+<div align="justify" style="font-size:30px;">
+<b><i>NOTE: </div>The <a href="">catalog</a> will be available on July 5, 2016.</b></i>
+</div>
+
