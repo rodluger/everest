@@ -30,7 +30,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
             ps_iter = 30, ps_masks = 10, npc_arr = np.arange(25, 260, 10),
             inject = {}, log_level = logging.DEBUG, scatter_alpha = 0.,
             screen_level = logging.CRITICAL, gp_iter = 2, 
-            jpeg_quality = 30, fig_ext = 'jpg', **kwargs):
+            jpeg_quality = 30, fig_ext = 'jpg', use_k2sff_aperture = True, **kwargs):
   '''
   This is the main :py:mod:`everest` routine. Here we download and de-trend
   a given `EPIC` target.
@@ -70,6 +70,8 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   :param int jpeg_quality: If plotting JPEGs, this number (1-95) sets the image quality. Default `30`
   :param str fig_ext: The figure extension. Default `jpg`. I found that this doesn't play nice with the \
                       `MacOSX` :py:mod:`matplotlib` backend, so consider switching this to `png` or switching backends
+  :param use_k2sff_aperture: Use apertures determined by the K2SFF team? Default `True`
+  :type clobber: bool
   
   :returns: A very large dictionary:
   
@@ -97,7 +99,7 @@ def Compute(EPIC, run_name = 'default', clobber = False, apnum = 15,
   '''
   
   # Grab the data
-  k2star = GetK2Data(EPIC, apnum = apnum)
+  k2star = GetK2Data(EPIC, apnum = apnum, use_k2sff_aperture = use_k2sff_aperture)
   
   # Get the campaign
   campaign = Campaign(EPIC)
