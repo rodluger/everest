@@ -502,8 +502,12 @@ def _MoveFigures(campaign, ext = 'jpg'):
   
   for i, EPIC in enumerate(stars):
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    campaign = Campaign(EPIC)
+    
     inpath = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), 'default')
+    
+    # DEBUG
+    campaign = Campaign(EPIC)
+    
     outpath = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                           ('%09d' % EPIC)[:4] + '00000')
     if not os.path.exists(outpath):
