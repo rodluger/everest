@@ -12,7 +12,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from . import __version__ as EVEREST_VERSION
 from .config import EVEREST_DAT, EVEREST_SRC
 from .plot import Plot
-from .data import GetK2Stars, GetK2Campaign, GetK2Data, GetK2Planets, GetK2InjectionTestStars
+from .data import GetK2Stars, GetK2Campaign, GetK2Data, GetK2Planets, GetK2InjectionTestStars, Campaign
 from .compute import Compute
 from .utils import ExceptionHook, ExceptionHookPDB, FunctionWrapper
 from .pool import Pool
@@ -502,6 +502,7 @@ def _MoveFigures(campaign, ext = 'jpg'):
   
   for i, EPIC in enumerate(stars):
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    campaign = Campaign(EPIC)
     inpath = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), 'default')
     outpath = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                           ('%09d' % EPIC)[:4] + '00000')
