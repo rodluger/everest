@@ -755,10 +755,20 @@ When the transits are properly masked (right column of the figure), both the bia
 and the increased scatter in the recovered depths disappear for transits of all
 depths. This shows that our cross-validation technique (\S\ref{sec:dmopt}) is
 correctly preventing overfitting and enforcing the high predictive power of the model
-in the masked regions of the dataset.
+in the masked regions of the dataset. 
 
-In order to remove the small bias introduced in the presence of shallow, unmasked
-transits, we strongly encourage those making use of our light curves for transiting exoplanet
+A particularly extreme example of transit depth alteration is illustrated in Figure~\ref{fig:202072563}, which shows 
+the (folded and normalized) primary and secondary eclipses of the eclipsing binary EPIC 202072563. 
+Three datasets are presented: the raw SAP flux (left), the default \texttt{EVEREST} light curve, 
+and the masked \texttt{EVEREST} light curve. 
+The \texttt{EVEREST} fluxes have been smoothed with a GP to 
+remove astrophysical variability. It is clear from the second column that our outlier detection technique failed to 
+mask all points during the eclipse, leading to a $\sim 20\%$ decrease in the eclipse
+depths. When properly masking the eclipses, however, the depth is correctly recovered 
+(third column).
+
+In order to remove the small bias introduced in the presence of unmasked
+transits and eclipses, we strongly encourage those making use of our light curves for transiting exoplanet
 characterization to run \texttt{EVEREST} while explicitly masking these transits. 
 This can be done by specifying the transit times and durations when calling the \texttt{EVEREST}
 Python module; the code takes only a few seconds to run. The same applies to those using our light
@@ -780,27 +790,13 @@ least-squares de-trending techniques. However, such an approach is very computat
 expensive, given that each light curve must be processed once for every combination
 of transit parameters. We therefore defer this procedure to a future paper.
 
-We note, finally, that other \emph{K2} pipelines are subject to similar overfitting
-problems. Consider the example in Figure~\ref{fig:202072563}, which shows 
-the (folded and normalized) primary and secondary eclipses of the eclipsing binary EPIC 202072563. 
-Four datasets are presented: the raw SAP flux (left), the default \texttt{EVEREST} light curve, 
-the masked \texttt{EVEREST} light curve, and the \texttt{K2SFF} light curve. 
-The \texttt{EVEREST} and \texttt{K2SFF} fluxes have been smoothed with a GP to 
-remove astrophysical variability. It is clear from the second column that our outlier detection technique failed to 
-mask all points during the eclipse, leading to a $\sim 20\%$ decrease in the eclipse
-depths. When properly masking the eclipses, however, the depth is correctly recovered 
-(third column). In the last column, we see that the \texttt{K2SFF} depths are also
-shallower, but by nearly $50\%$. Proper modeling or masking of these features would be necessary to
-preserve their depths during the \texttt{K2SFF} de-trending step.
-
 \begin{figure}[h]
   \begin{center}
       \psfig{file=images/202072563.png,width=3.25in}
        \caption{Primary and secondary eclipses of EPIC 202072563, folded
                 on a period of 2.1237 days. From left to right, the columns
-                show the raw SAP flux, the \texttt{EVEREST} flux, the \texttt{EVEREST}
-                flux obtained when explicitly masking the eclipses, and
-                the \texttt{K2SFF} flux. Masking
+                show the raw SAP flux, the \texttt{EVEREST} flux, and the \texttt{EVEREST}
+                flux obtained when explicitly masking the eclipses. Masking
                 is critical to preserving the transit depth during de-trending
                 for any pipeline that does not explicitly include a transit or
                 eclipse model.}
@@ -810,9 +806,9 @@ preserve their depths during the \texttt{K2SFF} de-trending step.
 
 \subsection{Limitations}
 \label{sec:limitations}
-We find that there are two particular situations in which PLD is likely to fail: saturated stars
-and crowded apertures. These limitations are inherent to the method itself and not
-specific to \emph{K2} data.
+We find that there are three particular situations in which PLD is likely to fail: saturated stars, 
+stars in crowded apertures, and extremely variable stars. These limitations are inherent to the 
+method itself and not specific to \emph{K2} data.
 
 \subsubsection{Saturated Stars}
 \label{sec:saturated}
@@ -935,6 +931,10 @@ It is possible to correct for the effects of crowding if the quantity $b_{il}/a_
 is known, even if just approximately. However, this requires careful modeling of the
 stellar PSF and is beyond the scope of this paper. In our database, we flag sources
 that may suffer from overfitting due to crowded fields.
+
+\subsubsection{Extremely variable stars}
+\label{sec:variablestars}
+\note{Blurb here. TODO.}
 
 \subsection{Photometric Precision}
 \label{sec:precision}
