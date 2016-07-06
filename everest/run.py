@@ -502,12 +502,13 @@ def _MoveFigures(campaign, ext = 'jpg'):
   
   for i, EPIC in enumerate(stars):
   
+    # DEBUG
     campaign = Campaign(EPIC)
   
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
     inpath = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), 'default')    
     outpath = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
-                          ('%09d' % EPIC)[:4] + '00000')
+                          ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:])
     if not os.path.exists(outpath):
       os.makedirs(outpath)
     prefix = 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s' % (EPIC, campaign, EVEREST_VERSION)
@@ -518,5 +519,3 @@ def _MoveFigures(campaign, ext = 'jpg'):
       b = os.path.join(outpath, '%s_%s.%s' % (prefix, outimg, ext))
       if os.path.exists(a):
         os.rename(a, b)
-        
-        import pdb; pdb.set_trace()
