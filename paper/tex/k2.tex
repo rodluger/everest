@@ -298,7 +298,7 @@ mathematically equivalent to Equations~(\ref{eq:demingsolution}) and
 
 \begin{figure}[h]
   \begin{center}
-      \psfig{file=images/third_order.png,width=3.5in}
+      \psfig{file=images/third_order.pdf,width=3.5in}
        \caption{PLD applied to a portion of the data for EPIC 201367065 (K2-3). 
        The top panel is the background-subtracted, normalized SAP flux in a large 
        35-pixel aperture centered on the target. The bottom three panels show 
@@ -315,7 +315,7 @@ mathematically equivalent to Equations~(\ref{eq:demingsolution}) and
 \begin{figure*}[t]
   \begin{center}
     \leavevmode
-      \psfig{file=images/sinusoid.png,width=\textwidth}
+      \psfig{file=images/sinusoid.pdf,width=\textwidth}
        \caption{Different de-trending techniques for quarter 4 of KIC 8583696 (KOI 1275),
                 a planet candidate host from the original \emph{Kepler} mission. The original
                 data are shown in the left column; in the other columns we
@@ -470,7 +470,7 @@ other outliers that could affect the quality of the PLD fit.
 \begin{figure*}[t]
   \begin{center}
     \leavevmode
-      \psfig{file=images/acor.png,width=\textwidth}
+      \psfig{file=images/acor.pdf,width=\textwidth}
        \caption{GP optimization procedure for EPIC 201497682. In the top left panel we 
                 plot the raw SAP flux (black) and a ten chunk, first order PLD fit
                 (red); the residuals are shown in the panel below. These are used to
@@ -557,7 +557,7 @@ where we kept only 285 basis vectors in the bottom panel. Had we de-trended with
 8435 components, we would obtain the light curve shown in Figure~\ref{fig:overfitting}.
 \begin{figure}[h]
   \begin{center}
-      \psfig{file=images/overfitting.png,width=3.5in}
+      \psfig{file=images/overfitting.pdf,width=3.5in}
        \caption{\emph{Top}: Third order PLD applied to EPIC 201367065, but this time keeping 
                 \emph{all} basis vectors. Compare to 
                 Figure~\ref{fig:third_order}. While the median scatter improved by a factor
@@ -587,7 +587,7 @@ the number of principal components $n_{pc}$.
 
 \begin{figure}[h]
   \begin{center}
-      \psfig{file=images/scatter.png,width=3.5in}
+      \psfig{file=images/scatter.pdf,width=3.5in}
        \caption{De-trended light curve precision as a function of the number of principal
                 components for EPIC 201497682. The blue dots are the median
                 6-hr precision (in ppm) of the unmasked sections of the light curve (the training set); 
@@ -681,7 +681,7 @@ to decrease the transit depth and therefore improve the likelihood of the fit.
 
 \begin{figure}[h]
   \begin{center}
-      \psfig{file=images/injections.png,width=3.5in}
+      \psfig{file=images/injections.pdf,width=3.5in}
        \caption{Transit injection results. Each panel shows the fraction of transits
                 recovered with a certain depth ratio $D/D_0$ (recovered depth divided
                 by true depth). Blue histograms correspond to the actual injection
@@ -792,7 +792,7 @@ of transit parameters. We therefore defer this procedure to a future paper.
 
 \begin{figure}[h]
   \begin{center}
-      \psfig{file=images/202072563.png,width=3.25in}
+      \psfig{file=images/202072563.pdf,width=3.25in}
        \caption{Primary and secondary eclipses of EPIC 202072563, folded
                 on a period of 2.1237 days. From left to right, the columns
                 show the raw SAP flux, the \texttt{EVEREST} flux, and the \texttt{EVEREST}
@@ -856,7 +856,7 @@ along with the instrumental noise.
 
 \begin{figure}[h]
   \begin{center}
-      \psfig{file=images/201270464.png,width=3.5in}
+      \psfig{file=images/201270464.pdf,width=3.5in}
        \caption{EPIC 201270464, a $K_p = 9.4$ saturated eclipsing binary. Plotted here
                 is the raw flux (top), the \texttt{K2SFF} flux (center), and the \texttt{EVEREST}
                 flux (bottom). PLD washes out the stellar variability along with most of the eclipses
@@ -881,7 +881,7 @@ depths for most stars dimmer than $K_p = 11$.
 
 \subsubsection{Crowded Apertures}
 \label{sec:crowded}
-The other situation in which PLD performs poorly is in apertures containing significant
+Another situation in which PLD performs poorly is in apertures containing significant
 contamination from other stars. In simple aperture photometry, the transit depth
 can be decreased in the presence of another star within the aperture. To correct for 
 this, one can simply scale the depth by the (inverse of the) crowding metric, the ratio of 
@@ -934,7 +934,16 @@ that may suffer from overfitting due to crowded fields.
 
 \subsubsection{Extremely variable stars}
 \label{sec:variablestars}
-\note{Blurb here. TODO.}
+Finally, we note that \texttt{EVEREST} performs poorly for stars with high amplitude
+and high frequency variability. This is particularly the case for stars that are 
+variable on timescales $\lesssim 1$ day, such as RR Lyrae variables or very short 
+period eclipsing binaries. In these situations, the power of the GP model exceeds that
+of the PLD model at short timescales, and nearly all of the light curve variability (astrophysical
+\emph{and} instrumental) is captured by the GP. As we rely only on the PLD model to produce our 
+de-trended light curves, these often still contain the instrumental signal, in addition
+to artifacts introduced by tension between the GP and PLD models. The reader is referred
+to the \texttt{K2VARCAT} pipeline \citep{ARM15, ARM16} for de-trended light curves of
+extremely variable stars.
 
 \subsection{Photometric Precision}
 \label{sec:precision}
@@ -1127,7 +1136,7 @@ targets and for those in very crowded fields.
 \begin{figure*}[t]
   \begin{center}
     \leavevmode
-      \psfig{file=images/detrended0.png,width=7in}
+      \psfig{file=images/detrended0.pdf,width=7in}
        \caption{De-trended light curves for the campaign 1 star EPIC 201367065 \citep[K2-3,][]{CRO15}. \emph{Top}: The de-trended
                 \texttt{K2SFF} flux (left) and the GP-smoothed flux folded on the periods of 
                 the planets b, c, and d (right). \emph{Bottom}: The de-trended \texttt{EVEREST}
@@ -1139,7 +1148,7 @@ targets and for those in very crowded fields.
 \begin{figure*}[t]
   \begin{center}
     \leavevmode
-      \psfig{file=images/detrended1.png,width=7in}
+      \psfig{file=images/detrended1.pdf,width=7in}
        \caption{De-trended light curves for EPIC 205071984, a campaign 2 star with three
                 known planet candidates \citep{SIN15}. As in Figure~\ref{fig:detrended0}, the
                 \texttt{K2SFF} light curve and the folded transits of EPIC 205071984.01 (b),
