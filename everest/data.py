@@ -280,7 +280,12 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
     
     # Get the TPF
     client = kplr.API()
-    star = client.k2_star(EPIC)
+    try:
+      star = client.k2_star(EPIC)
+    except:
+      log.error("Oops... The target doesn't seem to be available on MAST!")
+      return None
+      
     tpf = star.get_target_pixel_files()[0]
     campaign = tpf.sci_campaign
     with tpf.open() as f:
