@@ -511,6 +511,8 @@ def _MoveFigures(campaign, ext = 'jpg'):
     # DEBUG
     campaign = Campaign(EPIC)
     
+    import pdb; pdb.set_trace()
+    
     outpath = os.path.join(EVEREST_DAT, 'fits', 'c%02d' % campaign, 
                           ('%09d' % EPIC)[:4] + '00000')
     if not os.path.exists(outpath):
