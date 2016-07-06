@@ -503,6 +503,9 @@ def _MoveFigures(campaign, ext = 'jpg'):
   for i, EPIC in enumerate(stars):
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
     
+    # DEBUG
+    campaign = 99
+    
     inpath = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign, str(EPIC), 'default')
     
     # DEBUG
