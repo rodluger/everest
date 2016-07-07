@@ -2,7 +2,7 @@
   <img width = "400" src="http://staff.washington.edu/rodluger/everest_docs/_images/everest.png"/>
 </p>
 <p align="center">
-  <a href="https://travis-ci.com/rodluger/everest"><img src="https://travis-ci.com/rodluger/everest.svg?token=jABaFLLgJNHTWSqkT7CM&branch=master"/></a>
+  <a href="https://travis-ci.org/rodluger/everest/"><img src="https://travis-ci.org/rodluger/everest.svg?branch=master"/></a>
   <a href="http://arxiv.org/abs/1607.00524"><img src="https://img.shields.io/badge/arXiv-1607.00524-blue.svg?style=flat"/></a>
   <a href="http://dx.doi.org/10.5281/zenodo.56577"><img src="https://zenodo.org/badge/doi/10.5281/zenodo.56577.svg" alt="10.5281/zenodo.56577"></a>
   <a href="https://raw.githubusercontent.com/rodluger/everest/master/LICENSE?token=AI5FKwMJER1BTPmm_2e_4VhVh3x3dfXHks5XfBCiwA%3D%3D"><img src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
