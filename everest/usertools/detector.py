@@ -219,7 +219,7 @@ class VerticalSlider(AxesWidget):
 
 class Detector(object):
     
-  def __init__(self, campaign, maxc = 0.25):
+  def __init__(self, campaign, epic = None, maxc = 0.25):
         
     # Init
     self._maxc = maxc
@@ -242,7 +242,7 @@ class Detector(object):
     self.ax.xaxis.set_visible(False)
     self.ax.yaxis.set_visible(False)
     self.fig.canvas.set_window_title('Campaign %d' % self.campaign)
-  
+    
     # Colorbar
     self.divider = make_axes_locatable(self.ax)
     self.axcbar = self.divider.append_axes("top", size="5%", pad=0.1)
@@ -273,8 +273,15 @@ class Detector(object):
     # Labels
     self.label = self.ax.annotate('', xy = (0.95, 0.95), ha = 'right', 
                                   va = 'top', xycoords = 'axes fraction',
-                                  color = 'w')
-                                        
+                                  color = 'w', zorder = 99)
+    
+    # Initial EPIC?
+    if epic is not None:
+      i = np.argmax(self.e == epic)
+      self.label.set_text('EPIC %d\nK$_p$ = %.2f' % (self.e[i], self.kp[i]))
+      self.circle = self.ax.scatter(self.x[i],self.y[i],s=500,c='yellow',alpha=0.5,zorder=99)
+      self.fig.canvas.draw_idle()
+                                      
     # Show
     pl.show()
 

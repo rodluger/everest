@@ -16,6 +16,7 @@ if __name__ == '__main__':
   parser.add_argument("epic", type = int, help = 'The EPIC target number or the campaign number (required)')
   parser.add_argument("-a", "--aperture", action = 'store_true', help = 'Plot the aperture used for the photometry')
   parser.add_argument("-c", "--ccd", action = 'store_true', help = 'Plot the location of the target on the CCD')
+  parser.add_argument("-k", "--sky", action = 'store_true', help = 'Plot the location of the target on the sky')
   parser.add_argument("-i", "--interactive", action = 'store_true', help = 'Plot in interactive mode')
   parser.add_argument("-n", "--contamination", action = 'store_true', help = 'Plot the contamination analysis')
   parser.add_argument("-p", "--plot", action = 'store_true', help = 'Plot the everest de-trended light curve (default)')
@@ -28,7 +29,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
   
   # Plot is default
-  if not any([getattr(args, a) for a in ['aperture', 'ccd', 'contamination', 'autocorrelation', 
+  if not any([getattr(args, a) for a in ['aperture', 'ccd', 'sky', 'contamination', 'autocorrelation', 
                                          'postagestamp', 'crossvalidation', 'k2sff', 'k2sc', 'k2varcat']]):
     args.plot = True
   
@@ -45,6 +46,8 @@ if __name__ == '__main__':
     star.aperture()
   if args.ccd:
     star.ccd()
+  if args.sky:
+    star.sky()
   if args.contamination:
     star.contamination()
   if args.crossvalidation:
