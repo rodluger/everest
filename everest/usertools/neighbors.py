@@ -18,7 +18,7 @@ except ImportError:
     import astropy.io.fits as pyfits
   except ImportError:
     raise Exception('Please install the `pyfits` package.')
-import os, sys
+import os, sys, subprocess
 import matplotlib.pyplot as pl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
@@ -334,11 +334,19 @@ class Neighbors(object):
     # Show
     pl.show()
 
-  def onpick(self, event):
-    i = event.ind[0]
-    self.label.set_text('EPIC %d\nK$_p$ = %.2f' % (self.e[i], self.kepmag + self.dk[i]))
-    self.circle.center = (self.x[i], self.y[i])
-    self.fig.canvas.draw_idle()
+  def onpick(self, event):  
+    select = False
+    for i in event.ind:
+      if (self.c[i] > self.maxc) | (self.r[i] > self.maxr) | (np.abs(self.dk[i]) > self.maxm):
+        continue
+      else:
+        self.label.set_text('EPIC %d\nK$_p$ = %.2f' % (self.e[i], self.kepmag + self.dk[i]))
+        self.circle.center = (self.x[i], self.y[i])
+        self.fig.canvas.draw_idle()
+        select = True
+        break
+    if select and event.mouseevent.dblclick:
+      subprocess.Popen(['everest', '%d' % self.e[i]])
     
   def update_ctm(self, val):
     self.maxc = self.slctm.val
