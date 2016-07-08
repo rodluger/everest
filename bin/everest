@@ -13,7 +13,7 @@ import everest
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog = 'everest', add_help = True)
-  parser.add_argument("epic", type = int, help = 'The EPIC target number (required)')
+  parser.add_argument("epic", type = int, help = 'The EPIC target number or the campaign number (required)')
   parser.add_argument("-a", "--aperture", action = 'store_true', help = 'Plot the aperture used for the photometry')
   parser.add_argument("-c", "--ccd", action = 'store_true', help = 'Plot the location of the target on the CCD')
   parser.add_argument("-i", "--interactive", action = 'store_true', help = 'Plot in interactive mode')
@@ -33,6 +33,11 @@ if __name__ == '__main__':
                                          'postagestamp', 'crossvalidation', 'k2sff', 'k2sc', 'k2varcat',
                                          'neighbors']]):
     args.plot = True
+  
+  # Is this a campaign number?
+  if args.epic < 20:
+    everest.usertools.Detector(args.epic)
+    quit()
   
   # Get the data
   star = everest.Everest(args.epic)
