@@ -6,10 +6,10 @@ detector.py
 
 '''
 
+from __future__ import print_function
 from .. import __version__ as EVEREST_VERSION
 from ..config import EVEREST_DAT, EVEREST_SRC
 from ..data import Campaign, GetK2Campaign
-from .ccd import ModuleNumber, Channels
 from k2plr.config import KPLR_ROOT
 try:
   import pyfits
@@ -327,25 +327,5 @@ class Detector(object):
             channel = data['fitsheader'][0]['CHANNEL'][1]
             print("{:>09d} {:>03d} {:>15.10f} {:>15.10f} {:>6.3f} {:>6.3f}".format(star, channel, ra, dec, kp, contamination), file = f)
 
-    quit() # debug
-    info = np.loadtxt(info_file)  
-        
-    e = np.zeros(len(info)) * np.nan
-    x = np.zeros(len(info)) * np.nan
-    y = np.zeros(len(info)) * np.nan
-    r = np.zeros(len(info)) * np.nan
-    kp = np.zeros(len(info)) * np.nan
-    c = np.zeros(len(info)) * np.nan
-  
-    for i in range(len(info)):
-      x[i] = info[i][1] #ra
-      y[i] = info[i][2] #dec
-      kp[i] = info[i][3]
-      c[i] = info[i][4]
-      e[i] = info[i][0]
-        
-    self.e = np.array(e, dtype = int)
-    self.x = x
-    self.y = y
-    self.kp = kp
-    self.c = c
+    self.e, channel, self.x, self.y, self.kp, self.c  = np.loadtxt(info_file, unpack = True)  
+    self.e = np.array(self.e, dtype = int)

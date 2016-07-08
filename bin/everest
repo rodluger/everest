@@ -25,13 +25,11 @@ if __name__ == '__main__':
   parser.add_argument("--k2sff", action = 'store_true', help = 'Plot the k2sff light curve for the target')
   parser.add_argument("--k2sc", action = 'store_true', help = 'Plot the k2sc light curve for the target')
   parser.add_argument("--k2varcat", action = 'store_true', help = 'Plot the k2varcat light curve for the target')
-  parser.add_argument("--neighbors", action = 'store_true', help = "Interactively display the target's neighbors on the CCD")
   args = parser.parse_args()
   
   # Plot is default
   if not any([getattr(args, a) for a in ['aperture', 'ccd', 'contamination', 'autocorrelation', 
-                                         'postagestamp', 'crossvalidation', 'k2sff', 'k2sc', 'k2varcat',
-                                         'neighbors']]):
+                                         'postagestamp', 'crossvalidation', 'k2sff', 'k2sc', 'k2varcat']]):
     args.plot = True
   
   # Is this a campaign number?
@@ -43,8 +41,6 @@ if __name__ == '__main__':
   star = everest.Everest(args.epic)
   
   # Plot stuff!
-  if args.neighbors:
-    star.neighbors(command_line = True)
   if args.aperture:
     star.aperture()
   if args.ccd:

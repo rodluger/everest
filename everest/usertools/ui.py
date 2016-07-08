@@ -18,7 +18,6 @@ from ..utils import PlotBounds, MADOutliers, RMS, PadWithZeros
 from ..crowding import Contamination
 from .selector import Selector
 from .ccd import CCD
-from .neighbors import Neighbors
 from scipy.ndimage import zoom
 from scipy.signal import savgol_filter
 import k2plr as kplr
@@ -810,12 +809,3 @@ class Everest(object):
     pl.axis('off')
     fig.canvas.set_window_title('EPIC %d' % self.EPIC)
     return fig, ax
-  
-  def neighbors(self, command_line = False):
-    '''
-    Interactively display the target's neighbors on the CCD.
-    
-    '''
-    
-    n = Neighbors(self.EPIC, command_line = command_line)
-    return n.targets
