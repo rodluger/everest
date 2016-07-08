@@ -130,7 +130,7 @@ if __name__ == '__main__':
   
   # The campaigns we'll use for the synthesis plots
   campaigns = [0,1,2,3,4,5,6,7]
-  figures = [1,2,3,4,5,6]
+  figures = [1,2,3,4,5]
 
   # Get the raw **Kepler** rms
   kep_star, kep_kepmag, _, kep_raw = np.loadtxt(os.path.join('CDPP', 'kepler.tsv'), unpack = True)
@@ -195,8 +195,8 @@ if __name__ == '__main__':
     x = np.concatenate([k2_kepmag[c] for c in campaigns])
     y = np.concatenate([k2_ever[c] for c in campaigns])
   
-    ax.plot(kep_kepmag, kep_raw, 'y.', alpha = 0.025)
-    ax.plot(x, y, 'b.', alpha = 0.025)
+    ax.plot(kep_kepmag, kep_raw, 'y.', alpha = 0.025, zorder = -2)
+    ax.plot(x, y, 'b.', alpha = 0.025, zorder = -1)
 
     if labels:
       # Dummy points for legend
@@ -239,6 +239,7 @@ if __name__ == '__main__':
       # are far from gaussian. I'm just going to indicate the median on the plot
       ax.plot(bins - 0.025, b_kep, 'yo', zorder = 99)
       ax.plot(bins + 0.025, b_k2, 'bo', zorder = 99)
+      ax.set_rasterization_zorder(0)
 
       # DEBUG: Plot the distributions at a given magnitude.
       #bin = 11
@@ -259,8 +260,8 @@ if __name__ == '__main__':
     p = np.concatenate([k2_phot[c] for c in campaigns])
 
     # Set up the figure
-    ax.plot(x, r, 'r.', alpha = 0.0075)
-    ax.plot(x, e, 'b.', alpha = 0.00325)
+    ax.plot(x, r, 'r.', alpha = 0.0075, zorder = -2)
+    ax.plot(x, e, 'b.', alpha = 0.00325, zorder = -1)
   
     # Plot the median values
     bins = np.arange(10.5,19.,0.5)
@@ -310,6 +311,7 @@ if __name__ == '__main__':
       pass
     ax.set_xlim(10,19)
     ax.set_ylim(10 ** 0.75, 1e4)
+    ax.set_rasterization_zorder(0)
 
   def fig_comp_k2sff(fig, ax, campaigns, labels = True):
     '''
@@ -345,7 +347,7 @@ if __name__ == '__main__':
     y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.05)
+    ax.plot(x, y, 'b.', alpha = 0.05, zorder = -1)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -363,7 +365,8 @@ if __name__ == '__main__':
     if labels:
       ax.set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 22)
       ax.set_xlabel('Kepler Magnitude', fontsize = 18)
-
+    ax.set_rasterization_zorder(0)
+    
   def fig_comp_k2sc(fig, ax, campaigns, labels = True):
     '''
   
@@ -398,7 +401,7 @@ if __name__ == '__main__':
     y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.05)
+    ax.plot(x, y, 'b.', alpha = 0.05, zorder = -1)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -416,7 +419,9 @@ if __name__ == '__main__':
     if labels:
       ax.set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SC}}}{\mathrm{CDPP}_{\mathrm{K2SC}}}$', fontsize = 22)
       ax.set_xlabel('Kepler Magnitude', fontsize = 18)
-
+    
+    ax.set_rasterization_zorder(0)
+    
   def fig_comp_k2varcat(fig, ax, campaigns, labels = True):
     '''
   
@@ -453,7 +458,7 @@ if __name__ == '__main__':
       y = np.array(y)
   
     # Plot the equivalent of Fig. 10 in Aigrain+16
-    ax.plot(x, y, 'b.', alpha = 0.05)
+    ax.plot(x, y, 'b.', alpha = 0.05, zorder = -1)
     ax.set_ylim(-1,1)
     ax.set_xlim(11,19)
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -471,7 +476,9 @@ if __name__ == '__main__':
     if labels:
       ax.set_ylabel(r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2VARCAT}}}{\mathrm{CDPP}_{\mathrm{K2VARCAT}}}$', fontsize = 22)
       ax.set_xlabel('Kepler Magnitude', fontsize = 18)
-
+    
+    ax.set_rasterization_zorder(0)
+    
   def fig_comp_k2sff_k2sc(fig, ax, campaigns, labels = True):
     '''
   
@@ -542,9 +549,10 @@ if __name__ == '__main__':
     print("Plotting figure 1a...")
     fig, ax = pl.subplots(1, figsize = (8,6))
     fig_comp_kepler(fig, ax, campaigns = campaigns)
-    fig.savefig('../tex/images/comparison_kepler.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/comparison_kepler.pdf', bbox_inches = 'tight')
     pl.close()
     
+    '''
     print("Plotting figure 1b...")
     fig, ax = pl.subplots(2, 4, figsize = (17, 6))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
@@ -564,6 +572,7 @@ if __name__ == '__main__':
              ha='center', va='center', rotation='vertical')  
     fig.savefig('../tex/images/comparison_kepler_by_campaign.png', bbox_inches = 'tight')
     pl.close()
+    '''
 
   # 2. Overall CDPP
   # ---------------
@@ -571,9 +580,10 @@ if __name__ == '__main__':
     print("Plotting figure 2a...")
     fig, ax = pl.subplots(1, figsize = (8,6))
     fig_precision(fig, ax, campaigns)
-    fig.savefig('../tex/images/precision.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/precision.pdf', bbox_inches = 'tight')
     pl.close()
     
+    '''
     print("Plotting figure 2b...")
     fig, ax = pl.subplots(2, 4, figsize = (17, 6))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075)
@@ -593,6 +603,7 @@ if __name__ == '__main__':
              ha='center', va='center', rotation='vertical')
     fig.savefig('../tex/images/precision_by_campaign.png', bbox_inches = 'tight')
     pl.close()
+    '''
 
   # 3. Comparison to K2SFF
   # ----------------------
@@ -600,7 +611,7 @@ if __name__ == '__main__':
     print("Plotting figure 3a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sff(fig, ax, campaigns)
-    fig.savefig('../tex/images/comparison_k2sff.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/comparison_k2sff.pdf', bbox_inches = 'tight')
     pl.close()
     
     print("Plotting figure 3b...")
@@ -620,7 +631,7 @@ if __name__ == '__main__':
     fig.text(0.5, 0.015, 'Kepler Magnitude', ha='center', va='center', fontsize = 24)
     fig.text(0.08, 0.5, r'$\frac{\mathrm{CDPP}_{\mathrm{EVEREST}} - \mathrm{CDPP}_{\mathrm{K2SFF}}}{\mathrm{CDPP}_{\mathrm{K2SFF}}}$', fontsize = 28, 
              ha='center', va='center', rotation='vertical')
-    fig.savefig('../tex/images/comparison_k2sff_by_campaign.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/comparison_k2sff_by_campaign.pdf', bbox_inches = 'tight')
     pl.close()
 
   # 4. Comparison to K2SC (C3 - C6 only)
@@ -629,9 +640,10 @@ if __name__ == '__main__':
     print("Plotting figure 4a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2sc(fig, ax, campaigns)
-    fig.savefig('../tex/images/comparison_k2sc.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/comparison_k2sc.pdf', bbox_inches = 'tight')
     pl.close()
     
+    '''
     print("Plotting figure 4b...")
     fig, ax = pl.subplots(2, 2, figsize = (10, 8))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.18)
@@ -655,16 +667,18 @@ if __name__ == '__main__':
              ha='center', va='center', rotation='vertical')
     fig.savefig('../tex/images/comparison_k2sc_by_campaign.png', bbox_inches = 'tight')
     pl.close()
-
+    '''
+    
   # 5. Comparison to K2VARCAT
   # -------------------------
   if 5 in figures:
     print("Plotting figure 5a...")
     fig, ax = pl.subplots(1, figsize = (9,6))
     fig_comp_k2varcat(fig, ax, campaigns)
-    fig.savefig('../tex/images/comparison_k2varcat.png', bbox_inches = 'tight')
+    fig.savefig('../tex/images/comparison_k2varcat.pdf', bbox_inches = 'tight')
     pl.close()
   
+    '''
     print("Plotting figure 5b...")
     fig, ax = pl.subplots(2, 4, figsize = (15, 8))
     fig.subplots_adjust(wspace = 0.05, hspace = 0.075, left = 0.15)
@@ -684,6 +698,7 @@ if __name__ == '__main__':
              ha='center', va='center', rotation='vertical')
     fig.savefig('../tex/images/comparison_k2varcat_by_campaign.png', bbox_inches = 'tight')
     pl.close()
+    '''
 
   # 6. Compare K2SC to K2SFF (C4 and C5 only)
   # -----------------------------------------
