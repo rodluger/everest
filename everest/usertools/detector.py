@@ -306,35 +306,30 @@ class Detector(object):
     '''
       
     # Get info on all neighbors
-    info_file = os.path.join(EVEREST_SRC, 'tables', 'C%02d.npz' % self.campaign)
+    info_file = os.path.join(EVEREST_SRC, 'tables', 'C%02d.info' % self.campaign)
     if not os.path.exists(info_file):
-      info = {}
-      for channel in range(1,85):
-        info.update({channel: []})
-      stars = GetK2Campaign(self.campaign)
-      nstars = len(stars)
-      for i, star in enumerate(stars):
-        print("Running EPIC %d (%d/%d)..." % (star, i + 1, nstars))
-        file = os.path.join(KPLR_ROOT, 'data', 'everest', str(star), str(star) + '.npz')
-        if os.path.exists(file):
-          data = np.load(file)
-          ra = data['fitsheader'][0]['RA_OBJ'][1]
-          dec = data['fitsheader'][0]['DEC_OBJ'][1]
-          foo = [s['kepmag'] for s in data['nearby'] if s['epic'] == star]
-          if len(foo):
-            kp = foo[0]
-          else:
-            kp = np.nan
-          contamination = data['contamination'][()]
-          channel = data['fitsheader'][0]['CHANNEL'][1]  
-          info[channel].append([star, ra, dec, kp, contamination])
-      np.savez(info_file, info = info)
-    info = np.load(info_file)['info'][()]    
-    all_info = []
-    for c in range(1,85):
-      all_info.extend(info[c])
-    info = all_info
-    
+      with open(info_file, 'w') as f:
+        stars = GetK2Campaign(self.campaign)
+        nstars = len(stars)
+        for i, star in enumerate(stars):
+          print("Running EPIC %d (%d/%d)..." % (star, i + 1, nstars))
+          file = os.path.join(KPLR_ROOT, 'data', 'everest', str(star), str(star) + '.npz')
+          if os.path.exists(file):
+            data = np.load(file)
+            ra = data['fitsheader'][0]['RA_OBJ'][1]
+            dec = data['fitsheader'][0]['DEC_OBJ'][1]
+            foo = [s['kepmag'] for s in data['nearby'] if s['epic'] == star]
+            if len(foo):
+              kp = foo[0]
+            else:
+              kp = np.nan
+            contamination = data['contamination'][()]
+            channel = data['fitsheader'][0]['CHANNEL'][1]
+            print("{:>09d} {:>03d} {:>15.10f} {:>15.10f} {:>6.3f} {:>6.3f}".format(star, channel, ra, dec, kp, contamination), file = f)
+
+    quit() # debug
+    info = np.loadtxt(info_file)  
+        
     e = np.zeros(len(info)) * np.nan
     x = np.zeros(len(info)) * np.nan
     y = np.zeros(len(info)) * np.nan
