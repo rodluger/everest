@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-neigbbors.py
+neighbors.py
 ------------
 
 '''
@@ -219,8 +219,11 @@ class VerticalSlider(AxesWidget):
 
 class Neighbors(object):
     
-  def __init__(self, EPIC, maxc = 0.25, maxr = 250, maxm = 5, include_self = False,
+  def __init__(self, EPIC = None, maxc = 0.25, maxr = 250, maxm = 5, include_self = False,
                command_line = False):
+        
+    # DEBUG
+    EPIC = None    
         
     # Init
     self._maxr = maxr
@@ -228,13 +231,16 @@ class Neighbors(object):
     self._maxm = maxm
     self.EPIC = EPIC
     self.maxc = maxc
-    self.maxr = maxr
+    if self.EPIC is not None:
+      self.maxr = maxr
+    else:
+      self.maxr = np.inf
     self.maxm = maxm
     self.include_self = include_self
     self.cancel = True
     self.command_line = command_line
     self.GetNeighbors()
-  
+    
     # Create the figure
     self.fig = pl.figure(figsize = (8,8))
     self.fig.subplots_adjust(top = 0.95, bottom = 0.05, left = 0.05, right = 0.95)
@@ -245,8 +251,9 @@ class Neighbors(object):
                                    c = color(self.dk, (self.c > self.maxc) | (self.r > self.maxr)),
                                    edgecolor = 'none', zorder = 99,
                                    picker = True)
-    self.ax.set_xlim(-self.maxr, self.maxr)
-    self.ax.set_ylim(-self.maxr, self.maxr)
+    if self.EPIC is not None:
+      self.ax.set_xlim(-self.maxr, self.maxr)
+      self.ax.set_ylim(-self.maxr, self.maxr)
     self.ax.xaxis.set_visible(False)
     self.ax.yaxis.set_visible(False)
   
