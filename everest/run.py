@@ -287,7 +287,7 @@ def RunCampaign(campaign, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def RunFITS(campaign, queue = 'build', email = None, walltime = 8):
+def RunFITS(campaign, queue = None, email = None, walltime = 8):
   '''
   Submits a cluster job to make EVEREST FITS files for a given
   campaign.
@@ -295,7 +295,7 @@ def RunFITS(campaign, queue = 'build', email = None, walltime = 8):
   :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
                    all targets in that campaign. If a :py:class:`float` in the form \
                    `X.Y`, runs the `Y^th` decile of campaign `X`.
-  :param str queue: The queue to submit to. Default `build`
+  :param str queue: The queue to submit to
   :param str email: The email to send job status notifications to. Default `None`
   :param int walltime: The number of hours to request. Default `8`
   
@@ -488,7 +488,10 @@ def _MakeFITS(campaign, subcampaign):
   for i, EPIC in enumerate(stars):
     print("Processing EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
     fits.MakeFITS(EPIC)
-
+  
+  # Now move all the figures
+  _MoveFigures(campaign)
+  
 def _MoveFigures(campaign, ext = 'jpg'):
   '''
   Move all output plots from the 'output/' directory to the 'fits/' directory so
