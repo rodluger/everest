@@ -19,6 +19,7 @@ from k2plr.config import KPLR_ROOT
 import numpy as np
 import re
 import os
+import sys
 import six
 from six.moves import urllib
 from tempfile import NamedTemporaryFile
@@ -305,7 +306,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
       apertures = [[] for i in range(20)]
       apnew = (aperture & 2) // 2 
       
-      # HACK: Make the aperture bigger by including nearest neighbors
+      # HACK: Make the aperture bigger by including nearest neighbors,
+      # but only if there are fewer than 75 pixels.
+      apnew_copy = np.array(apnew)
       for i in range(apnew.shape[0]):
         for j in range(apnew.shape[1]):
           if aperture[i][j] == 1:
@@ -314,6 +317,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
                 if n[1] >= 0 and n[1] < apnew.shape[1]:
                   if apnew[n[0]][n[1]] == 1:
                     apnew[i][j] = 1
+      # Revert to original if it's too big!
+      if np.sum(apnew) > 75:
+        apnew = apnew_copy
       for i in range(20):
         apertures[i] = apnew  
         
@@ -876,3 +882,28 @@ def GetK2EBs(clobber = False):
       EBs[i] = EB
       
   return EBs
+
+def ClearErrors(campaign, run_name = 'default', delete_data = False):
+  '''
+  Delete all output directories that contain ``.err`` files. If `delete_data`
+  is `True`, also deletes the input data. This will force :py:mod:`everest` to
+  re-run them.
+  
+  '''
+  
+  folder = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign)
+  count = 0
+  if os.path.exists(folder):
+    stars = os.listdir(folder)
+    for i, EPIC in enumerate(stars):
+      sys.stdout.write('\rProcessing star %d/%d...' % (i + 1, len(stars)))
+      sys.stdout.flush()
+      if os.path.exists(os.path.join(folder, EPIC, run_name, '%s.err' % EPIC)):
+        count += 1
+        shutil.rmtree(os.path.join(folder, EPIC, run_name))
+        if delete_data:
+          if os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
+            shutil.rmtree(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC)))
+    print("")
+  print("Deleted %d targets." % count)
+  
