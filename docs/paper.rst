@@ -2,7 +2,7 @@ The Paper
 =========
 
 Below we provide links to Python scripts to generate all the figures in the
-`paper <https://github.com/rodluger/everest/blob/master/paper/tex/k2.pdf>`_.
+`paper <http://arxiv.org/abs/1607.00524>`_.
 Most allow the user to generate the figures from scratch, but some load in `.npz`
 files with pre-downloaded and pre-de-trended data. It shouldn't be *too* hard to
 generate that data yourself, though...

@@ -18,6 +18,7 @@ from ..utils import PlotBounds, MADOutliers, RMS, PadWithZeros
 from ..crowding import Contamination
 from .selector import Selector
 from .ccd import CCD
+from .detector import Detector
 from scipy.ndimage import zoom
 from scipy.signal import savgol_filter
 import k2plr as kplr
@@ -672,9 +673,16 @@ class Everest(object):
     
     ccd = CCD()
     ccd.add_source(self.channel, self.crval1p, self.crval2p)
-    ccd.fig.canvas.set_window_title('EPIC %d' % self.EPIC)
-    
+    ccd.fig.canvas.set_window_title('EPIC %d' % self.EPIC)    
     return ccd.fig, ccd.ax
+
+  def sky(self):
+    '''
+    Plot the location of the target on the `Kepler` field of view.
+    
+    '''
+    
+    Detector(Campaign(self.EPIC), self.EPIC)
   
   def cross_validation(self):
     '''

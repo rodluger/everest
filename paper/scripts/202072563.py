@@ -5,7 +5,7 @@ Figure 7
 --------
 
 This script reproduces Figure 7 in the paper, which shows the eclipsing binary
-EPIC 202072563 de-trended with both `everest` and `K2SFF`.
+EPIC 202072563 de-trended with `everest`.
 The source code is available 
 `here <https://github.com/rodluger/everest/blob/master/paper/scripts/202072563.py>`_.
 
@@ -24,9 +24,16 @@ your own script to plot this up from scratch.
 
     **Figure 7** Primary and secondary eclipses of EPIC 202072563, folded on a period 
     of 2.1237 days. From left to right, the columns show the raw SAP flux, the EVEREST 
-    flux, the EVEREST flux obtained when explicitly masking the eclipses, and the K2SFF 
-    flux. Masking is critical to preserving the transit depth during de-trending for 
+    flux, and the EVEREST flux obtained when explicitly masking the eclipses. Masking 
+    is critical to preserving the transit depth during de-trending for 
     any pipeline that does not explicitly include a transit or eclipse model.
+
+.. note:: In the original version of the paper, this figure showed a comparison to \
+          the `K2SFF` light curve for this target, arguing that `K2SFF` can lead to \
+          similarly shallow transits and eclipses. While the `K2SFF` light curve for
+          EPIC 202072563 does indeed show a shallower eclipse, this is due to \
+          contamination from a bright star near the edge of their aperture, and *not* \
+          to least-squares overfitting.
      
 '''
 
@@ -57,15 +64,15 @@ if __name__ == '__main__':
   P = lambda t: (t - (p0 - 54833) - per / 2.) % per - per / 2.
   S = lambda t: (t - (s0 - 54833) - per / 2.) % per - per / 2.
 
-  fig, ax = pl.subplots(2,4, sharex = True, sharey = True, figsize = (12,6))
+  fig, ax = pl.subplots(2,3, sharex = True, sharey = True, figsize = (12,6))
   fig.subplots_adjust(hspace = 0.1, wspace = 0.075)
   ax[0,0].plot(P(time), flux, 'k.', alpha = 0.3)
-  ax[0,3].plot(P(time), fwhite_sff, 'k.', alpha = 0.3)
+  #ax[0,3].plot(P(time), fwhite_sff, 'k.', alpha = 0.3)
   ax[0,1].plot(P(time), fwhite_nomask, 'k.', alpha = 0.3)
   ax[0,2].plot(P(time), fwhite, 'k.', alpha = 0.3)
 
   ax[1,0].plot(S(time), flux, 'k.', alpha = 0.3)
-  ax[1,3].plot(S(time), fwhite_sff, 'k.', alpha = 0.3)
+  #ax[1,3].plot(S(time), fwhite_sff, 'k.', alpha = 0.3)
   ax[1,1].plot(S(time), fwhite_nomask, 'k.', alpha = 0.3)
   ax[1,2].plot(S(time), fwhite, 'k.', alpha = 0.3)
 
@@ -73,7 +80,7 @@ if __name__ == '__main__':
   ax[0,0].set_ylim(0.75, 1.05)
   ax[0,0].yaxis.set_ticks([0.75, 0.8, 0.85, 0.9, 0.95, 1.0])
   ax[0,0].set_title('Raw SAP', fontsize = 20)
-  ax[0,3].set_title('K2SFF', fontsize = 20)
+  #ax[0,3].set_title('K2SFF', fontsize = 20)
   ax[0,1].set_title('EVEREST', fontsize = 20)
   ax[0,2].set_title('EVEREST (Masked)', fontsize = 20)
 
@@ -82,7 +89,7 @@ if __name__ == '__main__':
   ax[1,0].set_xlabel('Time (days)', fontsize = 18)
   ax[1,1].set_xlabel('Time (days)', fontsize = 18)
   ax[1,2].set_xlabel('Time (days)', fontsize = 18)
-  ax[1,3].set_xlabel('Time (days)', fontsize = 18)
+  #ax[1,3].set_xlabel('Time (days)', fontsize = 18)
 
   fig.savefig(os.path.join(IMG_PATH, '202072563.png'), bbox_inches = 'tight')
   fig.savefig(os.path.join(IMG_PATH, '202072563.pdf'), bbox_inches = 'tight')

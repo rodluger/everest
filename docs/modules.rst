@@ -30,6 +30,7 @@ code can be found on `github <https://github.com/rodluger/everest>`_.
    :caption: everest.usertools
    
    ccd
+   detector
    selector
    ui
 

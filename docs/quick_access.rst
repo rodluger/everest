@@ -26,10 +26,11 @@ for EPIC 205071984:
 The :py:mod:`everest` command accepts several options, which we list below.
 
 ====================  =================================================================================
-:py:obj:`epic`        The **EPIC** target number (`required`)
+:py:obj:`id`          The **EPIC** target number *or* the *K2* campaign number (`required`)
 :py:obj:`-a`          Plot the aperture used for the photometry
 :py:obj:`-c`          Plot the location of the target on the CCD
 :py:obj:`-i`          Plot in interactive mode
+:py:obj:`-k`          Plot all stars on the *K2* field of view (`interactive`)
 :py:obj:`-n`          Plot the contamination analysis
 :py:obj:`-p`          Plot the **EVEREST** de-trended light curve (`default`)
 :py:obj:`-r`          Plot the autocorrelation/GP fitting result

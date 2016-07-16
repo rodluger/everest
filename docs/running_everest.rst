@@ -151,6 +151,28 @@ specify the mask. The transit duration can be adjusted with the slider
 above the ``OK`` and ``Cancel`` buttons. Click ``OK`` and then ``Detrend``
 to see the results.
 
+The K2 Field of View
+~~~~~~~~~~~~~~~~~~~~
+
+The `K2` filed of view for a given campaign can be plotted by calling
+
+.. code-block:: python
+
+  from everest.usertools import Detector
+  Detector(2)
+
+.. figure:: running_everest8.jpeg
+ :width: 400px
+ :align: center
+ :height: 100px
+ :figclass: align-center
+
+Stars are colored according to their `Kepler` band magnitudes. A slider at the
+left allows the user to make cuts based on the contamination metric; note that
+stars near the edges of the detector tend to have high contamination metrics
+because of how the PRF becomes elongated far away from the center of the CCD.
+Double-clicking a star will download and plot its :py:mod:`everest` light curve.
+
 Additional Stuff
 ~~~~~~~~~~~~~~~~
 
