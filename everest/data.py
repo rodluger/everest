@@ -410,13 +410,6 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
     fitsheader = [pyfits.getheader(ftpf, 0).cards,
                   pyfits.getheader(ftpf, 1).cards,
                   pyfits.getheader(ftpf, 2).cards]
-  
-    # Save
-    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                        aperture = aperture, nearby = _nearby, campaign = campaign,
-                        apertures = apertures, fitsheader = fitsheader,
-                        contamination = contamination, raw_time = raw_time,
-                        raw_cadn = raw_cadn)
     
     # Atomically write to disk.
     # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python

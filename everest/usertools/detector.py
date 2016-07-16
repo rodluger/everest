@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-detector.py
------------
+:py:mod:`detector.py` - Plotting the Kepler Field
+-------------------------------------------------
+
+Tools for interactively plotting the `Kepler` field.
 
 '''
 
@@ -218,7 +220,15 @@ class VerticalSlider(AxesWidget):
             self.set_val(self.valinit)
 
 class Detector(object):
-    
+  '''
+  Plots all stars in a given campaign as they appear in the `Kepler` field
+  of view. Stars are colored according to their `Kp` magnitude, and a slider
+  at the left allows the user to make cuts based on the contamination metric.
+  Double-clicking on a star will download and plot its :py:mod:`everest`
+  light curve.
+  
+  '''
+  
   def __init__(self, campaign, epic = None, maxc = 0.25):
         
     # Init
@@ -309,7 +319,8 @@ class Detector(object):
         
   def GetStars(self):
     '''
-  
+    Get all stars on the detector for this campaign.
+    
     '''
       
     # Get info on all neighbors
