@@ -20,7 +20,7 @@
   <br><br>
   </div>
 
-.. figure:: everest_example.jpg
+.. figure:: everest_example.jpeg
    :width: 800px
    :align: center
    :height: 100px
