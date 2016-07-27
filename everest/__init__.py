@@ -6,7 +6,7 @@ import os, sys
 
 # Version number
 __version__ = "1.0"
-__develop__ = True
+__develop__ = False
 
 # Was everest imported from setup.py?
 try:

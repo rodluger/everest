@@ -26,10 +26,11 @@ for EPIC 205071984:
 The :py:mod:`everest` command accepts several options, which we list below.
 
 ====================  =================================================================================
-:py:obj:`epic`        The **EPIC** target number (`required`)
+:py:obj:`id`          The **EPIC** target number *or* the *K2* campaign number (`required`)
 :py:obj:`-a`          Plot the aperture used for the photometry
 :py:obj:`-c`          Plot the location of the target on the CCD
 :py:obj:`-i`          Plot in interactive mode
+:py:obj:`-k`          Plot all stars on the *K2* field of view (`interactive`)
 :py:obj:`-n`          Plot the contamination analysis
 :py:obj:`-p`          Plot the **EVEREST** de-trended light curve (`default`)
 :py:obj:`-r`          Plot the autocorrelation/GP fitting result
@@ -39,3 +40,15 @@ The :py:mod:`everest` command accepts several options, which we list below.
 :py:obj:`--k2sc`      Plot the **K2SC** light curve for the target
 :py:obj:`--k2varcat`  Plot the **K2VARCAT** light curve for the target
 ====================  =================================================================================
+
+.. raw:: html
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-47070068-2', 'auto');
+    ga('send', 'pageview');
+  </script>

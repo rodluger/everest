@@ -6,13 +6,11 @@ test_ui.py
 
 '''
 
-import everest
-
 def test_ui():
   '''
   
   '''
   
-  # Nothing for now
+  # Nothing for now.
   
   pass

@@ -1,20 +1,12 @@
 # Adapted from dfm/george
 
 language: python
-
-env:
-  global:
-    - NUMPY_VERSION=1.8
         
 matrix:
   include:
     # All the versions of Python.
     - python: 2.7
     - python: 3.4
-
-    # Old versions of NumPy.
-    - python: 2.7
-      env: NUMPY_VERSION=1.7
 
 cache: pip
 
@@ -23,23 +15,19 @@ addons:
     packages:
     - python-pip
     - libeigen3-dev
-    - python-numpy
-    - python-scipy
 
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda/bin:$PATH
+  - export PATH=/home/travis/miniconda2/bin:$PATH
   - conda update --yes conda
   
 install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - source activate test
-  - conda install --yes numpy=$NUMPY_VERSION scipy nose pip Cython
-  - pip install george
+  - conda install --yes numpy scipy nose pip
   - pip install coveralls
-  - pip install matplotlib
   - python setup.py install
 
 script: 

@@ -2,8 +2,8 @@ Known Issues
 ============
 
 As we discuss in the paper, **EVEREST** has certain limitations, particularly when
-it comes to saturated stars and stars in crowded apertures. Below we outline these
-limitations with some examples.
+it comes to saturated stars, stars in crowded apertures, and very variable stars. 
+Below we outline these limitations with some examples.
 
 .. contents::
    :local:
@@ -66,6 +66,24 @@ greater than 2 or 3. Other pipelines are likely to perform better for these targ
           Note that saturated and crowded stars were **not** included \
           when computing the overall performance of **EVEREST** relative to \
           other pipelines (such as in `Figures 10-15 <precision.html>`_ in our paper).
+
+RR Lyrae and very variable stars
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. figure:: 211069540_everest.jpeg
+ :width: 600px
+ :align: center
+ :height: 100px
+ :figclass: align-center
+
+The :py:mod:`everest` pipeline is also likely to fail for very short period
+variable stars, such as RR Lyrae stars. When the stellar variability signal is
+stronger and at a higher frequency than the instrumental signal,
+nearly all the de-trending power comes from the GP, and the resulting CDPP is rather 
+insensitive to the value of the PLD coefficients, leading to poor de-trending. Imperfect
+optimization of the GP can also lead to damping of the stellar variability signal,
+which is evident in the light curve shown above. Consider using the 
+`K2VARCAT catalog <https://archive.stsci.edu/prepds/k2varcat/>`_ for these stars.
           
 Ultrashort-period EBs
 ~~~~~~~~~~~~~~~~~~~~~
@@ -81,8 +99,21 @@ eclipsing binaries. If the eclipses take up a significant fraction of the orbit,
 not much continuum flux to train the model on. It's also likely that the eclipses 
 (particularly the secondaries) may not be properly identified as outliers, in which case
 the GP optimization step will favor a kernel that captures the short timescale, high amplitude
-variability introduced by these eclipses. When this happens, all the de-trending power
+variability introduced by these eclipses. As in the variable star case, all the de-trending power
 comes from the GP, and the resulting CDPP is insensitive to the value of the PLD coefficients,
 which as a result end up taking on effectively random values. This results in light curves
 like the one above, where the eclipses get washed out and the white noise gets inflated
 (despite a lower reported CDPP).
+
+
+.. raw:: html
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-47070068-2', 'auto');
+    ga('send', 'pageview');
+  </script>

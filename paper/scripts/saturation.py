@@ -129,17 +129,18 @@ if __name__ == '__main__':
   ax[0,0].set_ylim(0.95,1.05)
   fig.savefig(os.path.join(IMG_PATH, 'saturation1.png'), bbox_inches = 'tight')
   pl.close()
-
+  
   # Fractions
   fig, ax = pl.subplots(15,11, sharex = True, sharey = True, figsize = (11,15))
   fig.subplots_adjust(hspace = 0, wspace = 0)
   for i in range(15):
     for j in range(11):
-      ax[i,j].plot(x, z[i][j], 'k.', markersize = 0.75)
+      ax[i,j].plot(x, z[i][j], 'k.', markersize = 0.75, zorder = -1)
       ax[i,j].set_xticks([])
       ax[i,j].set_yticks([])
       if np.all(np.isnan(y[i][j])):
         ax[i,j].set_visible(False)
+      ax[i,j].set_rasterization_zorder(0)
   for j,i in [[5,3],[5,4],[5,5],[5,6],[5,7],[5,8],[5,9],[5,10],[5,11],[6,6],[6,7]]:
     ax[i,j].set_axis_bgcolor((1., 0.9, 0.9))
     ax[i,j].annotate('S', xy = (0.1, 0.9), xycoords = 'axes fraction',
@@ -151,4 +152,5 @@ if __name__ == '__main__':
   ax[0,0].set_xlim(-0.15, 0.15)
   ax[0,0].set_ylim(0.95,1.05)
   fig.savefig(os.path.join(IMG_PATH, 'saturation2.png'), bbox_inches = 'tight')
+  fig.savefig(os.path.join(IMG_PATH, 'saturation2.pdf'), bbox_inches = 'tight')
   pl.close()

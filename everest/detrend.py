@@ -282,7 +282,7 @@ def Outliers(time, flux, fpix, ferr, mask = [], sigma = 5):
   ferr = np.delete(ferr, mask)
 
   # Set up a generic GP
-  amp = np.median([np.std(y) for y in Chunks(flux, int(2. / np.median(time[1:] - time [:-1])))])
+  amp = np.nanmedian([np.nanstd(y) for y in Chunks(flux, int(2. / np.nanmedian(time[1:] - time [:-1])))])
   gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(2. ** 2))
   
   # Compute the basis vectors for 1st order PLD w/ 5 chunks
@@ -291,8 +291,8 @@ def Outliers(time, flux, fpix, ferr, mask = [], sigma = 5):
   X, _ = PLDBasis(fpix, time = time, pld_order = 1, max_components = 50, breakpoints = brkpts)
   
   # First we (tentatively) clip outliers from the raw flux.
-  med = np.median(flux)
-  MAD = 1.4826 * np.median(np.abs(flux - med))
+  med = np.nanmedian(flux)
+  MAD = 1.4826 * np.nanmedian(np.abs(flux - med))
   i = np.where((flux > med + sigma * MAD) | (flux < med - sigma * MAD))[0]
   log.info('Iteration #00: %d outliers.' % len(i))
   
@@ -316,8 +316,8 @@ def Outliers(time, flux, fpix, ferr, mask = [], sigma = 5):
     fdet = flux - M - mu
   
     # Clip!
-    med = np.median(fdet)
-    MAD = 1.4826 * np.median(np.abs(fdet - med))
+    med = np.nanmedian(fdet)
+    MAD = 1.4826 * np.nanmedian(np.abs(fdet - med))
     i = np.where((fdet > med + sigma * MAD) | (fdet < med - sigma * MAD))[0]
   
     # Log

@@ -45,16 +45,18 @@ setup(name = 'everest',
       license = 'MIT',
       packages = ['everest', 'everest.usertools'],
       install_requires = [
-                          'numpy',
+                          'numpy>=1.8',
                           'scipy',
                           'matplotlib',
                           'george==0.2.1',
                           'sklearn',
                           'astroML',
+                          'astroML_addons',
                           'six',
                           pyfits,
                           'pysyzygy>=0.0.1',
-                          'k2plr==0.2.1'
+                          'k2plr==0.2.1',
+                          'statsmodels'
                          ],
       dependency_links = [
                           'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
@@ -62,4 +64,7 @@ setup(name = 'everest',
                          ],
       scripts=['bin/everest'],
       include_package_data = True,
-      zip_safe = False)
+      zip_safe = False,
+      test_suite='nose.collector',
+      tests_require=['nose']
+      )

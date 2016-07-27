@@ -18,6 +18,7 @@ from ..utils import PlotBounds, MADOutliers, RMS, PadWithZeros
 from ..crowding import Contamination
 from .selector import Selector
 from .ccd import CCD
+from .detector import Detector
 from scipy.ndimage import zoom
 from scipy.signal import savgol_filter
 import k2plr as kplr
@@ -57,6 +58,7 @@ def _EverestVersion():
   data = handler.read().decode('utf-8')
   if data.endswith('\n'):
     data = data[:-1]
+
   return data
 
 def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
@@ -75,7 +77,7 @@ def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
   
     # Get the url
     mast_version = _EverestVersion()
-    url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + ('%09d' % EPIC)[4:] + \
+    url = MAST_ROOT + 'c%02d/' % campaign + ('%09d' % EPIC)[:4] + '00000/' + ('%09d/' % EPIC)[4:] + \
           'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, mast_version, name)
   
     # Get the local file name
@@ -84,7 +86,7 @@ def _DownloadFile(EPIC, name = 'lc.fits', clobber = False):
                             'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s' % (EPIC, campaign, mast_version, name))
     if not os.path.exists(os.path.dirname(filename)):
       os.makedirs(os.path.dirname(filename))
-  
+
     # Download the data
     r = urllib.request.Request(url)
     handler = urllib.request.urlopen(r)
@@ -342,10 +344,20 @@ class Everest(object):
       self.cdpp6raw = hdulist[1].header['CDPP6RAW']
       
       # Channel
+      self.module = hdulist[0].header['MODULE']
+      self.output = hdulist[0].header['OUTPUT']
       self.channel = hdulist[0].header['CHANNEL']
       self.crval1p = hdulist[4].header['CRVAL1P']
       self.crval2p = hdulist[4].header['CRVAL2P']
       self.apnum = hdulist[1].header['APNUM']
+      
+      # Position info
+      self.crpix1p = hdulist[4].header['CRPIX1P']
+      self.crpix2p = hdulist[4].header['CRPIX2P']
+      self.crval1p = hdulist[4].header['CRVAL1P']
+      self.crval2p = hdulist[4].header['CRVAL2P']
+      self.cdelt1p = hdulist[4].header['CDELT1P']
+      self.cdelt2p = hdulist[4].header['CDELT2P']
       
   @property
   def masked_inds(self):
@@ -661,9 +673,16 @@ class Everest(object):
     
     ccd = CCD()
     ccd.add_source(self.channel, self.crval1p, self.crval2p)
-    ccd.fig.canvas.set_window_title('EPIC %d' % self.EPIC)
-    
+    ccd.fig.canvas.set_window_title('EPIC %d' % self.EPIC)    
     return ccd.fig, ccd.ax
+
+  def sky(self):
+    '''
+    Plot the location of the target on the `Kepler` field of view.
+    
+    '''
+    
+    Detector(Campaign(self.EPIC), self.EPIC)
   
   def cross_validation(self):
     '''

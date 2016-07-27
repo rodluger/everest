@@ -19,6 +19,7 @@ from k2plr.config import KPLR_ROOT
 import numpy as np
 import re
 import os
+import sys
 import six
 from six.moves import urllib
 from tempfile import NamedTemporaryFile
@@ -194,7 +195,7 @@ class k2data(object):
   pass
 
 def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
-              calculate_contamination = True):
+              calculate_contamination = True, use_k2sff_aperture = True):
   '''
   Download and save a single quarter of `K2` data.
   
@@ -209,6 +210,9 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
   :type delete_kplr_data: bool
   
   :param clobber: Overwrite existing `.npz` file? Default `False`
+  :type clobber: bool
+  
+  :param use_k2sff_aperture: Use apertures determined by the K2SFF team? Default `True`
   :type clobber: bool
   
   :returns: 
@@ -274,23 +278,50 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
   if clobber:
     if not os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
       os.makedirs(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC)))
-  
-    # Grab the K2SFF info, mainly to get the apertures
-    try:
-      k2sff = kplr.K2SFF(EPIC)
-      apertures = k2sff.apertures
-    except:
-      # If we can't get the K2SFF files, we can't run Everest (for now)
-      return None
-  
+    
     # Get the TPF
     client = kplr.API()
-    star = client.k2_star(EPIC)
+    try:
+      star = client.k2_star(EPIC)
+    except:
+      log.error("Oops... The target doesn't seem to be available on MAST!")
+      return None
+      
     tpf = star.get_target_pixel_files()[0]
     campaign = tpf.sci_campaign
     with tpf.open() as f:
       aperture = f[2].data
       qdata = f[1].data
+        
+    try:
+      # Grab the K2SFF info, mainly to get the apertures
+      if not use_k2sff_aperture:
+        raise Exception('')
+      k2sff = kplr.K2SFF(EPIC)
+      apertures = k2sff.apertures
+    except:
+      # We will use the TPF optimal aperture (not ideal, since
+      # it's smaller). We hack it into the ``apertures`` list.
+      k2sff = None
+      apertures = [[] for i in range(20)]
+      apnew = (aperture & 2) // 2 
+      
+      # HACK: Make the aperture bigger by including nearest neighbors,
+      # but only if there are fewer than 75 pixels.
+      apnew_copy = np.array(apnew)
+      for i in range(apnew.shape[0]):
+        for j in range(apnew.shape[1]):
+          if aperture[i][j] == 1:
+            for n in [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]:
+              if n[0] >= 0 and n[0] < apnew.shape[0]:
+                if n[1] >= 0 and n[1] < apnew.shape[1]:
+                  if apnew[n[0]][n[1]] == 1:
+                    apnew[i][j] = 1
+      # Revert to original if it's too big!
+      if np.sum(apnew) > 75:
+        apnew = apnew_copy
+      for i in range(20):
+        apertures[i] = apnew  
         
     # Get the arrays
     time = np.array(qdata.field('TIME'), dtype='float64')
@@ -313,6 +344,11 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
     bkidx = np.where(apertures[apnum] ^ 1)   
     flux = np.sum(np.array([f[apidx] for f in fpix], dtype='float64'), axis = 1)
     f_nan_inds = list(np.where(np.isnan(flux))[0])
+    
+    # Make sure we have an aperture!
+    if len(apidx[0]) == 0:
+      log.error('Oops... The chosen aperture has zero size!')
+      return None
     
     # Get flagged data points. Note that like K2SFF, we do not throw out all data
     # points flagged with bit #15, but treat them separately. See "LDE Flags" in 
@@ -339,13 +375,13 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
     # by a few cadences -- they happen later than they should. No idea why
     # this is happening, but I get *much* better folded eclipses when I remove
     # the first part of C0. Here I simply remove whatever SFF removes.
-    if time[0] < 1940.:
+    if time[0] < 1940. and k2sff is not None:
       bad_inds = np.append(bad_inds, np.where(time < k2sff.time[0]))
 
     # Campaign 2 hack. The first 1-2 days in C2 have very different noise
     # properties than the rest of the campaign, so we'll again trust the SFF
     # cuts.
-    if time[0] < 2061 and time[0] > 2059:
+    if time[0] < 2061 and time[0] > 2059 and k2sff is not None:
       bad_inds = np.append(bad_inds, np.where(time < k2sff.time[0]))
 
     # Remove them
@@ -374,13 +410,6 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
     fitsheader = [pyfits.getheader(ftpf, 0).cards,
                   pyfits.getheader(ftpf, 1).cards,
                   pyfits.getheader(ftpf, 2).cards]
-  
-    # Save
-    np.savez_compressed(filename, time = time, fpix = fpix, perr = perr, cadn = cadn,
-                        aperture = aperture, nearby = _nearby, campaign = campaign,
-                        apertures = apertures, fitsheader = fitsheader,
-                        contamination = contamination, raw_time = raw_time,
-                        raw_cadn = raw_cadn)
     
     # Atomically write to disk.
     # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
@@ -398,7 +427,8 @@ def GetK2Data(EPIC, apnum = 15, delete_kplr_data = True, clobber = False,
     # Delete the kplr tpf
     if delete_kplr_data:
       os.remove(ftpf)
-      os.remove(k2sff._file)
+      if k2sff is not None:
+        os.remove(k2sff._file)
   
   # Get any K2 planets associated with this EPIC
   planets = []
@@ -845,3 +875,28 @@ def GetK2EBs(clobber = False):
       EBs[i] = EB
       
   return EBs
+
+def ClearErrors(campaign, run_name = 'default', delete_data = False):
+  '''
+  Delete all output directories that contain ``.err`` files. If `delete_data`
+  is `True`, also deletes the input data. This will force :py:mod:`everest` to
+  re-run them.
+  
+  '''
+  
+  folder = os.path.join(EVEREST_DAT, 'output', 'C%02d' % campaign)
+  count = 0
+  if os.path.exists(folder):
+    stars = os.listdir(folder)
+    for i, EPIC in enumerate(stars):
+      sys.stdout.write('\rProcessing star %d/%d...' % (i + 1, len(stars)))
+      sys.stdout.flush()
+      if os.path.exists(os.path.join(folder, EPIC, run_name, '%s.err' % EPIC)):
+        count += 1
+        shutil.rmtree(os.path.join(folder, EPIC, run_name))
+        if delete_data:
+          if os.path.exists(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC))):
+            shutil.rmtree(os.path.join(KPLR_ROOT, 'data', 'everest', str(EPIC)))
+    print("")
+  print("Deleted %d targets." % count)
+  
