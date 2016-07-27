@@ -1,0 +1,5 @@
+*.so
+*.DS_Store
+*.pyc
+*.png
+/*.egg-info

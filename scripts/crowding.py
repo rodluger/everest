@@ -11,12 +11,25 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os, sys
 EVEREST_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(1, EVEREST_ROOT)
-import everest
+sys.path.append('/Users/nks1994/Documents/Research/PyKE')
+#reload(sys)
+#sys.setdefaultencoding('utf-8')
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as pl
+import everest
+import scipy
 from scipy.ndimage import zoom
 from scipy.optimize import fmin
 from scipy.special import erf
+import k2plr
+from k2plr.config import KPLR_ROOT
+import glob
+import pyfits
+import kepio
+import kepfunc
+
 
 def AddApertureContour(ax, nx, ny, aperture):
   '''
@@ -90,7 +103,7 @@ def PlotPostageStamp(EPIC, apnum = 15):
   
   return
 
-# PlotPostageStamp(201367065, apnum = 15)
+PlotPostageStamp(201367065, apnum = 15)
 
 data = everest.GetK2Data(201367065)
 fpix = data.fpix
@@ -98,20 +111,6 @@ _, ny, nx = fpix.shape
 kepmag = data.kepmag
 total_flux = np.transpose(fpix[0])
 errors = np.transpose(data.perr[0])
-
-# print(nx, ny, fpix.shape, total_flux.shape)
-
-def GaussianFit(EPIC):
-  data = everest.GetK2Data(EPIC)
-  nearby = data.nearby
-  aperture = data.apertures[apnum]
-  fpix = data.fpix
-  kepmag = data.kepmag
-  _, ny, nx = fpix.shape
-
-# generate 2 dimensional guassian plot
-def Gaus2D(x, y, xc, yc, a, b, sigma):
-  return a*np.exp((- (x - xc) ** 2 - (y - yc) ** 2) / (2 * sigma ** 2)) + b
 
 # generate 2D error function
 def Erf2D(x, y, xc, yc, a, b, sigma):
@@ -127,7 +126,7 @@ def Erf2D(x, y, xc, yc, a, b, sigma):
 
 # define chi squared function
 def ChiSq(params):
-  xc, yc, a, b, sigma= params
+  xc, yc, a, b, sigma = params
   result = 0
   for x in range(nx):
     for y in range(ny):
@@ -142,7 +141,7 @@ fig1 = pl.figure()
 pl.imshow(total_flux)
 pl.title('Data', fontsize = 22)
 pl.colorbar()
-
+'''
 # Plot sample chi squared curve
 fig2 = pl.figure()
 sigma_arr = np.linspace(1,10,100)
@@ -173,5 +172,73 @@ fig4 = pl.figure()
 pl.imshow(total_flux - model)
 pl.colorbar()
 pl.title('Data - Model', fontsize = 22)
+'''
 
+
+'''
+** KEPLER PRF **
+'''
+
+epic = 201367065
+
+prfdir = '/Users/nks1994/Documents/Research/KeplerPRF'
+logfile = 'test.log'
+verbose = True
+
+client = k2plr.API()
+star = client.k2_star(epic)
+tpf = star.get_target_pixel_files(fetch = True)[0]
+ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % epic, tpf._filename)
+tdim5 = pyfits.getheader(ftpf,1)['TDIM5']
+xdim = int(tdim5.strip().strip('(').strip(')').split(',')[0])
+ydim = int(tdim5.strip().strip('(').strip(')').split(',')[1])
+module = pyfits.getheader(ftpf,0)['MODULE']
+output = pyfits.getheader(ftpf,0)['OUTPUT']
+column = pyfits.getheader(ftpf,2)['CRVAL1P']
+row = pyfits.getheader(ftpf,2)['CRVAL2P']
+
+if int(module) < 10:
+  prefix = 'kplr0'
+else:
+  prefix = 'kplr'
+prfglob = prfdir + '/' + prefix + str(module) + '.' + str(output) + '*' + '_prf.fits'
+prffile = glob.glob(prfglob)[0]
+
+prfn = [0,0,0,0,0]
+crpix1p = np.zeros((5),dtype='float32')
+crpix2p = np.zeros((5),dtype='float32')
+crval1p = np.zeros((5),dtype='float32')
+crval2p = np.zeros((5),dtype='float32')
+cdelt1p = np.zeros((5),dtype='float32')
+cdelt2p = np.zeros((5),dtype='float32')
+for i in range(5):
+    prfn[i], crpix1p[i], crpix2p[i], crval1p[i], crval2p[i], cdelt1p[i], cdelt2p[i], status \
+        = kepio.readPRFimage(prffile,i+1,logfile,verbose) 
+prfn = np.array(prfn)
+PRFx = np.arange(0.5,np.shape(prfn[0])[1]+0.5)
+PRFy = np.arange(0.5,np.shape(prfn[0])[0]+0.5)
+PRFx = (PRFx - np.size(PRFx) / 2) * cdelt1p[0]
+PRFy = (PRFy - np.size(PRFy) / 2) * cdelt2p[0]
+
+prf = np.zeros(np.shape(prfn[0]), dtype='float32')
+prfWeight = np.zeros((5), dtype='float32')
+for i in range(5):
+    prfWeight[i] = np.sqrt((column - crval1p[i])**2 + (row - crval2p[i])**2)
+    if prfWeight[i] == 0.0:
+        prfWeight[i] = 1.0e-6
+    prf = prf + prfn[i] / prfWeight[i]
+prf = prf / np.nansum(prf) / cdelt1p[0] / cdelt2p[0]
+
+prfDimY = int(ydim / cdelt1p[0])
+prfDimX = int(xdim / cdelt2p[0])
+PRFy0 = (np.shape(prf)[0] - prfDimY) / 2
+PRFx0 = (np.shape(prf)[1] - prfDimX) / 2
+
+splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
+
+pl.imshow(prf)
 pl.show()
+
+args = (DATx,DATy,DATimg,ERRimg,nsrc,splineInterpolation,float(x[0]),float(y[0]))
+ans = fmin_powell(kepfunc.PRF,guess,args=args,xtol=xtol,
+                  ftol=ftol,disp=False)
