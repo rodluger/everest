@@ -32,12 +32,10 @@ import kepfunc
 from numpy import empty
 
 # define EPIC ID
-epic = 205998445
+# epic = 205998445
+epic = int(sys.argv[1])
 
 def AddApertureContour(ax, nx, ny, aperture):
-  '''
-
-  '''
 
   # Get the indices
   apidx = np.where(aperture & 1)
@@ -102,11 +100,10 @@ def PlotPostageStamp(EPIC, apnum = 15):
   ax.set_yticklabels([])
 
   pl.suptitle('EPIC %d' % EPIC, fontsize = 25, y = 0.98)
-  # pl.show()
 
   return
 
-PlotPostageStamp(epic, apnum = 15)
+# PlotPostageStamp(epic, apnum = 15)
 
 data = everest.GetK2Data(epic)
 fpix = data.fpix
@@ -176,104 +173,118 @@ for i in range(5):
     prf = prf + prfn[i] / prfWeight[i]
 prf = prf / np.nansum(prf) / cdelt1p[0] / cdelt2p[0]
 
+# generate PRF dimensions
 prfDimY = int(ydim / cdelt1p[0])
 prfDimX = int(xdim / cdelt2p[0])
 PRFy0 = (np.shape(prf)[0] - prfDimY) / 2
 PRFx0 = (np.shape(prf)[1] - prfDimX) / 2
 
-# interpolate function over the PRF
-splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
-
 DATx = np.arange(column,column+xdim)
 DATy = np.arange(row,row+ydim)
 
-nsrc = 1
-neighbors = []
+# interpolate function over the PRF
+splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
 
-# fit PRF model to pixel data
-guess = [218000,28.76,126.67,100,28,121]
-args = (DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
-ans = fmin_powell(kepfunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
-
-print("ans:" + str(ans))
-print("Number of sources = " + str(nsrc))
-
-prffit_guess = kepfunc.PRF2DET([ans[0]], [DATx[0] + ans[1]], [DATy[0] + ans[2]],DATx,DATy,1.0,1.0,0,splineInterpolation)
-f=empty((nsrc));x=empty((nsrc));y=empty((nsrc))
-
-for i in range(nsrc):
-    src = (nsrc - 1)
-    f[i] = ans[3 * i]
-    x[i] = ans[3 * i + 1]
-    y[i] = ans[3 * i + 2]
-    if i == 0:
-        print("Star 1 ans: (" + str(f[i])+", "+str(x[i])+", "+str(y[i])+")")
-        prffit = kepfunc.PRF2DET([f[i]],[x[i]],[y[i]],DATx,DATy,1.0,1.0,0,splineInterpolation)
-        fig4 = pl.figure()
-        pl.imshow(prffit, interpolation='nearest')
-        pl.title('Index 0')
-    else:
-        print("Star 2 ans: (" + str(f[i]) +", "+ str(x[i])+", "+ str(y[i])+")")
-        prffit += kepfunc.PRF2DET([f[i]],[x[i]],[y[i]],DATx,DATy,1.0,1.0,0,splineInterpolation)
-        fig5 = pl.figure()
-        pl.imshow(prffit, interpolation='nearest')
-
-# prffit = kepfunc.PRF2DET(f,x,y,DATx,DATy,1.0,1.0,0.0,splineInterpolation)
-    print("Star " + str(i+1) + ":")
-    print("Flux:    " + str(f[i]))
-    print("Coords:  ({0:.2f}, {1:.2f})".format(x[i],y[i]))
-    print("")
-
-
-print('Guess:    %.3e' % np.nansum((total_flux - prffit_guess) ** 2))
-print('Solution: %.3e' % np.nansum((total_flux - prffit) ** 2))
-
-vmin = 0
-vmax = max(np.nanmax(total_flux), np.nanmax(prffit))
-fig, ax = pl.subplots(2,3, figsize = (12,8))
-
-im1 = ax[0,0].imshow(total_flux, interpolation = 'nearest')
-ax[0,0].set_title('Data', fontsize = 22)
-ax[0,1].imshow(prffit, interpolation = 'nearest')
-ax[0,1].set_title('PRF Fit', fontsize = 22)
-ax[0,2].imshow(total_flux - prffit, interpolation = 'nearest')
-ax[0,2].set_title('Data - Model', fontsize = 22)
-ax[1,0].imshow(prf)
-ax[1,0].set_title('Model', fontsize = 22)
-
-nb_args = []
+# contruct lists for f, x, and y for each star in field
+nsrc = 0
 nearby = data.nearby
 kepmag = data.kepmag
-def size(k):
-  s = 1000 * 2 ** (kepmag - k)
-  return s
-
-ax[1,1].set_xlim(-0.7, nx - 0.3)
-ax[1,1].set_ylim(ny - 0.3, -0.7)
-
-numsrc = 0
-src_distance = []
+src_distance=[];fguess=[];xguess=[];yguess=[];
 for source in nearby:
-    if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10:
-        numsrc += 1
+    # only counts up to 3 target stars in field right now
+    if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10 and nsrc < 4:
+        nsrc += 1
         src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
-        nb_args.extend([source.x - source.x0, source.y - source.y0, data.fpix[0],
-                           data.perr[0], nsrc, splineInterpolation,106,874])
-        ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
-                   s = size(source.kepmag),
-                   c = ['r'],
-                   alpha = 0.5,
-                   edgecolor = 'k')
-        ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
-                   marker = r'$%.1f$' % source.kepmag, color = 'w',
-                   s = 500)
+        # the value of below is significantly inconsistent with the flux value of the star returned by fmin_powell
+        fguess.append(data.fpix[0][source.x - source.x0][source.y - source.y0])
+        xguess.append(source.x)
+        yguess.append(source.y)
 
     else:
        continue
 
-print(numsrc, src_distance)
+# fit PRF model to pixel data
+# LUGER: Here's the first problem. I think I had the order of the arguments in the
+# guess wrong when I first coded this up for you. For more than one source, the
+# order of the guess should be [flux1, flux2, ..., x1, x2, ..., y1, y2, ...]
+# and NOT [flux1, x1, y1, flux2, x2, y2], which is what you had. If you look at the
+# source code for kepfunc.PRF, you can easily tell this. The edits below fix this issue.
+#
+# Also, this is a bit wonky, but the intensity the fit gets for the first source when
+# fitting 2 sources is *half* of what it gets when fitting for one source. The fit is
+# no worse when including two sources (actually a bit better, which is expected!) so
+# I think that first parameter is internally scaled funny and doesn't correspond to
+# an actual intensity. Doesn't matter much for now, but something to keep in mind when
+# we start calculating crowding parameters.
 
+# concatinate guess array
+guess = fguess + xguess + yguess
+args = (DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+
+# calculate solution array based on initial guess
+ans = fmin_powell(kepfunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
+
+# print guess and solution arrays, and number of sources
+print("\nGuess:    " + str(['%.2f' % elem for elem in guess]))
+print("Solution: " + str(['%.2f' % elem for elem in ans]))
+print("Number of sources = " + str(nsrc))
+
+# generate the prf fit for guess parameters
+prffit_guess = kepfunc.PRF2DET(fguess, xguess, yguess, DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
+
+# populate arrays for f, x, and i with solution
+f=empty((nsrc));x=empty((nsrc));y=empty((nsrc))
+for i in range(nsrc):
+    f[i] = ans[i]
+    x[i] = ans[nsrc+i]
+    y[i] = ans[nsrc*2+i]
+
+# LUGER: This line is crucial. For some reason the PRF fit must be calculated
+# simultaneously for both sources; you can't just compute them separately and add them
+# as above. Not sure why -- something to do with the way it interpolates the PRF.
+prffit = kepfunc.PRF2DET(f,x,y,DATx,DATy,1.0,1.0,0.0,splineInterpolation)
+
+# LUGER: Turns out kepfunc.PRF actually returns the chi squared, so we can just call that instead
+print('\nGuess X^2:    %.3e' % kepfunc.PRF(guess, *args))
+print('Solution X^2: %.3e' % kepfunc.PRF(ans, *args))
+
+
+# LUGER: I added vmin and vmax to the lines below so that everything is plotted on the same scale
+vmin = 0
+vmax = max(np.nanmax(total_flux), np.nanmax(prffit))
+fig, ax = pl.subplots(2,3, figsize = (12,8))
+
+im1 = ax[0,0].imshow(total_flux, interpolation = 'nearest', vmin=vmin, vmax=vmax)
+ax[0,0].set_title('Data', fontsize = 22)
+ax[0,1].imshow(prffit, interpolation = 'nearest', vmin=vmin, vmax=vmax)
+ax[0,1].set_title('PRF Fit', fontsize = 22)
+ax[0,2].imshow(np.abs(total_flux - prffit), interpolation = 'nearest', vmin=vmin, vmax=vmax)
+ax[0,2].set_title('Data - Model', fontsize = 22)
+ax[1,0].imshow(prf)
+ax[1,0].set_title('Model', fontsize = 22)
+
+# LUGER: Now showing what our guess looks like as well, for reference
+ax[1,2].imshow(prffit_guess, interpolation = 'nearest', vmin=vmin, vmax=vmax)
+ax[1,2].set_title('PRF Guess', fontsize = 22)
+
+# display sources in field
+def size(k):
+  s = 1000 * 2 ** (kepmag - k)
+  return s
+for source in nearby:
+    if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10:
+        ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
+            s = size(source.kepmag),
+            c = ['r'],
+            alpha = 0.5,
+            edgecolor = 'k')
+        ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
+            marker = r'$%.1f$' % source.kepmag, color = 'w',
+            s = 500)
+    else:
+        continue
+ax[1,1].set_xlim(-0.7, nx - 0.3)
+ax[1,1].set_ylim(ny - 0.3, -0.7)
 ax[1,1].set_title('Nearby Sources')
-
 
 pl.show()
