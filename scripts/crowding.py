@@ -192,11 +192,13 @@ kepmag = data.kepmag
 src_distance=[];fguess=[];xguess=[];yguess=[];
 for source in nearby:
     # only counts up to 3 target stars in field right now
-    if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10 and nsrc < 4:
+    if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1]) and nsrc < 4:
+    #if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10 and nsrc < 4:
         nsrc += 1
         src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
         # the value of below is significantly inconsistent with the flux value of the star returned by fmin_powell
-        fguess.append(data.fpix[0][source.x - source.x0][source.y - source.y0])
+        #fguess.append(data.fpix[0][source.x - source.x0][source.y - source.y0])
+        fguess.append(1.e4)
         xguess.append(source.x)
         yguess.append(source.y)
 
