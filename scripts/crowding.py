@@ -203,13 +203,16 @@ for source in nearby:
         nsrc += 1
         src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
 
+        # try new target parameters
         ftry = 10**(C_mag - source.kepmag)
         xtry = source.x
         ytry = source.y
         paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
 
+        # calculate X^2 value for set
         X.append(kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy)))
 
+        # add parameters to guess matrices if it improves the guess fit by a factor of 1.5 (ambiguous)
         if n==0 or (X[n-1] / X[n]) > 1.5:
 
             fguess.append(ftry)
