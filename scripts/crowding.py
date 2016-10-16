@@ -32,8 +32,9 @@ import kepfunc
 from numpy import empty
 
 # define EPIC ID
-# epic = 205998445
-epic = int(sys.argv[1])
+epic = 205998445
+# epic = 215915109
+# epic = int(sys.argv[1])
 
 def AddApertureContour(ax, nx, ny, aperture):
 
@@ -185,25 +186,44 @@ DATy = np.arange(row,row+ydim)
 # interpolate function over the PRF
 splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
 
+
 # contruct lists for f, x, and y for each star in field
 nsrc = 0
+
 nearby = data.nearby
 kepmag = data.kepmag
+C_mag = 17
+X = []; n=0;
+
 src_distance=[];fguess=[];xguess=[];yguess=[];
+
 for source in nearby:
     # only counts up to 3 target stars in field right now
     if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1]) and nsrc < 4:
-    #if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10 and nsrc < 4:
         nsrc += 1
         src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
-        # the value of below is significantly inconsistent with the flux value of the star returned by fmin_powell
-        #fguess.append(data.fpix[0][source.x - source.x0][source.y - source.y0])
-        fguess.append(1.e4)
-        xguess.append(source.x)
-        yguess.append(source.y)
+
+        ftry = 10**(C_mag - source.kepmag)
+        xtry = source.x
+        ytry = source.y
+        paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
+
+        X.append(kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy)))
+
+        if n==0 or (X[n-1] / X[n]) > 1.5:
+
+            fguess.append(ftry)
+            xguess.append(xtry)
+            yguess.append(ytry)
+            n += 1
+
+        else:
+            nsrc -= 1
+
 
     else:
        continue
+
 
 # fit PRF model to pixel data
 # LUGER: Here's the first problem. I think I had the order of the arguments in the
