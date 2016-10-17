@@ -32,8 +32,9 @@ import kepfunc
 from numpy import empty
 
 # define EPIC ID
-epic = 205998445
-# epic = 215915109
+# epic = 205998445
+# epic = 215796924
+epic = 215915109
 # epic = int(sys.argv[1])
 
 def AddApertureContour(ax, nx, ny, aperture):
@@ -193,13 +194,19 @@ nsrc = 0
 nearby = data.nearby
 kepmag = data.kepmag
 C_mag = 17
-X = []; n=0;
+X=[]; BIC=[]; n=0;
+
+BIC_0 = np.nansum([i**2 for i in fpix])
+
+# print(np.nansum([i**2 for i in fpix]))
 
 src_distance=[];fguess=[];xguess=[];yguess=[];
 
+# test nearby sources to determine if they improve the fit
+# by minimizing Bayesian Information Criterion (BIC)
 for source in nearby:
     # only counts up to 3 target stars in field right now
-    if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1]) and nsrc < 4:
+    if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1]):
         nsrc += 1
         src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
 
@@ -209,11 +216,12 @@ for source in nearby:
         ytry = source.y
         paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
 
-        # calculate X^2 value for set
+        # calculate X^2 value for set, and input into BIC
         X.append(kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy)))
+        BIC.append(X[n] + len(paramstry) * np.log(len(fpix)))
 
-        # add parameters to guess matrices if it improves the guess fit by a factor of 1.5 (ambiguous)
-        if n==0 or (X[n-1] / X[n]) > 1.5:
+        # add parameters to guess matrices if it improves the guess fit
+        if n==0 or (BIC[n-1] / BIC[n]) > 1:
 
             fguess.append(ftry)
             xguess.append(xtry)
@@ -227,20 +235,9 @@ for source in nearby:
     else:
        continue
 
+BIC = np.insert(BIC, 0, BIC_0)
 
 # fit PRF model to pixel data
-# LUGER: Here's the first problem. I think I had the order of the arguments in the
-# guess wrong when I first coded this up for you. For more than one source, the
-# order of the guess should be [flux1, flux2, ..., x1, x2, ..., y1, y2, ...]
-# and NOT [flux1, x1, y1, flux2, x2, y2], which is what you had. If you look at the
-# source code for kepfunc.PRF, you can easily tell this. The edits below fix this issue.
-#
-# Also, this is a bit wonky, but the intensity the fit gets for the first source when
-# fitting 2 sources is *half* of what it gets when fitting for one source. The fit is
-# no worse when including two sources (actually a bit better, which is expected!) so
-# I think that first parameter is internally scaled funny and doesn't correspond to
-# an actual intensity. Doesn't matter much for now, but something to keep in mind when
-# we start calculating crowding parameters.
 
 # concatinate guess array
 guess = fguess + xguess + yguess
@@ -285,12 +282,11 @@ ax[0,1].imshow(prffit, interpolation = 'nearest', vmin=vmin, vmax=vmax)
 ax[0,1].set_title('PRF Fit', fontsize = 22)
 ax[0,2].imshow(np.abs(total_flux - prffit), interpolation = 'nearest', vmin=vmin, vmax=vmax)
 ax[0,2].set_title('Data - Model', fontsize = 22)
-ax[1,0].imshow(prf)
-ax[1,0].set_title('Model', fontsize = 22)
+
 
 # LUGER: Now showing what our guess looks like as well, for reference
-ax[1,2].imshow(prffit_guess, interpolation = 'nearest', vmin=vmin, vmax=vmax)
-ax[1,2].set_title('PRF Guess', fontsize = 22)
+ax[1,0].imshow(prffit_guess, interpolation = 'nearest', vmin=vmin, vmax=vmax)
+ax[1,0].set_title('PRF Guess', fontsize = 22)
 
 # display sources in field
 def size(k):
@@ -312,4 +308,11 @@ ax[1,1].set_xlim(-0.7, nx - 0.3)
 ax[1,1].set_ylim(ny - 0.3, -0.7)
 ax[1,1].set_title('Nearby Sources')
 
+ax[1,2].plot([(i) for i in range(len(BIC))],BIC,'r-')
+ax[1,2].set_xlabel('Number of Sources')
+ax[1,2].set_ylabel('BIC (logarithmic)')
+ax[1,2].set_title('BIC vs. Sources')
+ax[1,2].set_yscale('log')
+
+pl.tight_layout()
 pl.show()
