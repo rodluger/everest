@@ -32,8 +32,8 @@ import kepfunc
 from numpy import empty
 
 # define EPIC ID
-# epic = 205998445
-# epic = 215796924
+#epic = 205998445
+#epic = 215796924
 epic = 215915109
 # epic = int(sys.argv[1])
 
@@ -194,48 +194,43 @@ nsrc = 0
 nearby = data.nearby
 kepmag = data.kepmag
 C_mag = 17
-X=[]; BIC=[]; n=0;
+nsrc = 0
 
-BIC_0 = np.nansum([i**2 for i in fpix])
+# Zero sources; this is just the chi^2 with a model of zero
+X = [np.nansum([i**2 for i in total_flux/errors])]
+BIC = [X[0]]
 
-# print(np.nansum([i**2 for i in fpix]))
+# Include only the sources that are in the aperture, and sort them
+# from brightest to faintest
+nearby = np.array([source for source in nearby if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1])])
+nearby = nearby[np.argsort([source.kepmag for source in nearby])]
 
 src_distance=[];fguess=[];xguess=[];yguess=[];
 
 # test nearby sources to determine if they improve the fit
 # by minimizing Bayesian Information Criterion (BIC)
-for source in nearby:
-    # only counts up to 3 target stars in field right now
-    if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1]):
-        nsrc += 1
-        src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
+# Testing a maximum of 3 sources
+for source in nearby[:3]:
+  
+  nsrc += 1
+  src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
 
-        # try new target parameters
-        ftry = 10**(C_mag - source.kepmag)
-        xtry = source.x
-        ytry = source.y
-        paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
+  # try new target parameters
+  ftry = 10**(C_mag - source.kepmag)
+  xtry = source.x
+  ytry = source.y
+  paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
+  
+  # calculate X^2 value for set, and input into BIC
+  chisq = kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+  X.append(chisq)
+  BIC.append(chisq + len(paramstry) * np.log(len(fpix)))
 
-        # calculate X^2 value for set, and input into BIC
-        X.append(kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy)))
-        BIC.append(X[n] + len(paramstry) * np.log(len(fpix)))
+  # Append the guess
+  fguess.append(ftry)
+  xguess.append(xtry)
+  yguess.append(ytry)
 
-        # add parameters to guess matrices if it improves the guess fit
-        if n==0 or (BIC[n-1] / BIC[n]) > 1:
-
-            fguess.append(ftry)
-            xguess.append(xtry)
-            yguess.append(ytry)
-            n += 1
-
-        else:
-            nsrc -= 1
-
-
-    else:
-       continue
-
-BIC = np.insert(BIC, 0, BIC_0)
 
 # fit PRF model to pixel data
 
