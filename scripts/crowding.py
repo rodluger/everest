@@ -33,8 +33,8 @@ from numpy import empty
 
 # define EPIC ID
 #epic = 205998445
-#epic = 215796924
-epic = 215915109
+epic = 215796924
+# epic = 215915109
 # epic = int(sys.argv[1])
 
 def AddApertureContour(ax, nx, ny, aperture):
@@ -211,7 +211,7 @@ src_distance=[];fguess=[];xguess=[];yguess=[];
 # by minimizing Bayesian Information Criterion (BIC)
 # Testing a maximum of 3 sources
 for source in nearby[:3]:
-  
+
   nsrc += 1
   src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
 
@@ -220,7 +220,7 @@ for source in nearby[:3]:
   xtry = source.x
   ytry = source.y
   paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
-  
+
   # calculate X^2 value for set, and input into BIC
   chisq = kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
   X.append(chisq)
@@ -234,8 +234,18 @@ for source in nearby[:3]:
 
 # fit PRF model to pixel data
 
-# concatinate guess array
-guess = fguess + xguess + yguess
+# isolate best fit
+def findFit(BIC):
+    for i in range(len(BIC)):
+        if BIC[i] == np.min(BIC[1:]):
+            return i
+        else:
+            continue
+
+nsrc = findFit(BIC)
+
+# concatenate guess array
+guess = fguess[:nsrc] + xguess[:nsrc] + yguess[:nsrc]
 args = (DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
 
 # calculate solution array based on initial guess
@@ -244,7 +254,7 @@ ans = fmin_powell(kepfunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
 # print guess and solution arrays, and number of sources
 print("\nGuess:    " + str(['%.2f' % elem for elem in guess]))
 print("Solution: " + str(['%.2f' % elem for elem in ans]))
-print("Number of sources = " + str(nsrc))
+print("Number of sources fit = " + str(nsrc))
 
 # generate the prf fit for guess parameters
 prffit_guess = kepfunc.PRF2DET(fguess, xguess, yguess, DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
@@ -305,7 +315,6 @@ ax[1,1].set_title('Nearby Sources')
 
 ax[1,2].plot([(i) for i in range(len(BIC))],BIC,'r-')
 ax[1,2].set_xlabel('Number of Sources')
-ax[1,2].set_ylabel('BIC (logarithmic)')
 ax[1,2].set_title('BIC vs. Sources')
 ax[1,2].set_yscale('log')
 
