@@ -28,11 +28,11 @@ from k2plr.config import KPLR_ROOT
 import glob
 import pyfits
 import kepio
-import kepfunc
+import prffunc
 from numpy import empty
 
 # define EPIC ID
-#epic = 205998445
+# epic = 205998445
 epic = 215796924
 # epic = 215915109
 # epic = int(sys.argv[1])
@@ -222,7 +222,7 @@ for source in nearby[:3]:
   paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
 
   # calculate X^2 value for set, and input into BIC
-  chisq = kepfunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+  chisq = prffunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
   X.append(chisq)
   BIC.append(chisq + len(paramstry) * np.log(len(fpix)))
 
@@ -249,7 +249,7 @@ guess = fguess[:nsrc] + xguess[:nsrc] + yguess[:nsrc]
 args = (DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
 
 # calculate solution array based on initial guess
-ans = fmin_powell(kepfunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
+ans = fmin_powell(prffunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
 
 # print guess and solution arrays, and number of sources
 print("\nGuess:    " + str(['%.2f' % elem for elem in guess]))
@@ -257,7 +257,7 @@ print("Solution: " + str(['%.2f' % elem for elem in ans]))
 print("Number of sources fit = " + str(nsrc))
 
 # generate the prf fit for guess parameters
-prffit_guess = kepfunc.PRF2DET(fguess, xguess, yguess, DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
+prffit_guess = prffunc.PRF2DET(fguess, xguess, yguess, DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
 
 # populate arrays for f, x, and i with solution
 f=empty((nsrc));x=empty((nsrc));y=empty((nsrc))
@@ -269,11 +269,11 @@ for i in range(nsrc):
 # LUGER: This line is crucial. For some reason the PRF fit must be calculated
 # simultaneously for both sources; you can't just compute them separately and add them
 # as above. Not sure why -- something to do with the way it interpolates the PRF.
-prffit = kepfunc.PRF2DET(f,x,y,DATx,DATy,1.0,1.0,0.0,splineInterpolation)
+prffit = prffunc.PRF2DET(f,x,y,DATx,DATy,1.0,1.0,0.0,splineInterpolation)
 
-# LUGER: Turns out kepfunc.PRF actually returns the chi squared, so we can just call that instead
-print('\nGuess X^2:    %.3e' % kepfunc.PRF(guess, *args))
-print('Solution X^2: %.3e' % kepfunc.PRF(ans, *args))
+# LUGER: Turns out prffunc.PRF actually returns the chi squared, so we can just call that instead
+print('\nGuess X^2:    %.3e' % prffunc.PRF(guess, *args))
+print('Solution X^2: %.3e' % prffunc.PRF(ans, *args))
 
 
 # LUGER: I added vmin and vmax to the lines below so that everything is plotted on the same scale
