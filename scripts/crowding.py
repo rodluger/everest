@@ -187,7 +187,6 @@ DATy = np.arange(row,row+ydim)
 # interpolate function over the PRF
 splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
 
-
 # contruct lists for f, x, and y for each star in field
 nsrc = 0
 
@@ -210,27 +209,27 @@ src_distance=[];fguess=[];xguess=[];yguess=[];
 # test nearby sources to determine if they improve the fit
 # by minimizing Bayesian Information Criterion (BIC)
 # Testing a maximum of 3 sources
+
 for source in nearby[:3]:
 
-  nsrc += 1
-  src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
+    nsrc += 1
+    src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
 
-  # try new target parameters
-  ftry = 10**(C_mag - source.kepmag)
-  xtry = source.x
-  ytry = source.y
-  paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
+    # try new target parameters
+    ftry = 10**(C_mag - source.kepmag)
+    xtry = source.x
+    ytry = source.y
+    paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
 
-  # calculate X^2 value for set, and input into BIC
-  chisq = prffunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
-  X.append(chisq)
-  BIC.append(chisq + len(paramstry) * np.log(len(fpix)))
+    # calculate X^2 value for set, and input into BIC
+    chisq = prffunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+    X.append(chisq)
+    BIC.append(chisq + len(paramstry) * np.log(len(fpix)))
 
-  # Append the guess
-  fguess.append(ftry)
-  xguess.append(xtry)
-  yguess.append(ytry)
-
+    # Append the guess
+    fguess.append(ftry)
+    xguess.append(xtry)
+    yguess.append(ytry)
 
 # fit PRF model to pixel data
 
@@ -301,10 +300,10 @@ for source in nearby:
     if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10:
         ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
             s = size(source.kepmag),
-            c = ['r'],
+            c = ['k'],
             alpha = 0.5,
             edgecolor = 'k')
-        ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
+        ax[1,1].scatter(source.x - source.x0, source.y - source.y0 + np.log10(size(source.kepmag)) / 2.5,
             marker = r'$%.1f$' % source.kepmag, color = 'w',
             s = 500)
     else:
@@ -312,6 +311,7 @@ for source in nearby:
 ax[1,1].set_xlim(-0.7, nx - 0.3)
 ax[1,1].set_ylim(ny - 0.3, -0.7)
 ax[1,1].set_title('Nearby Sources')
+ax[1,1].set_axis_bgcolor('darkblue')
 
 ax[1,2].plot([(i) for i in range(len(BIC))],BIC,'r-')
 ax[1,2].set_xlabel('Number of Sources')
