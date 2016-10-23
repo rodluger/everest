@@ -187,6 +187,9 @@ DATy = np.arange(row,row+ydim)
 # interpolate function over the PRF
 splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
 
+
+# Include only the sources that are in the aperture, and sort them
+# from brightest to faintest
 def findNearby():
 
     nearby = data.nearby
@@ -196,24 +199,18 @@ def findNearby():
 
     return nearby
 
-# contruct lists for f, x, and y for each star in field
-
 # test nearby sources to determine if they improve the fit
 # by minimizing Bayesian Information Criterion (BIC)
 # Testing a maximum of 3 sources
-
 def generateGuess():
 
     nearby = findNearby()
     C_mag = 17
     nsrc = 0
-
-    # Include only the sources that are in the aperture, and sort them
-    # from brightest to faintest
-
     X = [np.nansum([i**2 for i in base_flux/errors])]
     BIC = [X[0]]
 
+    # contruct lists for f, x, and y for each star in field
     src_distance=[];fguess=[];xguess=[];yguess=[];
 
     for source in nearby[:3]:
@@ -237,6 +234,7 @@ def generateGuess():
         xguess.append(xtry)
         yguess.append(ytry)
 
+    # return the BIC and guess array for the best fit
     for i in range(len(BIC)):
         if BIC[i] == np.min(BIC[1:]):
             nsrc = i
