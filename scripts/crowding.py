@@ -73,11 +73,11 @@ def PlotPostageStamp(EPIC, apnum = 15):
   fpix = data.fpix
   kepmag = data.kepmag
   _, ny, nx = fpix.shape
-  total_flux = np.log10(np.nansum(fpix, axis = 0))
+  base_flux = np.log10(np.nansum(fpix, axis = 0))
 
   # Plot the data and the aperture
   fig, ax = pl.subplots(1)
-  ax.imshow(total_flux, interpolation = 'nearest', alpha = 0.75)
+  ax.imshow(base_flux, interpolation = 'nearest', alpha = 0.75)
   AddApertureContour(ax, nx, ny, aperture)
 
   # Crop the image
@@ -111,7 +111,7 @@ data = everest.GetK2Data(epic)
 fpix = data.fpix
 _, ny, nx = fpix.shape
 kepmag = data.kepmag
-total_flux = fpix[0]
+base_flux = fpix[0]
 mean_flux = np.sum(fpix[n] for n in range(len(fpix))) / len(fpix)
 errors = data.perr[0]
 mean_errs = np.sum(data.perr[n] for n in range(len(data.perr))) / len(data.perr)
@@ -187,65 +187,69 @@ DATy = np.arange(row,row+ydim)
 # interpolate function over the PRF
 splineInterpolation = scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
 
+def findNearby():
+
+    nearby = data.nearby
+    kepmag = data.kepmag
+    nearby = np.array([source for source in nearby if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1])])
+    nearby = nearby[np.argsort([source.kepmag for source in nearby])]
+
+    return nearby
+
 # contruct lists for f, x, and y for each star in field
-nsrc = 0
-
-nearby = data.nearby
-kepmag = data.kepmag
-C_mag = 17
-nsrc = 0
-
-# Zero sources; this is just the chi^2 with a model of zero
-X = [np.nansum([i**2 for i in total_flux/errors])]
-BIC = [X[0]]
-
-# Include only the sources that are in the aperture, and sort them
-# from brightest to faintest
-nearby = np.array([source for source in nearby if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1])])
-nearby = nearby[np.argsort([source.kepmag for source in nearby])]
-
-src_distance=[];fguess=[];xguess=[];yguess=[];
 
 # test nearby sources to determine if they improve the fit
 # by minimizing Bayesian Information Criterion (BIC)
 # Testing a maximum of 3 sources
 
-for source in nearby[:3]:
+def generateGuess():
 
-    nsrc += 1
-    src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
+    nearby = findNearby()
+    C_mag = 17
+    nsrc = 0
 
-    # try new target parameters
-    ftry = 10**(C_mag - source.kepmag)
-    xtry = source.x
-    ytry = source.y
-    paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
+    # Include only the sources that are in the aperture, and sort them
+    # from brightest to faintest
 
-    # calculate X^2 value for set, and input into BIC
-    chisq = prffunc.PRF(paramstry,DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
-    X.append(chisq)
-    BIC.append(chisq + len(paramstry) * np.log(len(fpix)))
+    X = [np.nansum([i**2 for i in base_flux/errors])]
+    BIC = [X[0]]
 
-    # Append the guess
-    fguess.append(ftry)
-    xguess.append(xtry)
-    yguess.append(ytry)
+    src_distance=[];fguess=[];xguess=[];yguess=[];
 
-# fit PRF model to pixel data
+    for source in nearby[:3]:
 
-# isolate best fit
-def findFit(BIC):
+        nsrc += 1
+        src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
+
+        # try new target parameters
+        ftry = 10**(C_mag - source.kepmag)
+        xtry = source.x
+        ytry = source.y
+        paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
+
+        # calculate X^2 value for set, and input into BIC
+        chisq = prffunc.PRF(paramstry,DATx,DATy,base_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+        X.append(chisq)
+        BIC.append(chisq + len(paramstry) * np.log(len(fpix)))
+
+        # Append the guess
+        fguess.append(ftry)
+        xguess.append(xtry)
+        yguess.append(ytry)
+
     for i in range(len(BIC)):
         if BIC[i] == np.min(BIC[1:]):
-            return i
+            nsrc = i
+            return BIC, fguess[:nsrc] + xguess[:nsrc] + yguess[:nsrc]
         else:
             continue
 
-nsrc = findFit(BIC)
+# fit PRF model to pixel data
 
 # concatenate guess array
-guess = fguess[:nsrc] + xguess[:nsrc] + yguess[:nsrc]
-args = (DATx,DATy,total_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+BIC, guess = generateGuess()
+nsrc = int(len(guess) / 3)
+args = (DATx,DATy,base_flux,errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
 
 # calculate solution array based on initial guess
 ans = fmin_powell(prffunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
@@ -256,7 +260,7 @@ print("Solution: " + str(['%.2f' % elem for elem in ans]))
 print("Number of sources fit = " + str(nsrc))
 
 # generate the prf fit for guess parameters
-prffit_guess = prffunc.PRF2DET(fguess, xguess, yguess, DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
+prffit_guess = prffunc.PRF2DET(guess[:nsrc], guess[nsrc:2*nsrc], guess[2*nsrc:], DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
 
 # populate arrays for f, x, and i with solution
 f=empty((nsrc));x=empty((nsrc));y=empty((nsrc))
@@ -277,14 +281,14 @@ print('Solution X^2: %.3e' % prffunc.PRF(ans, *args))
 
 # LUGER: I added vmin and vmax to the lines below so that everything is plotted on the same scale
 vmin = 0
-vmax = max(np.nanmax(total_flux), np.nanmax(prffit))
+vmax = max(np.nanmax(base_flux), np.nanmax(prffit))
 fig, ax = pl.subplots(2,3, figsize = (12,8))
 
-im1 = ax[0,0].imshow(total_flux, interpolation = 'nearest', vmin=vmin, vmax=vmax)
+im1 = ax[0,0].imshow(base_flux, interpolation = 'nearest', vmin=vmin, vmax=vmax)
 ax[0,0].set_title('Data', fontsize = 22)
 ax[0,1].imshow(prffit, interpolation = 'nearest', vmin=vmin, vmax=vmax)
 ax[0,1].set_title('PRF Fit', fontsize = 22)
-ax[0,2].imshow(np.abs(total_flux - prffit), interpolation = 'nearest', vmin=vmin, vmax=vmax)
+ax[0,2].imshow(np.abs(base_flux - prffit), interpolation = 'nearest', vmin=vmin, vmax=vmax)
 ax[0,2].set_title('Data - Model', fontsize = 22)
 
 
@@ -296,7 +300,7 @@ ax[1,0].set_title('PRF Guess', fontsize = 22)
 def size(k):
   s = 1000 * 2 ** (kepmag - k)
   return s
-for source in nearby:
+for source in findNearby():
     if np.sqrt((source.x - source.x0)**2 + (source.y - source.y0)**2) < 10:
         ax[1,1].scatter(source.x - source.x0, source.y - source.y0,
             s = size(source.kepmag),
