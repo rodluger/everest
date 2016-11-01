@@ -1,12 +1,10 @@
 
 import numpy, scipy, math, sys
-import keparray
 from math import modf, cos, sin, radians, exp
 from scipy import ndimage, interpolate
 from scipy.ndimage import interpolation
 from scipy.ndimage.interpolation import shift, rotate
 from scipy.interpolate import RectBivariateSpline, interp2d
-from keparray import rebin2D
 from numpy import square, nansum, shape, array, empty, zeros, absolute, size
 from sys import stdout, exit
 
