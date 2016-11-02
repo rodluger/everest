@@ -25,7 +25,6 @@ import k2plr
 from k2plr.config import KPLR_ROOT
 import glob
 import pyfits
-import kepio
 import prffunc
 from numpy import empty
 
@@ -35,21 +34,24 @@ epic = 215796924
 # epic = 215915109
 # epic = int(sys.argv[1])
 
+
+
 class CrowdingTarget(object):
 
-    def __init__(self):
+    def __init__(self, epic):
         self.data = everest.GetK2Data(epic)
         self.nearby = self.data.nearby
         self.fpix = self.data.fpix
         self.kepmag = self.data.kepmag
         self._, self.ny, self.nx = self.fpix.shape
-        self.base_flux = np.log10(np.nansum(self.fpix, axis = 0))
+        self.base_flux = self.fpix[0]
         self.mean_flux = np.sum(self.fpix[n] for n in range(len(self.fpix))) / len(self.fpix)
         self.errors = self.data.perr[0]
         self.mean_errs = np.sum(self.data.perr[n] for n in range(len(self.data.perr))) / len(self.data.perr)
         self.BIC = []
         self.nsrc = 1
 
+    # draw contour around aperture for plotting postage stamp
     def addApertureContour(self,ax, nx, ny, aperture):
 
         # Get the indices
@@ -74,6 +76,7 @@ class CrowdingTarget(object):
 
         return
 
+    # plot region around target star with nearby neighbors marked
     def plotPostageStamp(self, epic, apnum = 15):
 
         self.aperture = self.data.apertures[apnum]
@@ -81,7 +84,7 @@ class CrowdingTarget(object):
         # Plot the data and the aperture
         fig, ax = pl.subplots(1)
         ax.imshow(self.base_flux, interpolation = 'nearest', alpha = 0.75)
-        CrowdingTarget().addApertureContour(ax, self.nx, self.ny, self.aperture)
+        CrowdingTarget(epic).addApertureContour(ax, self.nx, self.ny, self.aperture)
 
         # Crop the image
         ax.set_xlim(-0.7, self.nx - 0.3)
@@ -109,6 +112,7 @@ class CrowdingTarget(object):
 
         return
 
+    #
     def generatePRF(self,EPIC):
         # set PRF directory
         prfdir = '/Users/nks1994/Documents/Research/KeplerPRF'
@@ -148,16 +152,13 @@ class CrowdingTarget(object):
             cdelt2p = np.zeros((5),dtype='float32')
         for i in range(5):
             prfn[i], crpix1p[i], crpix2p[i], crval1p[i], crval2p[i], cdelt1p[i], cdelt2p[i], status \
-                = kepio.readPRFimage(prffile,i+1,logfile,verbose)
+                = prffunc.readPRFimage(prffile,i+1,logfile,verbose)
             prfn = np.array(prfn)
             PRFx = np.arange(0.5,np.shape(prfn[0])[1]+0.5)
             PRFy = np.arange(0.5,np.shape(prfn[0])[0]+0.5)
 
             PRFx = (PRFx - np.size(PRFx) / 2) * cdelt1p[0]
             PRFy = (PRFy - np.size(PRFy) / 2) * cdelt2p[0]
-
-            self.PRFx = PRFx
-            self.PRFy = PRFy
 
             prf = np.zeros(np.shape(prfn[0]), dtype='float32')
             prfWeight = np.zeros((5), dtype='float32')
@@ -167,7 +168,6 @@ class CrowdingTarget(object):
                 prfWeight[i] = 1.0e-6
             prf = prf + prfn[i] / prfWeight[i]
         prf = prf / np.nansum(prf) / cdelt1p[0] / cdelt2p[0]
-        self.prf = prf
 
         # generate PRF dimensions
         prfDimY = int(ydim / cdelt1p[0])
@@ -178,15 +178,16 @@ class CrowdingTarget(object):
         DATx = np.arange(column,column+xdim)
         DATy = np.arange(row,row+ydim)
 
+        # returns data dimensions, PRF dimensions, and the prf at the target location
         return DATx,DATy,PRFx,PRFy,prf
 
+    # interpolate function over the PRF
     def interpolate(self, PRFx, PRFy, prf):
 
-        # interpolate function over the PRF
         return scipy.interpolate.RectBivariateSpline(PRFx,PRFy,prf)
 
-    # Include only the sources that are in the aperture, and sort them
-    # from brightest to faintest
+    # include only the sources that are in the aperture
+    # and sort them from brightest to faintest
     def findNearby(self,DATx,DATy):
 
         data = self.data
@@ -242,6 +243,7 @@ class CrowdingTarget(object):
             else:
                 continue
 
+    # minimize residuals to find array with best parameters
     def findSolution(self, guess, DATx, DATy,splineInterpolation):
 
         self.nsrc = int(len(guess) / 3)
@@ -261,6 +263,7 @@ class CrowdingTarget(object):
 
         return ans
 
+    # create the guess prf fit
     def createGuessFit(self,guess,DATx,DATy,splineInterpolation):
 
         nsrc = self.nsrc
@@ -268,6 +271,7 @@ class CrowdingTarget(object):
         # generate the prf fit for guess parameters
         return prffunc.PRF2DET(guess[:nsrc], guess[nsrc:2*nsrc], guess[2*nsrc:], DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
 
+    # create the prf fit for the solution array
     def createFit(self,ans,DATx,DATy,splineInterpolation):
 
         nsrc = self.nsrc
@@ -280,6 +284,7 @@ class CrowdingTarget(object):
 
         return prffunc.PRF2DET(f,x,y,DATx,DATy,1.0,1.0,0.0,splineInterpolation)
 
+    # plot data, model, residuals, prf model, nearby neighbors, and the BIC
     def plotResults(self,prffit,guessfit,nearby):
 
         # LUGER: I added vmin and vmax to the lines below so that everything is plotted on the same scale
@@ -299,9 +304,6 @@ class CrowdingTarget(object):
         # LUGER: Now showing what our guess looks like as well, for reference
         ax[1,0].imshow(guessfit, interpolation = 'nearest', vmin=vmin, vmax=vmax)
         ax[1,0].set_title('PRF Guess', fontsize = 22)
-
-
-        nearby = CrowdingTarget().findNearby(DATx,DATy)
 
         # display sources in field
         def size(k):
@@ -332,19 +334,22 @@ class CrowdingTarget(object):
         pl.tight_layout()
         pl.show()
 
-# CrowdingTarget().plotPostageStamp(epic, apnum = 15)
+    # calls functions
+    def runCrowding(self,epic):
 
-CrowdingTarget().__init__()
-DATx,DATy,PRFx,PRFy,prf = CrowdingTarget().generatePRF(epic)
-splineInterpolation = CrowdingTarget().interpolate(PRFx,PRFy,prf)
-nearby = CrowdingTarget().findNearby(DATx,DATy)
+        target = CrowdingTarget(epic)
+        DATx,DATy,PRFx,PRFy,prf = target.generatePRF(epic)
+        splineInterpolation = target.interpolate(PRFx,PRFy,prf)
+        nearby = target.findNearby(DATx,DATy)
 
-# concatenate guess array
-guess = CrowdingTarget().generateGuess(PRFx,PRFy,prf,DATx,DATy,splineInterpolation,nearby)
-ans = CrowdingTarget().findSolution(guess, DATx, DATy,splineInterpolation)
+        # concatenate guess array
+        guess = target.generateGuess(PRFx,PRFy,prf,DATx,DATy,splineInterpolation,nearby)
+        ans = target.findSolution(guess, DATx, DATy,splineInterpolation)
 
-# generate the prf fit for guess parameters
-guessfit = CrowdingTarget().createGuessFit(guess,DATx,DATy,splineInterpolation)
-prffit = CrowdingTarget().createFit(ans,DATx,DATy,splineInterpolation)
+        # generate the prf fit for guess parameters
+        guessfit = target.createGuessFit(guess,DATx,DATy,splineInterpolation)
+        prffit = target.createFit(ans,DATx,DATy,splineInterpolation)
 
-CrowdingTarget().plotResults(prffit,guessfit,nearby)
+        target.plotResults(prffit,guessfit,nearby)
+
+CrowdingTarget(epic).runCrowding(epic)
