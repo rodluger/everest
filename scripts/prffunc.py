@@ -39,8 +39,8 @@ def PRF(params,*args):
 
     # calculate the sum squared difference between data and model
 
-    #    PRFres = nansum(square(DATimg - PRFfit) / square(DATerr))
-    PRFres = nansum(square(DATimg - PRFfit))
+    PRFres = nansum(square(DATimg - PRFfit) / square(DATerr))
+    # PRFres = nansum(square(DATimg - PRFfit))
 
     # keep the fit centered
 

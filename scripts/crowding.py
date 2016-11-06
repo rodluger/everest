@@ -30,8 +30,8 @@ from numpy import empty
 
 # define EPIC ID
 # epic = 205998445
-epic = 215796924
-# epic = 215915109
+# epic = 215796924
+epic = 215915109
 # epic = int(sys.argv[1])
 
 
@@ -50,6 +50,14 @@ class CrowdingTarget(object):
         self.mean_errs = np.sum(self.data.perr[n] for n in range(len(self.data.perr))) / len(self.data.perr)
         self.BIC = []
         self.nsrc = 1
+        self.epic = epic
+
+        # current maximum number of targets being fit
+        self.nsrc_fit = 3
+
+        # current Kepler PRF directory
+        self.prfdir = '/Users/nks1994/Documents/Research/KeplerPRF'
+
 
     # draw contour around aperture for plotting postage stamp
     def addApertureContour(self,ax, nx, ny, aperture):
@@ -77,14 +85,14 @@ class CrowdingTarget(object):
         return
 
     # plot region around target star with nearby neighbors marked
-    def plotPostageStamp(self, epic, apnum = 15):
+    def plotPostageStamp(self, apnum = 15):
 
         self.aperture = self.data.apertures[apnum]
 
         # Plot the data and the aperture
         fig, ax = pl.subplots(1)
         ax.imshow(self.base_flux, interpolation = 'nearest', alpha = 0.75)
-        CrowdingTarget(epic).addApertureContour(ax, self.nx, self.ny, self.aperture)
+        self.addApertureContour(ax, self.nx, self.ny, self.aperture)
 
         # Crop the image
         ax.set_xlim(-0.7, self.nx - 0.3)
@@ -99,7 +107,7 @@ class CrowdingTarget(object):
         for source in self.nearby:
             ax.scatter(source.x - source.x0, source.y - source.y0,
                        s = size(source.kepmag),
-                       c = ['g' if source.epic == epic else 'r'],
+                       c = ['g' if source.epic == self.epic else 'r'],
                        alpha = 0.5,
                        edgecolor = 'k')
             ax.scatter(source.x - source.x0, source.y - source.y0,
@@ -108,22 +116,20 @@ class CrowdingTarget(object):
             ax.set_xticklabels([])
             ax.set_yticklabels([])
 
-            pl.suptitle('EPIC %d' % epic, fontsize = 25, y = 0.98)
+            pl.suptitle('EPIC %d' % self.epic, fontsize = 25, y = 0.98)
 
         return
 
-    #
-    def generatePRF(self,EPIC):
-        # set PRF directory
-        prfdir = '/Users/nks1994/Documents/Research/KeplerPRF'
-        logfile = 'test.log'
-        verbose = True
+    # create PRF for location of target on detector
+    def generatePRF(self):
 
         # read PRF header data
+        logfile = 'test.log'
+        verbose = True
         client = k2plr.API()
-        star = client.k2_star(EPIC)
+        star = client.k2_star(self.epic)
         tpf = star.get_target_pixel_files(fetch = True)[0]
-        ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % epic, tpf._filename)
+        ftpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', '%d' % self.epic, tpf._filename)
         tdim5 = pyfits.getheader(ftpf,1)['TDIM5']
         xdim = int(tdim5.strip().strip('(').strip(')').split(',')[0])
         ydim = int(tdim5.strip().strip('(').strip(')').split(',')[1])
@@ -139,7 +145,7 @@ class CrowdingTarget(object):
             prefix = 'kplr0'
         else:
             prefix = 'kplr'
-            prfglob = prfdir + '/' + prefix + str(module) + '.' + str(output) + '*' + '_prf.fits'
+            prfglob = self.prfdir + '/' + prefix + str(module) + '.' + str(output) + '*' + '_prf.fits'
             prffile = glob.glob(prfglob)[0]
 
             # create PRF matrix
@@ -204,54 +210,62 @@ class CrowdingTarget(object):
     # Testing a maximum of 3 sources
     def generateGuess(self,PRFx,PRFy,prf,DATx,DATy,splineInterpolation,nearby):
 
-        data = self.data
         C_mag = 17
         nsrc = 0
-        X = [np.nansum([i**2 for i in self.base_flux/self.errors])]
-
-        self.BIC = [X[0]]
 
         # contruct lists for f, x, and y for each star in field
         src_distance=[];fguess=[];xguess=[];yguess=[];
 
-        for source in nearby[:3]:
+        for source in nearby[:self.nsrc_fit]:
 
             nsrc += 1
             src_distance.append(np.sqrt(source.x - source.x0) ** 2 + (source.y - source.y0) ** 2)
 
-            # try new target parameters
-            ftry = 10**(C_mag - source.kepmag)
-            xtry = source.x
-            ytry = source.y
-            paramstry = fguess + [ftry] + xguess + [xtry] + yguess + [ytry]
-
-            # calculate X^2 value for set, and input into BIC
-            chisq = prffunc.PRF(paramstry,DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
-            X.append(chisq)
-            self.BIC.append(chisq + len(paramstry) * np.log(len(self.fpix)))
-
             # Append the guess
-            fguess.append(ftry)
-            xguess.append(xtry)
-            yguess.append(ytry)
+            fguess.append(10**(C_mag - source.kepmag))
+            xguess.append(source.x)
+            yguess.append(source.y)
 
-        # return the BIC and guess array for the best fit
-        for i in range(len(self.BIC)):
-            if self.BIC[i] == np.min(self.BIC[1:]):
-                nsrc = i
-                return fguess[:nsrc] + xguess[:nsrc] + yguess[:nsrc]
-            else:
-                continue
+        return fguess + xguess + yguess
 
     # minimize residuals to find array with best parameters
     def findSolution(self, guess, DATx, DATy,splineInterpolation):
 
+        X = [np.nansum([i**2 for i in self.base_flux/self.errors])]
+        self.BIC = [X[0]]
         self.nsrc = int(len(guess) / 3)
         nsrc = self.nsrc
         args = (DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+        f = guess[:nsrc]; x = guess[nsrc:2*nsrc]; y = guess[2*nsrc:];
+
+        # return the BIC and guess array for the best fit
+        for i in range(nsrc):
+
+            # create temporary parameters and arguments
+            paramstry = np.concatenate((f[:i+1],x[:i+1],y[:i+1]),axis=0)
+            args = (DATx,DATy,self.base_flux,self.errors,i+1,splineInterpolation,np.mean(DATx),np.mean(DATy))
+
+            # calculate best parameters for PRF
+            ans = fmin_powell(prffunc.PRF,paramstry,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=False)
+
+            # calculate X^2 value for set, and input into BIC
+            chisq = prffunc.PRF(ans,DATx,DATy,self.base_flux,self.errors,i+1,splineInterpolation,np.mean(DATx),np.mean(DATy))
+            X.append(chisq)
+
+            # BIC = prffunc.PRF + k + ln(n)
+            self.BIC.append(chisq + len(paramstry) * np.log(len(self.fpix)))
+
+            # set nsrc to index (>0) of BIC
+            if self.BIC[i] == np.min(self.BIC[1:]):
+                self.nsrc = i + 1
+            else:
+                continue
+
+        # create final arguments and parameters for BIC-minimized PRF fit
+        args = (DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+        ans = np.concatenate((ans[:nsrc], ans[len(ans)/3:len(ans)/3+nsrc], ans[2*len(ans)/3:2*len(ans)/3+nsrc]),axis=0)
 
         # calculate solution array based on initial guess
-        ans = fmin_powell(prffunc.PRF,guess,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=True)
 
         # print guess and solution arrays, and number of sources
         print("\nGuess:    " + str(['%.2f' % elem for elem in guess]))
@@ -259,7 +273,7 @@ class CrowdingTarget(object):
         print("Number of sources fit = " + str(nsrc))
 
         print('\nGuess X^2:    %.3e' % prffunc.PRF(guess, *args))
-        print('Solution X^2: %.3e' % prffunc.PRF(ans, *args))
+        print('Solution X^2: %.3e\n' % prffunc.PRF(ans, *args))
 
         return ans
 
@@ -283,6 +297,10 @@ class CrowdingTarget(object):
             y[i] = ans[nsrc*2+i]
 
         return prffunc.PRF2DET(f,x,y,DATx,DATy,1.0,1.0,0.0,splineInterpolation)
+
+    def timeSeries(self):
+
+        pass
 
     # plot data, model, residuals, prf model, nearby neighbors, and the BIC
     def plotResults(self,prffit,guessfit,nearby):
@@ -335,21 +353,20 @@ class CrowdingTarget(object):
         pl.show()
 
     # calls functions
-    def runCrowding(self,epic):
+    def runCrowding(self):
 
-        target = CrowdingTarget(epic)
-        DATx,DATy,PRFx,PRFy,prf = target.generatePRF(epic)
-        splineInterpolation = target.interpolate(PRFx,PRFy,prf)
-        nearby = target.findNearby(DATx,DATy)
+        DATx,DATy,PRFx,PRFy,prf = self.generatePRF()
+        splineInterpolation = self.interpolate(PRFx,PRFy,prf)
+        nearby = self.findNearby(DATx,DATy)
 
         # concatenate guess array
-        guess = target.generateGuess(PRFx,PRFy,prf,DATx,DATy,splineInterpolation,nearby)
-        ans = target.findSolution(guess, DATx, DATy,splineInterpolation)
+        guess = self.generateGuess(PRFx,PRFy,prf,DATx,DATy,splineInterpolation,nearby)
+        ans = self.findSolution(guess, DATx, DATy,splineInterpolation)
 
         # generate the prf fit for guess parameters
-        guessfit = target.createGuessFit(guess,DATx,DATy,splineInterpolation)
-        prffit = target.createFit(ans,DATx,DATy,splineInterpolation)
+        guessfit = self.createGuessFit(guess,DATx,DATy,splineInterpolation)
+        prffit = self.createFit(ans,DATx,DATy,splineInterpolation)
 
-        target.plotResults(prffit,guessfit,nearby)
+        self.plotResults(prffit,guessfit,nearby)
 
-CrowdingTarget(epic).runCrowding(epic)
+CrowdingTarget(epic).runCrowding()
