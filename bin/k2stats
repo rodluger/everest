@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+k2stats
+-------
+
+'''
+
+import argparse
+from everest import Statistics
+
+if __name__ == '__main__':
+
+  parser = argparse.ArgumentParser(prog = 'estats', add_help = True)
+  parser.add_argument("campaign", type = str, help = 'The K2 campaign to download')
+  parser.add_argument("-m", "--model", type = str, default = None, help = 'The everest model to analyze')
+  parser.add_argument("-c", "--compare-to", type = str, default = None, help = 'The model to compare to')
+  args = parser.parse_args()
+  
+  # Get the campaign number
+  if '.' in args.campaign:
+    campaign = float(args.campaign)
+  else:
+    campaign = int(args.campaign)
+  
+  # Call the stats function
+  if args.model is not None:
+    if args.compare_to is not None:
+      Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to)
+    else:
+      Statistics(campaign = campaign, model = args.model)
+  else:
+    if args.compare_to is not None:
+      Statistics(campaign = campaign, compare_to = args.compare_to)
+    else:
+      Statistics(campaign = campaign)

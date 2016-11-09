@@ -1,0 +1,4 @@
+include README
+include everest/missions/*/*.pbs
+include everest/missions/*/tables/*.csv
+include everest/missions/*/tables/*.tsv

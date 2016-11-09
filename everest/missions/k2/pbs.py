@@ -1,0 +1,257 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+:py:mod:`pbs.py` - PBS cluster submission routines
+--------------------------------------------------
+
+'''
+
+from __future__ import division, print_function, absolute_import, unicode_literals
+from .aux import *
+from .k2 import GetData
+from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
+from ...utils import ExceptionHook, FunctionWrapper
+from ...pool import Pool
+import os, sys, subprocess
+import logging
+log = logging.getLogger(__name__)
+
+# Constants
+RED =    '\033[0;31m'
+GREEN =  '\033[0;32m'
+BLACK =  '\033[0m'
+BLUE =   '\033[0;34m'
+
+def Download(campaign = 0, queue = 'build', email = None, walltime = 8, **kwargs):
+  '''
+  Submits a cluster job to the build queue to download all TPFs for a given
+  campaign.
+  
+  :param int campaign: The `K2` campaign to run
+  :param str queue: The name of the queue to submit to. Default `build`
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `8`
+  
+  '''
+  
+  # Figure out the subcampaign
+  if type(campaign) is int:
+    subcampaign = -1
+  elif type(campaign) is float:
+    x, y = divmod(campaign, 1)
+    campaign = int(x)
+    subcampaign = round(y * 10)
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'download.pbs')
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_DAT, campaign, subcampaign)
+  if subcampaign == -1:
+    str_name = 'download_c%02d' % campaign
+  else:
+    str_name = 'download_c%02d.%d' % (campaign, subcampaign)
+  str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
+  qsub_args = ['qsub', pbsfile, 
+               '-q', queue,
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', str_name,
+               '-l', str_w]
+  if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
+def _Download(campaign, subcampaign):
+  '''
+  Download all stars from a given campaign. This is
+  called from ``missions/k2/download.pbs``
+  
+  '''
+
+  # Are we doing a subcampaign?
+  if subcampaign != -1:
+    campaign = campaign + 0.1 * subcampaign
+  # Get all star IDs for this campaign
+  stars = [s[0] for s in GetK2Campaign(campaign)]
+  nstars = len(stars)
+  # Download the TPF data for each one
+  for i, EPIC in enumerate(stars):
+    print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
+    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
+                         ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
+                         'data.npz')):
+      try:
+        GetData(EPIC, download_only = True)
+      except KeyboardInterrupt:
+        sys.exit()
+      except:
+        # Some targets could be corrupted...
+        print("ERROR downloading EPIC %d." % EPIC)
+        continue
+
+def Run(campaign = 0, model = 'PLD', nodes = 5, cadence = 'all',
+        ppn = 12, walltime = 100, mpn = None, email = None, queue = None):
+  '''
+  Submits a cluster job to compute and plot data for all targets in a given campaign.
+  
+  :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
+                   all targets in that campaign. If a :py:class:`float` in the form \
+                   `X.Y`, runs the `Y^th` decile of campaign `X`.
+  :param str queue: The queue to submit to. Default `None` (default queue)
+  :param str email: The email to send job status notifications to. Default `None`
+  :param int walltime: The number of hours to request. Default `100`
+  :param int nodes: The number of nodes to request. Default `5`
+  :param int ppn: The number of processors per node to request. Default `12`
+  :param int mpn: Memory per node in gb to request. Default no setting.
+  
+  '''
+  
+  # Figure out the subcampaign
+  if type(campaign) is int:
+    subcampaign = -1
+  elif type(campaign) is float:
+    x, y = divmod(campaign, 1)
+    campaign = int(x)
+    subcampaign = round(y * 10) 
+  assert cadence in ['lc', 'sc', 'all'], "Keyword argument `cadence` must be one of `lc`, `sc`, or `all`." 
+  # Submit the cluster job      
+  pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
+  if mpn is not None:
+    str_n = 'nodes=%d:ppn=%d,feature=%dcore,mem=%dgb' % (nodes, ppn, ppn, mpn * nodes)
+  else:
+    str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
+  str_w = 'walltime=%d:00:00' % walltime
+  str_v = 'EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,MODEL=%s,CADENCE=%s' % (EVEREST_DAT, 
+          nodes, campaign, subcampaign, model, cadence)
+  if subcampaign == -1:
+    str_name = 'c%02d' % campaign
+  else:
+    str_name = 'c%02d.%d' % (campaign, subcampaign)
+  str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
+  qsub_args = ['qsub', pbsfile, 
+               '-v', str_v, 
+               '-o', str_out,
+               '-j', 'oe', 
+               '-N', str_name,
+               '-l', str_n,
+               '-l', str_w]
+  if email is not None: 
+    qsub_args.append(['-M', email, '-m', 'ae'])
+  if queue is not None:
+    qsub_args += ['-q', queue]          
+  # Now we submit the job
+  print("Submitting the job...")
+  subprocess.call(qsub_args)
+
+def _Run(campaign, subcampaign, model, cadence):
+  '''
+  The actual function that runs a given campaign; this must
+  be called from ``missions/k2/run.pbs``.
+  
+  '''
+  
+  # Model wrapper
+  m = FunctionWrapper(EverestModel, model = model)
+  
+  # Set up our custom exception handler
+  sys.excepthook = ExceptionHook
+  # Initialize our multiprocessing pool
+  with Pool() as pool:
+    # Are we doing a subcampaign?
+    if subcampaign != -1:
+      campaign = campaign + 0.1 * subcampaign
+    # Get all the stars
+    if cadence == 'sc':
+      stars = [s[0] for s in GetK2Campaign(campaign) if s[3] == True]
+    elif cadence == 'lc':
+      stars = [s[0] for s in GetK2Campaign(campaign) if s[3] == False]
+    else:
+      stars = [s[0] for s in GetK2Campaign(campaign)]
+    # Run
+    pool.map(m, stars)
+
+def Status(campaign = range(9), model = 'PLD', purge = False, **kwargs):
+  '''
+  Shows the progress of the de-trending runs for the specified campaign(s).
+
+  '''
+  
+  if not hasattr(campaign, '__len__'):
+    if type(campaign) is int:
+      # Return the subcampaigns
+      all_stars = [s for s in GetK2Campaign(campaign, split = True, epics_only = True)]
+      campaign = [campaign + 0.1 * n for n in range(10)]
+    else:
+      all_stars = [[s for s in GetK2Campaign(campaign, epics_only = True)]]
+      campaign = [campaign]
+  else:
+    all_stars = [[s for s in GetK2Campaign(c, epics_only = True)] for c in campaign]
+  print("CAMP      TOTAL      DOWNLOADED    PROCESSED    ERRORS")
+  print("----      -----      ----------    ---------    ------")
+  for c, stars in zip(campaign, all_stars):
+    down = 0
+    proc = 0
+    err = 0
+    bad = []
+    remain = []
+    total = len(stars)
+    if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)):
+      path = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)
+      for folder in os.listdir(path):
+        for subfolder in os.listdir(os.path.join(path, folder)):
+          if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data.npz')):
+            if int(folder[:4] + subfolder) in stars:
+              down += 1
+              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.npz')):
+                proc += 1
+              elif os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err')):
+                err += 1
+                bad.append(folder[:4] + subfolder)
+                if purge:
+                  os.remove(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err'))
+              else:
+                remain.append(folder[:4] + subfolder)
+    if proc == total:
+      cc = ct = cd = cp = ce = GREEN
+    else:
+      cc = BLACK
+      ct = BLACK
+      cd = BLACK if down < total else BLUE
+      cp = BLACK if proc < down or proc == 0 else BLUE
+      ce = RED if err > 0 else BLACK
+    if type(c) is int:
+      print("%s{:>4d}   \033[0m%s{:>8d}\033[0m%s{:>16d}\033[0m%s{:>13d}\033[0m%s{:>10d}\033[0m".format(c, total, down, proc, err)
+            % (cc, ct, cd, cp, ce))
+    else:
+      print("%s{:>4.1f}   \033[0m%s{:>8d}\033[0m%s{:>16d}\033[0m%s{:>13d}\033[0m%s{:>10d}\033[0m".format(c, total, down, proc, err)
+            % (cc, ct, cd, cp, ce))
+    if len(remain) <= 25 and len(remain) > 0 and len(campaign) == 1:
+      remain.extend(["         "] * (4 - (len(remain) % 4)))
+      print()
+      for A, B, C, D in zip(remain[::4],remain[1::4],remain[2::4],remain[3::4]):
+        if A == remain[0]:
+          print("REMAIN:  %s   %s   %s   %s" % (A, B, C, D))
+          print()
+        else:
+          print("         %s   %s   %s   %s" % (A, B, C, D))
+          print()
+    if len(bad) and len(campaign) == 1:
+      bad.extend(["         "] * (4 - (len(bad) % 4)))
+      print()
+      for A, B, C, D in zip(bad[::4],bad[1::4],bad[2::4],bad[3::4]):
+        if A == bad[0]:
+          print("ERRORS:  %s   %s   %s   %s" % (A, B, C, D))
+          print()
+        else:
+          print("         %s   %s   %s   %s" % (A, B, C, D))
+          print()
+
+def EverestModel(ID, model = 'PLD', **kwargs):
+  '''
+  
+  '''
+  
+  from ... import model as everest_model
+  getattr(everest_model, model)(ID, **kwargs)
+  return True

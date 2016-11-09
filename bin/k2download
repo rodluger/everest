@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+k2download
+----------
+
+Download a K2 campaign by spawning 10 background screen sessions.
+
+'''
+
+import subprocess
+import argparse
+
+def download(c, s):
+  return " ".join(['screen',
+                   '-dmS',
+                   'k2c%d.%d' % (c, s),
+                   'bash',
+                   '-c',
+                   '\'python -c "import everest; everest.missions.k2.pbs._Download(%d,%d)"\'' % (c, s)])
+
+def cancel(c, s):
+  return " ".join(['screen',
+                   '-S',
+                   'k2c%d.%d' % (c, s),
+                   '-X',
+                   'quit'])
+
+if __name__ == '__main__':
+
+  parser = argparse.ArgumentParser(prog = 'download', add_help = True)
+  parser.add_argument("campaign", type = int, help = 'The K2 campaign to download')
+  parser.add_argument("-c", "--cancel", action = "store_true", help = 'Cancel downloading this campaign')
+  args = parser.parse_args()
+  
+  for s in range(10):
+    if args.cancel:
+      subprocess.call(cancel(args.campaign, s), shell = True)
+    else:
+      subprocess.call(download(args.campaign, s), shell = True)
