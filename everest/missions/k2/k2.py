@@ -30,8 +30,7 @@ import logging
 log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoint', 'GetData', 'GetNeighbors', 
-           'Statistics', 'TargetDirectory', 'GetSimpleNeighbors', 
-           'HasShortCadence']
+           'Statistics', 'TargetDirectory', 'HasShortCadence']
 
 def Setup():
   '''
@@ -553,47 +552,9 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     
   return data
 
-def GetSimpleNeighbors(EPIC, neighbors = 10, mag_lo = 11., mag_hi = 13., **kwargs):
+def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), cdpp_range = None, **kwargs):
   '''
   Return `neighbors` random bright stars on the same module as `EPIC`.
-  
-  '''
-  
-  # Manage kwargs
-  if mag_lo is None:
-    mag_lo = -np.inf
-  if mag_hi is None:
-    mag_hi = np.inf
-
-  # Get the IDs
-  campaign = Season(EPIC)
-  epics, kepmags, channels, _ = np.array(GetK2Stars()[campaign]).T
-  epics = np.array(epics, dtype = int)
-  c = GetNeighboringChannels(Channel(EPIC))
-  
-  # Filter by module and magnitude
-  inds = np.where(((channels == c[0]) | (channels == c[1]) | (channels == c[2]) | 
-                   (channels == c[3])) & (kepmags < mag_hi) & (kepmags > mag_lo))
-  
-  # Check if we have enough. If not, relax the same module constraint
-  if len(inds) - 1 < neighbors:
-    inds2 = np.where((kepmags < mag_hi) & (kepmags > mag_lo))
-    random.shuffle(inds2)
-    inds2 = inds2[:neighbors - len(inds) + 1]
-    inds = np.append(inds, inds2)
-  stars = epics[inds]
-  
-  # Remove self
-  if len(stars):
-    stars = list(np.delete(stars, np.argmax(stars == EPIC)))
-  
-  # Shuffle and return
-  random.shuffle(stars)
-  return stars[:neighbors]
-
-def GetNeighbors(EPIC, model = 'PLD', neighbors = 10, mag_range = (11., 13.), cdpp_range = None, **kwargs):
-  '''
-  Return `neighbors` random bright, unsaturated stars on the same module as `EPIC`.
   
   '''
   
@@ -628,9 +589,9 @@ def GetNeighbors(EPIC, model = 'PLD', neighbors = 10, mag_range = (11., 13.), cd
   cdpps = np.ones(len(epics), dtype = float)  
   for i, star in enumerate(epics):
     try:
-      if cdpp_range is not None:
+      if cdpp_range is not None and model is not None:
         cdpps[i] = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp6']
-      else:
+      elif model is not None:
         # Loading each .npz file takes a long time, so if we don't actually care about the
         # CDPPs, we'll just check to see if the file exists.
         if not os.path.exists(os.path.join(TargetDirectory(star, campaign), model + '.npz')):

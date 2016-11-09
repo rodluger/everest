@@ -51,8 +51,8 @@ class Model(object):
     self.has_sc = HasShortCadence(self.ID, season = self.season)
     self.clobber = kwargs.get('clobber', False)
     self.debug = kwargs.get('debug', False)
-    self.is_child = kwargs.get('is_child', False)
-    if not self.is_child:
+    self.is_parent = kwargs.get('is_parent', False)
+    if not self.is_parent:
       screen_level = kwargs.get('screen_level', logging.CRITICAL)
       log_level = kwargs.get('log_level', logging.DEBUG)
       InitLog(self.logfile, log_level, screen_level, self.debug)
@@ -1250,7 +1250,7 @@ class Model(object):
       name = self.name    
     file = os.path.join(self.dir, '%s.npz' % name)
     if os.path.exists(file):
-      if not self.is_child: 
+      if not self.is_parent: 
         log.info("Loading '%s.npz'..." % name)
       try:
         data = np.load(file)
@@ -1267,7 +1267,7 @@ class Model(object):
         log.warn("Error loading '%s.npz'." % name)
         os.rename(file, file + '.bad')
     
-    if self.is_child:
+    if self.is_parent:
       raise Exception('Unable to load `%s` model for target %d.' % (self.name, self.ID))
     
     return False
@@ -1466,13 +1466,13 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     
     '''
     
-    def __init__(self, *args, inject = None, parent = None, **kwargs):
+    def __init__(self, *args, inject = None, parent_class = None, **kwargs):
       '''
       
       '''
       
       self.inject = inject
-      self.parent = parent
+      self.parent_class = parent_class
       self.kwargs = kwargs
       super(Injection, self).__init__(*args, **kwargs)
 
@@ -1483,9 +1483,9 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       '''
       
       if self.inject['mask']:
-        return '%s_MaskedInject' % self.parent
+        return '%s_MaskedInject' % self.parent_class
       else:
-        return '%s_Inject' % self.parent
+        return '%s_Inject' % self.parent_class
     
     def load_tpf(self):
       '''
@@ -1525,7 +1525,7 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       transit_model = Transit(self.time, t0 = self.inject['t0'], per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['depth'])
       kwargs = dict(self.kwargs)
       kwargs.update({'clobber': False})
-      control = eval(self.parent)(self.ID, is_child = True, **kwargs)
+      control = eval(self.parent_class)(self.ID, is_parent = True, **kwargs)
       control.fraw *= transit_model 
       
       # Get params
@@ -1666,7 +1666,7 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       super(Injection, self).finalize()
       self.recover_depth()
     
-  return Injection(ID, inject = inject, parent = model, **kwargs)
+  return Injection(ID, inject = inject, parent_class = model, **kwargs)
 
 class PLD(Model):
   '''
@@ -1693,7 +1693,7 @@ class PLD(Model):
   
     '''
       
-    if not self.is_child:
+    if not self.is_parent:
       log.info("Computing the design matrix...")
     if self.recursive:
       X1 = self.fpix / self.flux.reshape(-1, 1)
@@ -1708,7 +1708,7 @@ class PLD(Model):
     
     '''
     
-    if not self.is_child:
+    if not self.is_parent:
       log.info("Computing the short cadence design matrix...")
     sc_X = [None for i in range(self.pld_order)]
     if self.recursive:
@@ -1737,9 +1737,10 @@ class nPLD(Model):
       return
     
     # Get neighbors
+    self.parent_model = kwargs.get('parent_model', None)
     num_neighbors = kwargs.get('neighbors', 10)
     self.neighbors = GetNeighbors(self.ID, mission = self.mission, 
-                                  model = 'PLD',
+                                  model = self.parent_model,
                                   neighbors = num_neighbors, 
                                   mag_lo = kwargs.get('mag_lo', 11.), 
                                   mag_hi = kwargs.get('mag_hi', 13.),
@@ -1756,22 +1757,47 @@ class nPLD(Model):
     self._scX1N = None
     for neighbor in self.neighbors:
       log.info("Loading data for neighboring target %d..." % neighbor)
-      data = PLD(neighbor, mission = self.mission, is_child = True)
+      if self.parent_model is not None:
+        # We load the `parent` model. The advantage here is that outliers have
+        # properly been identified and masked
+        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
+      else:
+        # We load the data straight from the TPF. Much quicker, since no model must
+        # be run in advance. Downside is we don't know where the outliers are. But based
+        # on tests with K2 data, the de-trending is actually *better* if the outliers are
+        # included! These are mostly thruster fire events and other artifacts common to
+        # all the stars, so it makes sense that we might want to keep them in the design
+        # matrix.
+        data = GetData(neighbor, self.mission, season = self.season, clobber = self.clobber_tpf, 
+                     aperture_name = self.aperture_name, 
+                     saturated_aperture_name = self.saturated_aperture_name, 
+                     max_pixels = self.max_pixels,
+                     saturation_tolerance = self.saturation_tolerance)
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+        if self.has_sc:
+          data.sc_mask = np.array(list(set(np.concatenate([data.sc_badmask, data.sc_nanmask]))), dtype = int)
+          data.sc_fraw = np.sum(data.sc_fpix, axis = 1)
+      
+      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
       X1 = data.fpix / data.fraw.reshape(-1, 1)
-      # Linearly interpolate over outliers, NaNs and bad timestamps
       X1 = Interpolate(data.time, data.mask, X1)
       if self.has_sc:
+        _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
+        _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
         if self._scX1N is None:
-          self._scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
+          self._scX1N = np.array(_scX1N)
         else:
-          self._scX1N = np.hstack([self._scX1N, data.sc_fpix / data.sc_fraw.reshape(-1, 1)])
+          self._scX1N = np.hstack([self._scX1N, _scX1N])
+        del _scX1N
       for n in range(self.pld_order):
         if self._XNeighbors[n] is None:
           self._XNeighbors[n] = X1 ** (n + 1)
         else:
           self._XNeighbors[n] = np.hstack([self._XNeighbors[n], X1 ** (n + 1)])
       del data
-      
+      del X1
+
     # Run
     self.run()
         
@@ -1780,7 +1806,7 @@ class nPLD(Model):
   
     '''
       
-    if not self.is_child:
+    if not self.is_parent:
       log.info("Computing the design matrix...")
     if self.recursive:
       X1 = self.fpix / self.flux.reshape(-1, 1)
@@ -1796,7 +1822,7 @@ class nPLD(Model):
     
     '''
 
-    if not self.is_child:
+    if not self.is_parent:
       log.info("Computing the short cadence design matrix...")
     sc_X = [None for i in range(self.pld_order)]
     if self.recursive:
