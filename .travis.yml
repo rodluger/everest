@@ -1,7 +1,13 @@
 # Adapted from dfm/george
 
 language: python
-        
+
+# blocklist
+branches:
+  except:
+  - dev
+  - nick
+
 matrix:
   include:
     # All the versions of Python.
