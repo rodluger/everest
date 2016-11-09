@@ -4,6 +4,11 @@
 :py:mod:`model.py` - De-trending
 --------------------------------
 
+TODO: 
+
+- Add model where neighboring stars are regularized separately
+- Test neighboring PLD on 3 stars 
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
