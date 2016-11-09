@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+everest-status
+--------------
+
+'''
+
+import argparse
+from everest import Status
+
+if __name__ == '__main__':
+
+  parser = argparse.ArgumentParser(prog = 'estats', add_help = True)
+  parser.add_argument("-c", "--campaign", type = str, default = None, help = 'The K2 campaign to check')
+  parser.add_argument("-m", "--model", type = str, default = None, help = 'The everest model to check')
+  args = parser.parse_args()
+  
+  # Get the campaign number
+  if args.campaign is not None:
+    if '.' in args.campaign:
+      campaign = float(args.campaign)
+    else:
+      campaign = int(args.campaign)
+  else:
+    campaign = None
+    
+  # Call the function
+  if campaign is not None:
+    if args.model is not None:
+      Status(campaign = campaign, model = args.model)
+    else:
+      Status(campaign = campaign)
+  else:
+    if args.model is not None:
+      Status(model = args.model)
+    else:
+      Status()

@@ -62,7 +62,7 @@ setup(name = 'everest',
                           'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
                           'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.1'
                          ],
-      scripts=['bin/everest', 'bin/k2download', 'bin/k2stats'],
+      scripts=['bin/everest', 'bin/k2download', 'bin/k2stats', 'bin/everest-status'],
       include_package_data = True,
       zip_safe = False,
       #test_suite='nose.collector',
