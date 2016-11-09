@@ -1,5 +1,0 @@
-include README.md
-include everest/tables/*.csv
-include everest/tables/*.tsv
-include everest/tables/*.info
-include everest/pbs/*.pbs
