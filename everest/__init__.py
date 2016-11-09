@@ -21,7 +21,6 @@ else:
   # This is a regular everest run
   from . import config, data, dvs, gp, math, missions, model, pbs, pool, transit, utils
   from .model import *
-  from .experimental import *
   from .data import Statistics
   from .pbs import Download, Run, Status
   from .transit import Transit
