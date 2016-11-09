@@ -1,2 +1,2 @@
-.. automodule:: everest2.model
+.. automodule:: everest.model
    :members:
