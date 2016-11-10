@@ -1850,7 +1850,7 @@ class snPLD(nPLD):
     '''
     
     # Initialize
-    kwargs.update('pld_order', kwargs.get('pld_order', 3) + 1)
+    kwargs.update({'pld_order': kwargs.get('pld_order', 3) + 1})
     super(snPLD, self).__init__(*args, **kwargs)
         
   def get_X(self):
