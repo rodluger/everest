@@ -55,28 +55,34 @@ class DVS1(object):
   
   '''
   
-  def __init__(self, breakpoint = False):
+  def __init__(self, breakpoint = False, pld_order = 3):
     '''
     
     '''
     
+    if pld_order <= 3:
+      hght = 28
+      nrows = 160
+    else:
+      hght = 32
+      nrows = 174 + hght * (pld_order - 3)  
     self.fig = pl.figure(figsize = (8.5, 11))
     self.fig.subplots_adjust(left = 0.025 * (11/8.5), right = 1 - 0.025 * (11/8.5), top = 0.975, bottom = 0.025)
     def GetFrame(y, x, dx, dy):
-      return Frame(self.fig, pl.subplot2grid((160, 160), (y, x), colspan = dx, rowspan = dy))
+      return Frame(self.fig, pl.subplot2grid((nrows, 160), (y, x), colspan = dx, rowspan = dy))
     self.title_left = GetFrame(0, 6, 44, 10)
     self.title_center = GetFrame(0, 50, 66, 10)
     self.title_right = GetFrame(0, 116, 44, 10)
     self.body_top_left = GetFrame(12, 6, 102, 26)
-    self.body_top_right = [GetFrame(12, 116, 21, 26), GetFrame(12, 139, 21, 26), GetFrame(40, 116, 21, 26), GetFrame(40, 139, 21, 26)]
-    self.body_left = [GetFrame(12 + 28 * n, 6, 102, 26) for n in range(1,5)]
+    self.body_top_right = [GetFrame(12, 116, 21, 26), GetFrame(12, 139, 21, 26), GetFrame(12 + hght, 116, 21, 26), GetFrame(12 + hght, 139, 21, 26)]
+    self.body_left = [GetFrame(12 + hght * n, 6, 102, 26) for n in range(1,2 + pld_order)]
     if not breakpoint:
-      self.body_right = [GetFrame(12 + 28 * n, 116, 44, 26) for n in range(2,5)]
+      self.body_right = [GetFrame(12 + hght * n, 116, 44, 26) for n in range(2,2 + pld_order)]
     else:
-      self.body_right = [Frame(self.fig,[pl.subplot2grid((160, 160), (12 + 28 * n, 116), colspan=44, rowspan=13), pl.subplot2grid((160, 160), (25 + 28 * n, 116), colspan=44, rowspan=13)]) for n in range(2, 5)]                
-    self.footer_left = GetFrame(154, 6, 44, 6)
-    self.footer_center = GetFrame(154, 50, 66, 6)
-    self.footer_right = GetFrame(154, 116, 44, 6)
+      self.body_right = [Frame(self.fig,[pl.subplot2grid((nrows, 160), (12 + hght * n, 116), colspan=44, rowspan=13), pl.subplot2grid((nrows, 160), (25 + hght * n, 116), colspan=44, rowspan=13)]) for n in range(2, 2 + pld_order)]                
+    self.footer_left = GetFrame(nrows - 6, 6, 44, 6)
+    self.footer_center = GetFrame(nrows - 6, 50, 66, 6)
+    self.footer_right = GetFrame(nrows - 6, 116, 44, 6)
     for ax in self.fig.get_axes():
       ax.axis('off')
     self.tcount = 0

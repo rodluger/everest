@@ -33,7 +33,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'mPLD']
+__all__ = ['Model', 'Inject', 'PLD', 'nPLD', 'snPLD']
 
 class Model(object):
   '''
@@ -119,7 +119,7 @@ class Model(object):
     self._weights = None
     
     # Initialize plotting
-    self.dvs1 = DVS1(nseg > 1)
+    self.dvs1 = DVS1(nseg > 1, pld_order = self.pld_order)
     self.dvs2 = DVS2(nseg > 1)
   
   @property
@@ -1724,7 +1724,7 @@ class PLD(Model):
       sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
     return sc_X
 
-class mPLD(Model):
+class nPLD(Model):
   '''
   
   '''
@@ -1735,7 +1735,7 @@ class mPLD(Model):
     '''
     
     # Initialize
-    super(mPLD, self).__init__(*args, **kwargs)
+    super(nPLD, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():
@@ -1838,3 +1838,64 @@ class mPLD(Model):
       sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
       sc_X[n] = np.hstack([sc_X[n], self._scX1N ** (n + 1)])
     return sc_X
+
+class snPLD(nPLD):
+  '''
+  
+  '''
+        
+  def __init__(self, *args, **kwargs):
+    '''
+    
+    '''
+    
+    # Initialize
+    kwargs.update('pld_order', kwargs.get('pld_order', 3) + 1)
+    super(snPLD, self).__init__(*args, **kwargs)
+        
+  def get_X(self):
+    '''
+  
+    '''
+      
+    if not self.is_parent:
+      log.info("Computing the design matrix...")
+    if self.recursive:
+      X1 = self.fpix / self.flux.reshape(-1, 1)
+    else:
+      X1 = self.fpix / self.fraw.reshape(-1, 1)
+    for n in range(self.pld_order - 1): 
+      if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
+        self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
+        if self._X[-1] is None:
+          self._X[-1] = np.array(self._XNeighbors[n])
+        else:
+          self._X[-1] = np.hstack([self._X[-1], self._XNeighbors[n]])
+  
+  def get_sc_X(self):
+    '''
+    
+    '''
+
+    if not self.is_parent:
+      log.info("Computing the short cadence design matrix...")
+    sc_X = [None for i in range(self.pld_order)]
+    if self.recursive:
+      X1 = self.sc_fpix / self.sc_flux.reshape(-1, 1)
+    else:
+      X1 = self.sc_fpix / self.sc_fraw.reshape(-1, 1)
+    for n in range(self.pld_order - 1): 
+      sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
+      if sc_X[-1] is None:
+        sc_X[-1] = self._scX1N ** (n + 1)
+      else:
+        sc_X[-1] = np.hstack([sc_X[-1], self._scX1N ** (n + 1)])
+    return sc_X
+  
+  def plot_weights(self):
+    '''
+    
+    '''
+    
+    # TODO!
+    pass
