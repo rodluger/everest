@@ -12,8 +12,8 @@ from everest import Status
 if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(prog = 'estats', add_help = True)
-  parser.add_argument("-c", "--campaign", type = str, default = None, help = 'The K2 campaign to check')
-  parser.add_argument("-m", "--model", type = str, default = None, help = 'The everest model to check')
+  parser.add_argument("campaign", nargs = '?', type = str, default = None, help = 'The K2 campaign to check')
+  parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to check')
   args = parser.parse_args()
   
   # Get the campaign number

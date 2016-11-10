@@ -708,7 +708,7 @@ def Statistics(campaign = 0, clobber = False, model = 'PLD', compare_to = 'evere
     # ------ 1. Plot cdpp vs. mag
     fig = pl.figure(figsize = (16, 5))
     fig.canvas.set_window_title('K2 Campaign %s: %s versus %s' % (campaign, model, compare_to))
-    fig.subplots_adjust(left = 0.05, right = 0.95, bottom = 0.1, top = 0.9)
+    fig.subplots_adjust(left = 0.05, right = 0.95, bottom = 0.125, top = 0.9)
     if compare_to.lower() != 'kepler':
       ax = [pl.subplot2grid((120, 120), (0,  0), colspan=35, rowspan=120),
             pl.subplot2grid((120, 120), (0,  40), colspan=35, rowspan=120),

@@ -7,7 +7,7 @@
 TODO: 
 
 - Add model where neighboring stars are regularized separately
-- Test neighboring PLD on 3 stars 
+- Test neighboring PLD on 3 stars
 
 '''
 
