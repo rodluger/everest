@@ -51,7 +51,7 @@ class Model(object):
         
     # Initialize logging
     self.ID = ID
-    self.recursive = kwargs.get('recursive', False)
+    self.recursive = kwargs.get('recursive', True)
     self.mission = kwargs.get('mission', 'k2')
     self.has_sc = HasShortCadence(self.ID, season = self.season)
     self.clobber = kwargs.get('clobber', False)
