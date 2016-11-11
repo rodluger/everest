@@ -34,6 +34,7 @@ __all__ = ['Campaign', 'GetK2Stars', 'GetK2Campaign', 'Channel', 'RemoveBackgrou
 
 def _range10_90(x):
   '''
+  Returns the 10th-90th percentile range of array :py:obj:`x`.
   
   '''
   
@@ -45,13 +46,22 @@ def _range10_90(x):
   
 class StatsPicker(object):
   '''
+  A class that enables clicking on the individual points on the :py:func:`k2.Statistics` scatter plots.
+  
+  :param axes: A :py:mod:`matplotlib.pyplot` axis instance or a list of axis instances
+  :param x: An array or a list of arrays corresponding to the abscissa of :py:obj:`axes`
+  :param y: An array or a list of arrays corresponding to the ordinate of :py:obj:`axes`
+  :param array_like epic: A list of EPIC target numbers for each of the plotted points
+  :param str model: The name of the current :py:mod:`everest` model. Default `"PLD"`
+  :param str compare_to: The name of the model against which the data is being compared. Default `"everest1"`
   
   '''
   
-  def __init__(self, axes, x, y, epic, campaign, model = 'StandardPLD', compare_to = 'everest1'):
+  def __init__(self, axes, x, y, epic, campaign, model = 'PLD', compare_to = 'everest1'):
     '''
     
     '''
+    
     if not hasattr(axes, '__len__'):
       axes = [axes]
       x = [x]
@@ -124,7 +134,9 @@ class StatsPicker(object):
 
 def Campaign(EPIC, **kwargs):
   '''
-  Returns the campaign number for a given EPIC target.
+  Returns the campaign number for a given EPIC target. If target is not found, returns :py:obj:`None`.
+  
+  :param int EPIC: The EPIC number of the target.
   
   '''
   
@@ -135,10 +147,15 @@ def Campaign(EPIC, **kwargs):
 
 def GetK2Stars(clobber = False):
   '''
-  Download and return a `dict` of all `K2` stars organized by campaign. Saves each
+  Download and return a :py:obj:`dict` of all *K2* stars organized by campaign. Saves each
   campaign to a `csv` file in the `everest/missions/k2/tables` directory.
   
-  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
+  :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
+  
+  .. note:: The keys of the dictionary returned by this function are the (integer) numbers of each \
+            campaign. Each item in the :py:obj:`dict` is a list of the targets in the corresponding \
+            campaign, and each item in that list is in turn a list of the following: **EPIC number** (:py:class:`int`), \
+            **Kp magnitude** (:py:class:`float`), **CCD channel number** (:py:class:`int`), and **short cadence available** (:py:class:`bool`).
   
   '''
   
@@ -156,7 +173,7 @@ def GetK2Stars(clobber = False):
   
   # Return
   res = {}
-  for campaign in range(100):
+  for campaign in range(18):
     f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.csv' % campaign)
     if os.path.exists(f):
       with open(f, 'r') as file:
@@ -172,20 +189,24 @@ def GetK2Stars(clobber = False):
 
 def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False):
   '''
-  Return all stars in a given K2 campaign.
+  Return all stars in a given *K2* campaign.
   
-  :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
+  :param campaign: The *K2* campaign number. If this is an :py:class:`int`, returns \
                    all targets in that campaign. If a :py:class:`float` in the form \
-                   `X.Y`, runs the `Y^th` decile of campaign `X`.
-  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
-  :param bool split: If `True` and `campaign` is an :py:class:`int`, returns each of the \
-                     subcampaigns as a separate list. Default `False`
-  :param bool epics_only: If `True`, returns only the EPIC numbers. If `False`, returns
-                          metadata associated with each target. Default `False`
+                   :py:obj:`X.Y`, runs the :py:obj:`Y^th` decile of campaign :py:obj:`X`.
+  :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
+  :param bool split: If :py:obj:`True` and :py:obj:`campaign` is an :py:class:`int`, returns each of the \
+                     subcampaigns as a separate list. Default :py:obj:`False`
+  :param bool epics_only: If :py:obj:`True`, returns only the EPIC numbers. If :py:obj:`False`, returns
+                          metadata associated with each target. Default :py:obj:`False`
                           
   '''
   
-  all = GetK2Stars(clobber = clobber)[int(campaign)]
+  all = GetK2Stars(clobber = clobber)
+  if int(campaign) in all.keys():
+    all = all[int(campaign)]
+  else:
+    return []
   if epics_only:
     all = [a[0] for a in all]
   if type(campaign) is int or type(campaign) is np.int64:
@@ -218,7 +239,7 @@ def Channel(EPIC):
 
 def KepMag(EPIC):
   '''
-  Returns the `Kepler` magnitude for a given EPIC target.
+  Returns the *Kepler* magnitude for a given EPIC target.
   
   '''
   
@@ -229,9 +250,8 @@ def KepMag(EPIC):
   
 def RemoveBackground(EPIC):
   '''
-  Returns `True` or `False`, indicating whether or not to remove the background
-  flux for the target. Currently, if `campaign < 3`, returns
-  `True`, otherwise returns `False`.
+  Returns :py:obj:`True` or :py:obj:`False`, indicating whether or not to remove the background
+  flux for the target. If ``campaign < 3``, returns :py:obj:`True`, otherwise returns :py:obj:`False`.
   
   '''
 
@@ -242,7 +262,7 @@ def RemoveBackground(EPIC):
 
 def GetNeighboringChannels(channel):
   '''
-  Returns all channels on the same module as `channel`.
+  Returns all channels on the same module as :py:obj:`channel`.
   
   '''
   
@@ -346,10 +366,13 @@ def GetSources(ID, darcsec = None, stars_only = False):
   Grabs the EPIC coordinates from the TPF and searches MAST
   for other EPIC targets within the same aperture.
   
-  :param int ID: The 9-digit `EPIC` number of the target
-  
+  :param int ID: The 9-digit :py:obj:`EPIC` number of the target
+  :param float darcsec: The search radius in arcseconds. \
+            Default is four times the largest dimension of the aperture.
+  :param bool stars_only: If :py:obj:`True`, only returns objects explicitly designated \
+                          as `"stars"` in MAST. Default :py:obj:`False`
   :returns: A list of :py:class:`Source` instances containing \
-            other `EPIC` targets within or close to this target's aperture
+            other :py:obj:`EPIC` targets within or close to this target's aperture
   '''
   
   client = kplr.API()
@@ -391,6 +414,9 @@ def GetSources(ID, darcsec = None, stars_only = False):
   
 def GetHiResImage(ID):
   '''
+  Queries the Palomar Observatory Sky Survey II catalog to
+  obtain a higher resolution optical image of the star with EPIC number
+  :py:obj:`ID`.
   
   '''
   
@@ -459,6 +485,7 @@ def GetHiResImage(ID):
 
 def GetCustomAperture(data):
   '''
+  .. warning:: Routine not yet implemented.
   
   '''
   

@@ -11,7 +11,12 @@ from .missions import Missions
 
 def Season(id, mission = 'k2', **kwargs):
   '''
+  A wrapper around the mission-specific :py:obj:`Season` function. Returns
+  the number of the current observational season/quarter/campaign for the target.
   
+  :param id: The target ID
+  :param str mission: The mission name. Default `k2`
+
   '''
   
   if mission in Missions:
@@ -21,6 +26,11 @@ def Season(id, mission = 'k2', **kwargs):
   
 def GetData(id, mission = 'k2', **kwargs):
   '''
+  A wrapper around the mission-specific :py:obj:`GetData` function. Returns
+  a :py:class:`utils.DataContainer` instance with the raw light curve data.
+  
+  :param id: The target ID
+  :param str mission: The mission name. Default `k2`  
   
   '''
   

@@ -28,7 +28,7 @@ def cancel(c, s):
 
 if __name__ == '__main__':
 
-  parser = argparse.ArgumentParser(prog = 'download', add_help = True)
+  parser = argparse.ArgumentParser(prog = 'k2download', add_help = True)
   parser.add_argument("campaign", type = int, help = 'The K2 campaign to download')
   parser.add_argument("-c", "--cancel", action = "store_true", help = 'Cancel downloading this campaign')
   args = parser.parse_args()

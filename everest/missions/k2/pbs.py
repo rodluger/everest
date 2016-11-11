@@ -105,6 +105,9 @@ def Run(campaign = 0, model = 'PLD', nodes = 5, cadence = 'all',
   :param int ppn: The number of processors per node to request. Default `12`
   :param int mpn: Memory per node in gb to request. Default no setting.
   
+  ..note :: If :py:obj:`queue` is set to `"bf"` (backfill), :py:obj:`walltime` is \
+            automatically capped at 4 hours.
+  
   '''
   
   # Figure out the subcampaign
@@ -115,6 +118,9 @@ def Run(campaign = 0, model = 'PLD', nodes = 5, cadence = 'all',
     campaign = int(x)
     subcampaign = round(y * 10) 
   assert cadence in ['lc', 'sc', 'all'], "Keyword argument `cadence` must be one of `lc`, `sc`, or `all`." 
+  # Limit backfill jobs to 4 hours
+  if queue == 'bf':
+    walltime = min(4, walltime)
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
   if mpn is not None:
@@ -171,7 +177,7 @@ def _Run(campaign, subcampaign, model, cadence):
     # Run
     pool.map(m, stars)
 
-def Status(campaign = range(9), model = 'PLD', purge = False, **kwargs):
+def Status(campaign = range(18), model = 'PLD', purge = False, **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
 
@@ -190,6 +196,8 @@ def Status(campaign = range(9), model = 'PLD', purge = False, **kwargs):
   print("CAMP      TOTAL      DOWNLOADED    PROCESSED    ERRORS")
   print("----      -----      ----------    ---------    ------")
   for c, stars in zip(campaign, all_stars):
+    if len(stars) == 0:
+      continue
     down = 0
     proc = 0
     err = 0

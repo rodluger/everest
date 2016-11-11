@@ -39,7 +39,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'naPLD', 's3nPLD']
+__all__ = ['Model', 'Inject', 'PLD', 'nPLD']
 
 class Model(object):
   '''
@@ -263,7 +263,7 @@ class Model(object):
   def mask(self):
     '''
     The array of indices to be masked. This is the union of the sets of outliers, bad (flagged)
-    cadences, and *NaN* cadences.
+    cadences, and :py:obj:`NaN` cadences.
     
     '''
     
@@ -363,8 +363,8 @@ class Model(object):
     '''
     Compute the model for the current value of lambda.
     
-    :param bool precompute: Precompute the expensive `A` and `B` matrices? Default `True`
-    :param bool sc: Compute the short cadence model? Default `False`
+    :param bool precompute: Precompute the expensive :py:obj:`A` and :py:obj:`B` matrices? Default :py:obj:`True`
+    :param bool sc: Compute the short cadence model? Default :py:obj:`False`
     
     '''
     
@@ -438,8 +438,8 @@ class Model(object):
     
   def _precompute(self, mask, b):
     '''
-    Pre-compute the matrices A and B (cross-validation step only)
-    for chunk `b`.
+    Pre-compute the matrices :py:obj:`A` and :py:obj:`B` (cross-validation step only)
+    for chunk :py:obj:`b`.
     
     '''
     
@@ -467,7 +467,7 @@ class Model(object):
     
   def _compute(self, b, A, B, mK, f):
     '''
-    Compute the model (cross-validation step only) for chunk `b`.
+    Compute the model (cross-validation step only) for chunk :py:obj:`b`.
     
     '''
 
@@ -483,8 +483,8 @@ class Model(object):
     '''
     Returns the outlier mask, an array of indices corresponding to the non-outliers.
     
-    :param numpy.ndarray x: If specified, returns the masked version of `x` instead. Default `None`
-    :param bool sc: Return the short cadence mask? Default `False`
+    :param numpy.ndarray x: If specified, returns the masked version of :py:obj:`x` instead. Default :py:obj:`None`
+    :param bool sc: Return the short cadence mask? Default :py:obj:`False`
     
     '''
     
@@ -504,8 +504,8 @@ class Model(object):
     Returns the indices corresponding to a given light curve chunk.
     
     :param int b: The index of the chunk to return
-    :param numpy.ndarray x: If specified, applies the mask to array `x`. Default `None`
-    :param bool sc: Get the indices of the short cadence chunk? Default `False`
+    :param numpy.ndarray x: If specified, applies the mask to array :py:obj:`x`. Default :py:obj:`None`
+    :param bool sc: Get the indices of the short cadence chunk? Default :py:obj:`False`
     
     '''
     
@@ -535,7 +535,7 @@ class Model(object):
     '''
     Same as :py:meth:`get_chunk`, but first removes the outlier indices.
     :param int b: The index of the chunk to return
-    :param numpy.ndarray x: If specified, applies the mask to array `x`. Default `None`
+    :param numpy.ndarray x: If specified, applies the mask to array :py:obj:`x`. Default :py:obj:`None`
     
     '''
     
@@ -637,7 +637,7 @@ class Model(object):
     
     :param ax: The current :py:obj:`matplotlib.pyplot` axis instance to plot the \
                cross-validation results.
-    :param str info: The label to show in the bottom right-hand corner of the plot. Default ''
+    :param str info: The label to show in the bottom right-hand corner of the plot. Default `''`
     
     '''
     
@@ -776,7 +776,7 @@ class Model(object):
   
   def get_weights(self):
     '''
-    Computes the PLD weights vector `w` (for plotting and/or computing the short
+    Computes the PLD weights vector :py:obj:`w` (for plotting and/or computing the short
     cadence model).
     
     '''
@@ -847,8 +847,8 @@ class Model(object):
     de-trending progress as a function of the different *PLD* orders.
     
     :param ax: The current :py:obj:`matplotlib.pyplot` axis instance
-    :param str info_left: Information to display at the left of the plot. Default ''
-    :param str info_right: Information to display at the right of the plot. Default ''
+    :param str info_left: Information to display at the left of the plot. Default `''`
+    :param str info_right: Information to display at the right of the plot. Default `''`
     :param str color: The color of the data points. Default `'b'`
     
     '''
@@ -1046,7 +1046,7 @@ class Model(object):
   
   def plot_weights(self):
     '''
-    Plots the PLD weights on the CCD for each of the PLD orders.
+    Plots the *PLD* weights on the CCD for each of the *PLD* orders.
     
     '''
         
@@ -1261,6 +1261,7 @@ class Model(object):
       self.aperture = data.aperture
       self.aperture_name = data.aperture_name
       self.apertures = data.apertures
+      self.quality = data.quality
       self.Xpos = data.Xpos
       self.Ypos = data.Ypos
       self.mag = data.mag
@@ -1376,7 +1377,7 @@ class Model(object):
     '''
     A custom exception handler.
     
-    :param pdb: If `True`, enters PDB post-mortem mode for debugging.
+    :param pdb: If :py:obj:`True`, enters PDB post-mortem mode for debugging.
     
     '''
     
@@ -1502,20 +1503,20 @@ class Model(object):
 def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
            mask = False, trn_win = 5, poly_order = 1, **kwargs):
   '''
-  Run one of the `everest` models with injected transits and attempt to recover the
+  Run one of the :py:obj:`everest` models with injected transits and attempt to recover the
   transit depth at the end with a simple linear regression with a polynomial baseline. 
-  The depth is stored in the `inject` attribute of the model (a dictionary) as 
-  `rec_depth`. A control injection is also performed, in which the transits are injected 
-  into the de-trended data; the recovered depth in the control run is stored in `inject` 
-  as `rec_depth_control`. The results are plotted on page 2 of the data validation summary.
+  The depth is stored in the :py:obj:`inject` attribute of the model (a dictionary) as 
+  :py:obj:`rec_depth`. A control injection is also performed, in which the transits are injected 
+  into the de-trended data; the recovered depth in the control run is stored in :py:obj:`inject` 
+  as :py:obj:`rec_depth_control`. The results are plotted on page 2 of the data validation summary.
   
   :param int ID: The target id
-  :param str model: The name of the `everest` model to run. Default `PLD`
-  :param float t0: The transit ephemeris in days. Default is to draw from the uniform distributon [0., `per`)
+  :param str model: The name of the :py:obj:`everest` model to run. Default `"PLD"`
+  :param float t0: The transit ephemeris in days. Default is to draw from the uniform distributon [0., :py:obj:`per`)
   :param float per: The injected planet period in days. Default is to draw from the uniform distribution [2, 10]
-  :param float dur: The transit duration in days. Must be in the range [0.05, 0.5]. Default `0.1`
-  :param float depth: The fractional transit depth. Default `0.001`
-  :param bool mask: Explicitly mask the in-transit cadences when computing the PLD model? Default `False`
+  :param float dur: The transit duration in days. Must be in the range [0.05, 0.5]. Default 0.1
+  :param float depth: The fractional transit depth. Default 0.001
+  :param bool mask: Explicitly mask the in-transit cadences when computing the PLD model? Default :py:obj:`False`
   :param float trn_win: The size of the transit window in units of the transit duration
   :param int poly_order: The order of the polynomial used to fit the continuum
   
@@ -1537,7 +1538,7 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
   # Define the injection class
   class Injection(_model):
     '''
-    The `Injection` class is a special subclass of a user-selected `everest` model.
+    The :py:obj:`Injection` class is a special subclass of a user-selected :py:obj:`everest` model.
     See :py:func:`Inject` for more details.
     
     '''
@@ -1593,7 +1594,7 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     def recover_depth(self):
       '''
       Recovers the injected transit depth from the long cadence data with a simple LLS solver.
-      The results are all stored in the `inject` attribute of the model.
+      The results are all stored in the :py:obj:`inject` attribute of the model.
 
       '''
       
@@ -1795,7 +1796,7 @@ class PLD(Model):
       sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
     return sc_X
 
-class naPLD(Model):
+class nPLD(Model):
   '''
   
   '''
@@ -1806,7 +1807,7 @@ class naPLD(Model):
     '''
     
     # Initialize
-    super(naPLD, self).__init__(*args, **kwargs)
+    super(nPLD, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():
@@ -1909,54 +1910,3 @@ class naPLD(Model):
       sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
       sc_X[n] = np.hstack([sc_X[n], self._scX1N ** (n + 1)])
     return sc_X
-
-class s3nPLD(naPLD):
-  '''
-  
-  '''
-        
-  def __init__(self, *args, **kwargs):
-    '''
-    
-    '''
-    
-    # Initialize
-    kwargs.update({'pld_order': kwargs.get('pld_order', 3) * 2})
-    super(s3nPLD, self).__init__(*args, **kwargs)
-        
-  def get_X(self):
-    '''
-  
-    '''
-      
-    if not self.is_parent:
-      log.info("Computing the design matrix...")
-    if self.recursive:
-      X1 = self.fpix / self.flux.reshape(-1, 1)
-    else:
-      X1 = self.fpix / self.fraw.reshape(-1, 1)
-    
-    for i in range(self.pld_order // 2): 
-      n = 2 * i
-      if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
-        self._X[n] = np.product(list(multichoose(X1.T, i + 1)), axis = 1).T
-        self.optimize_gp = True
-      if (self._X[n + 1] is None) and ((n + 1 == self.lam_idx) or (self.lam[0][n + 1] is not None)):  
-        self._X[n + 1] = np.array(self._XNeighbors[i])
-        self.optimize_gp = False
-  
-  def get_sc_X(self):
-    '''
-    
-    '''
-    
-    # TODO!
-    return None
-  
-  def plot_weights(self):
-    '''
-    
-    '''
-    
-    # TODO!
-    pass

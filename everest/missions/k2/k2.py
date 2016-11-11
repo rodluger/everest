@@ -51,7 +51,7 @@ def Season(EPIC, **kwargs):
 
 def Breakpoint(EPIC, **kwargs):
   '''
-  TODO: Populate these.
+  ..todo:: Populate these.
   
   '''
   
@@ -64,7 +64,16 @@ def Breakpoint(EPIC, **kwargs):
                  5: None,
                  6: 2143,
                  7: None,
-                 8: None}
+                 8: None,
+                 9: None,
+                 10: None,
+                 11: None,
+                 12: None,
+                 13: None,
+                 14: None,
+                 15: None,
+                 16: None,
+                 17: None}
   if campaign in breakpoints:
     return breakpoints[campaign]
   else:

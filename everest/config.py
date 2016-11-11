@@ -12,18 +12,18 @@ the data files, and the MAST url.
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os
 
-# Dev version hacks
+#: Is this the development (pre-publication) version?
 EVEREST_DEV = os.environ.get('EVEREST2_DEV', 0)
 if EVEREST_DEV:
+  # Dev version hack: enforce a non-ui backend
   import platform
   if platform.system() == "Linux":
     import matplotlib as mpl
     mpl.use("Agg", warn=False)
 
-# Directories
+#: The :py:mod:`everest` data directory
 EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.join("~", ".everest2")))                               
+#: The :py:mod:`everest` source code directory
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
-
-# MAST url
-EVEREST_FITS = os.environ.get('EVEREST2_FITS', None)
+#: The MAST url where the light curves are published
 MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'

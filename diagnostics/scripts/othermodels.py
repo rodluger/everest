@@ -1,5 +1,58 @@
 
 # ----- These need work! -------
+
+class s3nPLD(nPLD):
+  '''
+  Separately-regularized nPLD.
+  
+  '''
+        
+  def __init__(self, *args, **kwargs):
+    '''
+    
+    '''
+    
+    # Initialize
+    kwargs.update({'pld_order': kwargs.get('pld_order', 3) * 2})
+    super(s3nPLD, self).__init__(*args, **kwargs)
+        
+  def get_X(self):
+    '''
+  
+    '''
+      
+    if not self.is_parent:
+      log.info("Computing the design matrix...")
+    if self.recursive:
+      X1 = self.fpix / self.flux.reshape(-1, 1)
+    else:
+      X1 = self.fpix / self.fraw.reshape(-1, 1)
+    
+    for i in range(self.pld_order // 2): 
+      n = 2 * i
+      if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
+        self._X[n] = np.product(list(multichoose(X1.T, i + 1)), axis = 1).T
+        self.optimize_gp = True
+      if (self._X[n + 1] is None) and ((n + 1 == self.lam_idx) or (self.lam[0][n + 1] is not None)):  
+        self._X[n + 1] = np.array(self._XNeighbors[i])
+        self.optimize_gp = False
+  
+  def get_sc_X(self):
+    '''
+    
+    '''
+    
+    # TODO!
+    return None
+  
+  def plot_weights(self):
+    '''
+    
+    '''
+    
+    # TODO!
+    pass
+
 class MotionVectorPLD(Model):
   '''
   

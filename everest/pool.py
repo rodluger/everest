@@ -11,7 +11,7 @@ An implementation of three different types of pools:
         
     - A multiprocessing for local parallelization, borrowed from :py:mod:`emcee`
     
-    - A serial pool, which uses the built-in `map` function
+    - A serial pool, which uses the built-in :py:obj:`map` function
     
 
 '''
@@ -55,7 +55,7 @@ def _error_function(*args):
 def _test_function(x):
     '''
     Wastes a random amount of time, then
-    returns the average of `x`.
+    returns the average of :py:obj:`x`.
     
     '''
     
@@ -77,7 +77,7 @@ def _initializer_wrapper(actual_initializer, *rest):
 
 class GenericPool(object):
     '''
-    A generic multiprocessing pool object with a ``map`` method.
+    A generic multiprocessing pool object with a :py:obj:`map` method.
     
     '''
     
@@ -152,7 +152,7 @@ class MPIPool(GenericPool):
     emcee without shared memory, letting you use much larger machines
     with emcee.
 
-    The pool only support the :func:`map` method at the moment because
+    The pool only support the :py:func:`map` method at the moment because
     this is the only functionality that emcee needs. That being said,
     this pool is fairly general and it could be used for other purposes.
 
@@ -162,7 +162,7 @@ class MPIPool(GenericPool):
         The :py:mod:`mpi4py` communicator.
         
     :param loadbalance: (optional)
-        if `True` and `ntask` > `Ncpus`, tries to loadbalance by sending
+        if :py:obj:`True` and :py:obj:`ntask` > :py:obj:`Ncpus`, tries to loadbalance by sending
         out one task to each cpu first and then sending out the rest
         as the cpus get done.
     """
@@ -256,7 +256,7 @@ class MPIPool(GenericPool):
     
     def map(self, function, tasks):
         """
-        Like the built-in :func:`map` function, apply a function to all
+        Like the built-in :py:func:`map` function, apply a function to all
         of the values in a list and return the list of results.
 
         :param function:
@@ -421,7 +421,7 @@ class MultiPool(multiprocessing.pool.Pool):
     This is simply :py:mod:`emcee`'s :py:class:`InterruptiblePool`.
     
     A modified version of :py:class:`multiprocessing.pool.Pool` that has better
-    behavior with regard to `KeyboardInterrupts` in the :func:`map` method.
+    behavior with regard to :py:obj:`KeyboardInterrupts` in the :py:func:`map` method.
     
     Contributed by Peter K. G. Williams <peter@newton.cx>.
     
@@ -486,7 +486,7 @@ class MultiPool(multiprocessing.pool.Pool):
 def Pool(pool = 'AnyPool', **kwargs):
     '''
     Chooses between the different pools.
-    If `pool == 'AnyPool'`, chooses based on availability.
+    If ``pool == 'AnyPool'``, chooses based on availability.
     
     '''
     
