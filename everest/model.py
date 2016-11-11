@@ -9,7 +9,6 @@ supported missions. Most of the functionality is implemented in :py:class:`Model
 specific de-trending methods are implemented as subclasses.
 
 .. todo::
-  - Fix memory issues in the short cadence model
   - Check performance on highly variable stars: **212760038**, **212793961**, \
     **212760038**, **212801119**.
 
@@ -403,19 +402,19 @@ class Model(object):
     
     else:
       
-      # Get short cadence design matrix
-      sc_X = self.get_sc_X()
-          
       # Get the PLD weights
       norders = len(self.weights[0])
       nchunks = len(self.weights)
       model_arr = [None for b in range(nchunks)]
     
       # Compute the dot product order by order, chunk by chunk
+      # We load each segment of the design matrix individually,
+      # since it can be quite large.
       for o in range(norders):
         for b in range(nchunks):
+          log.info('Computing short cadence model (%d/%d)...' % (b + o * nchunks + 1, norders * nchunks))
           c = self.get_chunk(b, sc = True)
-          m = np.dot(sc_X[o][c], self.weights[b][o])
+          m = self.get_sc_model(o + 1, inds = c, weights = self.weights[b][o])
           if model_arr[b] is None:
             model_arr[b] = m
           else:
@@ -555,7 +554,7 @@ class Model(object):
   
     raise NotImplementedError('This method must be implemented in a subclass.')
   
-  def get_sc_X(self):
+  def get_sc_model(self):
     '''
     *Implemented by subclasses*
     
@@ -1483,7 +1482,6 @@ class Model(object):
       
       # Compute short cadence model, if available
       if self.has_sc:
-        log.info("Computing short cadence model...")
         self.compute(sc = True)
         
       # Save
@@ -1778,21 +1776,24 @@ class PLD(Model):
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
   
-  def get_sc_X(self):
+  def get_sc_model(self, order, weights, inds = None):
     '''
     
     '''
     
-    if not self.is_parent:
-      log.info("Computing the short cadence design matrix...")
-    sc_X = [None for i in range(self.pld_order)]
+    if inds is None:
+      inds = range(self.sc_fpix.shape[0])
+    
     if self.recursive:
-      X1 = self.sc_fpix / self.sc_fraw.reshape(-1, 1)
+      X1 = self.sc_fpix[inds] / self.sc_fraw[inds].reshape(-1, 1)
     else:
-      X1 = self.sc_fpix / self.sc_flux.reshape(-1, 1)
-    for n in range(self.pld_order): 
-      sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-    return sc_X
+      X1 = self.sc_fpix[inds] / self.sc_flux[inds].reshape(-1, 1)
+    
+    model = np.zeros(len(inds))
+    for ii, w in zip(multichoose(range(self.sc_fpix.shape[1]), order), weights):
+      model += np.product([X1[:,i] for i in ii], axis = 0) * w
+    
+    return model
 
 class nPLD(Model):
   '''
@@ -1827,7 +1828,7 @@ class nPLD(Model):
     else:
       log.error("No neighbors found! Aborting.")
       return
-      
+
     self._XNeighbors = [None for i in range(self.pld_order)]
     self._scX1N = None
     for neighbor in self.neighbors:
@@ -1892,19 +1893,21 @@ class nPLD(Model):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
         self._X[n] = np.hstack([self._X[n], self._XNeighbors[n]])
   
-  def get_sc_X(self):
+  def get_sc_model(self, order, weights, inds = None):
     '''
     
     '''
 
-    if not self.is_parent:
-      log.info("Computing the short cadence design matrix...")
-    sc_X = [None for i in range(self.pld_order)]
     if self.recursive:
-      X1 = self.sc_fpix / self.sc_flux.reshape(-1, 1)
+      X1 = self.sc_fpix[inds] / self.sc_fraw[inds].reshape(-1, 1)
     else:
-      X1 = self.sc_fpix / self.sc_fraw.reshape(-1, 1)
-    for n in range(self.pld_order): 
-      sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-      sc_X[n] = np.hstack([sc_X[n], self._scX1N ** (n + 1)])
-    return sc_X
+      X1 = self.sc_fpix[inds] / self.sc_flux[inds].reshape(-1, 1)
+    
+    model = np.zeros(len(inds))
+    for ii, w, n in zip(multichoose(range(self.sc_fpix.shape[1]), order), weights, range(len(weights))):
+      model += np.product([X1[:,i] for i in ii], axis = 0) * w
+    
+    # Add the neighbors' contribution
+    model += np.dot(self._scX1N[inds] ** (order), weights[n + 1:])
+    
+    return model
