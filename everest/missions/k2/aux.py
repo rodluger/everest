@@ -98,7 +98,18 @@ class StatsPicker(object):
     
       # Show the de-trended data for the comparison model
       if self.compare_to.lower() == 'everest1':
-        subprocess.Popen(['everest', '%d' % self.epic[i]])
+        cmds = '; '.join(['import k2plr',
+                          'import matplotlib.pyplot as pl',
+                          's = k2plr.EVEREST(%d, version = 1)' % self.epic[i],
+                          'fig = pl.figure(figsize = (10, 4))',
+                          'fig.subplots_adjust(bottom = 0.15)',
+                          'pl.plot(s.time, s.flux, "k.", markersize = 3, alpha = 0.5)',
+                          'pl.margins(0, None)',
+                          'pl.xlabel("Time (days)", fontsize = 16)',
+                          'pl.ylabel("EVEREST1 Flux", fontsize = 16)',
+                          'fig.canvas.set_window_title("EVEREST1: EPIC %d")' % self.epic[i],
+                          'pl.show()'])
+        subprocess.Popen(['python', '-c', cmds])
       elif self.compare_to.lower() == 'k2sff':
         cmds = '; '.join(['import k2plr',
                           'import matplotlib.pyplot as pl',
@@ -109,6 +120,7 @@ class StatsPicker(object):
                           'pl.margins(0, None)',
                           'pl.xlabel("Time (days)", fontsize = 16)',
                           'pl.ylabel("K2SFF Flux", fontsize = 16)',
+                          'fig.canvas.set_window_title("K2SFF: EPIC %d")' % self.epic[i],
                           'pl.show()'])
         subprocess.Popen(['python', '-c', cmds])
       elif self.compare_to.lower() == 'k2sc':
@@ -121,6 +133,7 @@ class StatsPicker(object):
                           'pl.margins(0, None)',
                           'pl.xlabel("Time (days)", fontsize = 16)',
                           'pl.ylabel("K2SC Flux", fontsize = 16)',
+                          'fig.canvas.set_window_title("K2SC: EPIC %d")' % self.epic[i],
                           'pl.show()'])
         subprocess.Popen(['python', '-c', cmds])
       elif self.compare_to.lower() == 'kepler':

@@ -10,10 +10,8 @@ specific de-trending methods are implemented as subclasses.
 
 .. todo::
   - Fix memory issues in the short cadence model
-  - Downbin the timeseries prior to the first PLD step. Compute the first order \
-    PLD weights and de-trend, then train the GP. Raise the ceiling on the amplitude \
-    and lower the floor on the timescale. This might help de-trend highly variable stars. \
-    Examples: **212760038**, **212793961**, **212760038**, **212801119**.
+  - Check performance on highly variable stars: **212760038**, **212793961**, \
+    **212760038**, **212801119**.
 
 '''
 
