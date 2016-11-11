@@ -39,7 +39,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'nPLD', 's3nPLD']
+__all__ = ['Model', 'Inject', 'PLD', 'naPLD', 's3nPLD']
 
 class Model(object):
   '''
@@ -1795,7 +1795,7 @@ class PLD(Model):
       sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
     return sc_X
 
-class nPLD(Model):
+class naPLD(Model):
   '''
   
   '''
@@ -1806,7 +1806,7 @@ class nPLD(Model):
     '''
     
     # Initialize
-    super(nPLD, self).__init__(*args, **kwargs)
+    super(naPLD, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():
