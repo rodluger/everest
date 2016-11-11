@@ -1421,7 +1421,7 @@ class Model(object):
       X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
       y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))      
       white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
-      amp = np.nanstd(y)
+      amp = 100. * np.nanstd(y)
       tau = 30.0
       self.kernel_params = [white, amp, tau]
     self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)

@@ -64,7 +64,7 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, guess = None):
     
   # Bounds
   bounds = [[0.1 * white, 10. * white], 
-            [1., 1000. * amp],
+            [1., 10000. * amp],
             [0.5, 100.]]
   
   # Loop
