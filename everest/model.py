@@ -1910,7 +1910,7 @@ class naPLD(Model):
       sc_X[n] = np.hstack([sc_X[n], self._scX1N ** (n + 1)])
     return sc_X
 
-class s3nPLD(nPLD):
+class s3nPLD(naPLD):
   '''
   
   '''
