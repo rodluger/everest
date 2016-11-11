@@ -39,16 +39,6 @@ def GetNeighbors(id, mission = 'k2', **kwargs):
   else:
     raise ValueError('Mission %s not supported.' % mission)
 
-def GetSimpleNeighbors(id, mission = 'k2', **kwargs):
-  '''
-  
-  '''
-
-  if mission in Missions:
-    return Missions[mission].GetSimpleNeighbors(id, **kwargs)
-  else:
-    raise ValueError('Mission %s not supported.' % mission)
-
 def Breakpoint(id, mission = 'k2', **kwargs):
   '''
   

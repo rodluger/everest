@@ -1,9 +1,3 @@
-.. figure:: everest.png
-   :width: 500px
-   :align: center
-   :height: 100px
-   :figclass: align-center
-
 Documentation
 =============
 

@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`model.py` - De-trending
---------------------------------
+:py:mod:`model.py` - De-trending models
+---------------------------------------
 
-TODO: 
+This module contains the generic models used to de-trend light curves for the various
+supported missions. Most of the functionality is implemented in :py:class:`Model`, and
+specific de-trending methods are implemented as subclasses.
 
-- Add model where neighboring stars are regularized separately
-- Test neighboring PLD on 3 stars
+.. todo::
+  - Fix memory issues in the short cadence model
+  - Downbin the timeseries prior to the first PLD step. Compute the first order \
+    PLD weights and de-trend, then train the GP. Raise the ceiling on the amplitude \
+    and lower the floor on the timescale. This might help de-trend highly variable stars. \
+    Examples: **212760038**, **212793961**, **212760038**, **212801119**.
 
 '''
 
@@ -16,7 +22,7 @@ from .config import EVEREST_DAT
 from .missions import Missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
-from .data import Season, GetData, GetNeighbors, Breakpoint, GetSimpleNeighbors, HasShortCadence
+from .data import Season, GetData, GetNeighbors, Breakpoint, HasShortCadence
 from .gp import GetCovariance, GetKernelParams
 from .transit import Transit
 from .dvs import DVS1, DVS2
@@ -33,14 +39,14 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'nPLD', 'snPLD']
+__all__ = ['Model', 'Inject', 'PLD', 'nPLD', 's3nPLD']
 
 class Model(object):
   '''
-  A generic PLD model with scalar matrix L2 regularization. Includes functionality
+  A generic *PLD* model with scalar matrix *L2* regularization. Includes functionality
   for loading pixel-level light curves, identifying outliers, generating the data
   covariance matrix, computing the regularized pixel model, and plotting the results.
-  Specific models are implemented as subclasses
+  Specific models are implemented as subclasses.
   
   '''
 
@@ -125,6 +131,7 @@ class Model(object):
   @property
   def name(self):
     '''
+    Returns the name of the current :py:class:`Model` subclass.
     
     '''
     
@@ -141,6 +148,7 @@ class Model(object):
   @property
   def dir(self):
     '''
+    Returns the directory where the raw data and output for the target is stored.
     
     '''
     
@@ -157,6 +165,7 @@ class Model(object):
   @property
   def logfile(self):
     '''
+    Returns the full path to the log file for the current run.
     
     '''
     
@@ -173,6 +182,8 @@ class Model(object):
   @property
   def season(self):
     '''
+    Returns the current observing season. For *K2*, this is the observing campaign,
+    while for *Kepler*, it is the current quarter. 
     
     '''
     
@@ -193,7 +204,8 @@ class Model(object):
   @property
   def flux(self):
     '''
-    The corrected/de-trended flux.
+    The corrected/de-trended flux. This is computed by subtracting the linear
+    model from the raw SAP flux.
     
     '''
     
@@ -210,7 +222,9 @@ class Model(object):
   @property
   def sc_flux(self):
     '''
-    The corrected/de-trended short cadence flux.
+    The corrected/de-trended short cadence flux, computed by subtracting the
+    short cadence linear model from the raw short cadence SAP flux. Only available
+    if short cadence data exists for the target.
     
     '''
     
@@ -230,6 +244,8 @@ class Model(object):
   @property
   def cdpps(self):
     '''
+    The string version of the current value of the CDPP in *ppm*. This displays the CDPP for
+    each segment of the light curve individually (if breakpoints are present).
     
     '''
     
@@ -246,7 +262,8 @@ class Model(object):
   @property
   def mask(self):
     '''
-    The array of indices to be masked.
+    The array of indices to be masked. This is the union of the sets of outliers, bad (flagged)
+    cadences, and *NaN* cadences.
     
     '''
     
@@ -263,7 +280,7 @@ class Model(object):
   @property
   def sc_mask(self):
     '''
-    The array of indices to be masked.
+    Similar to :py:attr:`mask`, but for the short cadence data (if available).
     
     '''
     
@@ -280,6 +297,7 @@ class Model(object):
   @property
   def X(self):
     '''
+    The current *PLD* design matrix.
     
     '''
     
@@ -296,6 +314,10 @@ class Model(object):
   @property
   def weights(self):
     '''
+    The PLD weights vector. The model may be computed by dotting the design matrix 
+    :py:attr:`X` with this vector. Note that these are computed just for plotting
+    purpoeses -- the actual weights are never explicitly computed during the de-trending,
+    since it can be rather slow.
     
     '''
     
@@ -313,7 +335,8 @@ class Model(object):
   
   def precompute(self):
     '''
-    Pre-compute some expensive matrices.
+    Pre-compute some expensive matrices used during the regularization step 
+    and store them in memory.
     
     '''
     
@@ -339,6 +362,9 @@ class Model(object):
   def compute(self, precompute = True, sc = False):
     '''
     Compute the model for the current value of lambda.
+    
+    :param bool precompute: Precompute the expensive `A` and `B` matrices? Default `True`
+    :param bool sc: Compute the short cadence model? Default `False`
     
     '''
     
@@ -455,7 +481,10 @@ class Model(object):
   
   def apply_mask(self, x = None, sc = False):
     '''
-    The outlier mask function (returns the non-outliers).
+    Returns the outlier mask, an array of indices corresponding to the non-outliers.
+    
+    :param numpy.ndarray x: If specified, returns the masked version of `x` instead. Default `None`
+    :param bool sc: Return the short cadence mask? Default `False`
     
     '''
     
@@ -472,7 +501,11 @@ class Model(object):
 
   def get_chunk(self, b, x = None, sc = False):
     '''
-    Chunk mask (returns chunk `b`).
+    Returns the indices corresponding to a given light curve chunk.
+    
+    :param int b: The index of the chunk to return
+    :param numpy.ndarray x: If specified, applies the mask to array `x`. Default `None`
+    :param bool sc: Get the indices of the short cadence chunk? Default `False`
     
     '''
     
@@ -500,7 +533,9 @@ class Model(object):
     
   def get_masked_chunk(self, b, x = None):
     '''
-    Chunk mask with outlier mask (returns chunk `b` after applying the outlier mask).
+    Same as :py:meth:`get_chunk`, but first removes the outlier indices.
+    :param int b: The index of the chunk to return
+    :param numpy.ndarray x: If specified, applies the mask to array `x`. Default `None`
     
     '''
     
@@ -516,13 +551,15 @@ class Model(object):
   
   def get_X(self):
     '''
-  
+    *Implemented by subclasses*
+    
     '''
   
     raise NotImplementedError('This method must be implemented in a subclass.')
   
   def get_sc_X(self):
     '''
+    *Implemented by subclasses*
     
     '''
     
@@ -530,7 +567,7 @@ class Model(object):
   
   def get_outliers(self):
     '''
-    Perform iterative sigma clipping to get outliers.
+    Performs iterative sigma clipping to get outliers.
     
     '''
             
@@ -574,13 +611,12 @@ class Model(object):
 
   def optimize_lambda(self, validation):
     '''
-    Returns the index of lambda_arr that minimizes the validation scatter
-    in the segment with minimum at the lowest value of lambda, with
-    fractional tolerance `self.leps`
+    Returns the index of :py:attr:`self.lambda_arr` that minimizes the validation scatter
+    in the segment with minimum at the lowest value of :py:obj:`lambda`, with
+    fractional tolerance :py:attr:`self.leps`.
     
-    Previously, this was computed as
-    `return int(np.nanmin([np.nanargmin(validation[:,n]) for n in range(validation.shape[1])]))`.
-      
+    :param numpy.ndarray validation: The scatter in the validation set as a function of :py:obj:`lambda`
+    
     '''
     
     maxm = 0
@@ -597,7 +633,11 @@ class Model(object):
 
   def cross_validate(self, ax, info = ''):
     '''
-    Cross-validate to find optimal value of lambda.
+    Cross-validate to find the optimal value of :py:obj:`lambda`.
+    
+    :param ax: The current :py:obj:`matplotlib.pyplot` axis instance to plot the \
+               cross-validation results.
+    :param str info: The label to show in the bottom right-hand corner of the plot. Default ''
     
     '''
     
@@ -736,7 +776,8 @@ class Model(object):
   
   def get_weights(self):
     '''
-    Computes the PLD weights vector `w`.
+    Computes the PLD weights vector `w` (for plotting and/or computing the short
+    cadence model).
     
     '''
     
@@ -802,6 +843,13 @@ class Model(object):
     
   def plot(self, ax, info_left = '', info_right = '', color = 'b'):
     '''
+    Plots the current light curve. This is called at several stages to plot the
+    de-trending progress as a function of the different *PLD* orders.
+    
+    :param ax: The current :py:obj:`matplotlib.pyplot` axis instance
+    :param str info_left: Information to display at the left of the plot. Default ''
+    :param str info_right: Information to display at the right of the plot. Default ''
+    :param str color: The color of the data points. Default `'b'`
     
     '''
 
@@ -858,6 +906,9 @@ class Model(object):
   
   def plot_info(self, dvs):
     '''
+    Plots miscellaneous de-trending information on the data validation summary figure.
+    
+    :param dvs: A :py:class:`dvs.DVS1` or :py:class:`dvs.DVS2` figure instance
     
     '''
     
@@ -894,6 +945,7 @@ class Model(object):
   
   def plot_final(self):
     '''
+    Plots the final de-trended light curve.
     
     '''
     
@@ -933,6 +985,10 @@ class Model(object):
   
   def plot_aperture(self, dvs):
     '''
+    Plots the aperture and the pixel images at the beginning, middle, and end of 
+    the time series. Also plots a high resolution image of the target, if available.
+    
+    :param dvs: A :py:class:`dvs.DVS1` or :py:class:`dvs.DVS2` figure instance
     
     '''
     
@@ -990,7 +1046,8 @@ class Model(object):
   
   def plot_weights(self):
     '''
-  
+    Plots the PLD weights on the CCD for each of the PLD orders.
+    
     '''
         
     # Loop over all PLD orders and over all chunks
@@ -1123,6 +1180,7 @@ class Model(object):
   
   def plot_page2(self):
     '''
+    Plots the second page of the data validation summary.
     
     '''
     
@@ -1180,6 +1238,7 @@ class Model(object):
     
   def load_tpf(self):
     '''
+    Loads the target pixel file.
     
     '''
     
@@ -1245,6 +1304,7 @@ class Model(object):
   
   def load_model(self, name = None):
     '''
+    Loads a saved version of the model.
     
     '''
     
@@ -1279,6 +1339,8 @@ class Model(object):
 
   def save_model(self):
     '''
+    Saves all of the de-trending information to disk in an `npz` file
+    and saves the DVS as a `pdf`.
     
     '''
     
@@ -1312,6 +1374,9 @@ class Model(object):
     
   def exception_handler(self, pdb):
     '''
+    A custom exception handler.
+    
+    :param pdb: If `True`, enters PDB post-mortem mode for debugging.
     
     '''
     
@@ -1336,6 +1401,8 @@ class Model(object):
   
   def update_gp(self):
     '''
+    Calls :py:func:`gp.GetKernelParams` to optimize the GP and obtain the
+    covariance matrix for the regression.
     
     '''
     
@@ -1346,6 +1413,7 @@ class Model(object):
   
   def init_kernel(self):
     '''
+    Initializes the covariance matrix with a guess at the GP kernel parameters.
     
     '''
     
@@ -1360,6 +1428,7 @@ class Model(object):
   
   def get_cdpp_arr(self):
     '''
+    Returns the 6-hr CDPP value in *ppm* for each of the chunks in the light curve.
     
     '''
     
@@ -1367,6 +1436,7 @@ class Model(object):
   
   def get_cdpp(self):
     '''
+    Returns the scalar 6-hr CDPP for the light curve.
     
     '''
     
@@ -1374,6 +1444,7 @@ class Model(object):
   
   def run(self):
     '''
+    Runs the de-trending step.
     
     '''
     
@@ -1695,7 +1766,7 @@ class PLD(Model):
       
   def get_X(self):
     '''
-  
+    
     '''
       
     if not self.is_parent:
@@ -1707,7 +1778,7 @@ class PLD(Model):
     for n in range(self.pld_order): 
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-
+  
   def get_sc_X(self):
     '''
     
@@ -1839,7 +1910,7 @@ class nPLD(Model):
       sc_X[n] = np.hstack([sc_X[n], self._scX1N ** (n + 1)])
     return sc_X
 
-class snPLD(nPLD):
+class s3nPLD(nPLD):
   '''
   
   '''
@@ -1850,8 +1921,8 @@ class snPLD(nPLD):
     '''
     
     # Initialize
-    kwargs.update({'pld_order': kwargs.get('pld_order', 3) + 1})
-    super(snPLD, self).__init__(*args, **kwargs)
+    kwargs.update({'pld_order': kwargs.get('pld_order', 3) * 2})
+    super(s3nPLD, self).__init__(*args, **kwargs)
         
   def get_X(self):
     '''
@@ -1864,33 +1935,23 @@ class snPLD(nPLD):
       X1 = self.fpix / self.flux.reshape(-1, 1)
     else:
       X1 = self.fpix / self.fraw.reshape(-1, 1)
-    for n in range(self.pld_order - 1): 
+    
+    for i in range(self.pld_order // 2): 
+      n = 2 * i
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
-        self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-        if self._X[-1] is None:
-          self._X[-1] = np.array(self._XNeighbors[n])
-        else:
-          self._X[-1] = np.hstack([self._X[-1], self._XNeighbors[n]])
+        self._X[n] = np.product(list(multichoose(X1.T, i + 1)), axis = 1).T
+        self.optimize_gp = True
+      if (self._X[n + 1] is None) and ((n + 1 == self.lam_idx) or (self.lam[0][n + 1] is not None)):  
+        self._X[n + 1] = np.array(self._XNeighbors[i])
+        self.optimize_gp = False
   
   def get_sc_X(self):
     '''
     
     '''
-
-    if not self.is_parent:
-      log.info("Computing the short cadence design matrix...")
-    sc_X = [None for i in range(self.pld_order)]
-    if self.recursive:
-      X1 = self.sc_fpix / self.sc_flux.reshape(-1, 1)
-    else:
-      X1 = self.sc_fpix / self.sc_fraw.reshape(-1, 1)
-    for n in range(self.pld_order - 1): 
-      sc_X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-      if sc_X[-1] is None:
-        sc_X[-1] = self._scX1N ** (n + 1)
-      else:
-        sc_X[-1] = np.hstack([sc_X[-1], self._scX1N ** (n + 1)])
-    return sc_X
+    
+    # TODO!
+    return None
   
   def plot_weights(self):
     '''
