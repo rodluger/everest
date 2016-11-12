@@ -622,6 +622,9 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
       aperture = data['apertures'][()][aperture_name]
       for source in data['nearby'][()]:
         # Ignore self
+        
+        import pdb; pdb.set_trace()
+        
         if source['ID'] == star:
           continue
         # Ignore really dim stars
