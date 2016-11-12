@@ -36,7 +36,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'nPLD', 'fnPLD']
+__all__ = ['Model', 'Inject', 'PLD', 'n3PLD', 'fnPLD']
 
 class Model(object):
   '''
@@ -1795,7 +1795,7 @@ class PLD(Model):
     
     return model
 
-class nPLD(Model):
+class n3PLD(Model):
   '''
   
   '''
@@ -1806,7 +1806,7 @@ class nPLD(Model):
     '''
     
     # Initialize
-    super(nPLD, self).__init__(*args, **kwargs)
+    super(n3PLD, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():
@@ -1814,7 +1814,7 @@ class nPLD(Model):
     
     # Get neighbors
     self.parent_model = kwargs.get('parent_model', None)
-    num_neighbors = kwargs.get('neighbors', 10)
+    num_neighbors = kwargs.get('neighbors', 3)
     self.neighbors = GetNeighbors(self.ID, mission = self.mission, 
                                   model = self.parent_model,
                                   neighbors = num_neighbors, 
