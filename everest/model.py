@@ -36,7 +36,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'nPLD']
+__all__ = ['Model', 'Inject', 'PLD', 'nPLD', 'fnPLD']
 
 class Model(object):
   '''
@@ -1828,6 +1828,124 @@ class nPLD(Model):
     else:
       log.error("No neighbors found! Aborting.")
       return
+
+    self._XNeighbors = [None for i in range(self.pld_order)]
+    self._scX1N = None
+    for neighbor in self.neighbors:
+      log.info("Loading data for neighboring target %d..." % neighbor)
+      if self.parent_model is not None:
+        # We load the `parent` model. The advantage here is that outliers have
+        # properly been identified and masked
+        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
+      else:
+        # We load the data straight from the TPF. Much quicker, since no model must
+        # be run in advance. Downside is we don't know where the outliers are. But based
+        # on tests with K2 data, the de-trending is actually *better* if the outliers are
+        # included! These are mostly thruster fire events and other artifacts common to
+        # all the stars, so it makes sense that we might want to keep them in the design
+        # matrix.
+        data = GetData(neighbor, self.mission, season = self.season, clobber = self.clobber_tpf, 
+                     aperture_name = self.aperture_name, 
+                     saturated_aperture_name = self.saturated_aperture_name, 
+                     max_pixels = self.max_pixels,
+                     saturation_tolerance = self.saturation_tolerance)
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+        if self.has_sc:
+          data.sc_mask = np.array(list(set(np.concatenate([data.sc_badmask, data.sc_nanmask]))), dtype = int)
+          data.sc_fraw = np.sum(data.sc_fpix, axis = 1)
+      
+      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
+      X1 = data.fpix / data.fraw.reshape(-1, 1)
+      X1 = Interpolate(data.time, data.mask, X1)
+      if self.has_sc:
+        _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
+        _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
+        if self._scX1N is None:
+          self._scX1N = np.array(_scX1N)
+        else:
+          self._scX1N = np.hstack([self._scX1N, _scX1N])
+        del _scX1N
+      for n in range(self.pld_order):
+        if self._XNeighbors[n] is None:
+          self._XNeighbors[n] = X1 ** (n + 1)
+        else:
+          self._XNeighbors[n] = np.hstack([self._XNeighbors[n], X1 ** (n + 1)])
+      del data
+      del X1
+
+    # Run
+    self.run()
+        
+  def get_X(self):
+    '''
+  
+    '''
+      
+    if not self.is_parent:
+      log.info("Computing the design matrix...")
+    if self.recursive:
+      X1 = self.fpix / self.flux.reshape(-1, 1)
+    else:
+      X1 = self.fpix / self.fraw.reshape(-1, 1)
+    for n in range(self.pld_order): 
+      if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
+        self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
+        self._X[n] = np.hstack([self._X[n], self._XNeighbors[n]])
+  
+  def get_sc_model(self, order, weights, inds = None):
+    '''
+    
+    '''
+
+    if self.recursive:
+      X1 = self.sc_fpix[inds] / self.sc_fraw[inds].reshape(-1, 1)
+    else:
+      X1 = self.sc_fpix[inds] / self.sc_flux[inds].reshape(-1, 1)
+    
+    model = np.zeros(len(inds))
+    for ii, w, n in zip(multichoose(range(self.sc_fpix.shape[1]), order), weights, range(len(weights))):
+      model += np.product([X1[:,i] for i in ii], axis = 0) * w
+    
+    # Add the neighbors' contribution
+    model += np.dot(self._scX1N[inds] ** (order), weights[n + 1:])
+    
+    return model
+
+class fnPLD(Model):
+  '''
+  
+  '''
+        
+  def __init__(self, *args, **kwargs):
+    '''
+    
+    '''
+    
+    # Initialize
+    super(fnPLD, self).__init__(*args, **kwargs)
+    
+    # Check for saved model
+    if self.load_model():
+      return
+    
+    # Get neighbors
+    self.parent_model = kwargs.get('parent_model', None)
+    num_neighbors = kwargs.get('neighbors', 10)
+    self.neighbors = np.array([212646589,
+                               212500114,
+                               212314869,
+                               212504433,
+                               212817056,
+                               212319518,
+                               212535194,
+                               212812158,
+                               212590172,
+                               212404097,
+                               212598609])
+    if self.ID in self.neighbors:
+      self.neighbors = list(np.delete(self.neighbors, np.argmax(self.neighbors == self.ID)))
+    self.neighbors = self.neighbors[:10]  
 
     self._XNeighbors = [None for i in range(self.pld_order)]
     self._scX1N = None
