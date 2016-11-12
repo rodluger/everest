@@ -620,7 +620,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
       contam = False
       data = np.load(os.path.join(TargetDirectory(star, campaign), 'data.npz'))
       aperture = data['apertures'][()][aperture_name]
-      for source in data['nearby']:
+      for source in data['nearby'][()]:
         # Ignore self
         if source['ID'] == star:
           continue
