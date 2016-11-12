@@ -1,9 +1,7 @@
-The Code
+Missions
 ========
 
 .. toctree::
    :maxdepth: 2
    
-   model
-   transit
-   utils
+   k2

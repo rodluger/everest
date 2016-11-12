@@ -8,10 +8,6 @@ This module contains the generic models used to de-trend light curves for the va
 supported missions. Most of the functionality is implemented in :py:class:`Model`, and
 specific de-trending methods are implemented as subclasses.
 
-.. todo::
-  - Check performance on highly variable stars: **212760038**, **212793961**, \
-    **212760038**, **212801119**.
-
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -36,7 +32,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'PLD', 'n3PLD', 'fnPLD']
+__all__ = ['Model', 'Inject', 'rPLD', 'nPLD']
 
 class Model(object):
   '''
@@ -44,6 +40,70 @@ class Model(object):
   for loading pixel-level light curves, identifying outliers, generating the data
   covariance matrix, computing the regularized pixel model, and plotting the results.
   Specific models are implemented as subclasses.
+  
+  **General:**
+  
+  :param ID: The target star ID (*EPIC*, *KIC*, or *TIC* number, for instance)
+  :param bool clobber: Overwrite existing :py:obj:`everest` models? Default :py:obj:`False`
+  :param bool clobber_tpf: Download and overwrite the saved raw TPF data? Default :py:obj:`False`
+  :param bool debug: De-trend in debug mode? If :py:obj:`True`, prints all output to screen and \
+                     enters :py:obj:`pdb` post-mortem mode for debugging when an error is raised.
+                     Default :py:obj:`False`
+  :param str mission: The name of the mission. Default `k2`
+  
+  **Model:**
+  
+  :param str aperture_name: The name of the aperture to use. These are defined in the datasets and are \
+                            mission specific. Defaults to the mission default
+  :param int bpad: When light curve breakpoints are set, the light curve chunks must be stitched together \
+                   at the end. To prevent kinks and/or discontinuities, the chunks are made to overlap by \
+                   :py:obj:`bpad` cadences on either end. The chunks are then mended and the overlap is \
+                   discarded. Default 100
+  :param bool breakpoint: Add a light curve breakpoint when de-trending? If :py:obj:`True`, splits the \
+                          light curve into two chunks and de-trends each one separately, then stitches them \
+                          back and the end. This is useful for missions like *K2*, where the light curve noise \
+                          properties are very different at the beginning and end of each campaign. The cadences \
+                          at which breakpoints are inserted are specified in the :py:func:`Breakpoint` function \
+                          of each mission. Default :py:obj:`True`
+  :param int cdivs: The number of light curve subdivisions when cross-validating. During each iteration, \
+                    one of these subdivisions will be masked and used as the validation set. Default 3
+  :param int giter: The number of iterations when optimizing the GP. During each iteration, the minimizer \
+                    is initialized with a perturbed guess; after :py:obj:`giter` iterations, the step with \
+                    the highest likelihood is kept. Default 3
+  :param float gp_factor: When computing the initial kernel parameters, the red noise amplitude is set to \
+                          the standard deviation of the data times this factor. Larger values generally \
+                          help with convergence, particularly for very variable stars. Default 100
+  :param array_like kernel_params: The initial value of the :py:obj:`Matern-3/2` kernel parameters \
+                                   (white noise amplitude in flux units, red noise amplitude in flux units, \
+                                   and timescale in days). Default :py:obj:`None` (determined from the data)
+  :param array_like lambda_arr: The array of :math:`\Lambda` values to iterate over during the \
+                                cross-validation step. :math:`\Lambda` is the regularization parameter,
+                                or the standard deviation of \
+                                the Gaussian prior on the weights for each order of PLD. \
+                                Default ``10 ** np.arange(0,18,0.5)``
+  :param float leps: The fractional tolerance when optimizing :math:`\Lambda`. The chosen value of \
+                     :math:`\Lambda` will be within this amount of the minimum of the CDPP curve. \
+                     Default 0.05
+  :param int max_pixels: The maximum number of pixels. Very large apertures are likely to cause memory \
+                         errors, particularly for high order PLD. If the chosen aperture exceeds this many \
+                         pixels, a different aperture is chosen from the dataset. If no apertures with fewer \
+                         than this many pixels are available, an error is thrown. Default 75
+  :param bool optimize_gp: Perform the GP optimization steps? Default :py:obj:`True`
+  :param float osigma: The outlier standard deviation threshold. Default 5
+  :param int oiter: The maximum number of steps taken during iterative sigma clipping. Default 10
+  :param int pld_order: The pixel level decorrelation order. Default `3`. Higher orders may cause memory errors
+  :param bool recursive: Calculate the fractional pixel flux recursively? If :py:obj:`False`, \
+                         always computes the fractional pixel flux as :math:`f_{ij}/\sum_i{f_{ij}}`. \
+                         If :py:obj:`True`, uses the current de-trended flux as the divisor in an attempt \
+                         to minimize the amount of instrumental information that is divided out in this \
+                         step: :math:`f_{ij}/(\sum_i{f_{ij}} - M)`. Default :py:obj:`True`
+  :param str saturated_aperture_name: If the target is found to be saturated, de-trending is performed \
+                                      on this aperture instead. Defaults to the mission default
+  :param float saturation_tolerance: The tolerance when determining whether or not to collapse a column \
+                                     in the aperture. The column collapsing is implemented in the individual \
+                                     mission modules. Default -0.1, i.e., if a target is 10% shy of the \
+                                     nominal saturation level, it is considered to be saturated.
+  :param int sc_bpad: Same as :py:obj:`bpad`, but for the short cadence data. Default 3000
   
   '''
 
@@ -74,7 +134,6 @@ class Model(object):
     self.osigma = kwargs.get('osigma', 5)
     self.oiter = kwargs.get('oiter', 10)
     self.cdivs = kwargs.get('cdivs', 3)
-    self.ccad = kwargs.get('ccad', 50)
     self.giter = kwargs.get('giter', 3)
     self.optimize_gp = kwargs.get('optimize_gp', True)
     self.kernel_params = kwargs.get('kernel_params', None)    
@@ -85,6 +144,7 @@ class Model(object):
     self.saturated_aperture_name = kwargs.get('saturated_aperture', None)
     self.max_pixels = kwargs.get('max_pixels', 75)
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
+    self.gp_factor = kwargs.get('gp_factor', 100.)
     
     # Handle breakpointing. The breakpoint is the *last* index of the first 
     # light curve chunk. The code is (for the most part) written to allow for
@@ -1419,7 +1479,7 @@ class Model(object):
       X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
       y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))      
       white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
-      amp = 100. * np.nanstd(y)
+      amp = self.gp_factor * np.nanstd(y)
       tau = 30.0
       self.kernel_params = [white, amp, tau]
     self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
@@ -1496,7 +1556,7 @@ class Model(object):
     
       self.exception_handler(self.debug)
 
-def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
+def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
            mask = False, trn_win = 5, poly_order = 1, **kwargs):
   '''
   Run one of the :py:obj:`everest` models with injected transits and attempt to recover the
@@ -1741,8 +1801,9 @@ def Inject(ID, model = 'PLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     
   return Injection(ID, inject = inject, parent_class = model, **kwargs)
 
-class PLD(Model):
+class rPLD(Model):
   '''
+  The standard PLD model, inheriting all of its features from :py:class:`Model`.
   
   '''
         
@@ -1752,7 +1813,7 @@ class PLD(Model):
     '''
     
     # Initialize
-    super(PLD, self).__init__(*args, **kwargs)
+    super(rPLD, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():
@@ -1763,6 +1824,12 @@ class PLD(Model):
       
   def get_X(self):
     '''
+    Computes the design matrix at the current *PLD* order and stores it in
+    :py:obj:`self.X`. This is a list of matrices, one for each *PLD* order.
+    The columns in each matrix are the *PLD* vectors for the target at the
+    corresponding order, computed as the product of the fractional pixel
+    flux of all sets of :py:obj:`n` pixels, where :py:obj:`n` is the *PLD*
+    order.
     
     '''
       
@@ -1778,6 +1845,22 @@ class PLD(Model):
   
   def get_sc_model(self, order, weights, inds = None):
     '''
+    Computes the short cadence model. The PLD model is always computed from
+    the long cadence data; the weights are then dotted with the short cadence
+    design matrix to compute the short cadence model. In principle, one could
+    compute the model from the short cadence data, but (a) this is likely to
+    take a very long time and lead to memory errors, and (b) it is likely to
+    perform poorly, since the SNR ratio of each data point in short cadence is
+    very low, making it difficult for PLD to pick out the instrumental component
+    of the signal. See Deming et al. (2015) for a discussion on how computing the
+    model on binned (i.e., long cadence) data is ideal.
+    
+    .. note:: The code below uses a :py:obj:`for` loop to dot each signal with its \
+              corresponding weight, which is inefficient. However, matrix operations \
+              on the short cadence design matrix take a **huge** amount of memory \
+              and usually cause the script to crash. By computing the model this way, \
+              the design matrix is never actually stored in memory, but processed one \
+              column at a time. It actually works surprisingly fast.
     
     '''
     
@@ -1795,8 +1878,34 @@ class PLD(Model):
     
     return model
 
-class n3PLD(Model):
+class nPLD(Model):
   '''
+  The "neighboring stars" *PLD* model. This model uses the *PLD* vectors of neighboring
+  stars to help in the de-trending and can lead to increased performance over the regular
+  :py:class:`rPLD` model, particularly for dimmer stars.
+  
+  :param tuple cdpp_range: If :py:obj:`parent_model` is set, neighbors are selected only if \
+                           their de-trended CDPPs fall within this range. Default `None`
+  :param tuple mag_range: Only select neighbors whose magnitudes are within this range. \
+                          Default (11., 13.) 
+  :param int neighbors: The number of neighboring stars to use in the de-trending. The \
+                        higher this number, the more signals there are and hence the more \
+                        de-trending information there is. However, the neighboring star \
+                        signals are regularized together with the target's signals, so adding \
+                        too many neighbors will inevitably reduce the contribution of the \
+                        target's own signals, which may reduce performance. Default `10`
+  :param str parent_model: By default, :py:class:`nPLD` is run in stand-alone mode. The neighbor \
+                           signals are computed directly from their TPFs, so there is no need to \
+                           have run *PLD* on them beforehand. However, if :py:obj:`parent_model` is set, \
+                           :py:class:`nPLD` will use information from the :py:obj:`parent_model` model of
+                           each neighboring star when de-trending. This is particularly useful for \
+                           identifying outliers in the neighbor signals and preventing them from polluting \
+                           the current target. Setting :py:obj:`parent_model` to :py:class:`rPLD`, for instance, \
+                           will use the outlier information in the :py:class:`rPLD` model of the neighbors \
+                           (this must have been run ahead of time). Note, however, that tests with *K2* data \
+                           show that including outliers in the neighbor signals actually *improves* the performance, \
+                           since many of these outliers are associated with events such as thruster firings and are \
+                           present in all light curves, and therefore *help* in the de-trending. Default `None`
   
   '''
         
@@ -1806,7 +1915,7 @@ class n3PLD(Model):
     '''
     
     # Initialize
-    super(n3PLD, self).__init__(*args, **kwargs)
+    super(nPLD, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():
@@ -1814,14 +1923,12 @@ class n3PLD(Model):
     
     # Get neighbors
     self.parent_model = kwargs.get('parent_model', None)
-    num_neighbors = kwargs.get('neighbors', 3)
+    num_neighbors = kwargs.get('neighbors', 10)
     self.neighbors = GetNeighbors(self.ID, mission = self.mission, 
                                   model = self.parent_model,
                                   neighbors = num_neighbors, 
-                                  mag_lo = kwargs.get('mag_lo', 11.), 
-                                  mag_hi = kwargs.get('mag_hi', 13.),
-                                  cdpp_lo = kwargs.get('cdpp_lo', 10.), 
-                                  cdpp_hi = kwargs.get('cdpp_hi', 30.))
+                                  mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                  cdpp_range = kwargs.get('cdpp_range', None))
     if len(self.neighbors):
       if len(self.neighbors) < num_neighbors:
         log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
@@ -1879,7 +1986,15 @@ class n3PLD(Model):
         
   def get_X(self):
     '''
-  
+    Computes the design matrix at the current *PLD* order and stores it in
+    :py:obj:`self.X`. This is a list of matrices, one for each *PLD* order.
+    The columns in each matrix are the *PLD* vectors for the target at the
+    corresponding order, computed as the product of the fractional pixel
+    flux of all sets of :py:obj:`n` pixels, where :py:obj:`n` is the *PLD*
+    order. At the end of each matrix, columns corresponding to the neighbor
+    star *PLD* signals are appended. Note that for both speed and memory
+    reasons, cross terms are **not** computed for the neighboring stars.
+      
     '''
       
     if not self.is_parent:
@@ -1895,124 +2010,8 @@ class n3PLD(Model):
   
   def get_sc_model(self, order, weights, inds = None):
     '''
-    
-    '''
-
-    if self.recursive:
-      X1 = self.sc_fpix[inds] / self.sc_fraw[inds].reshape(-1, 1)
-    else:
-      X1 = self.sc_fpix[inds] / self.sc_flux[inds].reshape(-1, 1)
-    
-    model = np.zeros(len(inds))
-    for ii, w, n in zip(multichoose(range(self.sc_fpix.shape[1]), order), weights, range(len(weights))):
-      model += np.product([X1[:,i] for i in ii], axis = 0) * w
-    
-    # Add the neighbors' contribution
-    model += np.dot(self._scX1N[inds] ** (order), weights[n + 1:])
-    
-    return model
-
-class fnPLD(Model):
-  '''
-  
-  '''
-        
-  def __init__(self, *args, **kwargs):
-    '''
-    
-    '''
-    
-    # Initialize
-    super(fnPLD, self).__init__(*args, **kwargs)
-    
-    # Check for saved model
-    if self.load_model():
-      return
-    
-    # Get neighbors
-    self.parent_model = kwargs.get('parent_model', None)
-    num_neighbors = kwargs.get('neighbors', 10)
-    self.neighbors = np.array([212646589,
-                               212500114,
-                               212314869,
-                               212504433,
-                               212817056,
-                               212319518,
-                               212535194,
-                               212812158,
-                               212590172,
-                               212404097,
-                               212598609])
-    if self.ID in self.neighbors:
-      self.neighbors = list(np.delete(self.neighbors, np.argmax(self.neighbors == self.ID)))
-    self.neighbors = self.neighbors[:10]  
-
-    self._XNeighbors = [None for i in range(self.pld_order)]
-    self._scX1N = None
-    for neighbor in self.neighbors:
-      log.info("Loading data for neighboring target %d..." % neighbor)
-      if self.parent_model is not None:
-        # We load the `parent` model. The advantage here is that outliers have
-        # properly been identified and masked
-        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
-      else:
-        # We load the data straight from the TPF. Much quicker, since no model must
-        # be run in advance. Downside is we don't know where the outliers are. But based
-        # on tests with K2 data, the de-trending is actually *better* if the outliers are
-        # included! These are mostly thruster fire events and other artifacts common to
-        # all the stars, so it makes sense that we might want to keep them in the design
-        # matrix.
-        data = GetData(neighbor, self.mission, season = self.season, clobber = self.clobber_tpf, 
-                     aperture_name = self.aperture_name, 
-                     saturated_aperture_name = self.saturated_aperture_name, 
-                     max_pixels = self.max_pixels,
-                     saturation_tolerance = self.saturation_tolerance)
-        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
-        data.fraw = np.sum(data.fpix, axis = 1)
-        if self.has_sc:
-          data.sc_mask = np.array(list(set(np.concatenate([data.sc_badmask, data.sc_nanmask]))), dtype = int)
-          data.sc_fraw = np.sum(data.sc_fpix, axis = 1)
-      
-      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
-      X1 = data.fpix / data.fraw.reshape(-1, 1)
-      X1 = Interpolate(data.time, data.mask, X1)
-      if self.has_sc:
-        _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
-        _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
-        if self._scX1N is None:
-          self._scX1N = np.array(_scX1N)
-        else:
-          self._scX1N = np.hstack([self._scX1N, _scX1N])
-        del _scX1N
-      for n in range(self.pld_order):
-        if self._XNeighbors[n] is None:
-          self._XNeighbors[n] = X1 ** (n + 1)
-        else:
-          self._XNeighbors[n] = np.hstack([self._XNeighbors[n], X1 ** (n + 1)])
-      del data
-      del X1
-
-    # Run
-    self.run()
-        
-  def get_X(self):
-    '''
-  
-    '''
-      
-    if not self.is_parent:
-      log.info("Computing the design matrix...")
-    if self.recursive:
-      X1 = self.fpix / self.flux.reshape(-1, 1)
-    else:
-      X1 = self.fpix / self.fraw.reshape(-1, 1)
-    for n in range(self.pld_order): 
-      if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
-        self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-        self._X[n] = np.hstack([self._X[n], self._XNeighbors[n]])
-  
-  def get_sc_model(self, order, weights, inds = None):
-    '''
+    Computes the short cadence model, including the contribution of the
+    neighboring stars. See :py:meth:`rPLD.get_sc_model` for more details.
     
     '''
 

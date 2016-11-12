@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`dvs.py`
-----------------
+:py:mod:`dvs.py` - Data Validation Summary
+------------------------------------------
 
 Code for handling the "Data Validation Summary" plot.
 

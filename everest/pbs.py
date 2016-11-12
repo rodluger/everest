@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`pbs.py` - PBS cluster submission routines
---------------------------------------------------
+:py:mod:`pbs.py` - PBS cluster routines
+---------------------------------------
 
 Routines to run :py:mod:`everest` in batch mode on a PBS cluster.
 

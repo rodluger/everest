@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`k2.py` - Routines for dealing with `K2`
-------------------------------------------------
+:py:mod:`k2.py` - Main mission routines
+---------------------------------------
 
 '''
 
@@ -51,7 +51,7 @@ def Season(EPIC, **kwargs):
 
 def Breakpoint(EPIC, **kwargs):
   '''
-  ..todo:: Populate these.
+  .. todo:: Populate these.
   
   '''
   

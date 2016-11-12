@@ -218,7 +218,7 @@ htmlhelp_basename = 'everestdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_preamble = '\\usepackage{amsmath}\n\\usepackage{amssymb}'
+latex_preamble = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage{amstools}'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').

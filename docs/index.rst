@@ -2,9 +2,10 @@ Documentation
 =============
 
 .. toctree::
-   :maxdepth: 1   
+   :maxdepth: 3 
    
-   modules
+   engine
+   missions
 
 Indices and tables
 ==================

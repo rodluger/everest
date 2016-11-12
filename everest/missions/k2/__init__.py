@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+'''
+:py:mod:`__init__.py` - Initialization
+--------------------------------------
+
+'''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .k2 import *

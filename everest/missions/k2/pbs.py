@@ -90,7 +90,7 @@ def _Download(campaign, subcampaign):
         print("ERROR downloading EPIC %d." % EPIC)
         continue
 
-def Run(campaign = 0, model = 'PLD', nodes = 5, cadence = 'all',
+def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
         ppn = 12, walltime = 100, mpn = None, email = None, queue = None):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
@@ -177,7 +177,7 @@ def _Run(campaign, subcampaign, model, cadence):
     # Run
     pool.map(m, stars)
 
-def Status(campaign = range(18), model = 'PLD', purge = False, **kwargs):
+def Status(campaign = range(18), model = 'nPLD', purge = False, **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
 
@@ -255,7 +255,7 @@ def Status(campaign = range(18), model = 'PLD', purge = False, **kwargs):
           print("         %s   %s   %s   %s" % (A, B, C, D))
           print()
 
-def EverestModel(ID, model = 'PLD', **kwargs):
+def EverestModel(ID, model = 'nPLD', **kwargs):
   '''
   
   '''
