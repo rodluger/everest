@@ -562,7 +562,7 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
   return data
 
 def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), 
-                 cdpp_range = None, data_kwargs = {}, **kwargs):
+                 cdpp_range = None, aperture_name = 'k2sff_15', **kwargs):
   '''
   Return `neighbors` random bright stars on the same module as `EPIC`.
   
@@ -618,8 +618,9 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
       # need to prevent potential astrophysical false positive contamination
       # from crowded planet-hosting neighbors when doing neighboring PLD.
       contam = False
-      data = GetData(star, **data_kwargs)
-      for source in data.nearby:
+      data = np.load(os.path.join(TargetDirectory(star, campaign), 'data.npz'))
+      aperture = data['apertures'][()][aperture_name]
+      for source in data['nearby']:
         # Ignore self
         if source['ID'] == star:
           continue
@@ -640,7 +641,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
               # Outside the postage stamp
               continue
             try:
-              if data.aperture[i][j]:
+              if aperture[i][j]:
                 # Oh-oh!
                 contam = True
             except IndexError:

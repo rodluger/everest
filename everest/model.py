@@ -1921,13 +1921,6 @@ class nPLD(Model):
     if self.load_model():
       return
     
-    # Kwargs for loading the data
-    data_kwargs = dict(self.mission, season = self.season, clobber = self.clobber_tpf, 
-                       aperture_name = self.aperture_name, 
-                       saturated_aperture_name = self.saturated_aperture_name, 
-                       max_pixels = self.max_pixels,
-                       saturation_tolerance = self.saturation_tolerance)
-    
     # Get neighbors
     self.parent_model = kwargs.get('parent_model', None)
     num_neighbors = kwargs.get('neighbors', 10)
@@ -1936,7 +1929,7 @@ class nPLD(Model):
                                   neighbors = num_neighbors, 
                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
                                   cdpp_range = kwargs.get('cdpp_range', None),
-                                  data_kwargs = data_kwargs)
+                                  aperture_name = self.aperture_name)
     if len(self.neighbors):
       if len(self.neighbors) < num_neighbors:
         log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
@@ -1959,7 +1952,11 @@ class nPLD(Model):
         # included! These are mostly thruster fire events and other artifacts common to
         # all the stars, so it makes sense that we might want to keep them in the design
         # matrix.
-        data = GetData(neighbor, **data_kwargs)
+        data = GetData(neighbor, self.mission, season = self.season, clobber = self.clobber_tpf, 
+                       aperture_name = self.aperture_name, 
+                       saturated_aperture_name = self.saturated_aperture_name, 
+                       max_pixels = self.max_pixels,
+                       saturation_tolerance = self.saturation_tolerance)
         data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
         data.fraw = np.sum(data.fpix, axis = 1)
         if self.has_sc:
