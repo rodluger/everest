@@ -561,7 +561,8 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     
   return data
 
-def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), cdpp_range = None, **kwargs):
+def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), 
+                 cdpp_range = None, data_kwargs = {}, **kwargs):
   '''
   Return `neighbors` random bright stars on the same module as `EPIC`.
   
@@ -593,48 +594,83 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), cdp
   else:
     cdpp_lo = cdpp_range[0]
     cdpp_hi = cdpp_range[1]
-
-  # Get the CDPPs
-  cdpps = np.ones(len(epics), dtype = float)  
-  for i, star in enumerate(epics):
-    try:
-      if cdpp_range is not None and model is not None:
-        cdpps[i] = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp6']
-      elif model is not None:
-        # Loading each .npz file takes a long time, so if we don't actually care about the
-        # CDPPs, we'll just check to see if the file exists.
+  targets = []
+  
+  # First look for nearby targets, then relax the constraint
+  for nearby in [True, False]:
+  
+    # Loop over all stars
+    for star, kp, channel, sc in zip(epics, kepmags, channels, short_cadence):
+    
+      # Preliminary vetting
+      if not (((channel in c) if nearby else True) and (kp < mag_hi) and (kp > mag_lo) and (sc if has_short_cadence else True)):
+        continue
+      
+      # Reject if self or if already in list
+      if (star == EPIC) or (star in targets):
+        continue
+    
+      # Ensure raw light curve file exists
+      if not os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data.npz')):
+        continue
+      
+      # Ensure crowding is OK. This is quite conservative, as we
+      # need to prevent potential astrophysical false positive contamination
+      # from crowded planet-hosting neighbors when doing neighboring PLD.
+      contam = False
+      data = GetData(star, **data_kwargs)
+      for source in data.nearby:
+        # Ignore self
+        if source['ID'] == star:
+          continue
+        # Ignore really dim stars
+        if source['mag'] < kp - 5:
+          continue
+        # Compute source position
+        x = int(np.round(source['x'] - source['x0']))
+        y = int(np.round(source['y'] - source['y0']))
+        # If the source is within two pixels of the edge
+        # of the target aperture, reject the target
+        for j in [x - 2, x - 1, x, x + 1, x + 2]:
+          if j < 0:
+            # Outside the postage stamp
+            continue
+          for i in [y - 2, y - 1, y, y + 1, y + 2]:
+            if i < 0:
+              # Outside the postage stamp
+              continue
+            try:
+              if data.aperture[i][j]:
+                # Oh-oh!
+                contam = True
+            except IndexError:
+              # Out of bounds... carry on!
+              pass
+      if contam:
+        continue
+    
+      # Reject if the model is not present
+      if model is not None:
         if not os.path.exists(os.path.join(TargetDirectory(star, campaign), model + '.npz')):
-          cdpps[i] = np.nan
-    except:
-      cdpps[i] = np.nan
-
-  # Filter by module, magnitude and cdpp. If this is a short cadence 
-  # target, only select short cadence targets.
-  if has_short_cadence:
-    inds = np.where(((channels == c[0]) | (channels == c[1]) | (channels == c[2]) | 
-                    (channels == c[3])) & (kepmags < mag_hi) & (kepmags > mag_lo) &
-                    (cdpps < cdpp_hi) & (cdpps > cdpp_lo) & (short_cadence == True))
-  else:
-    inds = np.where(((channels == c[0]) | (channels == c[1]) | (channels == c[2]) | 
-                    (channels == c[3])) & (kepmags < mag_hi) & (kepmags > mag_lo) &
-                    (cdpps < cdpp_hi) & (cdpps > cdpp_lo))
+          continue
+        
+        # Reject if CDPP out of range
+        if cdpp_range is not None:
+          cdpp = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp6']
+          if (cdpp > cdpp_hi) or (cdpp < cdpp_lo):
+            continue
+    
+      # Passed all the tests!
+      targets.append(star)
+    
+      # Do we have enough? If so, return
+      if len(targets) == neighbors:
+        random.shuffle(targets)
+        return targets
   
-  # Check if we have enough. If not, relax the same module constraint
-  if len(inds) - 1 < neighbors:
-    inds2 = np.where((kepmags < mag_hi) & (kepmags > mag_lo) & (cdpps < cdpp_hi) & (cdpps > cdpp_lo) & (short_cadence == True))
-    random.shuffle(inds2)
-    inds2 = inds2[:neighbors - len(inds) + 1]
-    inds = np.append(inds, inds2)
-  stars = epics[inds]
-  
-  # Remove self
-  if len(stars):
-    if EPIC in stars:
-      stars = list(np.delete(stars, np.argmax(stars == EPIC)))
-
-  # Shuffle and return
-  random.shuffle(stars)
-  return stars[:neighbors]
+  # If we get to this point, we didn't find enough neighbors... 
+  # Return what we have anyway.
+  return targets
     
 def Statistics(campaign = 0, clobber = False, model = 'PLD', compare_to = 'everest1', plot = True, **kwargs):
   '''
