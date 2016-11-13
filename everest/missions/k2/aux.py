@@ -393,7 +393,7 @@ def GetSources(ID, darcsec = None, stars_only = False):
   #tpf = star.get_target_pixel_files()[0]
   #with tpf.open() as f:
   # DEBUG!!!!
-  with pyfits.open('/usr/lusers/rodluger/.kplr/data/k2/target_pixel_files/ktwo%d-c06_lpd-targ.fits.gz' % ID) as f:
+  with pyfits.open('/usr/lusers/rodluger/.kplr/data/k2/target_pixel_files/%d/ktwo%d-c06_lpd-targ.fits.gz' % (ID, ID)) as f:
   
     crpix1 = f[2].header['CRPIX1']
     crpix2 = f[2].header['CRPIX2']
