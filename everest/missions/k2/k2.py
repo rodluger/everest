@@ -580,6 +580,8 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   c = GetNeighboringChannels(Channel(EPIC))
   
   # Manage kwargs
+  if aperture_name is None:
+    aperture_name = 'k2sff_15'
   if mag_range is None:
     mag_lo = -np.inf
     mag_hi = np.inf
