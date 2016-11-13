@@ -535,6 +535,7 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
   data.nearby = nearby
   data.hires = hires
   data.saturated = saturated
+  data.bkg = bkg
   
   if short_cadence:
     data.sc_cadn = sc_cadn
@@ -547,6 +548,7 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     data.sc_Xpos = sc_pc1
     data.sc_Ypos = sc_pc2
     data.sc_meta = sc_fitsheader
+    data.sc_bkg = sc_bkg
   else:
     data.sc_cadn = None
     data.sc_time = None
@@ -558,6 +560,7 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     data.sc_Xpos = None
     data.sc_Ypos = None
     data.sc_meta = None
+    data.sc_bkg = None
     
   return data
 

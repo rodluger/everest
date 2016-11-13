@@ -27,3 +27,10 @@ EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.joi
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 #: The MAST url where the light curves are published
 MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+
+#: Everest quality bit: masked because a Kepler flag was raised
+QUALITY_BAD = 23
+#: Everest quality bit: masked because data was NaN
+QUALITY_NAN = 24
+#: Everest quality bit: masked because data was an outlier
+QUALITY_OUT = 25

@@ -8,6 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .k2 import *
+from .fits import *
 from . import aux, pbs
 
 #: The string that identifies individual targets for this mission

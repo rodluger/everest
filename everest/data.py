@@ -78,3 +78,13 @@ def HasShortCadence(id, mission = 'k2', **kwargs):
     return Missions[mission].HasShortCadence(id, **kwargs)
   else:
     raise ValueError('Mission %s not supported.' % mission)
+
+def MakeFITS(model, mission = 'k2', **kwargs):
+  '''
+  
+  '''
+  
+  if mission in Missions:
+    return Missions[mission].MakeFITS(model, **kwargs)
+  else:
+    raise ValueError('Mission %s not supported.' % mission)

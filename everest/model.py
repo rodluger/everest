@@ -15,7 +15,7 @@ from .config import EVEREST_DAT
 from .missions import Missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
-from .data import Season, GetData, GetNeighbors, Breakpoint, HasShortCadence
+from .data import Season, GetData, GetNeighbors, Breakpoint, HasShortCadence, MakeFITS
 from .gp import GetCovariance, GetKernelParams
 from .transit import Transit
 from .dvs import DVS1, DVS2
@@ -49,6 +49,7 @@ class Model(object):
   :param bool debug: De-trend in debug mode? If :py:obj:`True`, prints all output to screen and \
                      enters :py:obj:`pdb` post-mortem mode for debugging when an error is raised.
                      Default :py:obj:`False`
+  :param bool make_fits: Generate a *FITS* file at the end of rthe run? Default :py:obj:`False`
   :param str mission: The name of the mission. Default `k2`
   
   **Model:**
@@ -115,6 +116,7 @@ class Model(object):
     # Initialize logging
     self.ID = ID
     self.recursive = kwargs.get('recursive', True)
+    self.make_fits = kwargs.get('make_fits', False)
     self.mission = kwargs.get('mission', 'k2')
     self.has_sc = HasShortCadence(self.ID, season = self.season)
     self.clobber = kwargs.get('clobber', False)
@@ -170,6 +172,8 @@ class Model(object):
     self._mK = [None for b in range(nseg)]
     self._f = [None for b in range(nseg)]
     self._X = [None for i in range(self.pld_order)]
+    self.XNeighbors = [None for i in range(self.pld_order)]
+    self.sc_X1N = None
     self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
     self.cdppv_arr = np.array([np.nan for b in range(nseg)])
@@ -1327,6 +1331,7 @@ class Model(object):
       self.hires = data.hires
       self.saturated = data.saturated
       self.meta = data.meta
+      self.bkg = data.bkg
       if self.has_sc:
         self.sc_cadn = data.sc_cadn
         self.sc_time = data.sc_time
@@ -1341,6 +1346,8 @@ class Model(object):
         self.sc_Ypos = data.sc_Ypos
         self.sc_meta = data.sc_meta
         self.sc_model = np.zeros_like(self.sc_time)
+        self.sc_quality = data.sc_quality
+        self.sc_bkg = data.sc_bkg
       else:
         self.sc_cadn = None
         self.sc_time = None
@@ -1355,6 +1362,8 @@ class Model(object):
         self.sc_Ypos = None
         self.sc_meta = None
         self.sc_model = None
+        self.sc_quality = None
+        self.sc_bkg = None
       
       # Update the last breakpoint to the correct value
       self.breakpoints[-1] = len(self.time) - 1
@@ -1551,11 +1560,15 @@ class Model(object):
       self.plot_info(self.dvs1)
       self.plot_info(self.dvs2)
       self.save_model()
-    
+      
+      if self.make_fits:
+        log.info('Generating FITS file...')
+        MakeFITS(self)
+        
     except:
     
       self.exception_handler(self.debug)
-
+  
 def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
            mask = False, trn_win = 5, poly_order = 1, **kwargs):
   '''
@@ -1936,9 +1949,7 @@ class nPLD(Model):
     else:
       log.error("No neighbors found! Aborting.")
       return
-
-    self._XNeighbors = [None for i in range(self.pld_order)]
-    self._scX1N = None
+    
     for neighbor in self.neighbors:
       log.info("Loading data for neighboring target %d..." % neighbor)
       if self.parent_model is not None:
@@ -1969,16 +1980,16 @@ class nPLD(Model):
       if self.has_sc:
         _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
         _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
-        if self._scX1N is None:
-          self._scX1N = np.array(_scX1N)
+        if self.sc_X1N is None:
+          self.sc_X1N = np.array(_scX1N)
         else:
-          self._scX1N = np.hstack([self._scX1N, _scX1N])
+          self.sc_X1N = np.hstack([self.sc_X1N, _scX1N])
         del _scX1N
       for n in range(self.pld_order):
-        if self._XNeighbors[n] is None:
-          self._XNeighbors[n] = X1 ** (n + 1)
+        if self.XNeighbors[n] is None:
+          self.XNeighbors[n] = X1 ** (n + 1)
         else:
-          self._XNeighbors[n] = np.hstack([self._XNeighbors[n], X1 ** (n + 1)])
+          self.XNeighbors[n] = np.hstack([self.XNeighbors[n], X1 ** (n + 1)])
       del data
       del X1
 
@@ -2007,7 +2018,7 @@ class nPLD(Model):
     for n in range(self.pld_order): 
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-        self._X[n] = np.hstack([self._X[n], self._XNeighbors[n]])
+        self._X[n] = np.hstack([self._X[n], self.XNeighbors[n]])
   
   def get_sc_model(self, order, weights, inds = None):
     '''
@@ -2026,6 +2037,6 @@ class nPLD(Model):
       model += np.product([X1[:,i] for i in ii], axis = 0) * w
     
     # Add the neighbors' contribution
-    model += np.dot(self._scX1N[inds] ** (order), weights[n + 1:])
+    model += np.dot(self.sc_X1N[inds] ** (order), weights[n + 1:])
     
     return model
