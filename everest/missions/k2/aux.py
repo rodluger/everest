@@ -388,10 +388,13 @@ def GetSources(ID, darcsec = None, stars_only = False):
             other :py:obj:`EPIC` targets within or close to this target's aperture
   '''
   
-  client = kplr.API()
-  star = client.k2_star(ID)
-  tpf = star.get_target_pixel_files()[0]
-  with tpf.open() as f:
+  #client = kplr.API()
+  #star = client.k2_star(ID)
+  #tpf = star.get_target_pixel_files()[0]
+  #with tpf.open() as f:
+  # DEBUG!!!!
+  with pyfits.open('/usr/lusers/rodluger/.kplr/data/k2/target_pixel_files/ktwo%d-c06_lpd-targ.fits.gz' % ID) as f:
+  
     crpix1 = f[2].header['CRPIX1']
     crpix2 = f[2].header['CRPIX2']
     crval1 = f[2].header['CRVAL1']  
