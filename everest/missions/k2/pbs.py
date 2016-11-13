@@ -105,8 +105,8 @@ def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
   :param int ppn: The number of processors per node to request. Default `12`
   :param int mpn: Memory per node in gb to request. Default no setting.
   
-  ..note:: If :py:obj:`queue` is set to `"bf"` (backfill), :py:obj:`walltime` is \
-           automatically capped at 4 hours.
+  .. note:: If :py:obj:`queue` is set to `"bf"` (backfill), :py:obj:`walltime` is \
+            automatically capped at 4 hours.
   
   '''
   
