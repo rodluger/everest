@@ -181,7 +181,7 @@ class Model(object):
     self.cdppr = np.nan
     self.cdppv = np.nan
     self.gppp = np.nan
-    self.neighbors = None
+    self.neighbors = []
     self.loaded = False
     self._weights = None
     
@@ -989,7 +989,7 @@ class Model(object):
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
     
-    axl.annotate(self.aperture_name if self.neighbors is None else "%s, %d neighbors" % (self.aperture_name, len(self.neighbors)),
+    axl.annotate(self.aperture_name if len(self.neighbors) == 0 else "%s, %d neighbors" % (self.aperture_name, len(self.neighbors)),
                  xy = (0.5, 0.2), xycoords = 'axes fraction',
                  ha = 'center', va = 'center', fontsize = 8, color = 'k',
                  fontstyle = 'italic')

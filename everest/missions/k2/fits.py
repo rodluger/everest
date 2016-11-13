@@ -147,6 +147,8 @@ def LongCadenceHDU(model):
       cards.append(('LAMBDA%d%d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
   cards.append(('LEPS', model.leps, 'Cross-validation tolerance'))
   cards.append(('MAXPIX', model.max_pixels, 'Maximum size of TPF aperture'))
+  for i, n in enumerate(model.neighbors):
+    cards.append(('NEIGH%02d' % i, model.neighbors[i], 'Neighboring star used to de-trend'))
   cards.append(('OITER', model.oiter, 'Number of outlier search iterations'))
   cards.append(('OPTGP', model.optimize_gp, 'GP optimization performed?'))
   cards.append(('OSIGMA', model.osigma, 'Outlier tolerance (standard deviations)'))
