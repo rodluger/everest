@@ -394,7 +394,14 @@ def GetSources(ID, darcsec = None, stars_only = False):
   #with tpf.open() as f:
   # DEBUG!!!!
   with pyfits.open('/usr/lusers/rodluger/.kplr/data/k2/target_pixel_files/%d/ktwo%d-c06_lpd-targ.fits.gz' % (ID, ID)) as f:
-  
+    
+    # DEBUG
+    class foo(object):
+      pass
+    star = foo()
+    star.k2_ra = f[2].header['RA_OBJ']
+    star.k2_dec = f[2].header['DEC_OBJ']
+    
     crpix1 = f[2].header['CRPIX1']
     crpix2 = f[2].header['CRPIX2']
     crval1 = f[2].header['CRVAL1']  
