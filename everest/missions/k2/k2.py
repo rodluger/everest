@@ -678,7 +678,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   # Return what we have anyway.
   return targets
     
-def Statistics(campaign = 0, clobber = False, model = 'PLD', compare_to = 'everest1', plot = True, **kwargs):
+def Statistics(campaign = 0, clobber = False, model = 'nPLD', compare_to = 'everest1', plot = True, **kwargs):
   '''
   
   '''
