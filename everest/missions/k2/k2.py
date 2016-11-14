@@ -678,13 +678,13 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   # Return what we have anyway.
   return targets
     
-def Statistics(campaign = 0, clobber = False, model = 'nPLD', compare_to = 'everest1', plot = True, **kwargs):
+def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, **kwargs):
   '''
   
   '''
   
   # Is this an injection run?
-  if 'Inject' in model:
+  if injection:
     return InjectionStatistics(campaign = campaign, clobber = clobber, model = model, plot = plot, **kwargs)
   
   # Compute the statistics
@@ -877,7 +877,7 @@ def HasShortCadence(EPIC, season = None):
   else:
     return None
 
-def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', plot = True, **kwargs):
+def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = True, **kwargs):
   '''
   
   '''
@@ -885,112 +885,124 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', pl
   # Compute the statistics
   stars = GetK2Campaign(campaign, epics_only = True)
   if type(campaign) is int:
-    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (model, campaign))
+    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.inj' % (model, campaign))
   else:
-    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%04.1f.tsv' % (model, campaign))
+    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%04.1f.inj' % (model, campaign))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
-      print("EPIC               Depth          Control       Recovered", file = f)
-      print("---------          -----          -------       ---------", file = f)
+      print("EPIC               Depth              UControl           URecovered         MControl           MRecovered", file = f)
+      print("----               -----              --------           ----------         --------           ----------", file = f)
       for i, _ in enumerate(stars):
         sys.stdout.write('\rProcessing target %d/%d...' % (i + 1, len(stars)))
         sys.stdout.flush()
-        nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
-                         ('%09d' % stars[i])[:4] + '00000', 
-                         ('%09d' % stars[i])[4:], model + '.npz')
-        try:
-          data = np.load(nf)
-          depth = data['inject'][()]['depth']
-          control = data['inject'][()]['rec_depth_control']
-          recovered = data['inject'][()]['rec_depth']
-          print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], depth, control, recovered), file = f)
-        except:
-          print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], np.nan, np.nan, np.nan), file = f)
+        path = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
+                           ('%09d' % stars[i])[:4] + '00000', 
+                           ('%09d' % stars[i])[4:])
+
+        # Loop over all depths
+        for depth in [0.01, 0.001, 0.0001]:
+          
+          try:
+          
+            # Unmasked
+            data = np.load(os.path.join(path, '%s_Inject_U%g' % (model, depth))
+            assert depth == data['inject'][()]['depth'], ""
+            ucontrol = data['inject'][()]['rec_depth_control']
+            urecovered = data['inject'][()]['rec_depth']
+        
+            # Masked
+            data = np.load(os.path.join(path, '%s_Inject_M%g' % (model, depth))
+            assert depth == data['inject'][()]['depth'], ""
+            mcontrol = data['inject'][()]['rec_depth_control']
+            mrecovered = data['inject'][()]['rec_depth']
+        
+            # Log it
+            print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], depth, ucontrol, urecovered, mcontrol, mrecovered), file = f)
+        
+          except:
+            pass
+          
       print("")
   
   if plot:
   
     # Load the statistics
-    epic, injected_depth, control_depth, recovered_depth = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    epic, depth, ucontrol, urecovered, mcontrol, mrecovered = np.loadtxt(outfile, unpack = True, skiprows = 2)
     
     # Normalize to the injected depth
-    control_depth /= injected_depth
-    recovered_depth /= injected_depth
+    ucontrol /= depth
+    urecovered /= depth
+    mcontrol /= depth
+    mrecovered /= depth
     
     # Set up the plot
     fig, ax = pl.subplots(3,2, figsize = (10,12))
     fig.subplots_adjust(hspace = 0.25)
-    ax = ax.flatten()
-    ax[0].set_title(r'Default', fontsize = 18)
-    ax[1].set_title(r'Masked', fontsize = 18)
-    ax[0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
-    ax[2].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
-    ax[4].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[0,0].set_title(r'Default', fontsize = 18)
+    ax[0,1].set_title(r'Masked', fontsize = 18)
+    ax[0,0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[1,0].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[2,0].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
     
     # Define some useful stuff for plotting
-    depths = [1e-2, 1e-2, 1e-3, 1e-3, 1e-4, 1e-4]
-    ranges = [(0.5, 1.5), (0.5, 1.5), 
-              (0.5, 1.5), (0.5, 1.5), 
-              (0., 2.), (0., 2.)]
-    nbins = [30, 30, 30, 30, 30, 30]
-    ymax = [0.6, 0.6, 0.4, 0.4, 0.15, 0.15]
-    xticks = [[0.5, 0.75, 1., 1.25, 1.5],
-              [0.5, 0.75, 1., 1.25, 1.5],
-              [0.5, 0.75, 1., 1.25, 1.5],
-              [0.5, 0.75, 1., 1.25, 1.5],
-              [0., 0.5, 1., 1.5, 2.0],
-              [0., 0.5, 1., 1.5, 2.0]]
+    depths = [1e-2, 1e-3, 1e-4]
+    ranges = [(0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0., 2.), (0., 2.)]
+    nbins = [30, 30, 30]
+    ymax = [0.6, 0.4, 0.15]
+    xticks = [[0.5, 0.75, 1., 1.25, 1.5], [0.5, 0.75, 1., 1.25, 1.5], [0., 0.5, 1., 1.5, 2.0]]
     
     # Plot
-    for i, axis in enumerate(ax): 
+    for i in range(3): 
       
       # Indices for this plot
-      idx = np.where(injected_depth == depths[i])
+      idx = np.where(depth == depths[i])
       
-      # Control
-      axis.hist(control_depth[idx], bins = nbins[i], range = ranges[i], color = 'r', 
-                histtype = 'step', weights = np.ones_like(control_depth[idx]) / len(control_depth[idx]))
-  
-      # Recovered
-      axis.hist(recovered_depth[idx], bins = nbins[i], range = ranges[i], color = 'b', 
-                histtype = 'step', weights = np.ones_like(recovered_depth[idx]) / len(recovered_depth[idx]))
+      for j, control, recovered in zip([0, 1], [ucontrol[idx], mcontrol[idx]], [urecovered[idx], mrecovered[idx]]):
       
-      # Indicate center
-      axis.axvline(1., color = 'k', ls = '--')
+        # Control
+        axis.hist(control, bins = nbins[i], range = ranges[i], color = 'r', 
+                  histtype = 'step', weights = np.ones_like(control) / len(control))
   
-      # Indicate the fraction above and below
-      if len(recovered_depth[idx]):
-        au = len(np.where(recovered_depth[idx] > ranges[i][1])[0]) / len(recovered_depth[idx])
-        al = len(np.where(recovered_depth[idx] < ranges[i][0])[0]) / len(recovered_depth[idx])
-        axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
-                      xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
-                      arrowprops = dict(arrowstyle="->",color='b'))
-        axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
-                      xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
-                      arrowprops = dict(arrowstyle="->",color='b'))
-      if len(control_depth[idx]):  
-        cu = len(np.where(control_depth[idx] > ranges[i][1])[0]) / len(control_depth[idx])
-        cl = len(np.where(control_depth[idx] < ranges[i][0])[0]) / len(control_depth[idx])
-        axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
-                      xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
-                      arrowprops = dict(arrowstyle="->",color='r'))
-        axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
-                      xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
-                      arrowprops = dict(arrowstyle="->",color='r'))
+        # Recovered
+        axis.hist(recovered, bins = nbins[i], range = ranges[i], color = 'b', 
+                  histtype = 'step', weights = np.ones_like(recovered) / len(recovered))
+      
+        # Indicate center
+        axis.axvline(1., color = 'k', ls = '--')
+  
+        # Indicate the fraction above and below
+        if len(recovered):
+          au = len(np.where(recovered > ranges[i][1])[0]) / len(recovered)
+          al = len(np.where(recovered < ranges[i][0])[0]) / len(recovered)
+          axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
+                        xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
+                        arrowprops = dict(arrowstyle="->",color='b'))
+          axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
+                        xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
+                        arrowprops = dict(arrowstyle="->",color='b'))
+        if len(control):  
+          cu = len(np.where(control > ranges[i][1])[0]) / len(control)
+          cl = len(np.where(control < ranges[i][0])[0]) / len(control)
+          axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
+                        xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
+                        arrowprops = dict(arrowstyle="->",color='r'))
+          axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
+                        xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
+                        arrowprops = dict(arrowstyle="->",color='r'))
                 
-      # Indicate the median
-      if len(recovered_depth[idx]):
-        axis.annotate('M = %.2f' % np.median(recovered_depth[idx]), xy = (0.3, 0.5), ha = 'right',
-                      xycoords = 'axes fraction', color = 'b', fontsize = 14)
-      if len(control_depth[idx]):
-        axis.annotate('M = %.2f' % np.median(control_depth[idx]), xy = (0.7, 0.5), ha = 'left',
-                      xycoords = 'axes fraction', color = 'r', fontsize = 14)
+        # Indicate the median
+        if len(recovered):
+          axis.annotate('M = %.2f' % np.median(recovered), xy = (0.3, 0.5), ha = 'right',
+                        xycoords = 'axes fraction', color = 'b', fontsize = 14)
+        if len(control):
+          axis.annotate('M = %.2f' % np.median(control), xy = (0.7, 0.5), ha = 'left',
+                        xycoords = 'axes fraction', color = 'r', fontsize = 14)
   
-      # Tweaks
-      axis.set_xticks(xticks[i])
-      axis.set_xlim(xticks[i][0], xticks[i][-1])
-      axis.set_ylim(0, ymax[i])
-      axis.set_xlabel(r'D/D$_0$', fontsize = 14)
+        # Tweaks
+        axis.set_xticks(xticks[i])
+        axis.set_xlim(xticks[i][0], xticks[i][-1])
+        axis.set_ylim(0, ymax[i])
+        axis.set_xlabel(r'D/D$_0$', fontsize = 14)
 
     pl.show()
     

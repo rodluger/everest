@@ -1629,9 +1629,10 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       '''
       
       if self.inject['mask']:
-        return '%s_MaskedInject' % self.parent_class
+        maskchar = 'M'
       else:
-        return '%s_Inject' % self.parent_class
+        maskchar = 'U'
+      return '%s_Inject_%s%g' % (self.parent_class, maskchar, self.inject['depth'])
     
     def load_tpf(self):
       '''
