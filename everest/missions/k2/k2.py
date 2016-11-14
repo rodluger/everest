@@ -890,8 +890,8 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
     outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%04.1f.inj' % (model, campaign))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
-      print("EPIC               Depth              UControl           URecovered         MControl           MRecovered", file = f)
-      print("----               -----              --------           ----------         --------           ----------", file = f)
+      print("EPIC         Depth         UControl      URecovered    MControl      MRecovered", file = f)
+      print("---------    ----------    ----------    ----------    ----------    ----------", file = f)
       for i, _ in enumerate(stars):
         sys.stdout.write('\rProcessing target %d/%d...' % (i + 1, len(stars)))
         sys.stdout.flush()
@@ -917,7 +917,7 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
             mrecovered = data['inject'][()]['rec_depth']
         
             # Log it
-            print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], depth, ucontrol, urecovered, mcontrol, mrecovered), file = f)
+            print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], depth, ucontrol, urecovered, mcontrol, mrecovered), file = f)
         
           except:
             pass
