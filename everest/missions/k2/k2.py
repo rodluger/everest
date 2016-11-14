@@ -905,13 +905,13 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
           try:
           
             # Unmasked
-            data = np.load(os.path.join(path, '%s_Inject_U%g' % (model, depth))
+            data = np.load(os.path.join(path, '%s_Inject_U%g' % (model, depth)))
             assert depth == data['inject'][()]['depth'], ""
             ucontrol = data['inject'][()]['rec_depth_control']
             urecovered = data['inject'][()]['rec_depth']
         
             # Masked
-            data = np.load(os.path.join(path, '%s_Inject_M%g' % (model, depth))
+            data = np.load(os.path.join(path, '%s_Inject_M%g' % (model, depth)))
             assert depth == data['inject'][()]['depth'], ""
             mcontrol = data['inject'][()]['rec_depth_control']
             mrecovered = data['inject'][()]['rec_depth']
