@@ -1593,7 +1593,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
   
   # Randomize the planet params
   if per is None:
-    a = 2.
+    a = 3.
     b = 10.
     per = a + (b - a) * np.random.random()
   if t0 is None:
@@ -1757,7 +1757,15 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax1 = self.dvs2.lc1()      
       ax1.plot(self.inject['fold_time'], self.inject['fold_flux'], 'k.', alpha = 0.3)
       x = np.linspace(np.min(self.inject['fold_time']), np.max(self.inject['fold_time']), 500)
-      y = Transit(x, t0 = 0., per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['rec_depth'])
+      try:
+        y = Transit(x, t0 = 0., per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['rec_depth'])
+      except:
+        # Log the error, and carry on
+        exctype, value, tb = sys.exc_info()
+        for line in traceback.format_exception_only(exctype, value):
+          l = line.replace('\n', '')
+          log.error(l)
+        y = np.ones_like(x) * np.nan
       ax1.plot(x, y, 'r-')
       ax1.annotate('INJECTED', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                    ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
@@ -1777,7 +1785,15 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax2 = self.dvs2.lc2()      
       ax2.plot(self.inject['fold_time_control'], self.inject['fold_flux_control'], 'k.', alpha = 0.3)
       x = np.linspace(np.min(self.inject['fold_time_control']), np.max(self.inject['fold_time_control']), 500)
-      y = Transit(x, t0 = 0., per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['rec_depth_control'])
+      try:
+        y = Transit(x, t0 = 0., per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['rec_depth_control'])
+      except:
+        # Log the error, and carry on
+        exctype, value, tb = sys.exc_info()
+        for line in traceback.format_exception_only(exctype, value):
+          l = line.replace('\n', '')
+          log.error(l)
+        y = np.ones_like(x) * np.nan
       ax2.plot(x, y, 'r-')
       ax2.annotate('CONTROL', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                    ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
