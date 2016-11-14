@@ -960,49 +960,49 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
       for j, control, recovered in zip([0, 1], [ucontrol[idx], mcontrol[idx]], [urecovered[idx], mrecovered[idx]]):
       
         # Control
-        axis.hist(control, bins = nbins[i], range = ranges[i], color = 'r', 
+        ax[i,j].hist(control, bins = nbins[i], range = ranges[i], color = 'r', 
                   histtype = 'step', weights = np.ones_like(control) / len(control))
   
         # Recovered
-        axis.hist(recovered, bins = nbins[i], range = ranges[i], color = 'b', 
+        ax[i,j].hist(recovered, bins = nbins[i], range = ranges[i], color = 'b', 
                   histtype = 'step', weights = np.ones_like(recovered) / len(recovered))
       
         # Indicate center
-        axis.axvline(1., color = 'k', ls = '--')
+        ax[i,j].axvline(1., color = 'k', ls = '--')
   
         # Indicate the fraction above and below
         if len(recovered):
           au = len(np.where(recovered > ranges[i][1])[0]) / len(recovered)
           al = len(np.where(recovered < ranges[i][0])[0]) / len(recovered)
-          axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
+          ax[i,j].annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
                         xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
                         arrowprops = dict(arrowstyle="->",color='b'))
-          axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
+          ax[i,j].annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
                         xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
                         arrowprops = dict(arrowstyle="->",color='b'))
         if len(control):  
           cu = len(np.where(control > ranges[i][1])[0]) / len(control)
           cl = len(np.where(control < ranges[i][0])[0]) / len(control)
-          axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
+          ax[i,j].annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
                         xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
                         arrowprops = dict(arrowstyle="->",color='r'))
-          axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
+          ax[i,j].annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
                         xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
                         arrowprops = dict(arrowstyle="->",color='r'))
                 
         # Indicate the median
         if len(recovered):
-          axis.annotate('M = %.2f' % np.median(recovered), xy = (0.3, 0.5), ha = 'right',
+          ax[i,j].annotate('M = %.2f' % np.median(recovered), xy = (0.3, 0.5), ha = 'right',
                         xycoords = 'axes fraction', color = 'b', fontsize = 14)
         if len(control):
-          axis.annotate('M = %.2f' % np.median(control), xy = (0.7, 0.5), ha = 'left',
+          ax[i,j].annotate('M = %.2f' % np.median(control), xy = (0.7, 0.5), ha = 'left',
                         xycoords = 'axes fraction', color = 'r', fontsize = 14)
   
         # Tweaks
-        axis.set_xticks(xticks[i])
-        axis.set_xlim(xticks[i][0], xticks[i][-1])
-        axis.set_ylim(0, ymax[i])
-        axis.set_xlabel(r'D/D$_0$', fontsize = 14)
+        ax[i,j].set_xticks(xticks[i])
+        ax[i,j].set_xlim(xticks[i][0], xticks[i][-1])
+        ax[i,j].set_ylim(0, ymax[i])
+        ax[i,j].set_xlabel(r'D/D$_0$', fontsize = 14)
 
     pl.show()
     

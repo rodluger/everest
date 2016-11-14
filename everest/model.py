@@ -1649,17 +1649,17 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       for i in range(self.fpix.shape[1]):
         self.fpix[:,i] *= transit_model 
       self.fraw = np.sum(self.fpix, axis = 1)
-      if mask:
-        self.outmask = np.where(transit_model < 1.)[0]
-    
+      if self.inject['mask']:
+        self.badmask = np.array(list(set(np.concatenate([self.badmask, np.where(transit_model < 1.)[0]]))), dtype = int)
+
       # Now inject into the short cadence, if available
       if self.has_sc:
         transit_model = Transit(self.sc_time, t0 = self.inject['t0'], per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['depth'])
         for i in range(self.sc_fpix.shape[1]):
           self.sc_fpix[:,i] *= transit_model 
         self.sc_fraw = np.sum(self.sc_fpix, axis = 1)
-        if mask:
-          self.sc_outmask = np.where(transit_model < 1.)[0]
+        if self.inject['mask']:
+          self.sc_badmask = np.array(list(set(np.concatenate([self.sc_badmask, np.where(transit_model < 1.)[0]]))), dtype = int)
  
     def recover_depth(self):
       '''
