@@ -890,8 +890,8 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', pl
     outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%04.1f.tsv' % (model, campaign))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
-      print("EPIC               Depth        Control      Recovered", file = f)
-      print("---------          -----        -------      ---------", file = f)
+      print("EPIC               Depth          Control       Recovered", file = f)
+      print("---------          -----          -------       ---------", file = f)
       for i, _ in enumerate(stars):
         sys.stdout.write('\rProcessing target %d/%d...' % (i + 1, len(stars)))
         sys.stdout.flush()
@@ -903,9 +903,9 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', pl
           depth = data['inject'][()]['depth']
           control = data['inject'][()]['rec_depth_control']
           recovered = data['inject'][()]['rec_depth']
-          print("{:>09d} {:>13.3f} {:>11.3f} {:>12.3f}".format(stars[i], depth, control, recovered), file = f)
+          print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], depth, control, recovered), file = f)
         except:
-          print("{:>09d} {:>13.3f} {:>11.3f} {:>12.3f}".format(stars[i], np.nan, np.nan, np.nan), file = f)
+          print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f}".format(stars[i], np.nan, np.nan, np.nan), file = f)
       print("")
   
   if plot:
