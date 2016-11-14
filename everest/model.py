@@ -32,7 +32,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'rPLD', 'nPLD']
+__all__ = ['Model', 'Inject', 'MaskedInject', 'rPLD', 'nPLD']
 
 class Model(object):
   '''
@@ -1830,6 +1830,13 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     
   return Injection(ID, inject = inject, parent_class = model, **kwargs)
 
+def MaskedInject(ID, **kwargs):
+  '''
+  
+  '''
+  
+  return Inject(ID, mask = True, **kwargs)
+
 class rPLD(Model):
   '''
   The standard PLD model, inheriting all of its features from :py:class:`Model`.
@@ -2056,3 +2063,4 @@ class nPLD(Model):
     model += np.dot(self.sc_X1N[inds] ** (order), weights[n + 1:])
     
     return model
+  
