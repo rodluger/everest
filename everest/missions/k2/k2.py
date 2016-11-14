@@ -904,9 +904,6 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
           
           try:
             
-            if depth == 0.001:
-              import pdb; pdb.set_trace()
-            
             # Unmasked
             data = np.load(os.path.join(path, '%s_Inject_U%g.npz' % (model, depth)))
             assert depth == data['inject'][()]['depth'], ""
