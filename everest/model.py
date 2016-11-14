@@ -1570,7 +1570,7 @@ class Model(object):
       self.exception_handler(self.debug)
   
 def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
-           mask = False, trn_win = 5, poly_order = 1, **kwargs):
+           mask = False, trn_win = 5, poly_order = 3, **kwargs):
   '''
   Run one of the :py:obj:`everest` models with injected transits and attempt to recover the
   transit depth at the end with a simple linear regression with a polynomial baseline. 
