@@ -1774,7 +1774,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
                    xy = (0.02, 0.025), 
                    xycoords = 'axes fraction', 
                    ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
-      ax1.annotate('%.4f\n%.4f' % (self.inject['depth'], self.inject['rec_depth']),
+      ax1.annotate('%.6f\n%.6f' % (self.inject['depth'], self.inject['rec_depth']),
                    xy = (0.25, 0.025), 
                    xycoords = 'axes fraction', 
                    ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
@@ -1802,7 +1802,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
                    xy = (0.02, 0.025), 
                    xycoords = 'axes fraction', 
                    ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
-      ax2.annotate('%.4f\n%.4f' % (self.inject['depth'], self.inject['rec_depth_control']),
+      ax2.annotate('%.6f\n%.6f' % (self.inject['depth'], self.inject['rec_depth_control']),
                    xy = (0.25, 0.025), 
                    xycoords = 'axes fraction', 
                    ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
