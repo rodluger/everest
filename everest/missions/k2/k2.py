@@ -30,7 +30,7 @@ import logging
 log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoint', 'GetData', 'GetNeighbors', 
-           'Statistics', 'TargetDirectory', 'HasShortCadence']
+           'Statistics', 'TargetDirectory', 'HasShortCadence', 'InjectionStatistics']
 
 def Setup():
   '''
@@ -900,12 +900,12 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', pl
                          ('%09d' % stars[i])[4:], model + '.npz')
         try:
           data = np.load(nf)
-          depth = data['inject']['depth']
-          control = data['inject']['rec_depth_control']
-          recovered = data['inject']['rec_depth']
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f}".format(stars[i], depth, control, recovered), file = f)
+          depth = data['inject'][()]['depth']
+          control = data['inject'][()]['rec_depth_control']
+          recovered = data['inject'][()]['rec_depth']
+          print("{:>09d} {:>13.3f} {:>11.3f} {:>12.3f}".format(stars[i], depth, control, recovered), file = f)
         except:
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f}".format(stars[i], np.nan, np.nan, np.nan), file = f)
+          print("{:>09d} {:>13.3f} {:>11.3f} {:>12.3f}".format(stars[i], np.nan, np.nan, np.nan), file = f)
       print("")
   
   if plot:
@@ -979,10 +979,12 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', pl
                       arrowprops = dict(arrowstyle="->",color='r'))
                 
       # Indicate the median
-      axis.annotate('M = %.2f' % np.median(recovered_depth[idx]), xy = (0.3, 0.5), ha = 'right',
-                    xycoords = 'axes fraction', color = 'b', fontsize = 14)
-      axis.annotate('M = %.2f' % np.median(control_depth[idx]), xy = (0.7, 0.5), ha = 'left',
-                    xycoords = 'axes fraction', color = 'r', fontsize = 14)
+      if len(recovered_depth[idx]):
+        axis.annotate('M = %.2f' % np.median(recovered_depth[idx]), xy = (0.3, 0.5), ha = 'right',
+                      xycoords = 'axes fraction', color = 'b', fontsize = 14)
+      if len(control_depth[idx]):
+        axis.annotate('M = %.2f' % np.median(control_depth[idx]), xy = (0.7, 0.5), ha = 'left',
+                      xycoords = 'axes fraction', color = 'r', fontsize = 14)
   
       # Tweaks
       axis.set_xticks(xticks[i])
