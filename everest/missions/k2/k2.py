@@ -683,6 +683,10 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', compare_to = 'ever
   
   '''
   
+  # Is this an injection run?
+  if 'Inject' in model:
+    return InjectionStatistics(campaign = campaign, clobber = clobber, model = model, plot = plot, **kwargs)
+  
   # Compute the statistics
   sub = np.array([s[0] for s in GetK2Campaign(campaign)], dtype = int)
   outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (model, int(campaign)))
@@ -872,3 +876,42 @@ def HasShortCadence(EPIC, season = None):
     return stars[i[0]][3]
   else:
     return None
+
+def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', plot = True, **kwargs):
+  '''
+  
+  '''
+  
+  # Compute the statistics
+  stars = GetK2Campaign(campaign, epics_only = True)
+  if type(campaign) is int:
+    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (model, campaign))
+  else:
+    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%04.1f.tsv' % (model, campaign))
+  if clobber or not os.path.exists(outfile):
+    with open(outfile, 'w') as f:
+      print("EPIC               Depth        Control      Recovered", file = f)
+      print("---------          -----        -------      ---------", file = f)
+      for i, _ in enumerate(stars):
+        sys.stdout.write('\rProcessing target %d/%d...' % (i + 1, len(stars)))
+        sys.stdout.flush()
+        nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
+                         ('%09d' % stars[i])[:4] + '00000', 
+                         ('%09d' % stars[i])[4:], model + '.npz')
+        try:
+          data = np.load(nf)
+          depth = data['inject']['depth']
+          control = data['inject']['rec_depth_control']
+          recovered = data['inject']['rec_depth']
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f}".format(stars[i], depth, control, recovered), file = f)
+        except:
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f}".format(stars[i], np.nan, np.nan, np.nan), file = f)
+      print("")
+  
+  if plot:
+  
+    # Load the statistics
+    epic, depth, control, recovered = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    
+    # TODO
+    

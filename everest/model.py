@@ -2063,4 +2063,3 @@ class nPLD(Model):
     model += np.dot(self.sc_X1N[inds] ** (order), weights[n + 1:])
     
     return model
-  
