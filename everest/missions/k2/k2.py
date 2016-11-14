@@ -911,7 +911,84 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD_Inject', pl
   if plot:
   
     # Load the statistics
-    epic, depth, control, recovered = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    epic, injected_depth, control_depth, recovered_depth = np.loadtxt(outfile, unpack = True, skiprows = 2)
     
-    # TODO
+    # Normalize to the injected depth
+    control_depth /= injected_depth
+    recovered_depth /= injected_depth
+    
+    # Set up the plot
+    fig, ax = pl.subplots(3,2, figsize = (10,12))
+    fig.subplots_adjust(hspace = 0.25)
+    ax = ax.flatten()
+    ax[0].set_title(r'Default', fontsize = 18)
+    ax[1].set_title(r'Masked', fontsize = 18)
+    ax[0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[2].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[4].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
+    
+    # Define some useful stuff for plotting
+    depths = [1e-2, 1e-2, 1e-3, 1e-3, 1e-4, 1e-4]
+    ranges = [(0.5, 1.5), (0.5, 1.5), 
+              (0.5, 1.5), (0.5, 1.5), 
+              (0., 2.), (0., 2.)]
+    nbins = [30, 30, 30, 30, 30, 30]
+    ymax = [0.6, 0.6, 0.4, 0.4, 0.15, 0.15]
+    xticks = [[0.5, 0.75, 1., 1.25, 1.5],
+              [0.5, 0.75, 1., 1.25, 1.5],
+              [0.5, 0.75, 1., 1.25, 1.5],
+              [0.5, 0.75, 1., 1.25, 1.5],
+              [0., 0.5, 1., 1.5, 2.0],
+              [0., 0.5, 1., 1.5, 2.0]]
+    
+    # Plot
+    for i, axis in enumerate(ax): 
+      
+      # Indices for this plot
+      idx = np.where(injected_depth == depths[i])
+      
+      # Control
+      axis.hist(control_depth[idx], bins = nbins[i], range = ranges[i], color = 'r', 
+                histtype = 'step', weights = np.ones_like(control_depth[idx]) / len(control_depth[idx]))
+  
+      # Recovered
+      axis.hist(recovered_depth[idx], bins = nbins[i], range = ranges[i], color = 'b', 
+                histtype = 'step', weights = np.ones_like(recovered_depth[idx]) / len(recovered_depth[idx]))
+      
+      # Indicate center
+      axis.axvline(1., color = 'k', ls = '--')
+  
+      # Indicate the fraction above and below
+      if len(recovered_depth[idx]):
+        au = len(np.where(recovered_depth[idx] > ranges[i][1])[0]) / len(recovered_depth[idx])
+        al = len(np.where(recovered_depth[idx] < ranges[i][0])[0]) / len(recovered_depth[idx])
+        axis.annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
+                      xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
+                      arrowprops = dict(arrowstyle="->",color='b'))
+        axis.annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
+                      xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
+                      arrowprops = dict(arrowstyle="->",color='b'))
+      if len(control_depth[idx]):  
+        cu = len(np.where(control_depth[idx] > ranges[i][1])[0]) / len(control_depth[idx])
+        cl = len(np.where(control_depth[idx] < ranges[i][0])[0]) / len(control_depth[idx])
+        axis.annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
+                      xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
+                      arrowprops = dict(arrowstyle="->",color='r'))
+        axis.annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
+                      xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
+                      arrowprops = dict(arrowstyle="->",color='r'))
+                
+      # Indicate the median
+      axis.annotate('M = %.2f' % np.median(recovered_depth[idx]), xy = (0.3, 0.5), ha = 'right',
+                    xycoords = 'axes fraction', color = 'b', fontsize = 14)
+      axis.annotate('M = %.2f' % np.median(control_depth[idx]), xy = (0.7, 0.5), ha = 'left',
+                    xycoords = 'axes fraction', color = 'r', fontsize = 14)
+  
+      # Tweaks
+      axis.set_xticks(xticks[i])
+      axis.set_xlim(xticks[i][0], xticks[i][-1])
+      axis.set_ylim(0, ymax[i])
+      axis.set_xlabel(r'D/D$_0$', fontsize = 14)
+
+    pl.show()
     
