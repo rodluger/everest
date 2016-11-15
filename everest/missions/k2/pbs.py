@@ -13,6 +13,7 @@ from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
 from ...utils import ExceptionHook, FunctionWrapper
 from ...pool import Pool
 import os, sys, subprocess
+import pickle
 import logging
 log = logging.getLogger(__name__)
 
@@ -90,8 +91,8 @@ def _Download(campaign, subcampaign):
         print("ERROR downloading EPIC %d." % EPIC)
         continue
 
-def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
-        ppn = 12, walltime = 100, mpn = None, email = None, queue = None):
+def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100, 
+        mpn = None, email = None, queue = None, **kwargs):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
   
@@ -104,10 +105,7 @@ def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
   :param int nodes: The number of nodes to request. Default `5`
   :param int ppn: The number of processors per node to request. Default `12`
   :param int mpn: Memory per node in gb to request. Default no setting.
-  
-  .. note:: If :py:obj:`queue` is set to `"bf"` (backfill), :py:obj:`walltime` is \
-            automatically capped at 4 hours.
-  
+    
   '''
   
   # Figure out the subcampaign
@@ -117,10 +115,14 @@ def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
     x, y = divmod(campaign, 1)
     campaign = int(x)
     subcampaign = round(y * 10) 
-  assert cadence in ['lc', 'sc', 'all'], "Keyword argument `cadence` must be one of `lc`, `sc`, or `all`." 
-  # Limit backfill jobs to 4 hours
-  if queue == 'bf':
+  
+  # DEV hack: limit backfill jobs to 4 hours
+  if EVEREST_DEV and (queue == 'bf'):
     walltime = min(4, walltime)
+  
+  # Convert kwargs to string
+  strkwargs = str(pickle.dumps(kwargs, 0))
+  
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
   if mpn is not None:
@@ -128,8 +130,8 @@ def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
   else:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,MODEL=%s,CADENCE=%s' % (EVEREST_DAT, 
-          nodes, campaign, subcampaign, model, cadence)
+  str_v = 'EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS=%s' % (EVEREST_DAT, 
+          nodes, campaign, subcampaign, strkwargs)
   if subcampaign == -1:
     str_name = 'c%02d' % campaign
   else:
@@ -146,19 +148,23 @@ def Run(campaign = 0, model = 'nPLD', nodes = 5, cadence = 'all',
     qsub_args.append(['-M', email, '-m', 'ae'])
   if queue is not None:
     qsub_args += ['-q', queue]          
+  
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def _Run(campaign, subcampaign, model, cadence):
+def _Run(campaign, subcampaign, strkwargs):
   '''
   The actual function that runs a given campaign; this must
   be called from ``missions/k2/run.pbs``.
   
   '''
   
+  # De-stringify the kwargs
+  kwargs = pickle.loads(strkwargs)
+  
   # Model wrapper
-  m = FunctionWrapper(EverestModel, model = model)
+  m = FunctionWrapper(EverestModel, **kwargs)
   
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
@@ -168,12 +174,7 @@ def _Run(campaign, subcampaign, model, cadence):
     if subcampaign != -1:
       campaign = campaign + 0.1 * subcampaign
     # Get all the stars
-    if cadence == 'sc':
-      stars = [s[0] for s in GetK2Campaign(campaign) if s[3] == True]
-    elif cadence == 'lc':
-      stars = [s[0] for s in GetK2Campaign(campaign) if s[3] == False]
-    else:
-      stars = [s[0] for s in GetK2Campaign(campaign)]
+    stars = GetK2Campaign(campaign, epics_only = True)
     # Run
     pool.map(m, stars)
 
