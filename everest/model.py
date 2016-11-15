@@ -324,11 +324,11 @@ class Model(object):
   def mask(self):
     '''
     The array of indices to be masked. This is the union of the sets of outliers, bad (flagged)
-    cadences, and :py:obj:`NaN` cadences.
+    cadences, transit cadences, and :py:obj:`NaN` cadences.
     
     '''
     
-    return np.array(list(set(np.concatenate([self.outmask, self.badmask, self.nanmask]))), dtype = int)
+    return np.array(list(set(np.concatenate([self.outmask, self.badmask, self.transitmask, self.nanmask]))), dtype = int)
   
   @mask.setter
   def mask(self, value):
@@ -345,7 +345,7 @@ class Model(object):
     
     '''
     
-    return np.array(list(set(np.concatenate([self.sc_badmask, self.sc_nanmask, self.sc_outmask]))), dtype = int)
+    return np.array(list(set(np.concatenate([self.sc_badmask, self.sc_nanmask, self.sc_transitmask, self.sc_outmask]))), dtype = int)
   
   @sc_mask.setter
   def sc_mask(self, value):
@@ -1318,6 +1318,7 @@ class Model(object):
       self.fraw_err = np.sqrt(np.sum(self.fpix_err ** 2, axis = 1))
       self.nanmask = data.nanmask
       self.badmask = data.badmask
+      self.transitmask = np.array([], dtype = int)
       self.outmask = np.array([], dtype = int)
       self.aperture = data.aperture
       self.aperture_name = data.aperture_name
@@ -1341,6 +1342,7 @@ class Model(object):
         self.sc_fraw_err = np.sqrt(np.sum(self.sc_fpix_err ** 2, axis = 1))
         self.sc_nanmask = data.sc_nanmask
         self.sc_badmask = data.sc_badmask
+        self.sc_transitmask = np.array([], dtype = int)
         self.sc_outmask = np.array([], dtype = int)
         self.sc_Xpos = data.sc_Xpos
         self.sc_Ypos = data.sc_Ypos
@@ -1357,6 +1359,7 @@ class Model(object):
         self.sc_fraw_err = None
         self.sc_nanmask = None
         self.sc_badmask = None
+        self.sc_transitmask = None
         self.sc_outmask = None
         self.sc_Xpos = None
         self.sc_Ypos = None
@@ -1650,7 +1653,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
         self.fpix[:,i] *= transit_model 
       self.fraw = np.sum(self.fpix, axis = 1)
       if self.inject['mask']:
-        self.badmask = np.array(list(set(np.concatenate([self.badmask, np.where(transit_model < 1.)[0]]))), dtype = int)
+        self.transitmask = np.array(list(set(np.concatenate([self.transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
 
       # Now inject into the short cadence, if available
       if self.has_sc:
@@ -1659,7 +1662,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
           self.sc_fpix[:,i] *= transit_model 
         self.sc_fraw = np.sum(self.sc_fpix, axis = 1)
         if self.inject['mask']:
-          self.sc_badmask = np.array(list(set(np.concatenate([self.sc_badmask, np.where(transit_model < 1.)[0]]))), dtype = int)
+          self.sc_transitmask = np.array(list(set(np.concatenate([self.sc_transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
  
     def recover_depth(self):
       '''
