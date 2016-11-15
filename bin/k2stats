@@ -13,8 +13,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog = 'estats', add_help = True)
   parser.add_argument("campaign", nargs = '?', type = str, default = None, help = 'The K2 campaign to download')
   parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to analyze')
-  parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to')
-  parser.add_argument("-i", "--inject", action = 'store_true', help = 'Run injection statistics?')
+  parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to; ``-i`` for injection stats')
   args = parser.parse_args()
   
   # Get the campaign number
@@ -26,33 +25,33 @@ if __name__ == '__main__':
   else:
     campaign = None
   
-  # Get the function
-  if args.inject:
-    from everest import InjectionStatistics as Statistics
+  # Injection run?
+  if args.compare_to == '-i' or args.compare_to == '--inject':
     args.compare_to = None
+    injection = True
   else:
-    from everest import Statistics
+    injection = False
   
   # Call the stats function
   if campaign is not None:
     if args.model is not None:
       if args.compare_to is not None:
-        Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to)
+        Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to, injection = injection)
       else:
-        Statistics(campaign = campaign, model = args.model)
+        Statistics(campaign = campaign, model = args.model, injection = injection)
     else:
       if args.compare_to is not None:
-        Statistics(campaign = campaign, compare_to = args.compare_to)
+        Statistics(campaign = campaign, compare_to = args.compare_to, injection = injection)
       else:
-        Statistics(campaign = campaign)
+        Statistics(campaign = campaign, injection = injection)
   else:
     if args.model is not None:
       if args.compare_to is not None:
-        Statistics(model = args.model, compare_to = args.compare_to)
+        Statistics(model = args.model, compare_to = args.compare_to, injection = injection)
       else:
-        Statistics(model = args.model)
+        Statistics(model = args.model, injection = injection)
     else:
       if args.compare_to is not None:
-        Statistics(compare_to = args.compare_to)
+        Statistics(compare_to = args.compare_to, injection = injection)
       else:
         Statistics()
