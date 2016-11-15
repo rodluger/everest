@@ -32,6 +32,8 @@ if __name__ == '__main__':
   else:
     injection = False
   
+  import pdb; pdb.set_trace()
+  
   # Call the stats function
   if campaign is not None:
     if args.model is not None:
