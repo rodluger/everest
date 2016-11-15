@@ -7,6 +7,8 @@ k2stats
 '''
 
 import argparse
+from everest import Statistics
+from everest.config import EVEREST_DEV
 
 if __name__ == '__main__':
 
@@ -32,28 +34,35 @@ if __name__ == '__main__':
   else:
     injection = False
   
-  import pdb; pdb.set_trace()
+  # Dev version hack
+  clobber = False
+  plot = True
+  if EVEREST_DEV:
+    import platform
+    if platform.system() == "Linux":
+      clobber = True
+      plot = False
   
   # Call the stats function
   if campaign is not None:
     if args.model is not None:
       if args.compare_to is not None:
-        Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to, injection = injection)
+        Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
       else:
-        Statistics(campaign = campaign, model = args.model, injection = injection)
+        Statistics(campaign = campaign, model = args.model, injection = injection, clobber = clobber, plot = plot)
     else:
       if args.compare_to is not None:
-        Statistics(campaign = campaign, compare_to = args.compare_to, injection = injection)
+        Statistics(campaign = campaign, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
       else:
-        Statistics(campaign = campaign, injection = injection)
+        Statistics(campaign = campaign, injection = injection, clobber = clobber, plot = plot)
   else:
     if args.model is not None:
       if args.compare_to is not None:
-        Statistics(model = args.model, compare_to = args.compare_to, injection = injection)
+        Statistics(model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
       else:
-        Statistics(model = args.model, injection = injection)
+        Statistics(model = args.model, injection = injection, clobber = clobber, plot = plot)
     else:
       if args.compare_to is not None:
-        Statistics(compare_to = args.compare_to, injection = injection)
+        Statistics(compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
       else:
-        Statistics()
+        Statistics(injection = injection, clobber = clobber, plot = plot)
