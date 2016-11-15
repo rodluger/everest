@@ -15,7 +15,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog = 'estats', add_help = True)
   parser.add_argument("campaign", nargs = '?', type = str, default = None, help = 'The K2 campaign to download')
   parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to analyze')
-  parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to; ``-i`` for injection stats')
+  parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to')
+  parser.add_argument("-i", "--inject", action = 'store_true', help = 'Run injection stats?')
   args = parser.parse_args()
   
   # Get the campaign number
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     campaign = None
   
   # Injection run?
-  if args.compare_to == '-i' or args.compare_to == '--inject':
+  if args.inject:
     args.compare_to = None
     injection = True
   else:
