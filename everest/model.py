@@ -1834,13 +1834,6 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     
   return Injection(ID, inject = inject, parent_class = model, **kwargs)
 
-def MaskedInject(ID, **kwargs):
-  '''
-  
-  '''
-  
-  return Inject(ID, mask = True, **kwargs)
-
 class rPLD(Model):
   '''
   The standard PLD model, inheriting all of its features from :py:class:`Model`.
