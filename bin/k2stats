@@ -7,7 +7,6 @@ k2stats
 '''
 
 import argparse
-from everest import Statistics
 
 if __name__ == '__main__':
 
@@ -15,6 +14,7 @@ if __name__ == '__main__':
   parser.add_argument("campaign", nargs = '?', type = str, default = None, help = 'The K2 campaign to download')
   parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to analyze')
   parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to')
+  parser.add_argument("-i", "--inject", action = 'store_true', help = 'Run injection statistics?')
   args = parser.parse_args()
   
   # Get the campaign number
@@ -25,6 +25,13 @@ if __name__ == '__main__':
       campaign = int(args.campaign)
   else:
     campaign = None
+  
+  # Get the function
+  if args.inject:
+    from everest import InjectionStatistics as Statistics
+    args.compare_to = None
+  else:
+    from everest import Statistics
   
   # Call the stats function
   if campaign is not None:
