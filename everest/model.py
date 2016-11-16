@@ -32,7 +32,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Model', 'Inject', 'MaskedInject', 'rPLD', 'nPLD']
+__all__ = ['Model', 'Inject', 'rPLD', 'nPLD']
 
 class Model(object):
   '''
