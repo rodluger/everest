@@ -455,8 +455,9 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     badmask += list(np.where(qual & 2 ** (b - 1))[0])
   
   # Flag >10 sigma outliers -- same thing.
-  t = np.delete(time, badmask)
-  f = np.delete(flux, badmask)
+  tmpmask = np.array(list(set(np.concatenate([badmask, nanmask]))))
+  t = np.delete(time, tmpmask)
+  f = np.delete(flux, tmpmask)
   f = SavGol(f)
   med = np.nanmedian(f)
   MAD = 1.4826 * np.nanmedian(np.abs(f - med))
