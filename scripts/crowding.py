@@ -30,8 +30,8 @@ from numpy import empty
 
 # define EPIC ID
 # epic = 205998445
-# epic = 215796924
-epic = 215915109
+epic = 215796924
+# epic = 215915109
 # epic = int(sys.argv[1])
 
 
@@ -52,7 +52,7 @@ class CrowdingTarget(object):
         self.nsrc = 1
         self.epic = epic
 
-        # current maximum number of targets being fit
+        # current maximum number of nsrc being fit
         self.nsrc_fit = 3
 
         # current Kepler PRF directory
@@ -200,7 +200,8 @@ class CrowdingTarget(object):
 
         nearby = data.nearby
         kepmag = data.kepmag
-        nearby = np.array([source for source in nearby if (source.x >= DATx[0]) and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1])])
+        nearby = np.array([source for source in nearby if (source.x >= DATx[0])
+                          and (source.x <= DATx[-1]) and (source.y >= DATy[0]) and (source.y <= DATy[-1])])
         nearby = nearby[np.argsort([source.kepmag for source in nearby])]
 
         return nearby
@@ -238,15 +239,30 @@ class CrowdingTarget(object):
         args = (DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
         f = guess[:nsrc]; x = guess[nsrc:2*nsrc]; y = guess[2*nsrc:];
 
+        # initial guess for first target
+        paramstry = np.concatenate((f[:1],x[:1],y[:1]),axis=0);status=1;
+
         # return the BIC and guess array for the best fit
         for i in range(nsrc):
 
             # create temporary parameters and arguments
-            paramstry = np.concatenate((f[:i+1],x[:i+1],y[:i+1]),axis=0)
+            if status == 1:
+                status = 0
+
+            # for nsrc > 1, add the new guess parameters to the solved for parameters
+            else:
+                ftry = np.concatenate((paramstry[:i], [f[i]]),axis=0)
+                xtry = np.concatenate((paramstry[i:2*i], [x[i]]),axis=0)
+                ytry = np.concatenate((paramstry[2*i:], [y[i]]),axis=0)
+
+                paramstry = np.concatenate((ftry,xtry,ytry),axis=0)
+
+
             args = (DATx,DATy,self.base_flux,self.errors,i+1,splineInterpolation,np.mean(DATx),np.mean(DATy))
 
             # calculate best parameters for PRF
             ans = fmin_powell(prffunc.PRF,paramstry,args=args,xtol=1.0e-4,ftol=1.0e-4,disp=False)
+            paramstry = ans
 
             # calculate X^2 value for set, and input into BIC
             chisq = prffunc.PRF(ans,DATx,DATy,self.base_flux,self.errors,i+1,splineInterpolation,np.mean(DATx),np.mean(DATy))
@@ -255,15 +271,20 @@ class CrowdingTarget(object):
             # BIC = prffunc.PRF + k + ln(n)
             self.BIC.append(chisq + len(paramstry) * np.log(len(self.fpix)))
 
-            # set nsrc to index (>0) of BIC
+        for i in range(nsrc):
+
+            # set nsrc to index (>0) of minimum BIC
             if self.BIC[i] == np.min(self.BIC[1:]):
-                self.nsrc = i + 1
+                self.nsrc = int(i)
+
+                ans = np.concatenate((ans[:i], ans[nsrc:nsrc+i], ans[2*nsrc:2*nsrc+i]),axis=0)
+                guess = np.concatenate((guess[:i], guess[nsrc:nsrc+i], guess[2*nsrc:2*nsrc+i]),axis=0)
             else:
                 continue
 
+        nsrc = self.nsrc
         # create final arguments and parameters for BIC-minimized PRF fit
         args = (DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
-        ans = np.concatenate((ans[:nsrc], ans[len(ans)/3:len(ans)/3+nsrc], ans[2*len(ans)/3:2*len(ans)/3+nsrc]),axis=0)
 
         # calculate solution array based on initial guess
 
@@ -281,7 +302,6 @@ class CrowdingTarget(object):
     def createGuessFit(self,guess,DATx,DATy,splineInterpolation):
 
         nsrc = self.nsrc
-
         # generate the prf fit for guess parameters
         return prffunc.PRF2DET(guess[:nsrc], guess[nsrc:2*nsrc], guess[2*nsrc:], DATx, DATy, 1.0, 1.0, 0, splineInterpolation)
 
