@@ -172,7 +172,7 @@ class Model(object):
     self._mK = [None for b in range(nseg)]
     self._f = [None for b in range(nseg)]
     self._X = [None for i in range(self.pld_order)]
-    self.XNeighbors = [None for i in range(self.pld_order)]
+    self.X1N = None
     self.sc_X1N = None
     self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
@@ -1997,6 +1997,12 @@ class nPLD(Model):
       # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
       X1 = data.fpix / data.fraw.reshape(-1, 1)
       X1 = Interpolate(data.time, data.mask, X1)
+      if self.X1N is None:
+        self.X1N = np.array(X1)
+      else:
+        self.X1N = np.hstack([self.X1N, X1])
+      del X1
+      # Do the same for short cadence
       if self.has_sc:
         _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
         _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
@@ -2005,13 +2011,7 @@ class nPLD(Model):
         else:
           self.sc_X1N = np.hstack([self.sc_X1N, _scX1N])
         del _scX1N
-      for n in range(self.pld_order):
-        if self.XNeighbors[n] is None:
-          self.XNeighbors[n] = X1 ** (n + 1)
-        else:
-          self.XNeighbors[n] = np.hstack([self.XNeighbors[n], X1 ** (n + 1)])
       del data
-      del X1
 
     # Run
     self.run()
@@ -2038,7 +2038,7 @@ class nPLD(Model):
     for n in range(self.pld_order): 
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
-        self._X[n] = np.hstack([self._X[n], self.XNeighbors[n]])
+        self._X[n] = np.hstack([self._X[n], self.X1N ** (n + 1)])
   
   def get_sc_model(self, order, weights, inds = None):
     '''
