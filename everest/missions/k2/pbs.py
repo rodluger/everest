@@ -120,8 +120,21 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   if EVEREST_DEV and (queue == 'bf'):
     walltime = min(4, walltime)
   
-  # Convert kwargs to string
-  strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '%%%')
+  # Convert kwargs to string. This is really hacky. Pickle creates an array
+  # of bytes, which we must convert into a regular string to pass to the pbs
+  # script and then back into python. Decoding the bytes isn't enough, since
+  # we have pesky escaped characters such as newlines that don't behave well
+  # when passing this string around. My braindead hack is to replace newlines
+  # with '%%%', then undo the replacement when reading the kwargs. This works
+  # for most cases, but sometimes pickle creates a byte array that can't be
+  # decoded into utf-8 -- this happens when trying to pass numpy arrays around,
+  # for instance. This needs to be fixed in the future, but for now we'll 
+  # restrict the kwargs to be ints, floats, lists, and strings.
+  try:
+    strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '%%%')
+  except UnicodeDecodeError:
+    raise ValueError('Unable to pickle `kwargs`. Currently the `kwargs` values may only be' +
+                     '`int`s, `float`s, `string`s, `bool`s, or lists of these.')
   
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
