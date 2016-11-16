@@ -130,7 +130,7 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   else:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = 'EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS=%s' % (EVEREST_DAT, 
+  str_v = "EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
           nodes, campaign, subcampaign, strkwargs)
   if subcampaign == -1:
     str_name = 'c%02d' % campaign
@@ -153,15 +153,15 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def _Run(campaign, subcampaign, kwbytes):
+def _Run(campaign, subcampaign, strkwargs):
   '''
   The actual function that runs a given campaign; this must
   be called from ``missions/k2/run.pbs``.
   
   '''
   
-  # Get kwargs from byte string
-  kwargs = pickle.loads(kwbytes)
+  # Get kwargs from string
+  kwargs = pickle.loads(strkwargs.encode('utf-8'))
   
   # Model wrapper
   m = FunctionWrapper(EverestModel, **kwargs)
