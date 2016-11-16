@@ -121,7 +121,7 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
     walltime = min(4, walltime)
   
   # Convert kwargs to string
-  strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '\\n')
+  strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '%%%')
   
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
@@ -161,7 +161,7 @@ def _Run(campaign, subcampaign, strkwargs):
   '''
   
   # Get kwargs from string
-  kwargs = pickle.loads(strkwargs.replace('\\n', '\n').encode('utf-8'))
+  kwargs = pickle.loads(strkwargs.replace('%%%', '\n').encode('utf-8'))
   
   # Model wrapper
   m = FunctionWrapper(EverestModel, **kwargs)

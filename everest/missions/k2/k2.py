@@ -948,7 +948,7 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
     depths = [1e-2, 1e-3, 1e-4]
     ranges = [(0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0., 2.), (0., 2.)]
     nbins = [30, 30, 30]
-    ymax = [0.6, 0.4, 0.15]
+    ymax = [0.6, 0.25, 0.15]
     xticks = [[0.5, 0.75, 1., 1.25, 1.5], [0.5, 0.75, 1., 1.25, 1.5], [0., 0.5, 1., 1.5, 2.0]]
     
     # Plot
