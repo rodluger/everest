@@ -121,7 +121,7 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
     walltime = min(4, walltime)
   
   # Convert kwargs to string
-  strkwargs = str(pickle.dumps(kwargs, 0))
+  strkwargs = pickle.dumps(kwargs, 0).decode('utf-8')
   
   # Submit the cluster job      
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
@@ -153,15 +153,15 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def _Run(campaign, subcampaign, strkwargs):
+def _Run(campaign, subcampaign, kwbytes):
   '''
   The actual function that runs a given campaign; this must
   be called from ``missions/k2/run.pbs``.
   
   '''
   
-  # De-stringify the kwargs
-  kwargs = pickle.loads(strkwargs)
+  # Get kwargs from byte string
+  kwargs = pickle.loads(kwbytes)
   
   # Model wrapper
   m = FunctionWrapper(EverestModel, **kwargs)
