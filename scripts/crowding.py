@@ -279,12 +279,14 @@ class CrowdingTarget(object):
 
                 ans = np.concatenate((ans[:i], ans[nsrc:nsrc+i], ans[2*nsrc:2*nsrc+i]),axis=0)
                 guess = np.concatenate((guess[:i], guess[nsrc:nsrc+i], guess[2*nsrc:2*nsrc+i]),axis=0)
+
             else:
                 continue
 
         nsrc = self.nsrc
         # create final arguments and parameters for BIC-minimized PRF fit
         args = (DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
+
 
         # calculate solution array based on initial guess
 

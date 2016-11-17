@@ -47,6 +47,10 @@ def PRF(params,*args):
     if max(abs(col - x[0]),abs(row - y[0])) > 10.0:
         PRFres = 1.0e300
 
+    for elem in f:
+        if elem < 0:
+            PRFres = 1.0e300
+
     return PRFres
 
 
