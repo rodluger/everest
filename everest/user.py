@@ -8,6 +8,8 @@
    - Plot raw flux
    - Plot SC flux
    - Add easy masking
+   - Add download interface
+   - Add outlier, gp options when plotting
    
 '''
 
@@ -39,11 +41,9 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
   '''
 
   # Grab some info
-  season = Season(ID, mission)
+  season = Season(ID, mission = mission)
   target_dir = Missions[mission].TargetDirectory(ID, season)
-  fitsfile = os.path.join(target_dir, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % 
-                         (ID, season, EVEREST_VERSION))
-  mission = pyfits.getheader(fitsfile, 0)['MISSION']
+  fitsfile = Missions[mission].FITSFile(target_dir, ID, season)
   model_name = pyfits.getheader(fitsfile, 1)['MODEL']
 
   class Star(eval(model_name + 'Base'), Basecamp):
@@ -168,7 +168,6 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
         self.quality = f[1].data['QUALITY']
         self.recursive = f[1].header['RECRSVE']
         self.saturated = f[1].header['SATUR']
-        self.saturated_aperture_name = f[1].header['SATAP']
         self.saturation_tolerance = f[1].header['SATTOL']
         self.time = f[1].data['TIME']
         
@@ -233,6 +232,7 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
         self.sc_outmask = None
         
       # These are not stored in the fits file; we don't need them
+      self.saturated_aperture_name = None
       self.apertures = None
       self.Xpos = None
       self.Ypos = None

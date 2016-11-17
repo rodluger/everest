@@ -36,7 +36,7 @@ def PrimaryHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 0)
+  cards = HDUCards(model.meta, hdu = 0, mission = model.mission)
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -59,7 +59,7 @@ def LongCadenceHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 1)
+  cards = HDUCards(model.meta, hdu = 1, mission = model.mission)
       
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -110,7 +110,6 @@ def LongCadenceHDU(model):
   cards.append(('PLDORDER', model.pld_order, 'PLD de-trending order'))
   cards.append(('RECRSVE', model.recursive, 'Recursive PLD?'))
   cards.append(('SATUR', model.saturated, 'Is target saturated?'))
-  cards.append(('SATAP', model.saturated_aperture_name, 'Saturated aperture name'))
   cards.append(('SATTOL', model.saturation_tolerance, 'Fractional saturation tolerance'))
   
   # Add the EVEREST quality flags to the QUALITY array
@@ -145,7 +144,7 @@ def ShortCadenceHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 6)
+  cards = HDUCards(model.meta, hdu = 6, mission = model.mission)
    
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -187,7 +186,7 @@ def LongCadencePixelHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 2)
+  cards = HDUCards(model.meta, hdu = 2, mission = model.mission)
   
   # Add EVEREST info
   cards = []
@@ -254,7 +253,7 @@ def ApertureHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 3)
+  cards = HDUCards(model.meta, hdu = 3, mission = model.mission)
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -277,7 +276,7 @@ def ImagesHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 4)
+  cards = HDUCards(model.meta, hdu = 4, mission = model.mission)
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -307,7 +306,7 @@ def HiResHDU(model):
   '''
   
   # Get mission cards
-  cards = HDUCards(model.meta, hdu = 5)
+  cards = HDUCards(model.meta, hdu = 5, mission = model.mission)
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))
@@ -334,7 +333,7 @@ def MakeFITS(model):
   log.info('Generating FITS file...')
   
   # Get the fits file name
-  outfile = FITSFile(model)
+  outfile = FITSFile(model.dir, model.ID, model.season, mission = model.mission)
   if os.path.exists(outfile) and not model.clobber:
     return
   elif os.path.exists(outfile):

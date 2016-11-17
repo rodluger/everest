@@ -698,7 +698,7 @@ class Detrender(Basecamp):
     '''
     
     if not self.loaded:
-      data = GetData(self.ID, self.mission, season = self.season, clobber = self.clobber_tpf, 
+      data = GetData(self.ID, mission = self.mission, season = self.season, clobber = self.clobber_tpf, 
                      aperture_name = self.aperture_name, 
                      saturated_aperture_name = self.saturated_aperture_name, 
                      max_pixels = self.max_pixels,
@@ -1042,7 +1042,7 @@ class nPLD(nPLDBase, Detrender):
         # included! These are mostly thruster fire events and other artifacts common to
         # all the stars, so it makes sense that we might want to keep them in the design
         # matrix.
-        data = GetData(neighbor, self.mission, season = self.season, clobber = self.clobber_tpf, 
+        data = GetData(neighbor, mission = self.mission, season = self.season, clobber = self.clobber_tpf, 
                        aperture_name = self.aperture_name, 
                        saturated_aperture_name = self.saturated_aperture_name, 
                        max_pixels = self.max_pixels,

@@ -1077,10 +1077,10 @@ def HDUCards(headers, hdu = 0):
       pass
   return cards  
 
-def FITSFile(model):
+def FITSFile(path, ID, season):
   '''
   
   '''
   
-  return os.path.join(model.dir, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % 
-                     (model.ID, model.season, EVEREST_VERSION)) 
+  return os.path.join(path, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % 
+                     (ID, season, EVEREST_VERSION)) 

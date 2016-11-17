@@ -76,7 +76,7 @@ class Basecamp(object):
     try:
       self._season
     except:
-      self._season = Season(self.ID, self.mission)
+      self._season = Season(self.ID, mission = self.mission)
     return self._season
 
   @season.setter
