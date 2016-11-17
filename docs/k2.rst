@@ -6,7 +6,6 @@ K2
    
    k2_init
    k2_aux
-   k2_fits
    k2_k2
    k2_pbs
 

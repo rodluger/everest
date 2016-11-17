@@ -79,12 +79,22 @@ def HasShortCadence(id, mission = 'k2', **kwargs):
   else:
     raise ValueError('Mission %s not supported.' % mission)
 
-def MakeFITS(model, mission = 'k2', **kwargs):
+def HDUCards(model, mission = 'k2', **kwargs):
   '''
   
   '''
   
   if mission in Missions:
-    return Missions[mission].MakeFITS(model, **kwargs)
+    return Missions[mission].HDUCards(model, **kwargs)
+  else:
+    raise ValueError('Mission %s not supported.' % mission)
+
+def FITSFile(model, mission = 'k2', **kwargs):
+  '''
+  
+  '''
+  
+  if mission in Missions:
+    return Missions[mission].FITSFile(model, **kwargs)
   else:
     raise ValueError('Mission %s not supported.' % mission)

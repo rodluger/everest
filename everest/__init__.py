@@ -19,9 +19,12 @@ if __EVEREST_SETUP__:
     Missions[mission].Setup()
 else:
   # This is a regular everest run
-  from . import config, data, dvs, gp, math, missions, model, pbs, pool, transit, utils
-  from .model import *
+  from . import basecamp, config, data, detrender, dvs, fits, gp, inject, math, \
+                missions, pbs, pld, pool, transit, user, utils
+  from .detrender import *
+  from .inject import *
   from .missions import *
   from .data import Statistics
   from .pbs import Download, Run, Status
   from .transit import Transit
+  from .user import Everest

@@ -8,7 +8,6 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .k2 import *
-from .fits import *
 from . import aux, pbs
 
 #: The string that identifies individual targets for this mission
@@ -17,3 +16,5 @@ IDSTRING = 'EPIC'
 SEASONCHAR = 'C'
 #: The string representing the filter/band used in the mission 
 MAGSTRING = r'K$_\mathrm{p}$'
+#: The time units for the mission
+TIMEUNITS = 'BJD - 2454833'

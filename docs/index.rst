@@ -5,6 +5,7 @@ Documentation
    :maxdepth: 3 
    
    engine
+   ui
    missions
 
 Indices and tables

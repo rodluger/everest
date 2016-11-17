@@ -1,0 +1,2 @@
+.. automodule:: everest.basecamp
+   :members:
