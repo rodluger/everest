@@ -787,6 +787,9 @@ class Detrender(Basecamp):
           except NotImplementedError:
             pass
         self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
+        
+        import pdb; pdb.set_trace()
+        
         self.get_X()
         pl.close()
         return True
