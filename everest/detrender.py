@@ -149,10 +149,8 @@ class Detrender(Basecamp):
     # Handle breakpointing. The breakpoint is the *last* index of the first 
     # light curve chunk. The code is (for the most part) written to allow for
     # multiple breakpoints, but the plotting can currently only handle one.
-    if kwargs.get('breakpoint', True):
+    if kwargs.get('breakpoint', True) and self._mission.Breakpoint(self.ID) is not None:
       self.breakpoints = [self._mission.Breakpoint(self.ID), 999999]
-      if self.breakpoints[0] is None:
-        raise ValueError('Invalid breakpoint set in `%s.Breakpoint()`.' % (self.mission))
     else:
       self.breakpoints = [999999]
     nseg = len(self.breakpoints)
@@ -824,6 +822,7 @@ class Detrender(Basecamp):
     d.pop('dvs2', None)
     d.pop('clobber', None)
     d.pop('clobber_tpf', None)
+    d.pop('_mission', None)
     d.pop('debug', None)
     np.savez(os.path.join(self.dir, self.name + '.npz'), **d)
     
