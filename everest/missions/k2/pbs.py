@@ -274,6 +274,6 @@ def EverestModel(ID, model = 'nPLD', **kwargs):
   
   '''
   
-  from ... import model as everest_model
-  getattr(everest_model, model)(ID, **kwargs)
+  from ... import detrender
+  getattr(detrender, model)(ID, **kwargs)
   return True

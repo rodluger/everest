@@ -6,7 +6,6 @@
 
 .. todo:: 
    - Add easy masking
-   - Add download interface
    
 '''
 
@@ -157,6 +156,17 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       
       return self.model_name
     
+    @property
+    def X(self):
+      '''
+      
+      '''
+      
+      if self._X is None:
+        self._X = [None for i in range(self.pld_order)]
+        self.get_X()
+      return self._X
+    
     def download_fits(self):
       '''
       
@@ -174,10 +184,9 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       self._B = [[None for i in range(self.pld_order)] for b in self.breakpoints]
       self._mK = [None for b in self.breakpoints]
       self._f = [None for b in self.breakpoints]
-      self._X = [None for i in range(self.pld_order)]
+      self._X = None
       self._weights = None
       self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
-      self.get_X()
       
     def load_fits(self):
       '''
