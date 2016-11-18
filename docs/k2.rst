@@ -8,6 +8,7 @@ K2
    k2_aux
    k2_k2
    k2_pbs
+   k2_pipelines
 
 .. toctree::
    :maxdepth: 1

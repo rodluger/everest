@@ -152,7 +152,7 @@ class Detrender(Basecamp):
     if kwargs.get('breakpoint', True):
       self.breakpoints = [self._mission.Breakpoint(self.ID), 999999]
       if self.breakpoints[0] is None:
-        raise ValueError('Invalid breakpoint set in `%d.Breakpoint()`.' % (self.mission))
+        raise ValueError('Invalid breakpoint set in `%s.Breakpoint()`.' % (self.mission))
     else:
       self.breakpoints = [999999]
     nseg = len(self.breakpoints)
@@ -792,6 +792,10 @@ class Detrender(Basecamp):
         return True
       except:
         log.warn("Error loading '%s.npz'." % name)
+        exctype, value, tb = sys.exc_info()
+        for line in traceback.format_exception_only(exctype, value):
+          l = line.replace('\n', '')
+          log.warn(l)
         os.rename(file, file + '.bad')
     
     if self.is_parent:

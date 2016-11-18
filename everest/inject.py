@@ -268,7 +268,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax1.set_ylim(ylim)
     
       # Plot the PLD weights
-      self.plot_weights()
+      self.plot_weights(*self.dvs2.weights_grid())
     
     def finalize(self):
       '''

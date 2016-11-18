@@ -7,6 +7,7 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from .pipelines import Pipelines
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
 from ...utils import _float
 from ...math import Chunks
@@ -63,6 +64,7 @@ class StatsPicker(object):
     '''
     
     from ...user import ShowDVS
+    self.show = ShowDVS
     if not hasattr(axes, '__len__'):
       axes = [axes]
       x = [x]
@@ -76,6 +78,7 @@ class StatsPicker(object):
     self.campaign = campaign
     self.model = model
     self.compare_to = compare_to
+    self.last = None
 
   def __call__(self, event):
     '''
@@ -83,60 +86,33 @@ class StatsPicker(object):
     '''
 
     if event.mouseevent.inaxes:
-    
+      
       # Get the axis instance
       j = np.argmax([id(event.mouseevent.inaxes) == id(ax) for ax in self.axes])
       
       # Index of nearest point
       i = np.nanargmin(((event.mouseevent.xdata - self.x[j]) / self.xr[j]) ** 2 + ((event.mouseevent.ydata - self.y[j]) / self.yr[j]) ** 2)  
       
+      # HACK: For some reason, this event is being called twice
+      # for every click. This is a silly way around that.
+      if self.epic[i] == self.last:
+        return
+      else:
+        self.last = self.epic[i]
+      
       # Show the de-trended data for the model
-      ShowDVS(self.epic[i], mission = 'k2', model = self.model)
+      log.info('Plotting %s model for %d...' % (self.model, self.epic[i]))
+      self.show(self.epic[i], mission = 'k2', model = self.model)
     
       # Show the de-trended data for the comparison model
-      if self.compare_to.lower() == 'everest1':
-        cmds = '; '.join(['import k2plr',
-                          'import matplotlib.pyplot as pl',
-                          's = k2plr.EVEREST(%d, version = 1)' % self.epic[i],
-                          'fig = pl.figure(figsize = (10, 4))',
-                          'fig.subplots_adjust(bottom = 0.15)',
-                          'pl.plot(s.time, s.flux, "k.", markersize = 3, alpha = 0.5)',
-                          'pl.margins(0, None)',
-                          'pl.xlabel("Time (days)", fontsize = 16)',
-                          'pl.ylabel("EVEREST1 Flux", fontsize = 16)',
-                          'fig.canvas.set_window_title("EVEREST1: EPIC %d")' % self.epic[i],
-                          'pl.show()'])
-        subprocess.Popen(['python', '-c', cmds])
-      elif self.compare_to.lower() == 'k2sff':
-        cmds = '; '.join(['import k2plr',
-                          'import matplotlib.pyplot as pl',
-                          's = k2plr.K2SFF(%d)' % self.epic[i],
-                          'fig = pl.figure(figsize = (10, 4))',
-                          'fig.subplots_adjust(bottom = 0.15)',
-                          'pl.plot(s.time, s.fcor, "k.", markersize = 3, alpha = 0.5)',
-                          'pl.margins(0, None)',
-                          'pl.xlabel("Time (days)", fontsize = 16)',
-                          'pl.ylabel("K2SFF Flux", fontsize = 16)',
-                          'fig.canvas.set_window_title("K2SFF: EPIC %d")' % self.epic[i],
-                          'pl.show()'])
-        subprocess.Popen(['python', '-c', cmds])
-      elif self.compare_to.lower() == 'k2sc':
-        cmds = '; '.join(['import k2plr',
-                          'import matplotlib.pyplot as pl',
-                          's = k2plr.K2SC(%d)' % self.epic[i],
-                          'fig = pl.figure(figsize = (10, 4))',
-                          'fig.subplots_adjust(bottom = 0.15)',
-                          'pl.plot(s.time, s.pdcflux, "k.", markersize = 3, alpha = 0.5)',
-                          'pl.margins(0, None)',
-                          'pl.xlabel("Time (days)", fontsize = 16)',
-                          'pl.ylabel("K2SC Flux", fontsize = 16)',
-                          'fig.canvas.set_window_title("K2SC: EPIC %d")' % self.epic[i],
-                          'pl.show()'])
-        subprocess.Popen(['python', '-c', cmds])
+      if self.compare_to.lower() in Pipelines:
+        log.info('Plotting %s model for %d...' % (self.compare_to, self.epic[i]))
+        subprocess.Popen(['python', '-c', 'import everest; everest.k2.pipelines.plot(%d, pipeline = "%s")' % (self.epic[i], self.compare_to)])
       elif self.compare_to.lower() == 'kepler':
         pass
       else:
-        ShowDVS(self.epic[i], mission = 'k2', model = self.compare_to)
+        log.info('Plotting %s model for %d...' % (self.compare_to, self.epic[i]))
+        self.show(self.epic[i], mission = 'k2', model = self.compare_to)
 
 def Campaign(EPIC, **kwargs):
   '''

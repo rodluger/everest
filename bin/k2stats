@@ -8,6 +8,8 @@ k2stats
 
 import argparse
 from everest.config import EVEREST_DEV
+import logging
+log = logging.getLogger(__name__)
 
 if __name__ == '__main__':
 
@@ -21,7 +23,9 @@ if __name__ == '__main__':
   
   # Get the mission
   from everest import missions
+  from everest.utils import InitLog
   Statistics = getattr(missions, args.mission).Statistics
+  InitLog(None, logging.CRITICAL, logging.DEBUG, False)
   
   # Get the campaign number
   if args.campaign is not None:

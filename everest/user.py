@@ -400,7 +400,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         return fig, ax, cax
 
     def plot(self, show = True, plot_raw = True, plot_gp = True, 
-                   plot_bad = True, plot_out = True, plot_sc = False):
+             plot_bad = True, plot_out = True, plot_sc = False):
       '''
       Plots the final de-trended light curve.
     
@@ -557,5 +557,12 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       '''
       
       ShowDVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
-          
+    
+    def plot_pipeline(self, **kwargs):
+      '''
+      
+      '''
+      
+      return getattr(missions, mission).pipelines.plot(self.ID, **kwargs)
+    
   return Star(ID, mission, model_name, fitsfile, quiet, clobber, **kwargs)
