@@ -732,7 +732,9 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     saturated = saturated[inds]
     sat = np.where(saturated == 1)
     unsat = np.where(saturated == 0)
-    
+    if not np.any([not np.isnan(x) for x in cdpp6]):
+      raise Exception("No targets to plot.")
+
     # Control transparency
     alpha_kepler = 0.03
     alpha_unsat = min(0.1, 2000. / (1 + len(unsat[0])))
@@ -921,7 +923,10 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
   if plot:
   
     # Load the statistics
-    epic, depth, ucontrol, urecovered, mcontrol, mrecovered = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    try:
+      epic, depth, ucontrol, urecovered, mcontrol, mrecovered = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    except ValueError:
+      raise Exception("No targets to plot.")
     
     # Normalize to the injected depth
     ucontrol /= depth

@@ -274,6 +274,10 @@ def EverestModel(ID, model = 'nPLD', **kwargs):
   
   '''
   
-  from ... import detrender
-  getattr(detrender, model)(ID, **kwargs)
+  if model != 'Inject':
+    from ... import detrender
+    getattr(detrender, model)(ID, **kwargs)
+  else:
+    from ...inject import Inject
+    Inject(ID, **kwargs)
   return True

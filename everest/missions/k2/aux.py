@@ -62,6 +62,7 @@ class StatsPicker(object):
     
     '''
     
+    from ...user import ShowDVS
     if not hasattr(axes, '__len__'):
       axes = [axes]
       x = [x]
@@ -75,7 +76,7 @@ class StatsPicker(object):
     self.campaign = campaign
     self.model = model
     self.compare_to = compare_to
-    
+
   def __call__(self, event):
     '''
     
@@ -90,11 +91,7 @@ class StatsPicker(object):
       i = np.nanargmin(((event.mouseevent.xdata - self.x[j]) / self.xr[j]) ** 2 + ((event.mouseevent.ydata - self.y[j]) / self.yr[j]) ** 2)  
       
       # Show the de-trended data for the model
-      subprocess.Popen(['open', 
-                        os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(self.campaign), 
-                        '%s00000' % ('%d' % self.epic[i])[:4],
-                        '%s' % ('%d' % self.epic[i])[4:],
-                        self.model + '.pdf')])
+      ShowDVS(self.epic[i], mission = 'k2', model = self.model)
     
       # Show the de-trended data for the comparison model
       if self.compare_to.lower() == 'everest1':
@@ -139,11 +136,7 @@ class StatsPicker(object):
       elif self.compare_to.lower() == 'kepler':
         pass
       else:
-        subprocess.Popen(['open', 
-                        os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(self.campaign), 
-                        '%s00000' % ('%d' % self.epic[i])[:4],
-                        '%s' % ('%d' % self.epic[i])[4:],
-                        self.compare_to + '.pdf')])
+        ShowDVS(self.epic[i], mission = 'k2', model = self.compare_to)
 
 def Campaign(EPIC, **kwargs):
   '''

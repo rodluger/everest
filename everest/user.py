@@ -100,6 +100,27 @@ def DownloadFile(ID, mission = 'k2', filename = None, clobber = False):
   else:
     raise Exception("Unable to download the file.")
 
+def ShowDVS(ID, mission = 'k2', model = 'nPLD', clobber = False):
+  '''
+  
+  '''
+  
+  file = DownloadFile(ID, mission = mission, 
+                      filename = model + '.pdf', 
+                      clobber = clobber)  
+  try:
+    if platform.system().lower().startswith('darwin'):
+      subprocess.call(['open', file])
+    elif os.name == 'nt':
+      os.startfile(file)
+    elif os.name == 'posix':
+      subprocess.call(['xdg-open', file])
+    else:
+      raise Exception("")
+  except:
+    log.info("Unable to open the pdf. The full path is")
+    log.info(file)
+
 def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
   '''
   
@@ -535,21 +556,6 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       
       '''
       
-      file = DownloadFile(self.ID, mission = self.mission, 
-                          filename = self.model_name + '.pdf', 
-                          clobber = self.clobber)
-      
-      try:
-        if platform.system().lower().startswith('darwin'):
-          subprocess.call(['open', file])
-        elif os.name == 'nt':
-          os.startfile(file)
-        elif os.name == 'posix':
-          subprocess.call(['xdg-open', file])
-        else:
-          raise Exception("")
-      except:
-        log.info("Unable to open the pdf. The full path is")
-        log.info(file)
+      ShowDVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
           
   return Star(ID, mission, model_name, fitsfile, quiet, clobber, **kwargs)
