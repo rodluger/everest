@@ -332,7 +332,7 @@ def MakeFITS(model):
   log.info('Generating FITS file...')
   
   # Get the fits file name
-  outfile = model._mission.FITSFile(model.dir, model.ID, model.season)
+  outfile = os.path.join(model.dir, model._mission.FITSFile(model.ID, model.season))
   if os.path.exists(outfile) and not model.clobber:
     return
   elif os.path.exists(outfile):

@@ -16,10 +16,10 @@ from . import missions
 from .basecamp import Basecamp
 from .pld import *
 from .gp import GetCovariance
-from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT
+from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, EVEREST_DEV, EVEREST_FITS
 from .utils import InitLog, Formatter
 import george
-import os, sys
+import os, sys, platform
 import numpy as np
 import matplotlib.pyplot as pl
 try:
@@ -29,18 +29,92 @@ except ImportError:
     import astropy.io.fits as pyfits
   except ImportError:
     raise Exception('Please install the `pyfits` package.')
+import subprocess
 import logging
 log = logging.getLogger(__name__)
 
-def Everest(ID, mission = 'k2', quiet = False, **kwargs):
+def DownloadFile(ID, mission = 'k2', filename = None, clobber = False):
+  '''
+  Download a given :py:mod:`everest` file from MAST.
+  
+  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
+  
+  '''
+  
+  # Grab some info
+  season = getattr(missions, mission).Season(ID)
+  path = getattr(missions, mission).TargetDirectory(ID, season)
+  relpath = getattr(missions, mission).TargetDirectory(ID, season, relative = True)
+  if filename is None:
+    filename = getattr(missions, mission).FITSFile(ID, season)
+  
+  # Check if file exists
+  if not os.path.exists(path):
+    os.makedirs(path)
+  elif os.path.exists(os.path.join(path, filename)) and not clobber:
+    log.info('Found cached file.')
+    return os.path.join(path, filename)
+  
+  # Get file URL
+  log.info('Downloading the file...')
+  try:
+    fitsurl = getattr(missions, mission).FITSUrl(ID, season)
+    if not fitsurl.endswith('/'):
+      fitsurl += '/'
+  except AssertionError:
+    fitsurl = None
+   
+  if (not EVEREST_DEV) and (url is not None):
+  
+    # Download the data
+    r = urllib.request.Request(url + filename)
+    handler = urllib.request.urlopen(r)
+    code = handler.getcode()
+    if int(code) != 200:
+      raise Exception("Error code {0} for URL '{1}'".format(code, url + filename))
+    data = handler.read()
+    
+    # Atomically save to disk
+    f = NamedTemporaryFile("wb", delete=False)
+    f.write(data)
+    f.flush()
+    os.fsync(f.fileno())
+    f.close()
+    shutil.move(f.name, os.path.join(path, filename))
+    
+  else:
+    
+    # This section is for pre-publication/development use only!
+    if EVEREST_FITS is None:
+      raise Exception("Unable to locate the file.")
+    
+    # Get the url
+    inpath = os.path.join(EVEREST_FITS, relpath, filename)
+    outpath = os.path.join(path, filename)
+
+    # Download the data
+    subprocess.call(['scp', inpath, outpath])
+  
+  # Success?
+  if os.path.exists(os.path.join(path, filename)):
+    return os.path.join(path, filename)
+  else:
+    raise Exception("Unable to download the file.")
+
+def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
   '''
   
   '''
+  
+  # Initialize preliminary logging
+  if not quiet:
+    screen_level = logging.DEBUG
+  else:
+    screen_level = logging.CRITICAL
+  InitLog(None, logging.DEBUG, screen_level, False)
 
-  # Grab some info
-  season = getattr(missions, mission).Season(ID)
-  target_dir = getattr(missions, mission).TargetDirectory(ID, season)
-  fitsfile = getattr(missions, mission).FITSFile(target_dir, ID, season)
+  # Download the FITS file if necessary
+  fitsfile = DownloadFile(ID, mission = mission, clobber = clobber)
   model_name = pyfits.getheader(fitsfile, 1)['MODEL']
 
   class Star(eval(model_name + 'Base'), Basecamp):
@@ -55,7 +129,7 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
       
       return "<everest.Star(%d)>" % self.ID
     
-    def __init__(self, ID, mission, model_name, fitsfile, quiet, **kwargs):
+    def __init__(self, ID, mission, model_name, fitsfile, quiet, clobber, **kwargs):
       '''
       
       '''
@@ -64,15 +138,15 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
       self.mission = mission
       self.model_name = model_name
       self.fitsfile = fitsfile
+      self.clobber = clobber
       if not quiet:
         screen_level = logging.DEBUG
       else:
         screen_level = logging.CRITICAL
       log_level = kwargs.get('log_level', logging.DEBUG)
       InitLog(self.logfile, logging.DEBUG, screen_level, False)
-      log.info("Loading FITS file for %d." % (self.ID))
+      self.download_fits()
       self.load_fits()
-      log.info("Initializing %s model for %d." % (self.name, self.ID))
       self.init_model()
     
     @property
@@ -83,11 +157,19 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
       
       return self.model_name
     
+    def download_fits(self):
+      '''
+      
+      '''
+      
+      pass
+    
     def init_model(self):
       '''
       
       '''
       
+      log.info("Initializing %s model for %d." % (self.name, self.ID))
       self._A = [[None for i in range(self.pld_order)] for b in self.breakpoints]
       self._B = [[None for i in range(self.pld_order)] for b in self.breakpoints]
       self._mK = [None for b in self.breakpoints]
@@ -102,6 +184,7 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
       
       '''
       
+      log.info("Loading FITS file for %d." % (self.ID))
       with pyfits.open(self.fitsfile) as f:
         
         # Params and long cadence data
@@ -438,4 +521,26 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
         else:
           return fig, axes[0]
     
-  return Star(ID, mission, model_name, fitsfile, quiet, **kwargs)
+    def dvs(self):
+      '''
+      
+      '''
+      
+      file = DownloadFile(self.ID, mission = self.mission, 
+                          filename = self.model_name + '.pdf', 
+                          clobber = self.clobber)
+      
+      try:
+        if platform.system().lower().startswith('darwin'):
+          subprocess.call(['open', file])
+        elif os.name == 'nt':
+          os.startfile(file)
+        elif os.name == 'posix':
+          subprocess.call(['xdg-open', file])
+        else:
+          raise Exception("")
+      except:
+        log.info("Unable to open the pdf. The full path is")
+        log.info(file)
+          
+  return Star(ID, mission, model_name, fitsfile, quiet, clobber, **kwargs)

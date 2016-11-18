@@ -9,7 +9,7 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ... import __version__ as EVEREST_VERSION
 from .aux import *
-from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
+from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
 from ...math import SavGol, Interpolate
 try:
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoint', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
-           'InjectionStatistics', 'HDUCards', 'FITSFile']
+           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl']
 
 def Setup():
   '''
@@ -854,15 +854,6 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     # Show
     pl.show()
 
-def TargetDirectory(ID, season, **kwargs):
-  '''
-  
-  '''
-
-  return os.path.join(EVEREST_DAT, 'k2', 'c%02d' % season, 
-                     ('%09d' % ID)[:4] + '00000', 
-                     ('%09d' % ID)[4:])
-
 def HasShortCadence(EPIC, season = None):
   '''
   Returns `True` if short cadence data is available for this target.
@@ -1077,10 +1068,32 @@ def HDUCards(headers, hdu = 0):
       pass
   return cards  
 
-def FITSFile(path, ID, season):
+def TargetDirectory(ID, season, relative = False, **kwargs):
   '''
   
   '''
   
-  return os.path.join(path, 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % 
-                     (ID, season, EVEREST_VERSION)) 
+  if relative:
+    path = ''
+  else:
+    path = EVEREST_DAT
+  return os.path.join(path, 'k2', 'c%02d' % season, 
+                     ('%09d' % ID)[:4] + '00000', 
+                     ('%09d' % ID)[4:])
+
+def FITSFile(ID, season):
+  '''
+  
+  '''
+  
+  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % (ID, season, EVEREST_VERSION)
+
+def FITSUrl(ID, season):
+  '''
+  
+  '''
+  
+  mast_version = MAST_VERSION()
+  assert mast_version == EVEREST_VERSION, "Version %s light curves not available on MAST." % EVEREST_VERSION
+  url = MAST_ROOT + 'c%02d/' % season + ('%09d' % ID)[:4] + '00000/' + ('%09d/' % ID)[4:]
+  return url
