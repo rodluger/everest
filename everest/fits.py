@@ -317,8 +317,10 @@ def HiResHDU(model):
   
   # Create the HDU
   header = pyfits.Header(cards = cards)
-  hdu = pyfits.ImageHDU(data = model.hires, header = header, name = 'HI RES IMAGE')
-
+  if model.hires is not None:
+    hdu = pyfits.ImageHDU(data = model.hires, header = header, name = 'HI RES IMAGE')
+  else:
+    hdu = pyfits.ImageHDU(data = np.empty((0,0), dtype = float), header = header, name = 'HI RES IMAGE')
   return hdu
 
 def MakeFITS(model):
