@@ -90,6 +90,7 @@ def _Download(campaign, subcampaign):
       except:
         # Some targets could be corrupted...
         print("ERROR downloading EPIC %d." % EPIC)
+        exctype, value, tb = sys.exc_info()
         for line in traceback.format_exception_only(exctype, value):
           l = line.replace('\n', '')
           print(l)
