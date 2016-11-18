@@ -37,7 +37,12 @@ def plot(ID, pipeline = 'everest1', show = True):
     flux = s.pdcflux
   else:
     raise ValueError('Invalid pipeline: `%s`.' % pipeline)
-    
+  
+  # Remove nans
+  mask = np.where(np.isnan(flux))[0]
+  time = np.delete(time, mask)
+  flux = np.delete(flux, mask)
+  
   # Plot it
   fig, ax = pl.subplots(1, figsize = (10, 4))
   fig.subplots_adjust(bottom = 0.15)
@@ -52,7 +57,8 @@ def plot(ID, pipeline = 'everest1', show = True):
   ax.set_ylim(ylim)
   
   # Show the CDPP
-  ax.annotate('%.2f ppm' % CDPP6(flux), xy = (0.98, 0.975), xycoords = 'axes fraction', 
+  ax.annotate('%.2f ppm' % CDPP6(flux), 
+              xy = (0.98, 0.975), xycoords = 'axes fraction', 
               ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
   
   # Appearance
