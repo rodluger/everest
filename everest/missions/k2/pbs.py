@@ -14,6 +14,7 @@ from ...utils import ExceptionHook, FunctionWrapper
 from ...pool import Pool
 import os, sys, subprocess
 import pickle
+import traceback
 import logging
 log = logging.getLogger(__name__)
 
@@ -89,6 +90,9 @@ def _Download(campaign, subcampaign):
       except:
         # Some targets could be corrupted...
         print("ERROR downloading EPIC %d." % EPIC)
+        for line in traceback.format_exception_only(exctype, value):
+          l = line.replace('\n', '')
+          print(l)
         continue
 
 def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100, 
