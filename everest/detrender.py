@@ -11,17 +11,15 @@ specific de-trending methods are implemented as subclasses.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import missions
 from .basecamp import Basecamp
 from .pld import rPLDBase, nPLDBase
 from .config import EVEREST_DAT
-from .missions import Missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
-from .data import Season, GetData, GetNeighbors, Breakpoint, HasShortCadence
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
 from .dvs import DVS1, DVS2
-from itertools import combinations_with_replacement as multichoose
 import os, sys
 import numpy as np
 import george
@@ -118,7 +116,7 @@ class Detrender(Basecamp):
     self.recursive = kwargs.get('recursive', True)
     self.make_fits = kwargs.get('make_fits', False)
     self.mission = kwargs.get('mission', 'k2')
-    self.has_sc = HasShortCadence(self.ID, season = self.season)
+    self.has_sc = self._mission.HasShortCadence(self.ID, season = self.season)
     self.clobber = kwargs.get('clobber', False)
     self.debug = kwargs.get('debug', False)
     self.is_parent = kwargs.get('is_parent', False)
@@ -152,7 +150,7 @@ class Detrender(Basecamp):
     # light curve chunk. The code is (for the most part) written to allow for
     # multiple breakpoints, but the plotting can currently only handle one.
     if kwargs.get('breakpoint', True):
-      self.breakpoints = [Breakpoint(self.ID), 999999]
+      self.breakpoints = [self._mission.Breakpoint(self.ID), 999999]
       if self.breakpoints[0] is None:
         raise ValueError('Invalid breakpoint set in `%d.Breakpoint()`.' % (self.mission))
     else:
@@ -550,7 +548,7 @@ class Detrender(Basecamp):
                 fontweight = 'bold')            
     ax.annotate(info_left, xy = (0.02, 0.025), xycoords = 'axes fraction', 
                 ha = 'left', va = 'bottom', fontsize = 8)     
-    ax.set_xlabel(r'Time (%s)' % Missions[self.mission].TIMEUNITS, fontsize = 5)
+    ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 5)
     ax.margins(0.01, 0.1)
     ax.set_ylim(*ylim)
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
@@ -603,7 +601,7 @@ class Detrender(Basecamp):
     '''
     
     axl, axc, axr = dvs.title()
-    axc.annotate("%s %d" % (Missions[self.mission].IDSTRING, self.ID),
+    axc.annotate("%s %d" % (self._mission.IDSTRING, self.ID),
                  xy = (0.5, 0.5), xycoords = 'axes fraction', 
                  ha = 'center', va = 'center', fontsize = 18)
     
@@ -613,7 +611,7 @@ class Detrender(Basecamp):
                  fontstyle = 'italic')
     
     axl.annotate("%s %s%02d: %s" % (self.mission.upper(), 
-                 Missions[self.mission].SEASONCHAR, self.season, self.name),
+                 self._mission.SEASONCHAR, self.season, self.name),
                  xy = (0.5, 0.5), xycoords = 'axes fraction', 
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
@@ -623,7 +621,7 @@ class Detrender(Basecamp):
                  ha = 'center', va = 'center', fontsize = 8, color = 'k',
                  fontstyle = 'italic')
     
-    axr.annotate("%s %.3f" % (Missions[self.mission].MAGSTRING, self.mag),
+    axr.annotate("%s %.3f" % (self._mission.MAGSTRING, self.mag),
                  xy = (0.5, 0.5), xycoords = 'axes fraction', 
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
@@ -698,11 +696,11 @@ class Detrender(Basecamp):
     '''
     
     if not self.loaded:
-      data = GetData(self.ID, mission = self.mission, season = self.season, clobber = self.clobber_tpf, 
-                     aperture_name = self.aperture_name, 
-                     saturated_aperture_name = self.saturated_aperture_name, 
-                     max_pixels = self.max_pixels,
-                     saturation_tolerance = self.saturation_tolerance)
+      data = self._mission.GetData(self.ID, season = self.season, clobber = self.clobber_tpf, 
+                  aperture_name = self.aperture_name, 
+                  saturated_aperture_name = self.saturated_aperture_name, 
+                  max_pixels = self.max_pixels,
+                  saturation_tolerance = self.saturation_tolerance)
       self.cadn = data.cadn
       self.time = data.time
       self.model = np.zeros_like(self.time)
@@ -832,7 +830,7 @@ class Detrender(Basecamp):
     pdf.savefig(self.dvs2.fig)
     pl.close(self.dvs2.fig)
     d = pdf.infodict()
-    d['Title'] = 'EVEREST: %s de-trending of %s %d' % (self.name, Missions[self.mission].IDSTRING, self.ID)
+    d['Title'] = 'EVEREST: %s de-trending of %s %d' % (self.name, self._mission.IDSTRING, self.ID)
     d['Author'] = 'Rodrigo Luger'
     pdf.close()
     
@@ -1016,12 +1014,12 @@ class nPLD(nPLDBase, Detrender):
     # Get neighbors
     self.parent_model = kwargs.get('parent_model', None)
     num_neighbors = kwargs.get('neighbors', 10)
-    self.neighbors = GetNeighbors(self.ID, mission = self.mission, 
-                                  model = self.parent_model,
-                                  neighbors = num_neighbors, 
-                                  mag_range = kwargs.get('mag_range', (11., 13.)), 
-                                  cdpp_range = kwargs.get('cdpp_range', None),
-                                  aperture_name = self.aperture_name)
+    self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                   model = self.parent_model,
+                                   neighbors = num_neighbors, 
+                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                   cdpp_range = kwargs.get('cdpp_range', None),
+                                   aperture_name = self.aperture_name)
     if len(self.neighbors):
       if len(self.neighbors) < num_neighbors:
         log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
@@ -1042,11 +1040,11 @@ class nPLD(nPLDBase, Detrender):
         # included! These are mostly thruster fire events and other artifacts common to
         # all the stars, so it makes sense that we might want to keep them in the design
         # matrix.
-        data = GetData(neighbor, mission = self.mission, season = self.season, clobber = self.clobber_tpf, 
-                       aperture_name = self.aperture_name, 
-                       saturated_aperture_name = self.saturated_aperture_name, 
-                       max_pixels = self.max_pixels,
-                       saturation_tolerance = self.saturation_tolerance)
+        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
+                             aperture_name = self.aperture_name, 
+                             saturated_aperture_name = self.saturated_aperture_name, 
+                             max_pixels = self.max_pixels,
+                             saturation_tolerance = self.saturation_tolerance)
         data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
         data.fraw = np.sum(data.fpix, axis = 1)
         if self.has_sc:

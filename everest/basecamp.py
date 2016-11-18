@@ -7,10 +7,9 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from .missions import Missions
+from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
-from .data import Season, Breakpoint
 from .gp import GetCovariance, GetKernelParams
 import os, sys
 import numpy as np
@@ -30,6 +29,22 @@ class Basecamp(object):
   '''
   
   '''
+  
+  @property
+  def _mission(self):
+    '''
+    
+    '''
+    
+    return getattr(missions, self.mission)
+  
+  @_mission.setter
+  def _mission(self, value):
+    '''
+    
+    '''
+    
+    raise NotImplementedError("Can't set this property.") 
     
   @property
   def dir(self):
@@ -38,7 +53,7 @@ class Basecamp(object):
     
     '''
     
-    return Missions[self.mission].TargetDirectory(self.ID, self.season)
+    return self._mission.TargetDirectory(self.ID, self.season)
       
   @dir.setter
   def dir(self, value):
@@ -76,7 +91,7 @@ class Basecamp(object):
     try:
       self._season
     except:
-      self._season = Season(self.ID, mission = self.mission)
+      self._season = self._mission.Season(self.ID)
     return self._season
 
   @season.setter
@@ -451,43 +466,32 @@ class Basecamp(object):
     
     self._weights = weights
   
-  def get_cdpp_arr(self):
+  def get_cdpp_arr(self, flux = None):
     '''
     Returns the 6-hr CDPP value in *ppm* for each of the chunks in the light curve.
     
     '''
     
-    return np.array([CDPP6(self.flux[self.get_masked_chunk(b)]) for b, _ in enumerate(self.breakpoints)])
+    if flux is None:
+      flux = self.flux
+    return np.array([CDPP6(flux[self.get_masked_chunk(b)]) for b, _ in enumerate(self.breakpoints)])
   
-  def get_cdpp(self):
+  def get_cdpp(self, flux = None):
     '''
     Returns the scalar 6-hr CDPP for the light curve.
     
     '''
     
-    return CDPP6(self.apply_mask(self.flux))
+    if flux is None:
+      flux = self.flux
+    return CDPP6(self.apply_mask(flux))
   
-  def plot_weights(self, ax = None, cax = None):
+  def plot_weights(self, ax, cax):
     '''
     Plots the *PLD* weights on the CCD for each of the *PLD* orders.
     
     '''
-    
-    # Set up the axes?
-    if (ax is None) or (cax is None):
-      fig = pl.figure(figsize = (12, 12))
-      fig.subplots_adjust(top = 0.95, bottom = 0.025, left = 0.1, right = 0.92)
-      fig.canvas.set_window_title('%s %d' % (Missions[self.mission].IDSTRING, self.ID))
-      ax = [pl.subplot2grid((80, 130), (20 * j, 25 * i), colspan = 23, rowspan = 18) 
-            for j in range(len(self.breakpoints) * 2) for i in range(1 + 2 * (self.pld_order - 1))]
-      cax = [pl.subplot2grid((80, 130), (20 * j, 25 * (1 + 2 * (self.pld_order - 1))), 
-             colspan = 4, rowspan = 18) for j in range(len(self.breakpoints) * 2)]
-      ax = np.array(ax).reshape(2 * len(self.breakpoints), -1)
-      cax = np.array(cax)
-      show = True
-    else:
-      show = False
-    
+
     # Loop over all PLD orders and over all chunks
     npix = len(self.fpix[1])
     ap = self.aperture.flatten()
@@ -615,11 +619,8 @@ class Basecamp(object):
       ax[2 * j, 0].text(-0.55, -0.15, r'$%d$' % (j + 1), fontsize = 16, transform = ax[2 * j, 0].transAxes)
       ax[2 * j, 0].set_ylabel(r'$w_{ij}$', fontsize = 18)
       ax[2 * j + 1, 0].set_ylabel(r'$\bar{X}_{ij} \cdot w_{ij}$', fontsize = 18)
-  
-    if show:
-      pl.show()
 
-  def plot_aperture(self, axes = None):
+  def plot_aperture(self, axes, labelsize = 8):
     '''
     Plots the aperture and the pixel images at the beginning, middle, and end of 
     the time series. Also plots a high resolution image of the target, if available.
@@ -627,23 +628,10 @@ class Basecamp(object):
     '''
     
     log.info('Plotting the aperture...')
-    
-    # Set up the axes?
-    if axes is None:
-      fig, axes = pl.subplots(2,2, figsize = (6, 8))
-      fig.subplots_adjust(top = 0.975, bottom = 0.025, left = 0.05, 
-                          right = 0.95, hspace = 0.05, wspace = 0.05)
-      axes = axes.flatten()
-      fig.canvas.set_window_title('%s %d' % (Missions[self.mission].IDSTRING, self.ID))
-      show = True
-      labelsize = 12
-    else:
-      show = False
-      labelsize = 8
-    
+        
     # Get colormap
     plasma = pl.get_cmap('plasma')
-    plasma.set_bad('w')
+    plasma.set_bad(alpha = 0)
     
     # Get aperture contour
     def PadWithZeros(vector, pad_width, iaxis, kwargs):
@@ -692,93 +680,3 @@ class Basecamp(object):
       ax.set_ylim(-0.7, ny - 0.3)
       ax.annotate('hires', xy = (0.5, 0.975), xycoords = 'axes fraction',
                   ha = 'center', va = 'top', size = labelsize, color = 'w')
-    
-    if show:
-      pl.show()
-
-  def plot(self, ax = None):
-    '''
-    Plots the final de-trended light curve.
-    
-    '''
-    
-    log.info('Plotting the light curve...')
-    
-    # Set up axes?
-    if ax is None:
-      fig, ax = pl.subplots(1, figsize = (13, 6))
-      fig.canvas.set_window_title('EVEREST Light curve')
-      show = True
-    else:
-      show = False
-
-    # Plot the good data points
-    ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 4, alpha = 0.5)
-    
-    # Plot the outliers
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    O1 = lambda x: x[self.outmask]
-    O2 = lambda x: x[bnmask]
-    M = lambda x: np.delete(x, bnmask)
-    ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 4, alpha = 0.5)
-    ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 4, alpha = 0.25)
-
-    # Plot the GP
-    _, amp, tau = self.kernel_params
-    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-    gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
-    med = np.nanmedian(self.apply_mask(self.flux))
-    y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
-    y += med
-    ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
-
-    # Appearance
-    ax.set_title('%s %d' % (Missions[self.mission].IDSTRING, self.ID), fontsize = 18)
-    ax.set_xlabel('Time (%s)' % Missions[self.mission].TIMEUNITS, fontsize = 18)
-    ax.set_ylabel('Flux', fontsize = 18)
-    for brkpt in self.breakpoints[:-1]:
-      ax.axvline(self.time[brkpt], color = 'r', ls = '--', alpha = 0.25)
-    if len(self.cdpp6_arr) == 2:
-      ax.annotate('%.2f ppm' % self.cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 12, color = 'r')
-      ax.annotate('%.2f ppm' % self.cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                  ha = 'right', va = 'top', fontsize = 12, color = 'r')
-    else:
-      ax.annotate('%.2f ppm' % self.cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 12, color = 'r')
-    ax.margins(0.01, 0.1)          
-    
-    # Get y lims that bound 99% of the flux
-    flux = np.delete(self.flux, bnmask)
-    N = int(0.995 * len(flux))
-    hi, lo = flux[np.argsort(flux)][[N,-N]]
-    fsort = flux[np.argsort(flux)]
-    pad = (hi - lo) * 0.1
-    ylim = (lo - pad, hi + pad)
-    ax.set_ylim(ylim)   
-    ax.get_yaxis().set_major_formatter(Formatter.Flux)
-    
-    # Indicate off-axis outliers
-    for i in np.where(self.flux < ylim[0])[0]:
-      if i in bnmask:
-        color = "#ffcccc"
-      elif i in self.outmask:
-        color = "#cccccc"
-      else:
-        color = "#ccccff"
-      ax.annotate('', xy=(self.time[i], ylim[0]), xycoords = 'data',
-                  xytext = (0, 15), textcoords = 'offset points',
-                  arrowprops=dict(arrowstyle = "-|>", color = color))
-    for i in np.where(self.flux > ylim[1])[0]:
-      if i in bnmask:
-        color = "#ffcccc"
-      elif i in self.outmask:
-        color = "#cccccc"
-      else:
-        color = "#ccccff"
-      ax.annotate('', xy=(self.time[i], ylim[1]), xycoords = 'data',
-                  xytext = (0, -15), textcoords = 'offset points',
-                  arrowprops=dict(arrowstyle = "-|>", color = color))
-
-    if show:
-      pl.show()

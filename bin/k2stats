@@ -7,7 +7,6 @@ k2stats
 '''
 
 import argparse
-from everest import Statistics
 from everest.config import EVEREST_DEV
 
 if __name__ == '__main__':
@@ -17,7 +16,12 @@ if __name__ == '__main__':
   parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to analyze')
   parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to')
   parser.add_argument("-i", "--inject", action = 'store_true', help = 'Run injection stats?')
+  parser.add_argument("-m", "--mission", type = str, default = 'k2', help = 'Mission to analyze')
   args = parser.parse_args()
+  
+  # Get the mission
+  from everest import missions
+  Statistics = getattr(missions, args.mission).Statistics
   
   # Get the campaign number
   if args.campaign is not None:

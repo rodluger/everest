@@ -14,17 +14,15 @@ except NameError:
 
 if __EVEREST_SETUP__:
   # Set up the individual missions
-  from .missions import Missions
-  for mission in Missions:
-    Missions[mission].Setup()
+  from . import missions
+  for mission in missions.Missions:
+    getattr(missions, mission).Setup()
 else:
   # This is a regular everest run
-  from . import basecamp, config, data, detrender, dvs, fits, gp, inject, math, \
-                missions, pbs, pld, pool, transit, user, utils
+  from . import basecamp, config, detrender, dvs, fits, gp, inject, math, \
+                missions, pld, pool, transit, user, utils
   from .detrender import *
   from .inject import *
   from .missions import *
-  from .data import Statistics
-  from .pbs import Download, Run, Status
   from .transit import Transit
   from .user import Everest

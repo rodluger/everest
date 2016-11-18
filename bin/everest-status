@@ -7,14 +7,18 @@ everest-status
 '''
 
 import argparse
-from everest import Status
 
 if __name__ == '__main__':
 
   parser = argparse.ArgumentParser(prog = 'estats', add_help = True)
   parser.add_argument("campaign", nargs = '?', type = str, default = None, help = 'The K2 campaign to check')
   parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to check')
+  parser.add_argument("-m", "--mission", type = str, default = 'k2', help = 'Mission to analyze')
   args = parser.parse_args()
+  
+  # Get the mission
+  from everest import missions
+  Status = getattr(missions, args.mission).Status
   
   # Get the campaign number
   if args.campaign is not None:

@@ -7,7 +7,6 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from .data import GetData, GetNeighbors
 from .math import Interpolate
 import os, sys
 import numpy as np

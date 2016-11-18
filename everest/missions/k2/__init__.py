@@ -9,6 +9,7 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .k2 import *
 from . import aux, pbs
+from .pbs import Download, Run, Status
 
 #: The string that identifies individual targets for this mission
 IDSTRING = 'EPIC'

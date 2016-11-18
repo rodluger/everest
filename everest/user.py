@@ -5,23 +5,20 @@
 ----------------------------------------
 
 .. todo:: 
-   - Plot raw flux
-   - Plot SC flux
    - Add easy masking
    - Add download interface
-   - Add outlier, gp options when plotting
    
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
+from . import missions
 from .basecamp import Basecamp
 from .pld import *
-from .data import HasShortCadence, Season
-from .missions import Missions
 from .gp import GetCovariance
 from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT
-from .utils import InitLog
+from .utils import InitLog, Formatter
+import george
 import os, sys
 import numpy as np
 import matplotlib.pyplot as pl
@@ -41,9 +38,9 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
   '''
 
   # Grab some info
-  season = Season(ID, mission = mission)
-  target_dir = Missions[mission].TargetDirectory(ID, season)
-  fitsfile = Missions[mission].FITSFile(target_dir, ID, season)
+  season = getattr(missions, mission).Season(ID)
+  target_dir = getattr(missions, mission).TargetDirectory(ID, season)
+  fitsfile = getattr(missions, mission).FITSFile(target_dir, ID, season)
   model_name = pyfits.getheader(fitsfile, 1)['MODEL']
 
   class Star(eval(model_name + 'Base'), Basecamp):
@@ -108,7 +105,7 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
       with pyfits.open(self.fitsfile) as f:
         
         # Params and long cadence data
-        self.has_sc = HasShortCadence(self.ID, season = self.season)
+        self.has_sc = self._mission.HasShortCadence(self.ID, season = self.season)
         self.loaded = True
         self.is_parent = False
         try:
@@ -246,5 +243,199 @@ def Everest(ID, mission = 'k2', quiet = False, **kwargs):
       self.sc_meta = None
       self.transitmask = np.array([], dtype = int)
       self.sc_transitmask = np.array([], dtype = int)
+    
+    def plot_aperture(self, show = True):
+      '''
+      
+      '''
+      
+      # Set up the axes
+      fig, ax = pl.subplots(2,2, figsize = (6, 8))
+      fig.subplots_adjust(top = 0.975, bottom = 0.025, left = 0.05, 
+                          right = 0.95, hspace = 0.05, wspace = 0.05)
+      ax = ax.flatten()
+      fig.canvas.set_window_title('%s %d' % (self._mission.IDSTRING, self.ID))
+      super(Star, self).plot_aperture(ax, labelsize = 12) 
+      
+      if show:
+        pl.show()
+        pl.close()
+      else:
+        return fig, ax
+    
+    def plot_weights(self, show = True):
+      '''
+      
+      '''
+      
+      # Set up the axes
+      fig = pl.figure(figsize = (12, 12))
+      fig.subplots_adjust(top = 0.95, bottom = 0.025, left = 0.1, right = 0.92)
+      fig.canvas.set_window_title('%s %d' % (self._mission.IDSTRING, self.ID))
+      ax = [pl.subplot2grid((80, 130), (20 * j, 25 * i), colspan = 23, rowspan = 18) 
+            for j in range(len(self.breakpoints) * 2) for i in range(1 + 2 * (self.pld_order - 1))]
+      cax = [pl.subplot2grid((80, 130), (20 * j, 25 * (1 + 2 * (self.pld_order - 1))), 
+             colspan = 4, rowspan = 18) for j in range(len(self.breakpoints) * 2)]
+      ax = np.array(ax).reshape(2 * len(self.breakpoints), -1)
+      cax = np.array(cax)
+      super(Star, self).plot_weights(ax, cax)
+      
+      if show:
+        pl.show()
+        pl.close()
+      else:
+        return fig, ax, cax
 
+    def plot(self, show = True, plot_raw = True, plot_gp = True, 
+                   plot_bad = True, plot_out = True, plot_sc = False):
+      '''
+      Plots the final de-trended light curve.
+    
+      '''
+
+      log.info('Plotting the light curve...')
+    
+      # Set up axes
+      if plot_raw:
+        fig, axes = pl.subplots(2, figsize = (13, 9), sharex = True)
+        fig.subplots_adjust(hspace = 0.1)
+        axes = [axes[1], axes[0]]
+        if plot_sc:
+          fluxes = [self.sc_flux, self.sc_fraw]
+        else:
+          fluxes = [self.flux, self.fraw]
+        labels = ['EVEREST Flux', 'Raw Flux']
+      else:
+        fig, axes = pl.subplots(1, figsize = (13, 6))
+        axes = [axes]
+        if plot_sc:
+          fluxes = [self.sc_flux]
+        else:
+          fluxes = [self.flux]
+        labels = ['EVEREST Flux']
+      fig.canvas.set_window_title('EVEREST Light curve')
+      
+      # Set up some stuff
+      if plot_sc:
+        time = self.sc_time
+        badmask = self.sc_badmask
+        nanmask = self.sc_nanmask
+        outmask = self.sc_outmask
+        fraw_err = self.sc_fraw_err
+        breakpoints = []
+        plot_gp = False
+        ms = 2
+      else:
+        time = self.time
+        badmask = self.badmask
+        nanmask = self.nanmask
+        outmask = self.outmask
+        fraw_err = self.fraw_err
+        breakpoints = self.breakpoints
+        ms = 4
+      
+      # Get the cdpps
+      cdpps = [[self.get_cdpp(self.flux), self.get_cdpp_arr(self.flux)],
+               [self.get_cdpp(self.fraw), self.get_cdpp_arr(self.fraw)]]
+      self.cdpp6 = cdpps[0][0]
+      self.cdpp6_arr = cdpps[0][1]
+      
+      for n, ax, flux, label, cdpp in zip([0,1], axes, fluxes, labels, cdpps):
+        
+        # Initialize CDPP
+        cdpp6 = cdpp[0]
+        cdpp6_arr = cdpp[1]
+          
+        # Plot the good data points
+        ax.plot(self.apply_mask(time, sc = plot_sc), self.apply_mask(flux, sc = plot_sc), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+    
+        # Plot the outliers
+        bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
+        O1 = lambda x: x[outmask]
+        O2 = lambda x: x[bnmask]
+        if plot_out:
+          ax.plot(O1(time), O1(flux), ls = 'none', color = "#777777", marker = '.', markersize = ms, alpha = 0.5)
+        if plot_bad:
+          ax.plot(O2(time), O2(flux), 'r.', markersize = ms, alpha = 0.25)
+
+        # Plot the GP
+        if n == 0 and plot_gp:
+          M = lambda x: np.delete(x, bnmask)
+          _, amp, tau = self.kernel_params
+          gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+          gp.compute(self.apply_mask(time, sc = plot_sc), self.apply_mask(fraw_err, sc = plot_sc))
+          med = np.nanmedian(self.apply_mask(flux, sc = plot_sc))
+          y, _ = gp.predict(self.apply_mask(flux, sc = plot_sc) - med, time)
+          y += med
+          ax.plot(M(time), M(y), 'r-', lw = 0.5, alpha = 0.5)
+
+        # Appearance
+        if n == 0: 
+          ax.set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+        ax.set_ylabel(label, fontsize = 18)
+        for brkpt in breakpoints[:-1]:
+          ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
+        if len(cdpp6_arr) == 2:
+          ax.annotate('%.2f ppm' % cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                      ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+          ax.annotate('%.2f ppm' % cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+                      ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+        else:
+          ax.annotate('%.2f ppm' % cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                      ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+        ax.margins(0.01, 0.1)          
+    
+        # Get y lims that bound 99% of the flux
+        f = np.concatenate([np.delete(f, bnmask) for f in fluxes])
+        N = int(0.995 * len(f))
+        hi, lo = f[np.argsort(f)][[N,-N]]
+        fsort = f[np.argsort(f)]
+        pad = (hi - lo) * 0.1
+        ylim = (lo - pad, hi + pad)
+        ax.set_ylim(ylim)   
+        ax.get_yaxis().set_major_formatter(Formatter.Flux)
+    
+        # Indicate off-axis outliers
+        for i in np.where(flux < ylim[0])[0]:
+          if i in bnmask:
+            color = "#ffcccc"
+            if not plot_bad: 
+              continue
+          elif i in outmask:
+            color = "#cccccc"
+            if not plot_out:
+              continue
+          else:
+            color = "#ccccff"
+          ax.annotate('', xy=(time[i], ylim[0]), xycoords = 'data',
+                      xytext = (0, 15), textcoords = 'offset points',
+                      arrowprops=dict(arrowstyle = "-|>", color = color))
+        for i in np.where(flux > ylim[1])[0]:
+          if i in bnmask:
+            color = "#ffcccc"
+            if not plot_bad:
+              continue
+          elif i in outmask:
+            color = "#cccccc"
+            if not plot_out:
+              continue
+          else:
+            color = "#ccccff"
+          ax.annotate('', xy=(time[i], ylim[1]), xycoords = 'data',
+                      xytext = (0, -15), textcoords = 'offset points',
+                      arrowprops=dict(arrowstyle = "-|>", color = color))
+      
+      # Show total CDPP improvement
+      pl.figtext(0.5, 0.94, '%s %d' % (self._mission.IDSTRING, self.ID), fontsize = 18, ha = 'center', va = 'bottom')
+      pl.figtext(0.5, 0.905, r'$%.2f\ \mathrm{ppm} \rightarrow %.2f\ \mathrm{ppm}$' % (self.cdppr, self.cdpp6), fontsize = 14, ha = 'center', va = 'bottom')
+      
+      if show:
+        pl.show()
+        pl.close()
+      else:
+        if plot_raw:
+          return fig, axes
+        else:
+          return fig, axes[0]
+    
   return Star(ID, mission, model_name, fitsfile, quiet, **kwargs)
