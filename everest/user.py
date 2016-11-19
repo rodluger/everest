@@ -3,9 +3,6 @@
 '''
 :py:mod:`user.py` - User-facing routines
 ----------------------------------------
-
-.. todo:: 
-   - Add easy masking
    
 '''
 
@@ -187,6 +184,14 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         self._X = [None for i in range(self.pld_order)]
         self.get_X()
       return self._X
+    
+    def reset(self):
+      '''
+      
+      '''
+      
+      self.load_fits()
+      self.init_model()
     
     def download_fits(self):
       '''
@@ -434,6 +439,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         badmask = self.sc_badmask
         nanmask = self.sc_nanmask
         outmask = self.sc_outmask
+        transitmask = self.sc_transitmask
         fraw_err = self.sc_fraw_err
         breakpoints = []
         plot_gp = False
@@ -443,6 +449,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         badmask = self.badmask
         nanmask = self.nanmask
         outmask = self.outmask
+        transitmask = self.transitmask
         fraw_err = self.fraw_err
         breakpoints = self.breakpoints
         ms = 4
@@ -466,11 +473,13 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
         O1 = lambda x: x[outmask]
         O2 = lambda x: x[bnmask]
+        O3 = lambda x: x[transitmask]
         if plot_out:
           ax.plot(O1(time), O1(flux), ls = 'none', color = "#777777", marker = '.', markersize = ms, alpha = 0.5)
         if plot_bad:
           ax.plot(O2(time), O2(flux), 'r.', markersize = ms, alpha = 0.25)
-
+        ax.plot(O3(time), O3(flux), 'b.', markersize = ms, alpha = 0.25)
+        
         # Plot the GP
         if n == 0 and plot_gp:
           M = lambda x: np.delete(x, bnmask)
@@ -565,4 +574,15 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       
       return getattr(missions, mission).pipelines.plot(self.ID, **kwargs)
     
+    def mask_planet(self, t0, period, dur = 0.2):
+      '''
+      
+      '''
+      
+      mask = []
+      t0 += np.ceil((self.time[0] - dur - t0) / period) * period
+      for t in np.arange(t0, self.time[-1] + dur, period):
+        mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
+      self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
+      
   return Star(ID, mission, model_name, fitsfile, quiet, clobber, **kwargs)
