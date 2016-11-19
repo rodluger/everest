@@ -738,7 +738,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     # Control transparency
     alpha_kepler = 0.03
     alpha_unsat = min(0.1, 2000. / (1 + len(unsat[0])))
-    alpha_sat = min(1., 20. / (1 + len(sat[0])))
+    alpha_sat = min(1., 60. / (1 + len(sat[0])))
 
     # Get the comparison model stats
     if compare_to.lower() == 'everest1':

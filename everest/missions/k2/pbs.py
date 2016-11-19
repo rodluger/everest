@@ -138,7 +138,7 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   try:
     strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '%%%')
   except UnicodeDecodeError:
-    raise ValueError('Unable to pickle `kwargs`. Currently the `kwargs` values may only be' +
+    raise ValueError('Unable to pickle `kwargs`. Currently the `kwargs` values may only be ' +
                      '`int`s, `float`s, `string`s, `bool`s, or lists of these.')
   
   # Submit the cluster job      

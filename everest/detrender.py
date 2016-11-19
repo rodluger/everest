@@ -47,7 +47,7 @@ class Detrender(Basecamp):
   :param bool debug: De-trend in debug mode? If :py:obj:`True`, prints all output to screen and \
                      enters :py:obj:`pdb` post-mortem mode for debugging when an error is raised.
                      Default :py:obj:`False`
-  :param bool make_fits: Generate a *FITS* file at the end of rthe run? Default :py:obj:`False`
+  :param bool make_fits: Generate a *FITS* file at the end of rthe run? Default :py:obj:`True`
   :param str mission: The name of the mission. Default `k2`
   
   **Detrender:**
@@ -114,7 +114,7 @@ class Detrender(Basecamp):
     # Initialize logging
     self.ID = ID
     self.recursive = kwargs.get('recursive', True)
-    self.make_fits = kwargs.get('make_fits', False)
+    self.make_fits = kwargs.get('make_fits', True)
     self.mission = kwargs.get('mission', 'k2')
     self.has_sc = self._mission.HasShortCadence(self.ID, season = self.season)
     self.clobber = kwargs.get('clobber', False)
