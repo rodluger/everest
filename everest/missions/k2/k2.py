@@ -51,21 +51,20 @@ def Season(EPIC, **kwargs):
   
   return Campaign(EPIC, **kwargs)
 
-def Breakpoint(EPIC, **kwargs):
+def Breakpoint(EPIC, **kwargs):  
   '''
-  .. todo:: Populate these.
   
   '''
   
   campaign = Season(EPIC)
-  breakpoints = {0: None,
-                 1: None,
+  breakpoints = {0: None,   # Campaign is really short
+                 1: 2133,
                  2: 2042,
-                 3: None,
-                 4: None,
-                 5: None,
+                 3: 2084,
+                 4: 2012,
+                 5: 1821,
                  6: 2143,
-                 7: None,
+                 7: 2457,   # This one should be tuned
                  8: 2084,
                  9: None,
                  10: None,
