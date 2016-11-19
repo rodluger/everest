@@ -112,7 +112,7 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
                           str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz' % (EPIC, campaign))
     if clobber or not os.path.exists(tpf):                 
       kplr_client.k2_star(EPIC).get_target_pixel_files(fetch = True)
-    
+
     with pyfits.open(tpf) as f:
       qdata = f[1].data
       
