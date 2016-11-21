@@ -8,7 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .aux import *
-from .k2 import GetData
+from .k2 import GetData, FITSFile
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
 from ...utils import ExceptionHook, FunctionWrapper
 from ...pool import Pool
@@ -228,9 +228,10 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, **kwargs):
       for folder in os.listdir(path):
         for subfolder in os.listdir(os.path.join(path, folder)):
           if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data.npz')):
-            if int(folder[:4] + subfolder) in stars:
+            ID = int(folder[:4] + subfolder)
+            if ID in stars:
               down += 1
-              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.npz')):
+              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, FITSFile(ID, c))):
                 proc += 1
               elif os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err')):
                 err += 1
