@@ -31,7 +31,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'rPLD', 'nPLD', 'nPLDPowell']
+__all__ = ['Detrender', 'rPLD', 'nPLD', 'nPLDPowell', 'nPLD2']
 
 class Detrender(Basecamp):
   '''
@@ -1175,3 +1175,108 @@ class nPLDPowell(nPLDBase, Detrender):
     scatter = np.max(scatter)
     
     return scatter
+
+class nPLD2(nPLDBase, Detrender):
+  '''
+  The "neighboring stars" *PLD* model. This model uses the *PLD* vectors of neighboring
+  stars to help in the de-trending and can lead to increased performance over the regular
+  :py:class:`rPLD` model, particularly for dimmer stars.
+  
+  :param tuple cdpp_range: If :py:obj:`parent_model` is set, neighbors are selected only if \
+                           their de-trended CDPPs fall within this range. Default `None`
+  :param tuple mag_range: Only select neighbors whose magnitudes are within this range. \
+                          Default (11., 13.) 
+  :param int neighbors: The number of neighboring stars to use in the de-trending. The \
+                        higher this number, the more signals there are and hence the more \
+                        de-trending information there is. However, the neighboring star \
+                        signals are regularized together with the target's signals, so adding \
+                        too many neighbors will inevitably reduce the contribution of the \
+                        target's own signals, which may reduce performance. Default `10`
+  :param str parent_model: By default, :py:class:`nPLD` is run in stand-alone mode. The neighbor \
+                           signals are computed directly from their TPFs, so there is no need to \
+                           have run *PLD* on them beforehand. However, if :py:obj:`parent_model` is set, \
+                           :py:class:`nPLD` will use information from the :py:obj:`parent_model` model of
+                           each neighboring star when de-trending. This is particularly useful for \
+                           identifying outliers in the neighbor signals and preventing them from polluting \
+                           the current target. Setting :py:obj:`parent_model` to :py:class:`rPLD`, for instance, \
+                           will use the outlier information in the :py:class:`rPLD` model of the neighbors \
+                           (this must have been run ahead of time). Note, however, that tests with *K2* data \
+                           show that including outliers in the neighbor signals actually *improves* the performance, \
+                           since many of these outliers are associated with events such as thruster firings and are \
+                           present in all light curves, and therefore *help* in the de-trending. Default `None`
+  
+  '''
+        
+  def __init__(self, *args, **kwargs):
+    '''
+    
+    '''
+    
+    # Initialize
+    super(nPLD2, self).__init__(*args, **kwargs)
+    
+    # Check for saved model
+    if self.load_model():
+      return
+    
+    # Get neighbors
+    self.parent_model = kwargs.get('parent_model', None)
+    num_neighbors = kwargs.get('neighbors', 10)
+    self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                   model = self.parent_model,
+                                   neighbors = num_neighbors, 
+                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                   cdpp_range = kwargs.get('cdpp_range', None),
+                                   aperture_name = self.aperture_name)
+    if len(self.neighbors):
+      if len(self.neighbors) < num_neighbors:
+        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
+    else:
+      log.error("No neighbors found! Aborting.")
+      return
+    
+    for neighbor in self.neighbors:
+      log.info("Loading data for neighboring target %d..." % neighbor)
+      if self.parent_model is not None:
+        # We load the `parent` model. The advantage here is that outliers have
+        # properly been identified and masked
+        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
+      else:
+        # We load the data straight from the TPF. Much quicker, since no model must
+        # be run in advance. Downside is we don't know where the outliers are. But based
+        # on tests with K2 data, the de-trending is actually *better* if the outliers are
+        # included! These are mostly thruster fire events and other artifacts common to
+        # all the stars, so it makes sense that we might want to keep them in the design
+        # matrix.
+        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
+                             aperture_name = self.aperture_name, 
+                             saturated_aperture_name = self.saturated_aperture_name, 
+                             max_pixels = self.max_pixels,
+                             saturation_tolerance = self.saturation_tolerance)
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+        if self.has_sc:
+          data.sc_mask = np.array(list(set(np.concatenate([data.sc_badmask, data.sc_nanmask]))), dtype = int)
+          data.sc_fraw = np.sum(data.sc_fpix, axis = 1)
+      
+      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
+      X1 = data.fpix / data.fraw.reshape(-1, 1)
+      X1 = Interpolate(data.time, data.mask, X1)
+      if self.X1N is None:
+        self.X1N = np.array(X1)
+      else:
+        self.X1N = np.hstack([self.X1N, X1])
+      del X1
+      # Do the same for short cadence
+      if self.has_sc:
+        _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
+        _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
+        if self.sc_X1N is None:
+          self.sc_X1N = np.array(_scX1N)
+        else:
+          self.sc_X1N = np.hstack([self.sc_X1N, _scX1N])
+        del _scX1N
+      del data
+
+    # Run
+    self.run()
