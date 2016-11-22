@@ -1,2 +1,0 @@
-.. automodule:: everest.data
-   :members:

@@ -30,6 +30,8 @@ EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 EVEREST_FITS = os.environ.get('EVEREST2_FITS', None)
 #: The MAST url where the light curves are published
 MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+#: The directory containing the Kepler PRF files
+KEPPRF_DIR = os.path.expanduser(os.environ.get("KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF"))) 
 
 def MAST_VERSION():
   '''

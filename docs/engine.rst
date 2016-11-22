@@ -24,14 +24,12 @@ Code Engine
    
    basecamp
    config
-   data
    detrender
    dvs
    fits
    gp
    inject
    math
-   pbs
    pld
    pool
    transit
