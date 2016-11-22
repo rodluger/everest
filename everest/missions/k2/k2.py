@@ -57,15 +57,15 @@ def Breakpoint(EPIC, **kwargs):
   '''
   
   campaign = Season(EPIC)
-  breakpoints = {0: None,   # Campaign is really short
-                 1: 2133,
-                 2: 2042,
-                 3: 2084,
-                 4: 2012,
-                 5: 1821,
-                 6: 2143,
-                 7: 2457,   # This one should be tuned
-                 8: 2084,
+  breakpoints = {0: None,   # OK; campaign is really short
+                 1: 2210,   #
+                 2: 2042,   # OK
+                 3: 2140,   #
+                 4: 1750,   #
+                 5: 1774,   #
+                 6: 2143,   # OK
+                 7: 2065,   # There's no stable point in this campaign
+                 8: 1950,   # This campaign needs to be redone (was 2084)
                  9: None,
                  10: None,
                  11: None,
