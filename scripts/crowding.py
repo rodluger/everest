@@ -89,6 +89,8 @@ class CrowdingTarget(object):
         ferr = data['fpix_err']
         time = data['time']
         qual = data['qual']
+        pc1 = data['pc1']
+        pc2 = data['pc2']
         flux = np.nansum(fpix, axis = (1,2))
     
         # Remove bad timestamps
@@ -100,6 +102,8 @@ class CrowdingTarget(object):
         fpix = np.delete(fpix, badmask, axis = 0)
         ferr = np.delete(ferr, badmask, axis = 0)
         flux = np.delete(flux, badmask)
+        pc1 = np.delete(pc1, badmask)
+        pc2 = np.delete(pc2, badmask)
           
         # Get the nearby targets
         nearby_dict = data['nearby']
@@ -118,6 +122,8 @@ class CrowdingTarget(object):
         self.nearby = nearby
         self.mag = mag
         self.aperture = data['apertures'][()][self.aperture]
+        self.X = pc1
+        self.Y = pc2
 
     def generatePRF(self):
         '''
@@ -409,5 +415,8 @@ class CrowdingTarget(object):
         pl.show()
         
 c = CrowdingTarget(215796924)
-c.findSolution()
+
+import pdb; pdb.set_trace()
+
+c.findSolution(3000)
 c.plot()
