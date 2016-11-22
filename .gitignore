@@ -3,3 +3,5 @@ __pycache__
 docs/.*
 .ipynb_checkpoints
 everest.egg-info
+progress.txt
+output
