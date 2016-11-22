@@ -40,7 +40,7 @@ class CrowdingTarget(object):
     
     '''
     
-    def __init__(self, ID, maxsrc = 3, xtol = 1.e-4, ftol = 1.e-4, aperture = 'k2sff_15'):
+    def __init__(self, ID, maxsrc = 3, xtol = 1.e-4, ftol = 1.e-4, dtol = 0.01, aperture = 'k2sff_15'):
         '''
         
         '''
@@ -54,6 +54,9 @@ class CrowdingTarget(object):
         # Powell minimization params
         self.xtol = xtol
         self.ftol = ftol
+        
+        # The distance tolerance when fitting sources (in pixels)
+        self.dtol = dtol
         
         # Name of the aperture we're using
         self.aperture = aperture
@@ -390,7 +393,7 @@ class CrowdingTarget(object):
                          markersize = 3)
             
             # Display fit info
-            ax[1,n].annotate(r'$\mathrm{BIC} = %.3f$' % self.bic[n + 1],
+            ax[1,n].annotate(r'$\log(\chi^2) = %.3f$' % np.log10(self.chisq[n + 1]),
                              xy = (0.025, 0.95), xycoords = 'axes fraction',
                              ha = 'left', va = 'top', color = 'k', fontsize = 12)
             ax[1,n].annotate(r'$\mathrm{ERROR} = %.1f$' % (100 * err) + r'$\%$',
