@@ -79,9 +79,9 @@ def LightcurveHDU(model):
   cards.append(('CDPPG', model.gppp, 'Average GP-de-trended 6-hr CDPP'))
   for i in range(99):
     try:
-      cards.append(('CDPP6%02d' % (i + 1), model.cdpp6_arr[i], 'Chunk de-trended 6-hr CDPP'))
-      cards.append(('CDPPR%02d' % (i + 1), model.cdppr_arr[i], 'Chunk raw 6-hr CDPP'))
-      cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i], 'Chunk validation 6-hr CDPP'))
+      cards.append(('CDPP6%02d' % (i + 1), model.cdpp6_arr[i] if not np.isnan(model.cdpp6_arr[i]) else 0, 'Chunk de-trended 6-hr CDPP'))
+      cards.append(('CDPPR%02d' % (i + 1), model.cdppr_arr[i] if not np.isnan(model.cdppr_arr[i]) else 0, 'Chunk raw 6-hr CDPP'))
+      cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i] if not np.isnan(model.cdppv_arr[i]) else 0, 'Chunk validation 6-hr CDPP'))
     except:
       break
   cards.append(('GITER', model.giter, 'Number of GP optimiziation iterations'))
