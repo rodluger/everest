@@ -283,6 +283,8 @@ class CrowdingTarget(object):
             else:
                 continue
 
+
+
         nsrc = self.nsrc
         # create final arguments and parameters for BIC-minimized PRF fit
         args = (DATx,DATy,self.base_flux,self.errors,nsrc,splineInterpolation,np.mean(DATx),np.mean(DATy))
@@ -379,16 +381,16 @@ class CrowdingTarget(object):
 
         DATx,DATy,PRFx,PRFy,prf = self.generatePRF()
         splineInterpolation = self.interpolate(PRFx,PRFy,prf)
-        nearby = self.findNearby(DATx,DATy)
+        sorted_nearby = self.findNearby(DATx,DATy)
 
         # concatenate guess array
-        guess = self.generateGuess(PRFx,PRFy,prf,DATx,DATy,splineInterpolation,nearby)
+        guess = self.generateGuess(PRFx,PRFy,prf,DATx,DATy,splineInterpolation,sorted_nearby)
         ans = self.findSolution(guess, DATx, DATy,splineInterpolation)
 
         # generate the prf fit for guess parameters
         guessfit = self.createGuessFit(guess,DATx,DATy,splineInterpolation)
         prffit = self.createFit(ans,DATx,DATy,splineInterpolation)
 
-        self.plotResults(prffit,guessfit,nearby)
+        self.plotResults(prffit,guessfit,sorted_nearby)
 
 CrowdingTarget(epic).runCrowding()
