@@ -55,7 +55,7 @@ class DVS1(object):
   
   '''
   
-  def __init__(self, breakpoint = False, pld_order = 3):
+  def __init__(self, nchunks = 2, pld_order = 3):
     '''
     
     '''
@@ -76,10 +76,10 @@ class DVS1(object):
     self.body_top_left = GetFrame(12, 6, 102, 26)
     self.body_top_right = [GetFrame(12, 116, 21, 26), GetFrame(12, 139, 21, 26), GetFrame(12 + hght, 116, 21, 26), GetFrame(12 + hght, 139, 21, 26)]
     self.body_left = [GetFrame(12 + hght * n, 6, 102, 26) for n in range(1,2 + pld_order)]
-    if not breakpoint:
-      self.body_right = [GetFrame(12 + hght * n, 116, 44, 26) for n in range(2,2 + pld_order)]
-    else:
+    if nchunks >= 2:
       self.body_right = [Frame(self.fig,[pl.subplot2grid((nrows, 160), (12 + hght * n, 116), colspan=44, rowspan=13), pl.subplot2grid((nrows, 160), (25 + hght * n, 116), colspan=44, rowspan=13)]) for n in range(2, 2 + pld_order)]                
+    else:
+      self.body_right = [GetFrame(12 + hght * n, 116, 44, 26) for n in range(2,2 + pld_order)]
     self.footer_left = GetFrame(nrows - 6, 6, 44, 6)
     self.footer_center = GetFrame(nrows - 6, 50, 66, 6)
     self.footer_right = GetFrame(nrows - 6, 116, 44, 6)
@@ -142,7 +142,7 @@ class DVS2(object):
   
   '''
   
-  def __init__(self, breakpoint = False, pld_order = 3):
+  def __init__(self, nchunks = 2, pld_order = 3):
     '''
     
     '''
@@ -163,7 +163,7 @@ class DVS2(object):
     for ax in self.fig.get_axes():
       ax.axis('off')
     self.tcount = 0
-    if breakpoint:
+    if nchunks == 2:
       self.nseg = 2
     else:
       self.nseg = 1

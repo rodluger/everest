@@ -59,12 +59,13 @@ class Detrender(Basecamp):
                    at the end. To prevent kinks and/or discontinuities, the chunks are made to overlap by \
                    :py:obj:`bpad` cadences on either end. The chunks are then mended and the overlap is \
                    discarded. Default 100
-  :param bool breakpoint: Add a light curve breakpoint when de-trending? If :py:obj:`True`, splits the \
-                          light curve into two chunks and de-trends each one separately, then stitches them \
+  :param bool breakpoints: Add light curve breakpoints when de-trending? If :py:obj:`True`, splits the \
+                          light curve into chunks and de-trends each one separately, then stitches them \
                           back and the end. This is useful for missions like *K2*, where the light curve noise \
                           properties are very different at the beginning and end of each campaign. The cadences \
-                          at which breakpoints are inserted are specified in the :py:func:`Breakpoint` function \
-                          of each mission. Default :py:obj:`True`
+                          at which breakpoints are inserted are specified in the :py:func:`Breakpoints` function \
+                          of each mission. Alternatively, the user may specify a list of cadences at which to \
+                          break up the light curve. Default :py:obj:`True`
   :param int cdivs: The number of light curve subdivisions when cross-validating. During each iteration, \
                     one of these subdivisions will be masked and used as the validation set. Default 3
   :param int giter: The number of iterations when optimizing the GP. During each iteration, the minimizer \
@@ -147,13 +148,16 @@ class Detrender(Basecamp):
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
     self.gp_factor = kwargs.get('gp_factor', 100.)
     
-    # Handle breakpointing. The breakpoint is the *last* index of the first 
-    # light curve chunk. The code is (for the most part) written to allow for
-    # multiple breakpoints, but the plotting can currently only handle one.
-    if kwargs.get('breakpoint', True) and self._mission.Breakpoint(self.ID) is not None:
-      self.breakpoints = [self._mission.Breakpoint(self.ID), 999999]
+    # Handle breakpointing. The breakpoint is the *last* index of each 
+    # light curve chunk.
+    bkpts = kwargs.get('breakpoints', True)
+    if bkpts is True:
+      self.breakpoints = np.append(self._mission.Breakpoints(self.ID), [999999])
+    elif hasattr(bkpts, '__len__'):
+      self.breakpoints = np.append(bkpts, [999999])
     else:
-      self.breakpoints = [999999]
+      self.breakpoints = np.array([999999])
+
     nseg = len(self.breakpoints)
 
     # Get the pld order
@@ -183,8 +187,8 @@ class Detrender(Basecamp):
     self._weights = None
     
     # Initialize plotting
-    self.dvs1 = DVS1(nseg > 1, pld_order = self.pld_order)
-    self.dvs2 = DVS2(nseg > 1)
+    self.dvs1 = DVS1(len(self.breakpoints), pld_order = self.pld_order)
+    self.dvs2 = DVS2(len(self.breakpoints))
   
   @property
   def name(self):
@@ -407,54 +411,82 @@ class Detrender(Basecamp):
       self.lam[b][self.lam_idx] = self.lambda_arr[i]
       log.info("Found optimum solution at log(lambda) = %.1f." % np.log10(self.lam[b][self.lam_idx]))
       self.compute()
-
-      # Plotting hack: first x tick will be -infty
-      lambda_arr = np.array(self.lambda_arr)
-      lambda_arr[0] = 10 ** (np.log10(lambda_arr[1]) - 3)
+      
+      # Plotting: There's not enough space in the DVS to show the cross-val results
+      # for more than two light curve segments.
+      if len(self.breakpoints) <= 2:
+      
+        # Plotting hack: first x tick will be -infty
+        lambda_arr = np.array(self.lambda_arr)
+        lambda_arr[0] = 10 ** (np.log10(lambda_arr[1]) - 3)
     
-      # Plot cross-val
-      for n in range(len(masks)):
-        ax[b].plot(np.log10(lambda_arr), validation[:,n], 'r-', alpha = 0.3)
-      ax[b].plot(np.log10(lambda_arr), med_training, 'b-', lw = 1., alpha = 1)
-      ax[b].plot(np.log10(lambda_arr), med_validation, 'r-', lw = 1., alpha = 1)            
-      ax[b].axvline(np.log10(self.lam[b][self.lam_idx]), color = 'k', ls = '--', lw = 0.75, alpha = 0.75)
-      ax[b].axhline(v_best, color = 'k', ls = '--', lw = 0.75, alpha = 0.75)
-      ax[b].set_ylabel(r'Scatter (ppm)', fontsize = 5)
-      hi = np.max(validation[0])
-      lo = np.min(training)
-      rng = (hi - lo)
-      ax[b].set_ylim(lo - 0.15 * rng, hi + 0.15 * rng)
-      if rng > 2:
-        ax[b].get_yaxis().set_major_formatter(Formatter.CDPP)
-        ax[b].get_yaxis().set_major_locator(MaxNLocator(integer = True))
-      elif rng > 0.2:
-        ax[b].get_yaxis().set_major_formatter(Formatter.CDPP1F)
-      else:
-        ax[b].get_yaxis().set_major_formatter(Formatter.CDPP2F)
+        # Plot cross-val
+        for n in range(len(masks)):
+          ax[b].plot(np.log10(lambda_arr), validation[:,n], 'r-', alpha = 0.3)
+        ax[b].plot(np.log10(lambda_arr), med_training, 'b-', lw = 1., alpha = 1)
+        ax[b].plot(np.log10(lambda_arr), med_validation, 'r-', lw = 1., alpha = 1)            
+        ax[b].axvline(np.log10(self.lam[b][self.lam_idx]), color = 'k', ls = '--', lw = 0.75, alpha = 0.75)
+        ax[b].axhline(v_best, color = 'k', ls = '--', lw = 0.75, alpha = 0.75)
+        ax[b].set_ylabel(r'Scatter (ppm)', fontsize = 5)
+        hi = np.max(validation[0])
+        lo = np.min(training)
+        rng = (hi - lo)
+        ax[b].set_ylim(lo - 0.15 * rng, hi + 0.15 * rng)
+        if rng > 2:
+          ax[b].get_yaxis().set_major_formatter(Formatter.CDPP)
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(integer = True))
+        elif rng > 0.2:
+          ax[b].get_yaxis().set_major_formatter(Formatter.CDPP1F)
+        else:
+          ax[b].get_yaxis().set_major_formatter(Formatter.CDPP2F)
         
-      # Fix the x ticks
-      xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
-      ax[b].set_xticks(xticks)
-      ax[b].set_xticklabels(['' for x in xticks])
-      pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
-      ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
-      ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
-                     ha = 'left', va = 'bottom', fontsize = 8, alpha = 0.5, 
-                     fontweight = 'bold')
+        # Fix the x ticks
+        xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
+        ax[b].set_xticks(xticks)
+        ax[b].set_xticklabels(['' for x in xticks])
+        pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
+        ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
+        ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
+                       ha = 'left', va = 'bottom', fontsize = 8, alpha = 0.5, 
+                       fontweight = 'bold')
+        
     
     # Tidy up
-    if len(ax) > 1:
+    if len(ax) == 2:
       ax[0].xaxis.set_ticks_position('top')
     for axis in ax[1:]:
       axis.spines['top'].set_visible(False)
       axis.xaxis.set_ticks_position('bottom')
     
-    # A hack to mark the first xtick as -infty
-    labels = ['%.1f' % x for x in xticks]
-    labels[0] = r'$-\infty$'
-    ax[-1].set_xticklabels(labels) 
-    ax[-1].set_xlabel(r'Log $\Lambda$', fontsize = 5)
-  
+    if len(self.breakpoints) <= 2:
+
+      # A hack to mark the first xtick as -infty
+      labels = ['%.1f' % x for x in xticks]
+      labels[0] = r'$-\infty$'
+      ax[-1].set_xticklabels(labels) 
+      ax[-1].set_xlabel(r'Log $\Lambda$', fontsize = 5)
+    
+    else:
+        
+      # We're just going to plot lambda as a function of chunk number (DEBUG)
+      bs = np.arange(len(self.breakpoints))
+      ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r.')
+      ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r-', alpha = 0.25)
+      ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
+      ax[0].margins(0.1, 0.1)
+      ax[0].set_xticklabels([])
+      
+      # Now plot the CDPP and approximate validation CDPP
+      cdpp_arr = self.get_cdpp_arr()
+      cdppv_arr = self.cdppv_arr * cdpp_arr
+      ax[1].plot(bs + 1, cdpp_arr, 'b.')
+      ax[1].plot(bs + 1, cdpp_arr, 'b-', alpha = 0.25)
+      ax[1].plot(bs + 1, cdppv_arr, 'r.')
+      ax[1].plot(bs + 1, cdppv_arr, 'r-', alpha = 0.25)
+      ax[1].margins(0.1, 0.1)
+      ax[1].set_ylabel(r'CDPP', fontsize = 5)
+      ax[1].set_xlabel(r'Chunk', fontsize = 5)
+      
   def finalize(self):
     '''
     This method is called at the end of the de-trending, prior to plotting the final results.
@@ -686,7 +718,8 @@ class Detrender(Basecamp):
     ax2.get_yaxis().set_major_formatter(Formatter.Flux) 
     
     # Plot the PLD weights
-    self.plot_weights(*self.dvs2.weights_grid())
+    if len(self.breakpoints) <= 2:
+      self.plot_weights(*self.dvs2.weights_grid())
     
   def load_tpf(self):
     '''

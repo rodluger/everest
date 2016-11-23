@@ -490,8 +490,14 @@ class Basecamp(object):
     '''
     Plots the *PLD* weights on the CCD for each of the *PLD* orders.
     
+    .. note:: Only works for light curves with zero or one breakpoints.
+    
     '''
-
+    
+    # Check number of segments
+    if len(self.breakpoints) > 2:
+      return
+    
     # Loop over all PLD orders and over all chunks
     npix = len(self.fpix[1])
     ap = self.aperture.flatten()

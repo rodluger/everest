@@ -567,12 +567,12 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       
       ShowDVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
     
-    def plot_pipeline(self, **kwargs):
+    def plot_pipeline(self, *args, **kwargs):
       '''
       
       '''
       
-      return getattr(missions, mission).pipelines.plot(self.ID, **kwargs)
+      return getattr(missions, mission).pipelines.plot(self.ID, *args, **kwargs)
     
     def mask_planet(self, t0, period, dur = 0.2):
       '''

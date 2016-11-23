@@ -30,7 +30,7 @@ import os, sys, shutil
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Setup', 'Season', 'Breakpoint', 'GetData', 'GetNeighbors', 
+__all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
            'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl']
 
@@ -51,30 +51,30 @@ def Season(EPIC, **kwargs):
   
   return Campaign(EPIC, **kwargs)
 
-def Breakpoint(EPIC, **kwargs):  
+def Breakpoints(EPIC, **kwargs):  
   '''
   
   '''
   
   campaign = Season(EPIC)
-  breakpoints = {0: None,   # OK; campaign is really short
-                 1: 2210,   #
-                 2: 2042,   # OK
-                 3: 2140,   #
-                 4: 1750,   #
-                 5: 1774,   #
-                 6: 2143,   # OK
-                 7: 2065,   # There's no stable point in this campaign
-                 8: 1950,   # This campaign needs to be redone (was 2084)
-                 9: None,
-                 10: None,
-                 11: None,
-                 12: None,
-                 13: None,
-                 14: None,
-                 15: None,
-                 16: None,
-                 17: None}
+  breakpoints = {0: [],       # OK; campaign is really short
+                 1: [2210],   #
+                 2: [2042],   # OK
+                 3: [2140],   #
+                 4: [1750],   #
+                 5: [1774],   #
+                 6: [2143],   # OK
+                 7: [2065],   # There's no stable point in this campaign
+                 8: [1950],   # This campaign needs to be redone (was 2084)
+                 9: [],
+                 10: [],
+                 11: [],
+                 12: [],
+                 13: [],
+                 14: [],
+                 15: [],
+                 16: [],
+                 17: []}
   if campaign in breakpoints:
     return breakpoints[campaign]
   else:
