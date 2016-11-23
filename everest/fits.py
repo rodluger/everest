@@ -51,7 +51,7 @@ def PrimaryHDU(model):
 
   return hdu
 
-def LongCadenceHDU(model):
+def LightcurveHDU(model):
   '''
   Construct the data HDU file containing the arrays and the observing info.
   
@@ -71,7 +71,7 @@ def LongCadenceHDU(model):
   cards.append(('APNAME', model.aperture_name, 'Name of aperture used'))
   cards.append(('BPAD', model.bpad, 'Chunk overlap in cadences'))
   for c in range(len(model.breakpoints)):
-    cards.append(('BRKPT%d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
+    cards.append(('BRKPT%02d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
   cards.append(('CDIVS', model.cdivs, 'Cross-validation subdivisions'))
   cards.append(('CDPP6', model.cdpp6, 'Average de-trended 6-hr CDPP'))
   cards.append(('CDPPR', model.cdppr, 'Raw 6-hr CDPP'))
@@ -136,49 +136,7 @@ def LongCadenceHDU(model):
 
   return hdu
 
-def ShortCadenceHDU(model):
-  '''
-  Construct the data HDU file containing the arrays and the observing info.
-  
-  '''
-  
-  # Get mission cards
-  cards = model._mission.HDUCards(model.meta, hdu = 6)
-   
-  # Add EVEREST info
-  cards.append(('COMMENT', '************************'))
-  cards.append(('COMMENT', '*     EVEREST INFO     *'))
-  cards.append(('COMMENT', '************************'))
-  cards.append(('MISSION', model.mission, 'Mission name'))
-  cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
-  cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
-  cards.append(('MODEL', model.name, 'Name of EVEREST model used'))
-  cards.append(('SC_BPAD', model.sc_bpad, 'Chunk overlap in cadences'))
-
-  # Arrays
-  sc_quality = np.array(model.sc_quality)
-  sc_quality[model.sc_badmask] += 2 ** (QUALITY_BAD - 1)
-  sc_quality[model.sc_nanmask] += 2 ** (QUALITY_NAN - 1)
-  sc_quality[model.sc_outmask] += 2 ** (QUALITY_OUT - 1)
-  arrays = [pyfits.Column(name = 'SC_CADN', format = 'D', array = model.sc_cadn),
-            pyfits.Column(name = 'SC_FLUX', format = 'D', array = model.sc_flux, unit = 'e-/s'),
-            pyfits.Column(name = 'SC_FRAW', format = 'D', array = model.sc_fraw, unit = 'e-/s'),
-            pyfits.Column(name = 'SC_FERR', format = 'D', array = model.sc_fraw_err, unit = 'e-/s'),
-            pyfits.Column(name = 'SC_QUAL', format = 'J', array = sc_quality),
-            pyfits.Column(name = 'SC_TIME', format = 'D', array = model.sc_time, unit = 'BJD - 2454833')]
-  
-  # Did we subtract a background term?
-  if hasattr(model.sc_bkg, '__len__'):
-    arrays.append(pyfits.Column(name = 'SC_BKG', format = 'D', array = model.sc_bkg, unit = 'BJD - 2454833'))
-  
-  # Create the HDU
-  header = pyfits.Header(cards = cards)
-  cols = pyfits.ColDefs(arrays)
-  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'SC ARRAYS')
-
-  return hdu
-
-def LongCadencePixelHDU(model):
+def PixelsHDU(model):
   '''
   Construct the HDU containing the pixel-level light curve.
   
@@ -209,39 +167,6 @@ def LongCadencePixelHDU(model):
     
   cols = pyfits.ColDefs(arrays)
   hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'LC PIXELS')
-
-  return hdu
-
-def ShortCadencePixelHDU(model):
-  '''
-  Construct the HDU containing the pixel-level light curve.
-  
-  '''
-
-  # Get mission cards
-  cards = model._mission.HDUCards(model.meta, hdu = 7)
-
-  # Add EVEREST info
-  cards = []
-  cards.append(('COMMENT', '************************'))
-  cards.append(('COMMENT', '*     EVEREST INFO     *'))
-  cards.append(('COMMENT', '************************'))
-  cards.append(('MISSION', model.mission, 'Mission name'))
-  cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
-  cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
-  
-  # Create the HDU
-  header = pyfits.Header(cards = cards)
-  
-  # The pixel timeseries
-  arrays = [pyfits.Column(name = 'SC_FPIX', format = '%dD' % model.sc_fpix.shape[1], array = model.sc_fpix)]
-  
-  # The first order PLD vectors for all the neighbors (npixels, ncadences)
-  if model.sc_X1N is not None:
-    arrays.append(pyfits.Column(name = 'SC_X1N', format = '%dD' % model.sc_X1N.shape[1], array = model.sc_X1N))
-    
-  cols = pyfits.ColDefs(arrays)
-  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'SC PIXELS')
 
   return hdu
 
@@ -342,19 +267,14 @@ def MakeFITS(model):
       
   # Create the HDUs
   primary = PrimaryHDU(model)
-  long_cadence = LongCadenceHDU(model)
-  lc_pixels = LongCadencePixelHDU(model)
+  lightcurve = LightcurveHDU(model)
+  pixels = PixelsHDU(model)
   aperture = ApertureHDU(model)
   images = ImagesHDU(model)
   hires = HiResHDU(model)
   
   # Combine to get the HDUList
-  if model.has_sc:
-    short_cadence = ShortCadenceHDU(model)
-    sc_pixels = ShortCadencePixelHDU(model)
-    hdulist = pyfits.HDUList([primary, long_cadence, lc_pixels, aperture, images, hires, short_cadence, sc_pixels])
-  else:
-    hdulist = pyfits.HDUList([primary, long_cadence, lc_pixels, aperture, images, hires])
+  hdulist = pyfits.HDUList([primary, lightcurve, pixels, aperture, images, hires])
   
   # Output to the FITS file
   hdulist.writeto(outfile)

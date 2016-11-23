@@ -121,28 +121,6 @@ class Basecamp(object):
     raise NotImplementedError("Can't set this property.") 
   
   @property
-  def sc_flux(self):
-    '''
-    The corrected/de-trended short cadence flux, computed by subtracting the
-    short cadence linear model from the raw short cadence SAP flux. Only available
-    if short cadence data exists for the target.
-    
-    '''
-    
-    if self.sc_model is not None:
-      return self.sc_fraw - self.sc_model
-    else:
-      return None
-  
-  @sc_flux.setter
-  def sc_flux(self, value):
-    '''
-    
-    '''
-    
-    raise NotImplementedError("Can't set this property.") 
-  
-  @property
   def cdpps(self):
     '''
     The string version of the current value of the CDPP in *ppm*. This displays the CDPP for
@@ -177,24 +155,7 @@ class Basecamp(object):
     '''
     
     raise NotImplementedError("Can't set this property.")
-  
-  @property
-  def sc_mask(self):
-    '''
-    Similar to :py:attr:`mask`, but for the short cadence data (if available).
     
-    '''
-    
-    return np.array(list(set(np.concatenate([self.sc_badmask, self.sc_nanmask, self.sc_transitmask, self.sc_outmask]))), dtype = int)
-  
-  @sc_mask.setter
-  def sc_mask(self, value):
-    '''
-    
-    '''
-    
-    raise NotImplementedError("Can't set this property.")
-  
   @property
   def X(self):
     '''
@@ -260,141 +221,84 @@ class Basecamp(object):
       # Normalized flux
       self._f[b] = self.fraw[m] - np.nanmedian(self.fraw)  
   
-  def compute(self, precompute = True, sc = False):
+  def compute(self, precompute = True):
     '''
     Compute the model for the current value of lambda.
     
     :param bool precompute: Precompute the expensive :py:obj:`A` and :py:obj:`B` matrices? Default :py:obj:`True`
-    :param bool sc: Compute the short cadence model? Default :py:obj:`False`
     
     '''
-    
-    if not sc:
-      
-      log.info('Computing the model...')
-      if precompute:
-        self.precompute()
-  
-      # Loop over all chunks
-      model = [None for b in self.breakpoints]
-      for b, brkpt in enumerate(self.breakpoints):
-        A = np.sum([l * a for l, a in zip(self.lam[b], self._A[b]) if l is not None], axis = 0)
-        B = np.sum([l * b for l, b in zip(self.lam[b], self._B[b]) if l is not None], axis = 0)
-        W = np.linalg.solve(self._mK[b] + A, self._f[b])
-        model[b] = np.dot(B, W)
-  
-      # Join the chunks after applying the correct offset
-      if len(model) > 1:
-  
-        # First chunk
-        self.model = model[0][:-self.bpad]
-    
-        # Center chunks
-        for m in model[1:-1]:
-          offset = self.model[-1] - m[self.bpad - 1]
-          self.model = np.concatenate([self.model, m[self.bpad:-self.bpad] + offset])
-    
-        # Last chunk
-        offset = self.model[-1] - model[-1][self.bpad - 1]
-        self.model = np.concatenate([self.model, model[-1][self.bpad:] + offset])      
-    
-      else:
-  
-        self.model = model[0]
-    
-      # Subtract the global median
-      self.model -= np.nanmedian(self.model)
-      
-      # Get the CDPP and reset the weights
-      self.cdpp6_arr = self.get_cdpp_arr()
-      self.cdpp6 = self.get_cdpp()
-      self._weights = None
-      
-    else:
-      
-      log.info('Computing the short cadence model...')
-      # Get the PLD weights
-      norders = len(self.weights[0])
-      nchunks = len(self.weights)
-      model_arr = [None for b in range(nchunks)]
-    
-      # Compute the dot product order by order, chunk by chunk
-      # We load each segment of the design matrix individually,
-      # since it can be quite large.
-      for o in range(norders):
-        for b in range(nchunks):
-          log.info('Computing short cadence model (%d/%d)...' % (b + o * nchunks + 1, norders * nchunks))
-          c = self.get_chunk(b, sc = True)
-          m = self.get_sc_model(o + 1, inds = c, weights = self.weights[b][o])
-          if model_arr[b] is None:
-            model_arr[b] = m
-          else:
-            model_arr[b] += m
-    
-      # Join the chunks after applying the correct offset
-      if len(model_arr) > 1:
-        model = model_arr[0][:-self.sc_bpad]
-        for m in model_arr[1:-1]:
-          offset = model[-1] - m[self.sc_bpad - 1]
-          model = np.concatenate([model, m[self.sc_bpad:-self.sc_bpad] + offset])
-        offset = model[-1] - model_arr[-1][self.sc_bpad - 1]
-        model = np.concatenate([model, model_arr[-1][self.sc_bpad:] + offset])
-      else:
-        model = model_arr[0]
-      model -= np.nanmedian(model)
-      self.sc_model = model
 
-  def apply_mask(self, x = None, sc = False):
+    log.info('Computing the model...')
+    if precompute:
+      self.precompute()
+
+    # Loop over all chunks
+    model = [None for b in self.breakpoints]
+    for b, brkpt in enumerate(self.breakpoints):
+      A = np.sum([l * a for l, a in zip(self.lam[b], self._A[b]) if l is not None], axis = 0)
+      B = np.sum([l * b for l, b in zip(self.lam[b], self._B[b]) if l is not None], axis = 0)
+      W = np.linalg.solve(self._mK[b] + A, self._f[b])
+      model[b] = np.dot(B, W)
+
+    # Join the chunks after applying the correct offset
+    if len(model) > 1:
+
+      # First chunk
+      self.model = model[0][:-self.bpad]
+  
+      # Center chunks
+      for m in model[1:-1]:
+        offset = self.model[-1] - m[self.bpad - 1]
+        self.model = np.concatenate([self.model, m[self.bpad:-self.bpad] + offset])
+  
+      # Last chunk
+      offset = self.model[-1] - model[-1][self.bpad - 1]
+      self.model = np.concatenate([self.model, model[-1][self.bpad:] + offset])      
+  
+    else:
+
+      self.model = model[0]
+  
+    # Subtract the global median
+    self.model -= np.nanmedian(self.model)
+    
+    # Get the CDPP and reset the weights
+    self.cdpp6_arr = self.get_cdpp_arr()
+    self.cdpp6 = self.get_cdpp()
+    self._weights = None
+
+  def apply_mask(self, x = None):
     '''
     Returns the outlier mask, an array of indices corresponding to the non-outliers.
     
     :param numpy.ndarray x: If specified, returns the masked version of :py:obj:`x` instead. Default :py:obj:`None`
-    :param bool sc: Return the short cadence mask? Default :py:obj:`False`
     
     '''
     
     if x is None:
-      if sc:
-        return np.delete(np.arange(len(self.sc_time)), self.sc_mask)
-      else:
-        return np.delete(np.arange(len(self.time)), self.mask)
+      return np.delete(np.arange(len(self.time)), self.mask)
     else:
-      if sc:
-        return np.delete(x, self.sc_mask, axis = 0)
-      else:
-        return np.delete(x, self.mask, axis = 0)
+      return np.delete(x, self.mask, axis = 0)
 
-  def get_chunk(self, b, x = None, sc = False):
+  def get_chunk(self, b, x = None):
     '''
     Returns the indices corresponding to a given light curve chunk.
     
     :param int b: The index of the chunk to return
     :param numpy.ndarray x: If specified, applies the mask to array :py:obj:`x`. Default :py:obj:`None`
-    :param bool sc: Get the indices of the short cadence chunk? Default :py:obj:`False`
-    
+
     '''
-    
-    if not sc:
-      M = np.arange(len(self.time))
-      if b > 0:
-        res = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
-      else:
-        res = M[M <= self.breakpoints[b] + self.bpad]
-      if x is None:
-        return res
-      else:
-        return x[res]
+
+    M = np.arange(len(self.time))
+    if b > 0:
+      res = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
     else:
-      sc_breakpoints = [np.nanargmin(np.abs(self.sc_time - self.time[b])) for b in self.breakpoints]
-      M = np.arange(len(self.sc_time))
-      if b > 0:
-        res = M[(M > sc_breakpoints[b - 1] - self.sc_bpad) & (M <= sc_breakpoints[b] + self.sc_bpad)]
-      else:
-        res = M[M <= sc_breakpoints[b] + self.sc_bpad]
-      if x is None:
-        return res
-      else:
-        return x[res]
+      res = M[M <= self.breakpoints[b] + self.bpad]
+    if x is None:
+      return res
+    else:
+      return x[res]
     
   def get_masked_chunk(self, b, x = None):
     '''
@@ -421,15 +325,7 @@ class Basecamp(object):
     '''
   
     raise NotImplementedError('This method must be implemented in a subclass.')
-  
-  def get_sc_model(self):
-    '''
-    *Implemented by subclasses*
     
-    '''
-    
-    raise NotImplementedError('This method must be implemented in a subclass.')
-  
   def get_weights(self):
     '''
     Computes the PLD weights vector :py:obj:`w` (for plotting and/or computing the short

@@ -42,41 +42,6 @@ class rPLDBase(object):
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
   
-  def get_sc_model(self, order, weights, inds = None):
-    '''
-    Computes the short cadence model. The PLD model is always computed from
-    the long cadence data; the weights are then dotted with the short cadence
-    design matrix to compute the short cadence model. In principle, one could
-    compute the model from the short cadence data, but (a) this is likely to
-    take a very long time and lead to memory errors, and (b) it is likely to
-    perform poorly, since the SNR ratio of each data point in short cadence is
-    very low, making it difficult for PLD to pick out the instrumental component
-    of the signal. See Deming et al. (2015) for a discussion on how computing the
-    model on binned (i.e., long cadence) data is ideal.
-    
-    .. note:: The code below uses a :py:obj:`for` loop to dot each signal with its \
-              corresponding weight, which is inefficient. However, matrix operations \
-              on the short cadence design matrix take a **huge** amount of memory \
-              and usually cause the script to crash. By computing the model this way, \
-              the design matrix is never actually stored in memory, but processed one \
-              column at a time. It actually works surprisingly fast.
-    
-    '''
-    
-    if inds is None:
-      inds = range(self.sc_fpix.shape[0])
-    
-    if self.recursive:
-      X1 = self.sc_fpix[inds] / self.sc_fraw[inds].reshape(-1, 1)
-    else:
-      X1 = self.sc_fpix[inds] / self.sc_flux[inds].reshape(-1, 1)
-    
-    model = np.zeros(len(inds))
-    for ii, w in zip(multichoose(range(self.sc_fpix.shape[1]), order), weights):
-      model += np.product([X1[:,i] for i in ii], axis = 0) * w
-    
-    return model
-  
 class nPLDBase(object):
   '''
   
@@ -105,24 +70,3 @@ class nPLDBase(object):
       if (self._X[n] is None) and ((n == self.lam_idx) or (self.lam[0][n] is not None)):
         self._X[n] = np.product(list(multichoose(X1.T, n + 1)), axis = 1).T
         self._X[n] = np.hstack([self._X[n], self.X1N ** (n + 1)])
-  
-  def get_sc_model(self, order, weights, inds = None):
-    '''
-    Computes the short cadence model, including the contribution of the
-    neighboring stars. See :py:meth:`rPLD.get_sc_model` for more details.
-    
-    '''
-
-    if self.recursive:
-      X1 = self.sc_fpix[inds] / self.sc_fraw[inds].reshape(-1, 1)
-    else:
-      X1 = self.sc_fpix[inds] / self.sc_flux[inds].reshape(-1, 1)
-    
-    model = np.zeros(len(inds))
-    for ii, w, n in zip(multichoose(range(self.sc_fpix.shape[1]), order), weights, range(len(weights))):
-      model += np.product([X1[:,i] for i in ii], axis = 0) * w
-    
-    # Add the neighbors' contribution
-    model += np.dot(self.sc_X1N[inds] ** (order), weights[n + 1:])
-    
-    return model

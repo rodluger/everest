@@ -223,7 +223,6 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       with pyfits.open(self.fitsfile) as f:
         
         # Params and long cadence data
-        self.has_sc = self._mission.HasShortCadence(self.ID, season = self.season)
         self.loaded = True
         self.is_parent = False
         try:
@@ -285,37 +284,6 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         self.saturated = f[1].header['SATUR']
         self.saturation_tolerance = f[1].header['SATTOL']
         self.time = f[1].data['TIME']
-        
-        # Short cadence
-        if self.has_sc:
-          try:
-            self.sc_X1N = f[7].data['SC_X1N']
-          except KeyError:
-            self.sc_X1N = None
-          try:
-            self.sc_bkg = f[6].data['SC_BKG']
-          except KeyError:
-            self.sc_bkg = 0.
-          self.sc_bpad = f[6].header['SC_BPAD']
-          self.sc_cadn = f[6].data['SC_CADN']
-          self.sc_fpix = f[7].data['SC_FPIX']
-          self.sc_fraw = f[6].data['SC_FRAW']
-          self.sc_fraw_err = f[6].data['SC_FERR']
-          self.sc_model = self.sc_fraw - f[6].data['SC_FLUX']
-          self.sc_quality = f[6].data['SC_QUAL']
-          self.sc_time = f[6].data['SC_TIME']
-        else:
-          self.sc_X1N = None
-          self.sc_bkg = None
-          self.sc_bpad = None
-          self.sc_cadn = None
-          self.sc_time = None
-          self.sc_fpix = None
-          self.sc_fraw = None
-          self.sc_fraw_err = None
-          self.sc_model = None
-          self.sc_quality = None
-          self.sc_bkg = None
           
         # Chunk arrays
         self.breakpoints = []
@@ -324,7 +292,11 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         self.cdppr_arr = []
         for c in range(99):
           try:
-            self.breakpoints.append(f[1].header['BRKPT%d' % (c + 1)])
+            try:
+              self.breakpoints.append(f[1].header['BRKPT%02d' % (c + 1)])
+            except KeyError:
+              # Backwards-compatibility fix
+              self.breakpoints.append(f[1].header['BRKPT%d' % (c + 1)])
             self.cdpp6_arr.append(f[1].header['CDPP6%02d' % (c + 1)])
             self.cdppr_arr.append(f[1].header['CDPPR%02d' % (c + 1)])
             self.cdppv_arr.append(f[1].header['CDPPV%02d' % (c + 1)])
@@ -337,14 +309,6 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
       self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
       self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
-      if self.has_sc:
-        self.sc_badmask = np.where(self.sc_quality & 2 ** (QUALITY_BAD - 1))[0]
-        self.sc_nanmask = np.where(self.sc_quality & 2 ** (QUALITY_NAN - 1))[0]
-        self.sc_outmask = np.where(self.sc_quality & 2 ** (QUALITY_OUT - 1))[0]
-      else:
-        self.sc_badmask = None
-        self.sc_nanmask = None
-        self.sc_outmask = None
         
       # These are not stored in the fits file; we don't need them
       self.saturated_aperture_name = None
@@ -354,13 +318,8 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       self.fpix_err = None
       self.parent_model = None
       self.lambda_arr = None
-      self.sc_Xpos = None
-      self.sc_Ypos = None
-      self.sc_fpix_err = None
       self.meta = None
-      self.sc_meta = None
       self.transitmask = np.array([], dtype = int)
-      self.sc_transitmask = np.array([], dtype = int)
     
     def plot_aperture(self, show = True):
       '''
@@ -405,7 +364,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         return fig, ax, cax
 
     def plot(self, show = True, plot_raw = True, plot_gp = True, 
-             plot_bad = True, plot_out = True, plot_sc = False):
+             plot_bad = True, plot_out = True):
       '''
       Plots the final de-trended light curve.
     
@@ -418,41 +377,24 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         fig, axes = pl.subplots(2, figsize = (13, 9), sharex = True)
         fig.subplots_adjust(hspace = 0.1)
         axes = [axes[1], axes[0]]
-        if plot_sc:
-          fluxes = [self.sc_flux, self.sc_fraw]
-        else:
-          fluxes = [self.flux, self.fraw]
+        fluxes = [self.flux, self.fraw]
         labels = ['EVEREST Flux', 'Raw Flux']
       else:
         fig, axes = pl.subplots(1, figsize = (13, 6))
         axes = [axes]
-        if plot_sc:
-          fluxes = [self.sc_flux]
-        else:
-          fluxes = [self.flux]
+        fluxes = [self.flux]
         labels = ['EVEREST Flux']
       fig.canvas.set_window_title('EVEREST Light curve')
       
       # Set up some stuff
-      if plot_sc:
-        time = self.sc_time
-        badmask = self.sc_badmask
-        nanmask = self.sc_nanmask
-        outmask = self.sc_outmask
-        transitmask = self.sc_transitmask
-        fraw_err = self.sc_fraw_err
-        breakpoints = []
-        plot_gp = False
-        ms = 2
-      else:
-        time = self.time
-        badmask = self.badmask
-        nanmask = self.nanmask
-        outmask = self.outmask
-        transitmask = self.transitmask
-        fraw_err = self.fraw_err
-        breakpoints = self.breakpoints
-        ms = 4
+      time = self.time
+      badmask = self.badmask
+      nanmask = self.nanmask
+      outmask = self.outmask
+      transitmask = self.transitmask
+      fraw_err = self.fraw_err
+      breakpoints = self.breakpoints
+      ms = 4
       
       # Get the cdpps
       cdpps = [[self.get_cdpp(self.flux), self.get_cdpp_arr(self.flux)],
@@ -467,7 +409,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         cdpp6_arr = cdpp[1]
           
         # Plot the good data points
-        ax.plot(self.apply_mask(time, sc = plot_sc), self.apply_mask(flux, sc = plot_sc), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+        ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
     
         # Plot the outliers
         bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
@@ -485,9 +427,9 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
           M = lambda x: np.delete(x, bnmask)
           _, amp, tau = self.kernel_params
           gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-          gp.compute(self.apply_mask(time, sc = plot_sc), self.apply_mask(fraw_err, sc = plot_sc))
-          med = np.nanmedian(self.apply_mask(flux, sc = plot_sc))
-          y, _ = gp.predict(self.apply_mask(flux, sc = plot_sc) - med, time)
+          gp.compute(self.apply_mask(time), self.apply_mask(fraw_err))
+          med = np.nanmedian(self.apply_mask(flux))
+          y, _ = gp.predict(self.apply_mask(flux) - med, time)
           y += med
           ax.plot(M(time), M(y), 'r-', lw = 0.5, alpha = 0.5)
 

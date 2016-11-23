@@ -189,6 +189,7 @@ def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False):
     all = all[int(campaign)]
   else:
     return []
+
   if epics_only:
     all = [a[0] for a in all]
   if type(campaign) is int or type(campaign) is np.int64:

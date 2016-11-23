@@ -104,8 +104,7 @@ class Detrender(Basecamp):
                                      in the aperture. The column collapsing is implemented in the individual \
                                      mission modules. Default -0.1, i.e., if a target is 10% shy of the \
                                      nominal saturation level, it is considered to be saturated.
-  :param int sc_bpad: Same as :py:obj:`bpad`, but for the short cadence data. Default 3000
-
+                                     
   '''
 
   def __init__(self, ID, **kwargs):
@@ -118,7 +117,6 @@ class Detrender(Basecamp):
     self.recursive = kwargs.get('recursive', True)
     self.make_fits = kwargs.get('make_fits', True)
     self.mission = kwargs.get('mission', 'k2')
-    self.has_sc = self._mission.HasShortCadence(self.ID, season = self.season)
     self.clobber = kwargs.get('clobber', False)
     self.debug = kwargs.get('debug', False)
     self.is_parent = kwargs.get('is_parent', False)
@@ -141,7 +139,6 @@ class Detrender(Basecamp):
     self.kernel_params = kwargs.get('kernel_params', None)    
     self.clobber_tpf = kwargs.get('clobber_tpf', False)
     self.bpad = kwargs.get('bpad', 100)
-    self.sc_bpad = kwargs.get('sc_bpad', 3000)
     self.aperture_name = kwargs.get('aperture', None)
     self.saturated_aperture_name = kwargs.get('saturated_aperture', None)
     self.max_pixels = kwargs.get('max_pixels', 75)
@@ -173,7 +170,6 @@ class Detrender(Basecamp):
     self._f = [None for b in range(nseg)]
     self._X = [None for i in range(self.pld_order)]
     self.X1N = None
-    self.sc_X1N = None
     self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
     self.cdppv_arr = np.array([np.nan for b in range(nseg)])
@@ -667,42 +663,22 @@ class Detrender(Basecamp):
     
     '''
     
-    # Plot the short cadence light curve (if available). Otherwise,
-    # plot the raw light curve.
-    ax1 = self.dvs2.lc1()
-    
-    if self.has_sc:
-      bnmask = np.array(list(set(np.concatenate([self.sc_badmask, self.sc_nanmask]))), dtype = int)
-      M = lambda x: np.delete(x, bnmask)
-      ax1.plot(M(self.sc_time), M(self.sc_flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
-      ax1.set_rasterization_zorder(0)
-      ax1.annotate('SC', xy = (0.98, 0.025), xycoords = 'axes fraction', 
-                  ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
-                  fontweight = 'bold') 
-      ax1.margins(0.01, 0.1)  
-      flux = np.delete(self.sc_flux, bnmask)
-      N = int(0.995 * len(flux))
-      hi, lo = flux[np.argsort(flux)][[N,-N]]
-      fsort = flux[np.argsort(flux)]
-      pad = (hi - lo) * 0.1
-      ylim = (lo - pad, hi + pad)   
-      ax1.set_ylim(ylim)   
-      ax1.get_yaxis().set_major_formatter(Formatter.Flux)  
-    else:
-      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.5)
-      ax1.annotate('Raw', xy = (0.98, 0.025), xycoords = 'axes fraction', 
-                  ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
-                  fontweight = 'bold') 
-      ax1.margins(0.01, 0.1)  
-      bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-      flux = np.delete(self.flux, bnmask)
-      N = int(0.995 * len(flux))
-      hi, lo = flux[np.argsort(flux)][[N,-N]]
-      fsort = flux[np.argsort(flux)]
-      pad = (hi - lo) * 0.1
-      ylim = (lo - pad, hi + pad)   
-      ax1.set_ylim(ylim)   
-      ax1.get_yaxis().set_major_formatter(Formatter.Flux) 
+    # Plot the raw light curve
+    ax1 = self.dvs2.lc1()    
+    ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.5)
+    ax1.annotate('Raw', xy = (0.98, 0.025), xycoords = 'axes fraction', 
+                ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
+                fontweight = 'bold') 
+    ax1.margins(0.01, 0.1)  
+    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
+    flux = np.delete(self.flux, bnmask)
+    N = int(0.995 * len(flux))
+    hi, lo = flux[np.argsort(flux)][[N,-N]]
+    fsort = flux[np.argsort(flux)]
+    pad = (hi - lo) * 0.1
+    ylim = (lo - pad, hi + pad)   
+    ax1.set_ylim(ylim)   
+    ax1.get_yaxis().set_major_formatter(Formatter.Flux) 
 
     # Plot the long cadence light curve
     ax2 = self.dvs2.lc2()
@@ -756,40 +732,6 @@ class Detrender(Basecamp):
       self.saturated = data.saturated
       self.meta = data.meta
       self.bkg = data.bkg
-      if self.has_sc:
-        self.sc_cadn = data.sc_cadn
-        self.sc_time = data.sc_time
-        self.sc_fpix = data.sc_fpix
-        self.sc_fraw = np.sum(self.sc_fpix, axis = 1)
-        self.sc_fpix_err = data.sc_fpix_err
-        self.sc_fraw_err = np.sqrt(np.sum(self.sc_fpix_err ** 2, axis = 1))
-        self.sc_nanmask = data.sc_nanmask
-        self.sc_badmask = data.sc_badmask
-        self.sc_transitmask = np.array([], dtype = int)
-        self.sc_outmask = np.array([], dtype = int)
-        self.sc_Xpos = data.sc_Xpos
-        self.sc_Ypos = data.sc_Ypos
-        self.sc_meta = data.sc_meta
-        self.sc_model = np.zeros_like(self.sc_time)
-        self.sc_quality = data.sc_quality
-        self.sc_bkg = data.sc_bkg
-      else:
-        self.sc_cadn = None
-        self.sc_time = None
-        self.sc_fpix = None
-        self.sc_fraw = None
-        self.sc_fpix_err = None
-        self.sc_fraw_err = None
-        self.sc_nanmask = None
-        self.sc_badmask = None
-        self.sc_transitmask = None
-        self.sc_outmask = None
-        self.sc_Xpos = None
-        self.sc_Ypos = None
-        self.sc_meta = None
-        self.sc_model = None
-        self.sc_quality = None
-        self.sc_bkg = None
       
       # Update the last breakpoint to the correct value
       self.breakpoints[-1] = len(self.time) - 1
@@ -963,10 +905,6 @@ class Detrender(Basecamp):
         self.cdppv = np.mean(self.cdppv_arr)
         log.info("%s (%d/%d): CDPP = %s" % (self.name, n + 1, self.pld_order, self.cdpps))
         self.plot_lc(self.dvs1.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
-      
-      # Compute short cadence model, if available
-      if self.has_sc:
-        self.compute(sc = True)
         
       # Save
       self.finalize()
@@ -1083,9 +1021,6 @@ class nPLD(nPLDBase, Detrender):
                              saturation_tolerance = self.saturation_tolerance)
         data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
         data.fraw = np.sum(data.fpix, axis = 1)
-        if self.has_sc:
-          data.sc_mask = np.array(list(set(np.concatenate([data.sc_badmask, data.sc_nanmask]))), dtype = int)
-          data.sc_fraw = np.sum(data.sc_fpix, axis = 1)
       
       # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
       X1 = data.fpix / data.fraw.reshape(-1, 1)
@@ -1095,15 +1030,6 @@ class nPLD(nPLDBase, Detrender):
       else:
         self.X1N = np.hstack([self.X1N, X1])
       del X1
-      # Do the same for short cadence
-      if self.has_sc:
-        _scX1N = data.sc_fpix / data.sc_fraw.reshape(-1, 1)
-        _scX1N = Interpolate(data.sc_time, data.sc_mask, _scX1N)
-        if self.sc_X1N is None:
-          self.sc_X1N = np.array(_scX1N)
-        else:
-          self.sc_X1N = np.hstack([self.sc_X1N, _scX1N])
-        del _scX1N
       del data
 
     # Run
