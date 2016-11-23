@@ -59,13 +59,13 @@ class Detrender(Basecamp):
                    at the end. To prevent kinks and/or discontinuities, the chunks are made to overlap by \
                    :py:obj:`bpad` cadences on either end. The chunks are then mended and the overlap is \
                    discarded. Default 100
-  :param bool breakpoints: Add light curve breakpoints when de-trending? If :py:obj:`True`, splits the \
-                          light curve into chunks and de-trends each one separately, then stitches them \
-                          back and the end. This is useful for missions like *K2*, where the light curve noise \
-                          properties are very different at the beginning and end of each campaign. The cadences \
-                          at which breakpoints are inserted are specified in the :py:func:`Breakpoints` function \
-                          of each mission. Alternatively, the user may specify a list of cadences at which to \
-                          break up the light curve. Default :py:obj:`True`
+  :param breakpoints: Add light curve breakpoints when de-trending? If :py:obj:`True`, splits the \
+                      light curve into chunks and de-trends each one separately, then stitches them \
+                      back and the end. This is useful for missions like *K2*, where the light curve noise \
+                      properties are very different at the beginning and end of each campaign. The cadences \
+                      at which breakpoints are inserted are specified in the :py:func:`Breakpoints` function \
+                      of each mission. Alternatively, the user may specify a list of cadences at which to \
+                      break up the light curve. Default :py:obj:`True`
   :param int cdivs: The number of light curve subdivisions when cross-validating. During each iteration, \
                     one of these subdivisions will be masked and used as the validation set. Default 3
   :param int giter: The number of iterations when optimizing the GP. During each iteration, the minimizer \
@@ -105,7 +105,7 @@ class Detrender(Basecamp):
                                      mission modules. Default -0.1, i.e., if a target is 10% shy of the \
                                      nominal saturation level, it is considered to be saturated.
   :param int sc_bpad: Same as :py:obj:`bpad`, but for the short cadence data. Default 3000
-  
+
   '''
 
   def __init__(self, ID, **kwargs):
@@ -157,7 +157,6 @@ class Detrender(Basecamp):
       self.breakpoints = np.append(bkpts, [999999])
     else:
       self.breakpoints = np.array([999999])
-
     nseg = len(self.breakpoints)
 
     # Get the pld order
