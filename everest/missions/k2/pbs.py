@@ -121,9 +121,9 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
     campaign = int(x)
     subcampaign = round(y * 10) 
   
-  # DEV hack: limit backfill jobs to 4 hours
+  # DEV hack: limit backfill jobs to 10 hours
   if EVEREST_DEV and (queue == 'bf'):
-    walltime = min(4, walltime)
+    walltime = min(10, walltime)
   
   # Convert kwargs to string. This is really hacky. Pickle creates an array
   # of bytes, which we must convert into a regular string to pass to the pbs
