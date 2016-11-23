@@ -415,8 +415,5 @@ class CrowdingTarget(object):
         pl.show()
         
 c = CrowdingTarget(215796924)
-
-import pdb; pdb.set_trace()
-
 c.findSolution(3000)
 c.plot()

@@ -51,22 +51,48 @@ def Season(EPIC, **kwargs):
   
   return Campaign(EPIC, **kwargs)
 
-def Breakpoints(EPIC, **kwargs):  
+def Breakpoints(EPIC, cadence = 'lc', **kwargs):  
   '''
   
   '''
   
+  # Get the campaign number
   campaign = Season(EPIC)
-  breakpoints = {0: [],       # OK; campaign is really short
-                 1: [2210],   #
-                 2: [2042],   # OK
-                 3: [2140],   #
-                 4: [1750],   #
-                 5: [1774],   #
-                 6: [2143],   # OK
-                 7: [2065],   # There's no stable point in this campaign
-                 8: [1950],   # This campaign needs to be redone (was 2084)
-                 9: [],
+  
+  # Select LC or SC
+  if cadence == 'lc':
+    breakpoints = {
+                   0: [],       # OK; campaign is really short
+                   1: [2210],   #
+                   2: [2042],   # OK
+                   3: [2140],   #
+                   4: [1750],   #
+                   5: [1774],   #
+                   6: [2143],   # OK
+                   7: [2065],   # There's no stable point in this campaign
+                   8: [1950],   # This campaign needs to be redone (was 2084)
+                   9: [],
+                  10: [],
+                  11: [],
+                  12: [],
+                  13: [],
+                  14: [],
+                  15: [],
+                  16: [],
+                  17: []
+                  }
+  elif cadence == 'sc':
+    breakpoints = {
+                  0: [],
+                  1: [],
+                  2: np.array(np.linspace(0, 115680, 61)[1:-1], dtype = int),
+                  3: [],
+                  4: [],
+                  5: [],
+                  6: [],
+                  7: [],
+                  8: [],
+                  9: [],
                  10: [],
                  11: [],
                  12: [],
@@ -74,13 +100,18 @@ def Breakpoints(EPIC, **kwargs):
                  14: [],
                  15: [],
                  16: [],
-                 17: []}
+                 17: []
+                  }
+  else:
+    raise ValueError("Invalid value for the cadence.")
+  
+  # Return
   if campaign in breakpoints:
     return breakpoints[campaign]
   else:
     return None
 
-def GetData(EPIC, season = None, clobber = False, delete_raw = False, 
+def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
             aperture_name = 'k2sff_15', saturated_aperture_name = 'k2sff_19',
             max_pixels = 75, download_only = False, saturation_tolerance = -0.1, 
             bad_bits = [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17], **kwargs):
@@ -96,7 +127,9 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
 
   # Is there short cadence data available for this target?
   short_cadence = HasShortCadence(EPIC, season = campaign)
-  
+  if cadence == 'sc' and not short_cadence:
+    raise ValueError("Short cadence data not available for this target.")
+    
   # Local file name
   filename = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
                          ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
@@ -217,7 +250,6 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
       sc_fpix = None
       sc_fpix_err = None
       sc_qual = None
-      sc_naninds = None
       sc_pc1 = None
       sc_pc2 = None
     
@@ -234,7 +266,7 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
                         pc1 = pc1, pc2 = pc2, fitsheader = fitsheader,
                         pixel_images = pixel_images, nearby = nearby, hires = hires,
                         sc_cadn = sc_cadn, sc_time = sc_time, sc_fpix = sc_fpix,
-                        sc_fpix_err = sc_fpix_err, sc_qual = sc_qual, sc_naninds = sc_naninds,
+                        sc_fpix_err = sc_fpix_err, sc_qual = sc_qual,
                         sc_pc1 = sc_pc1, sc_pc2 = sc_pc2, sc_fitsheader = sc_fitsheader)
     f.flush()
     os.fsync(f.fileno())
@@ -245,30 +277,33 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
       return
   
   # Load
-  else:
-    data = np.load(filename)
+  data = np.load(filename)
+  apertures = data['apertures'][()]
+  pixel_images = data['pixel_images']
+  nearby = data['nearby']
+  hires = data['hires']
+  
+  if cadence == 'lc':
+    fitsheader = data['fitsheader']
     cadn = data['cadn']
     time = data['time']
     fpix = data['fpix']
     fpix_err = data['fpix_err']
     qual = data['qual']
-    apertures = data['apertures'][()]
     pc1 = data['pc1']
     pc2 = data['pc2']
-    fitsheader = data['fitsheader']
-    pixel_images = data['pixel_images']
-    nearby = data['nearby']
-    hires = data['hires']    
-    sc_cadn = data['sc_cadn']
-    sc_time = data['sc_time']
-    sc_fpix = data['sc_fpix']
-    sc_fpix_err = data['sc_fpix_err']
-    sc_qual = data['sc_qual']
-    sc_naninds = data['sc_naninds']
-    sc_pc1 = data['sc_pc1']
-    sc_pc2 = data['sc_pc2']
-    sc_fitsheader = data['sc_fitsheader']
-  
+  elif cadence == 'sc':
+    fitsheader = data['sc_fitsheader']
+    cadn = data['sc_cadn']
+    time = data['sc_time']
+    fpix = data['sc_fpix']
+    fpix_err = data['sc_fpix_err']
+    qual = data['sc_qual']
+    pc1 = data['sc_pc1']
+    pc2 = data['sc_pc2']
+  else:
+    raise ValueError("Invalid value for the cadence.")
+    
   # Select the "saturated aperture" to check if the star is saturated
   # If it is, we will use this aperture instead
   if saturated_aperture_name == 'custom':
@@ -350,18 +385,12 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     ncol = 0
     fpixnew = []
     ferrnew = []
-    if short_cadence:
-      sc_fpixnew = []
-      sc_ferrnew = []
 
     for j in range(aperture.shape[1]):
       if np.any(f97[:,j] > satflx):
         marked = False
         collapsed = np.zeros(len(fpix[:,0,0]))
         collapsed_err2 = np.zeros(len(fpix[:,0,0]))
-        if short_cadence:
-          sc_collapsed = np.zeros(len(sc_fpix[:,0,0]))
-          sc_collapsed_err2 = np.zeros(len(sc_fpix[:,0,0]))
         for i in range(aperture.shape[0]):
           if aperture[i,j]:
             if not marked:
@@ -371,29 +400,17 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
               aperture[i,j] = AP_SATURATED_PIXEL
             collapsed += fpix[:,i,j]
             collapsed_err2 += fpix_err[:,i,j] ** 2
-            if short_cadence:
-              sc_collapsed += sc_fpix[:,i,j]
-              sc_collapsed_err2 += sc_fpix_err[:,i,j] ** 2
         if np.any(collapsed):
           fpixnew.append(collapsed)
           ferrnew.append(np.sqrt(collapsed_err2))
-          if short_cadence:
-            sc_fpixnew.append(sc_collapsed)
-            sc_ferrnew.append(np.sqrt(sc_collapsed_err2))
           ncol += 1
       else:
         for i in range(aperture.shape[0]):
           if aperture[i,j]:
             fpixnew.append(fpix[:,i,j])
             ferrnew.append(fpix_err[:,i,j])
-            if short_cadence:
-              sc_fpixnew.append(sc_fpix[:,i,j])
-              sc_ferrnew.append(sc_fpix_err[:,i,j])
     fpix2D = np.array(fpixnew).T
     fpix_err2D = np.array(ferrnew).T
-    if short_cadence:
-      sc_fpix2D = np.array(sc_fpixnew).T
-      sc_fpix_err2D = np.array(sc_ferrnew).T
     log.info("Collapsed %d saturated column(s)." % ncol)
 
   else:
@@ -415,9 +432,6 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
     ap = np.where(aperture & 1)
     fpix2D = np.array([f[ap] for f in fpix], dtype='float64')
     fpix_err2D = np.array([p[ap] for p in fpix_err], dtype='float64')
-    if short_cadence:
-      sc_fpix2D = np.array([f[ap] for f in sc_fpix], dtype='float64')
-      sc_fpix_err2D = np.array([p[ap] for p in sc_fpix_err], dtype='float64')
     
   # Compute the background
   binds = np.where(aperture ^ 1)
@@ -428,18 +442,9 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
                       dtype='float64'), axis = 1) / np.sqrt(len(binds[0]))
     bkg = bkg.reshape(-1, 1)
     bkg_err = bkg_err.reshape(-1, 1)
-    if short_cadence:
-      sc_bkg = np.nanmedian(np.array([f[binds] for f in sc_fpix], dtype='float64'), axis = 1)
-      sc_bkg_err = 1.253 * np.nanmedian(np.array([e[binds] for e in sc_fpix_err], 
-                           dtype='float64'), axis = 1) / np.sqrt(len(binds[0]))
-      sc_bkg = sc_bkg.reshape(-1, 1)
-      sc_bkg_err = sc_bkg_err.reshape(-1, 1)
   else:
     bkg = 0.
     bkg_err = 0.
-    if short_cadence:
-      sc_bkg = 0.
-      sc_bkg_err = 0.
   
   # Make everything 2D and remove the background
   fpix = fpix2D - bkg
@@ -479,42 +484,6 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
   fpix = Interpolate(time, nanmask, fpix)
   fpix_err = Interpolate(time, nanmask, fpix_err)
 
-  # Repeat for short cadence
-  if short_cadence:
-    sc_fpix = sc_fpix2D - sc_bkg
-    sc_fpix_err = np.sqrt(sc_fpix_err2D ** 2 + sc_bkg_err ** 2)
-    sc_flux = np.sum(sc_fpix, axis = 1)
-    sc_ferr = np.sqrt(np.sum(sc_fpix_err ** 2, axis = 1))
-    
-    # NaN and bad masks
-    sc_nanmask = np.where(np.isnan(sc_flux) | (sc_flux == 0))[0]                         
-    sc_badmask = []
-    for b in bad_bits:
-      sc_badmask += list(np.where(sc_qual & 2 ** (b - 1))[0])
-  
-    # Flag >10 sigma outliers -- same thing.
-    t = np.delete(sc_time, sc_badmask)
-    f = np.delete(sc_flux, sc_badmask)
-    f = SavGol(f)
-    med = np.nanmedian(f)
-    MAD = 1.4826 * np.nanmedian(np.abs(f - med))
-    bad = np.where((f > med + 10. * MAD) | (f < med - 10. * MAD))[0]
-    sc_badmask.extend([np.argmax(sc_time == t[i]) for i in bad])
-  
-    # Campaign 2 hack: the first day or two are screwed up
-    if campaign == 2:
-      sc_badmask.extend(np.where(sc_time < 2061.5)[0])
-  
-    # TODO: Fix time offsets in first half of 
-    # Campaign 0. See note in everest 1.0 code
-  
-    # Finalize the mask
-    sc_badmask = np.array(sorted(list(set(sc_badmask))))
-  
-    # Interpolate the nans
-    sc_fpix = Interpolate(sc_time, sc_nanmask, sc_fpix)
-    sc_fpix_err = Interpolate(sc_time, sc_nanmask, sc_fpix_err)
-
   # Return
   data = DataContainer()
   data.ID = EPIC
@@ -538,36 +507,12 @@ def GetData(EPIC, season = None, clobber = False, delete_raw = False,
   data.hires = hires
   data.saturated = saturated
   data.bkg = bkg
-  
-  if short_cadence:
-    data.sc_cadn = sc_cadn
-    data.sc_time = sc_time
-    data.sc_fpix = sc_fpix
-    data.sc_fpix_err = sc_fpix_err
-    data.sc_nanmask = sc_nanmask
-    data.sc_badmask = sc_badmask
-    data.sc_quality = sc_qual
-    data.sc_Xpos = sc_pc1
-    data.sc_Ypos = sc_pc2
-    data.sc_meta = sc_fitsheader
-    data.sc_bkg = sc_bkg
-  else:
-    data.sc_cadn = None
-    data.sc_time = None
-    data.sc_fpix = None
-    data.sc_fpix_err = None
-    data.sc_nanmask = None
-    data.sc_badmask = None
-    data.sc_quality = None
-    data.sc_Xpos = None
-    data.sc_Ypos = None
-    data.sc_meta = None
-    data.sc_bkg = None
     
   return data
 
 def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), 
-                 cdpp_range = None, aperture_name = 'k2sff_15', **kwargs):
+                 cdpp_range = None, aperture_name = 'k2sff_15', 
+                 cadence = 'lc', **kwargs):
   '''
   Return `neighbors` random bright stars on the same module as `EPIC`.
   
@@ -575,7 +520,6 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   
   # Get the IDs
   campaign = Season(EPIC)
-  has_short_cadence = HasShortCadence(EPIC, season = campaign)
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T
   short_cadence = np.array(short_cadence, dtype = bool)
   epics = np.array(epics, dtype = int)
@@ -593,7 +537,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
     # K2-specific tweak. The short cadence stars are preferentially really bright ones,
     # so we won't get many neighbors if we stick to the default magnitude range! I'm 
     # therefore enforcing a lower magnitude cut-off of 8.
-    if has_short_cadence:
+    if cadence == 'sc':
       mag_lo = 8.
   if cdpp_range is None:
     cdpp_lo = -np.inf
@@ -610,7 +554,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
     for star, kp, channel, sc in zip(epics, kepmags, channels, short_cadence):
     
       # Preliminary vetting
-      if not (((channel in c) if nearby else True) and (kp < mag_hi) and (kp > mag_lo) and (sc if has_short_cadence else True)):
+      if not (((channel in c) if nearby else True) and (kp < mag_hi) and (kp > mag_lo) and (sc if cadence == 'sc' else True)):
         continue
       
       # Reject if self or if already in list
@@ -1085,13 +1029,16 @@ def TargetDirectory(ID, season, relative = False, **kwargs):
                      ('%09d' % ID)[:4] + '00000', 
                      ('%09d' % ID)[4:])
 
-def FITSFile(ID, season):
+def FITSFile(ID, season, cadence = 'lc'):
   '''
   
   '''
   
-  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % (ID, season, EVEREST_VERSION)
-
+  if cadence == 'lc':
+    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % (ID, season, EVEREST_VERSION)
+  else:
+    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_sclc.fits' % (ID, season, EVEREST_VERSION)
+    
 def FITSUrl(ID, season):
   '''
   

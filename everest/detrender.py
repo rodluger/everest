@@ -43,6 +43,7 @@ class Detrender(Basecamp):
   **General:**
   
   :param ID: The target star ID (*EPIC*, *KIC*, or *TIC* number, for instance)
+  :param str cadence: The cadence of the observations. Default :py:obj:`lc`
   :param bool clobber: Overwrite existing :py:obj:`everest` models? Default :py:obj:`False`
   :param bool clobber_tpf: Download and overwrite the saved raw TPF data? Default :py:obj:`False`
   :param bool debug: De-trend in debug mode? If :py:obj:`True`, prints all output to screen and \
@@ -114,6 +115,9 @@ class Detrender(Basecamp):
         
     # Initialize logging
     self.ID = ID
+    self.cadence = kwargs.get('cadence', 'lc').lower()
+    if self.cadence not in ['lc', 'sc']:
+      raise ValueError("Invalid cadence selected.")
     self.recursive = kwargs.get('recursive', True)
     self.make_fits = kwargs.get('make_fits', True)
     self.mission = kwargs.get('mission', 'k2')
@@ -125,6 +129,20 @@ class Detrender(Basecamp):
       log_level = kwargs.get('log_level', logging.DEBUG)
       InitLog(self.logfile, log_level, screen_level, self.debug)
       log.info("Initializing %s model for %d." % (self.name, self.ID))
+    
+    # If this is a short cadence light curve, get the
+    # GP params from the long cadence model. It would
+    # take way too long and too much memory to optimize
+    # the GP based on the short cadence light curve
+    log.info("Cadence type: %s" % self.cadence)
+    if self.cadence == 'sc':
+      log.info("Loading long cadence model...")
+      kwargs.update({'cadence': 'lc'})
+      lc = self.__class__(ID, is_parent = True, **kwargs)
+      kwargs.update({'cadence': 'sc',
+                     'kernel_params': lc.kernel_params,
+                     'optimize_gp': False})
+      del lc
     
     # Read general model kwargs
     self.lambda_arr = kwargs.get('lambda_arr', 10 ** np.arange(0,18,0.5))
@@ -149,7 +167,7 @@ class Detrender(Basecamp):
     # light curve chunk.
     bkpts = kwargs.get('breakpoints', True)
     if bkpts is True:
-      self.breakpoints = np.append(self._mission.Breakpoints(self.ID), [999999])
+      self.breakpoints = np.append(self._mission.Breakpoints(self.ID, cadence = self.cadence), [999999])
     elif hasattr(bkpts, '__len__'):
       self.breakpoints = np.append(bkpts, [999999])
     else:
@@ -192,7 +210,10 @@ class Detrender(Basecamp):
     
     '''
     
-    return self.__class__.__name__
+    if self.cadence == 'lc':
+      return self.__class__.__name__
+    else:
+      return '%s.sc' % self.__class__.__name__
       
   @name.setter
   def name(self, value):
@@ -212,7 +233,8 @@ class Detrender(Basecamp):
     # Get current chunk and mask outliers
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
-    K = self.K[m1][:,m1]
+    #K = self.K[m1][:,m1]
+    K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
     med = np.nanmedian(self.fraw)
     
     # Now mask the validation set
@@ -526,15 +548,23 @@ class Detrender(Basecamp):
     '''
 
     # Plot
-    ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+    if self.cadence == 'lc':
+      ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+    else:
+      ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+      ax.set_rasterization_zorder(0)
     ylim = self.get_ylim()
     
     # Plot the outliers
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     O1 = lambda x: x[self.outmask]
     O2 = lambda x: x[bnmask]
-    ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
-    ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.25)
+    if self.cadence == 'lc':
+      ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
+      ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.25)
+    else:
+      ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.25, zorder = -1)
+      ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
     for i in np.where(self.flux < ylim[0])[0]:
       if i in bnmask:
         color = "#ffcccc"
@@ -588,16 +618,21 @@ class Detrender(Basecamp):
     # Plot the light curve
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
-    ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+    if self.cadence == 'lc':
+      ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+    else:
+      ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+      ax.set_rasterization_zorder(0)
 
-    # Plot the GP
-    _, amp, tau = self.kernel_params
-    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-    gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
-    med = np.nanmedian(self.apply_mask(self.flux))
-    y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
-    y += med
-    ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
+    # Plot the GP (long cadence only)
+    if self.cadence == 'lc':
+      _, amp, tau = self.kernel_params
+      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+      med = np.nanmedian(self.apply_mask(self.flux))
+      y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
+      y += med
+      ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
     
     # Appearance
     ax.annotate('Final', xy = (0.98, 0.025), xycoords = 'axes fraction', 
@@ -665,7 +700,11 @@ class Detrender(Basecamp):
     
     # Plot the raw light curve
     ax1 = self.dvs2.lc1()    
-    ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.5)
+    if self.cadence == 'lc':
+      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.5)
+    else:
+      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.05, zorder = -1)
+      ax1.set_rasterization_zorder(0)
     ax1.annotate('Raw', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
                 fontweight = 'bold') 
@@ -680,11 +719,15 @@ class Detrender(Basecamp):
     ax1.set_ylim(ylim)   
     ax1.get_yaxis().set_major_formatter(Formatter.Flux) 
 
-    # Plot the long cadence light curve
+    # Plot the de-trended light curve
     ax2 = self.dvs2.lc2()
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
-    ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+    if self.cadence == 'lc':
+      ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+    else:
+      ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+      ax2.set_rasterization_zorder(0)
     ax2.annotate('LC', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
                 fontweight = 'bold') 
@@ -703,7 +746,8 @@ class Detrender(Basecamp):
     '''
     
     if not self.loaded:
-      data = self._mission.GetData(self.ID, season = self.season, clobber = self.clobber_tpf, 
+      data = self._mission.GetData(self.ID, season = self.season, 
+                  cadence = self.cadence, clobber = self.clobber_tpf, 
                   aperture_name = self.aperture_name, 
                   saturated_aperture_name = self.saturated_aperture_name, 
                   max_pixels = self.max_pixels,
@@ -759,7 +803,6 @@ class Detrender(Basecamp):
             setattr(self, key, data[key][()])
           except NotImplementedError:
             pass
-        self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
         self.get_X()
         pl.close()
         return True
@@ -849,7 +892,6 @@ class Detrender(Basecamp):
     self.kernel_params = GetKernelParams(self.time, self.flux, self.fraw_err, 
                                          mask = self.mask, guess = self.kernel_params, 
                                          giter = self.giter)
-    self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
   
   def init_kernel(self):
     '''
@@ -864,7 +906,6 @@ class Detrender(Basecamp):
       amp = self.gp_factor * np.nanstd(y)
       tau = 30.0
       self.kernel_params = [white, amp, tau]
-    self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
   
   def run(self):
     '''
@@ -989,6 +1030,7 @@ class nPLD(nPLDBase, Detrender):
     self.parent_model = kwargs.get('parent_model', None)
     num_neighbors = kwargs.get('neighbors', 10)
     self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                   cadence = self.cadence,
                                    model = self.parent_model,
                                    neighbors = num_neighbors, 
                                    mag_range = kwargs.get('mag_range', (11., 13.)), 
@@ -1003,9 +1045,10 @@ class nPLD(nPLDBase, Detrender):
     
     for neighbor in self.neighbors:
       log.info("Loading data for neighboring target %d..." % neighbor)
-      if self.parent_model is not None:
+      if self.parent_model is not None and self.cadence == 'lc':
         # We load the `parent` model. The advantage here is that outliers have
-        # properly been identified and masked
+        # properly been identified and masked. I haven't tested this on short
+        # cadence data, so I'm going to just forbid it...
         data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
       else:
         # We load the data straight from the TPF. Much quicker, since no model must
@@ -1015,6 +1058,7 @@ class nPLD(nPLDBase, Detrender):
         # all the stars, so it makes sense that we might want to keep them in the design
         # matrix.
         data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
+                             cadence = self.cadence,
                              aperture_name = self.aperture_name, 
                              saturated_aperture_name = self.saturated_aperture_name, 
                              max_pixels = self.max_pixels,

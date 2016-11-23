@@ -216,7 +216,7 @@ class Basecamp(object):
           self._B[b][n] = np.dot(self.X[n][c], self.X[n][m].T)
       
       # This block of the masked covariance matrix
-      self._mK[b] = self.K[m][:,m]
+      self._mK[b] = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
       # Normalized flux
       self._f[b] = self.fraw[m] - np.nanmedian(self.fraw)  
@@ -344,7 +344,7 @@ class Basecamp(object):
       c = self.get_chunk(b)
       
       # This block of the masked covariance matrix
-      _mK = self.K[m][:,m]
+      _mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
       # This chunk of the normalized flux
       f = self.fraw[m] - np.nanmedian(self.fraw)  
