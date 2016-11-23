@@ -134,13 +134,12 @@ class Detrender(Basecamp):
     # GP params from the long cadence model. It would
     # take way too long and too much memory to optimize
     # the GP based on the short cadence light curve
-    log.info("Cadence type: %s" % self.cadence)
     if self.cadence == 'sc':
       log.info("Loading long cadence model...")
-      kwargs.update({'cadence': 'lc'})
+      kwargs.pop('cadence', None)
+      kwargs.pop('clobber', None)
       lc = self.__class__(ID, is_parent = True, **kwargs)
-      kwargs.update({'cadence': 'sc',
-                     'kernel_params': lc.kernel_params,
+      kwargs.update({'kernel_params': lc.kernel_params,
                      'optimize_gp': False})
       del lc
     
@@ -233,7 +232,6 @@ class Detrender(Basecamp):
     # Get current chunk and mask outliers
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
-    #K = self.K[m1][:,m1]
     K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
     med = np.nanmedian(self.fraw)
     
@@ -427,7 +425,6 @@ class Detrender(Basecamp):
       self.cdppv_arr[b] = v_best / t_best
       self.lam[b][self.lam_idx] = self.lambda_arr[i]
       log.info("Found optimum solution at log(lambda) = %.1f." % np.log10(self.lam[b][self.lam_idx]))
-      self.compute()
       
       # Plotting: There's not enough space in the DVS to show the cross-val results
       # for more than two light curve segments.
@@ -466,7 +463,9 @@ class Detrender(Basecamp):
         ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
                        ha = 'left', va = 'bottom', fontsize = 8, alpha = 0.5, 
                        fontweight = 'bold')
-        
+    
+    # Finally, compute the model
+    self.compute()
     
     # Tidy up
     if len(ax) == 2:
@@ -588,8 +587,11 @@ class Detrender(Basecamp):
     
     # Plot the breakpoints
     for brkpt in self.breakpoints[:-1]:
-      ax.axvline(self.time[brkpt], color = 'r', ls = '--', alpha = 0.5)
-    
+      if len(self.breakpoints) <= 5:
+        ax.axvline(self.time[brkpt], color = 'r', ls = '--', alpha = 0.5)
+      else:
+        ax.axvline(self.time[brkpt], color = 'r', ls = '-', alpha = 0.025)
+        
     # Appearance
     if len(self.cdpp6_arr) == 2:
       ax.annotate('%.2f ppm' % self.cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
@@ -633,7 +635,15 @@ class Detrender(Basecamp):
       y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
       y += med
       ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
+      
+      # Compute the CDPP of the GP-detrended flux
+      self.gppp = CDPP6(self.apply_mask(self.flux - y + med), cadence = self.cadence)
     
+    else:
+      
+      # We're not going to calculate this
+      self.gppp = 0.
+      
     # Appearance
     ax.annotate('Final', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
@@ -649,10 +659,7 @@ class Detrender(Basecamp):
     ylim = (lo - pad, hi + pad)
     ax.set_ylim(ylim)   
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
-    
-    # Compute the CDPP of the GP-detrended flux
-    self.gppp = CDPP6(self.apply_mask(self.flux - y + med))
-  
+
   def plot_info(self, dvs):
     '''
     Plots miscellaneous de-trending information on the data validation summary figure.
@@ -927,7 +934,7 @@ class Detrender(Basecamp):
       self.cdppv_arr = np.array(self.cdppr_arr)
       self.cdppr = self.get_cdpp()
       self.cdpp6 = self.cdppr
-      self.cdppv = self.cdppv
+      self.cdppv = self.cdppr
 
       log.info("%s (Raw): CDPP6 = %s" % (self.name, self.cdpps))
       self.plot_lc(self.dvs1.left(), info_right = 'Raw', color = 'k')
@@ -943,7 +950,7 @@ class Detrender(Basecamp):
         self.cdpp6_arr = self.get_cdpp_arr()
         self.cdppv_arr *= self.cdpp6_arr
         self.cdpp6 = self.get_cdpp()
-        self.cdppv = np.mean(self.cdppv_arr)
+        self.cdppv = np.nanmean(self.cdppv_arr)
         log.info("%s (%d/%d): CDPP = %s" % (self.name, n + 1, self.pld_order, self.cdpps))
         self.plot_lc(self.dvs1.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
         

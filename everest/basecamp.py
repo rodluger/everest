@@ -370,7 +370,7 @@ class Basecamp(object):
     
     if flux is None:
       flux = self.flux
-    return np.array([CDPP6(flux[self.get_masked_chunk(b)]) for b, _ in enumerate(self.breakpoints)])
+    return np.array([CDPP6(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b, _ in enumerate(self.breakpoints)])
   
   def get_cdpp(self, flux = None):
     '''
@@ -380,7 +380,7 @@ class Basecamp(object):
     
     if flux is None:
       flux = self.flux
-    return CDPP6(self.apply_mask(flux))
+    return CDPP6(self.apply_mask(flux), cadence = self.cadence)
   
   def plot_weights(self, ax, cax):
     '''

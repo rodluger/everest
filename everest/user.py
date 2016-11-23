@@ -29,7 +29,7 @@ import subprocess
 import logging
 log = logging.getLogger(__name__)
 
-def DownloadFile(ID, mission = 'k2', filename = None, clobber = False):
+def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = False):
   '''
   Download a given :py:mod:`everest` file from MAST.
   
@@ -42,7 +42,7 @@ def DownloadFile(ID, mission = 'k2', filename = None, clobber = False):
   path = getattr(missions, mission).TargetDirectory(ID, season)
   relpath = getattr(missions, mission).TargetDirectory(ID, season, relative = True)
   if filename is None:
-    filename = getattr(missions, mission).FITSFile(ID, season)
+    filename = getattr(missions, mission).FITSFile(ID, season, cadence)
   
   # Check if file exists
   if not os.path.exists(path):
@@ -118,7 +118,7 @@ def ShowDVS(ID, mission = 'k2', model = 'nPLD', clobber = False):
     log.info("Unable to open the pdf. The full path is")
     log.info(file)
 
-def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
+def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', **kwargs):
   '''
   
   '''
@@ -130,8 +130,12 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
     screen_level = logging.CRITICAL
   InitLog(None, logging.DEBUG, screen_level, False)
 
+  # Check the cadence
+  if cadence not in ['lc', 'sc']:
+    raise ValueError("Invalid cadence selected.")
+  
   # Download the FITS file if necessary
-  fitsfile = DownloadFile(ID, mission = mission, clobber = clobber)
+  fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence)
   model_name = pyfits.getheader(fitsfile, 1)['MODEL']
 
   class Star(eval(model_name + 'Base'), Basecamp):
@@ -146,12 +150,13 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
       
       return "<everest.Star(%d)>" % self.ID
     
-    def __init__(self, ID, mission, model_name, fitsfile, quiet, clobber, **kwargs):
+    def __init__(self, ID, mission, model_name, fitsfile, quiet, clobber, cadence, **kwargs):
       '''
       
       '''
       
       self.ID = ID
+      self.cadence = cadence
       self.mission = mission
       self.model_name = model_name
       self.fitsfile = fitsfile
@@ -195,6 +200,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
     
     def download_fits(self):
       '''
+      TODO.
       
       '''
       
@@ -302,8 +308,13 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
             self.cdppv_arr.append(f[1].header['CDPPV%02d' % (c + 1)])
           except KeyError:
             break
-        self.lam = [[f[1].header['LAMBDA%d%d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
-                     for c in range(len(self.breakpoints))]
+        try:
+          self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
+                      for c in range(len(self.breakpoints))]
+        except KeyError:
+          # Backwards-compatibility fix
+          self.lam = [[f[1].header['LAMBDA%d%d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
+                      for c in range(len(self.breakpoints))]
         
       # Masks
       self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
@@ -527,4 +538,4 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, **kwargs):
         mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
       self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
       
-  return Star(ID, mission, model_name, fitsfile, quiet, clobber, **kwargs)
+  return Star(ID, mission, model_name, fitsfile, quiet, clobber, cadence, **kwargs)

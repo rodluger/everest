@@ -91,7 +91,7 @@ def LightcurveHDU(model):
   cards.append(('GPTAU', model.kernel_params[2], 'GP red noise timescale (days)'))
   for c in range(len(model.breakpoints)):
     for o in range(model.pld_order):
-      cards.append(('LAMBDA%d%d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
+      cards.append(('LAMB%02d%02d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
   cards.append(('LEPS', model.leps, 'Cross-validation tolerance'))
   cards.append(('MAXPIX', model.max_pixels, 'Maximum size of TPF aperture'))
   for i, source in enumerate(model.nearby[:99]):

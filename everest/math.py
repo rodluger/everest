@@ -112,24 +112,32 @@ def RMS(y, win = 13, remove_outliers = False):
     
   return 1.e6 * np.nanmedian([np.std(yi)/np.sqrt(win) for yi in Chunks(y, win, all = True)])
 
-def SavGol(y):
+def SavGol(y, win = 49):
   '''
   
   '''
   
-  if len(y) >= 49:
-    return y - savgol_filter(y, 49, 2) + np.nanmedian(y)
+  if len(y) >= win:
+    return y - savgol_filter(y, win, 2) + np.nanmedian(y)
   else:
     return y
   
-def CDPP6(flux, mask = []):
+def CDPP6(flux, mask = [], cadence = 'lc'):
   '''
   Compute the proxy 6-hr CDPP metric.
   
+  .. todo:: This should be tailored to individual missions.
+  
   '''
   
-  flux_savgol = SavGol(np.delete(flux, mask))
-  return RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True) 
+  if cadence == 'lc':
+    rmswin = 13
+    svgwin = 49
+  else:
+    rmswin = 13 * 30
+    svgwin = 50 * 30 - 1
+  flux_savgol = SavGol(np.delete(flux, mask), win = svgwin)
+  return RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
 
 def NumRegressors(npix, pld_order, cross_terms = True):
   '''
