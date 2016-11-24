@@ -298,23 +298,14 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
         self.cdppr_arr = []
         for c in range(99):
           try:
-            try:
-              self.breakpoints.append(f[1].header['BRKPT%02d' % (c + 1)])
-            except KeyError:
-              # Backwards-compatibility fix
-              self.breakpoints.append(f[1].header['BRKPT%d' % (c + 1)])
+            self.breakpoints.append(f[1].header['BRKPT%02d' % (c + 1)])
             self.cdpp6_arr.append(f[1].header['CDPP6%02d' % (c + 1)])
             self.cdppr_arr.append(f[1].header['CDPPR%02d' % (c + 1)])
             self.cdppv_arr.append(f[1].header['CDPPV%02d' % (c + 1)])
           except KeyError:
             break
-        try:
-          self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
-                      for c in range(len(self.breakpoints))]
-        except KeyError:
-          # Backwards-compatibility fix
-          self.lam = [[f[1].header['LAMBDA%d%d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
-                      for c in range(len(self.breakpoints))]
+        self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
+                     for c in range(len(self.breakpoints))]
         
       # Masks
       self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
