@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from . import __version__ as EVEREST_VERSION
 from . import missions
 from .basecamp import Basecamp
-from .pld import *
+from . import pld
 from .gp import GetCovariance
 from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, EVEREST_DEV, EVEREST_FITS
 from .utils import InitLog, Formatter
@@ -138,7 +138,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
   fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence)
   model_name = pyfits.getheader(fitsfile, 1)['MODEL']
 
-  class Star(eval(model_name + 'Base'), Basecamp):
+  class Star(getattr(pld, model_name), Basecamp):
     '''
   
     '''
@@ -178,17 +178,6 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
       '''
       
       return self.model_name
-    
-    @property
-    def X(self):
-      '''
-      
-      '''
-      
-      if self._X is None:
-        self._X = [None for i in range(self.pld_order)]
-        self.get_X()
-      return self._X
     
     def reset(self):
       '''

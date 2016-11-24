@@ -31,6 +31,105 @@ log = logging.getLogger(__name__)
 
 __all__ = ['cPLD', 'SimpleNeighborPLD', 'NoThrustersNeighborPLD']
 
+class nPLDPowell(nPLDBase, Detrender):
+  '''
+  An experimental model using a non-linear optimizer to find the
+  cross-validation parameter lambda.
+  
+  '''
+  
+  def __init__(self, *args, **kwargs):
+    '''
+    
+    '''
+    
+    # Initialize
+    super(nPLDPowell, self).__init__(*args, **kwargs)
+    
+    # Check for saved model
+    if not self.load_model('nPLD'):
+      raise Exception("Can't find `nPLD` model for target.")
+      
+    # Plot original
+    self.plot_aperture([self.dvs1.top_right() for i in range(4)])  
+    self.plot_lc(self.dvs1.left(), info_right = 'nPLD', color = 'k')
+    
+    # Cross-validate
+    self.powell_cross_validate()
+    self.compute()
+    self.cdpp6_arr = self.get_cdpp_arr()
+    self.cdpp6 = self.get_cdpp()
+    
+    # Plot new
+    self.plot_lc(self.dvs1.left(), info_right = 'Powell', color = 'k')
+    
+    # Save
+    self.plot_final(self.dvs1.top_left())
+    self.plot_info(self.dvs1)
+    self.save_model()
+    
+  def powell_cross_validate(self):
+    '''
+
+    '''
+    
+    # Loop over all chunks
+    for b, brkpt in enumerate(self.breakpoints):
+    
+      log.info("Cross-validating chunk %d/%d..." % (b + 1, len(self.breakpoints))) 
+        
+      # Mask for current chunk 
+      m = self.get_masked_chunk(b)
+        
+      # Mask transits and outliers
+      time = self.time[m]
+      flux = self.fraw[m]
+      ferr = self.fraw_err[m]
+      med = np.nanmedian(self.fraw)
+    
+      # Setup the GP
+      _, amp, tau = self.kernel_params
+      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp.compute(time, ferr)
+    
+      # The masks
+      masks = list(Chunks(np.arange(0, len(time)), len(time) // self.cdivs))
+      
+      # The pre-computed matrices
+      pre_v = [self.cv_precompute(mask, b) for mask in masks]
+      
+      # Call the minimizer
+      self.lam[b] = 10 ** fmin_powell(self.validation_scatter, np.log10(self.lam[b]), 
+                                      args = (b, masks, pre_v, gp, flux, time, med),
+                                      maxfun = 1, disp = False)
+      
+  def validation_scatter(self, loglam, b, masks, pre_v, gp, flux, time, med):
+    '''
+    
+    '''
+    
+    # Update the lambda matrix
+    self.lam[b] = 10 ** loglam 
+  
+    # The scatter in each segment
+    scatter = np.zeros(len(masks))
+  
+    # Loop over the different masks
+    for i, mask in enumerate(masks):
+
+      # Validation set
+      model = self.cv_compute(b, *pre_v[i])
+      gpm, _ = gp.predict(flux - model - med, time[mask])
+      fdet = (flux - model)[mask] - gpm
+      scatter[i] = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
+                                                 np.nanmedian(fdet / med))) /
+                                                 np.sqrt(len(mask)))
+    
+    # Take the maximum
+    scatter = np.max(scatter)
+    
+    return scatter
+
 class cPLD(Model):
   '''
   PLD for crowded stars. Uses the PLD vectors of 50

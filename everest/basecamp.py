@@ -163,7 +163,7 @@ class Basecamp(object):
     
     '''
     
-    return self._X
+    return self._DesignMatrix
   
   @X.setter
   def X(self, value):
@@ -211,10 +211,14 @@ class Basecamp(object):
       
       # Loop over all orders
       for n in range(self.pld_order):
-        if self.X[n] is not None:
-          self._A[b][n] = np.dot(self.X[n][m], self.X[n][m].T)
-          self._B[b][n] = np.dot(self.X[n][c], self.X[n][m].T)
-      
+        # Only compute up to the current PLD order
+        if self.lam_idx >= n:
+          X2 = self.X(n,m)
+          X1 = self.X(n,c)
+          self._A[b][n] = np.dot(X2, X2.T)
+          self._B[b][n] = np.dot(X1, X2.T)
+          del X1, X2
+          
       # This block of the masked covariance matrix
       self._mK[b] = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
@@ -317,14 +321,6 @@ class Basecamp(object):
       return res
     else:
       return x[res]
-  
-  def get_X(self):
-    '''
-    *Implemented by subclasses*
-    
-    '''
-  
-    raise NotImplementedError('This method must be implemented in a subclass.')
     
   def get_weights(self):
     '''
@@ -352,13 +348,15 @@ class Basecamp(object):
       # Loop over all orders
       _A = [None for i in range(self.pld_order)]
       for n in range(self.pld_order):
-        if self.X[n] is not None:
-          _A[n] = np.dot(self.X[n][m], self.X[n][m].T)
-      
+        if self.lam_idx >= n:
+          X = self.X(n,m)
+          _A[n] = np.dot(X, X.T)
+          del X
+          
       # Compute the weights
       A = np.sum([l * a for l, a in zip(self.lam[b], _A) if l is not None], axis = 0)
       W = np.linalg.solve(_mK + A, f)
-      weights[b] = [l * np.dot(self.X[n][m].T, W) for n, l in enumerate(self.lam[b]) if l is not None]
+      weights[b] = [l * np.dot(self.X(n,m).T, W) for n, l in enumerate(self.lam[b]) if l is not None]
     
     self._weights = weights
   
@@ -414,7 +412,7 @@ class Basecamp(object):
         c = self.get_chunk(b)
         rw_ii = np.zeros(npix); rw_ij = np.zeros(npix)
         sw_ii = np.zeros(npix); sw_ij = np.zeros(npix)
-        X = np.nanmedian(self.X[o][c], axis = 0)
+        X = np.nanmedian(self.X(o,c), axis = 0)
       
         # Compute all sets of pixels at this PLD order, then
         # loop over them and assign the weights to the correct pixels

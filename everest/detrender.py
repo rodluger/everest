@@ -13,7 +13,7 @@ specific de-trending methods are implemented as subclasses.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import missions
 from .basecamp import Basecamp
-from .pld import rPLDBase, nPLDBase
+from . import pld
 from .config import EVEREST_DAT
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
@@ -31,7 +31,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'rPLD', 'nPLD', 'nPLDPowell']
+__all__ = ['Detrender', 'rPLD', 'nPLD']
 
 class Detrender(Basecamp):
   '''
@@ -185,7 +185,6 @@ class Detrender(Basecamp):
     self._B = [[None for i in range(self.pld_order)] for b in range(nseg)]
     self._mK = [None for b in range(nseg)]
     self._f = [None for b in range(nseg)]
-    self._X = [None for i in range(self.pld_order)]
     self.X1N = None
     self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
@@ -245,9 +244,13 @@ class Detrender(Basecamp):
     A = [None for i in range(self.pld_order)]
     B = [None for i in range(self.pld_order)] 
     for n in range(self.pld_order):
-      if self.X[n] is not None:
-        A[n] = np.dot(self.X[n][m2], self.X[n][m2].T)
-        B[n] = np.dot(self.X[n][m1], self.X[n][m2].T)
+      # Only compute up to the current PLD order
+      if self.lam_idx >= n:
+        X2 = self.X(n,m2)
+        X1 = self.X(n,m1)
+        A[n] = np.dot(X2, X2.T)
+        B[n] = np.dot(X1, X2.T)
+        del X1, X2
     
     return A, B, mK, f
     
@@ -810,7 +813,6 @@ class Detrender(Basecamp):
             setattr(self, key, data[key][()])
           except NotImplementedError:
             pass
-        self.get_X()
         pl.close()
         return True
       except:
@@ -836,7 +838,6 @@ class Detrender(Basecamp):
     # Save the data
     log.info("Saving data to '%s.npz'..." % self.name)
     d = dict(self.__dict__)
-    d.pop('_X', None)
     d.pop('_weights', None)
     d.pop('_A', None)
     d.pop('_B', None)
@@ -942,7 +943,6 @@ class Detrender(Basecamp):
       # Loop
       for n in range(self.pld_order):
         self.lam_idx += 1
-        self.get_X()
         self.get_outliers()
         if n > 0 and self.optimize_gp:
           self.update_gp()
@@ -969,9 +969,9 @@ class Detrender(Basecamp):
     
       self.exception_handler(self.debug)
 
-class rPLD(rPLDBase, Detrender):
+class rPLD(pld.rPLD, Detrender):
   '''
-  The standard PLD model, inheriting all of its features from :py:class:`Detrender`.
+  A wrapper around the standard PLD model.
   
   '''
         
@@ -986,39 +986,20 @@ class rPLD(rPLDBase, Detrender):
     # Check for saved model
     if self.load_model():
       return
-
+    
+    # Setup
+    self._setup(**kwargs)
+    
     # Run
     self.run()
 
-class nPLD(nPLDBase, Detrender):
+class nPLD(pld.nPLD, Detrender):
   '''
-  The "neighboring stars" *PLD* model. This model uses the *PLD* vectors of neighboring
-  stars to help in the de-trending and can lead to increased performance over the regular
-  :py:class:`rPLD` model, particularly for dimmer stars.
-  
-  :param tuple cdpp_range: If :py:obj:`parent_model` is set, neighbors are selected only if \
-                           their de-trended CDPPs fall within this range. Default `None`
-  :param tuple mag_range: Only select neighbors whose magnitudes are within this range. \
-                          Default (11., 13.) 
-  :param int neighbors: The number of neighboring stars to use in the de-trending. The \
-                        higher this number, the more signals there are and hence the more \
-                        de-trending information there is. However, the neighboring star \
-                        signals are regularized together with the target's signals, so adding \
-                        too many neighbors will inevitably reduce the contribution of the \
-                        target's own signals, which may reduce performance. Default `10`
-  :param str parent_model: By default, :py:class:`nPLD` is run in stand-alone mode. The neighbor \
-                           signals are computed directly from their TPFs, so there is no need to \
-                           have run *PLD* on them beforehand. However, if :py:obj:`parent_model` is set, \
-                           :py:class:`nPLD` will use information from the :py:obj:`parent_model` model of
-                           each neighboring star when de-trending. This is particularly useful for \
-                           identifying outliers in the neighbor signals and preventing them from polluting \
-                           the current target. Setting :py:obj:`parent_model` to :py:class:`rPLD`, for instance, \
-                           will use the outlier information in the :py:class:`rPLD` model of the neighbors \
-                           (this must have been run ahead of time). Note, however, that tests with *K2* data \
-                           show that including outliers in the neighbor signals actually *improves* the performance, \
-                           since many of these outliers are associated with events such as thruster firings and are \
-                           present in all light curves, and therefore *help* in the de-trending. Default `None`
-  
+  A wrapper aroundn the "neighboring stars" *PLD* model. This model uses the 
+  *PLD* vectors of neighboring stars to help in the de-trending and can lead 
+  to increased performance over the regular :py:class:`rPLD` model, 
+  particularly for dimmer stars.
+    
   '''
         
   def __init__(self, *args, **kwargs):
@@ -1033,154 +1014,8 @@ class nPLD(nPLDBase, Detrender):
     if self.load_model():
       return
     
-    # Get neighbors
-    self.parent_model = kwargs.get('parent_model', None)
-    num_neighbors = kwargs.get('neighbors', 10)
-    self.neighbors = self._mission.GetNeighbors(self.ID, 
-                                   cadence = self.cadence,
-                                   model = self.parent_model,
-                                   neighbors = num_neighbors, 
-                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
-                                   cdpp_range = kwargs.get('cdpp_range', None),
-                                   aperture_name = self.aperture_name)
-    if len(self.neighbors):
-      if len(self.neighbors) < num_neighbors:
-        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
-    else:
-      log.error("No neighbors found! Aborting.")
-      return
-    
-    for neighbor in self.neighbors:
-      log.info("Loading data for neighboring target %d..." % neighbor)
-      if self.parent_model is not None and self.cadence == 'lc':
-        # We load the `parent` model. The advantage here is that outliers have
-        # properly been identified and masked. I haven't tested this on short
-        # cadence data, so I'm going to just forbid it...
-        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
-      else:
-        # We load the data straight from the TPF. Much quicker, since no model must
-        # be run in advance. Downside is we don't know where the outliers are. But based
-        # on tests with K2 data, the de-trending is actually *better* if the outliers are
-        # included! These are mostly thruster fire events and other artifacts common to
-        # all the stars, so it makes sense that we might want to keep them in the design
-        # matrix.
-        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
-                             cadence = self.cadence,
-                             aperture_name = self.aperture_name, 
-                             saturated_aperture_name = self.saturated_aperture_name, 
-                             max_pixels = self.max_pixels,
-                             saturation_tolerance = self.saturation_tolerance)
-        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
-        data.fraw = np.sum(data.fpix, axis = 1)
-      
-      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
-      X1 = data.fpix / data.fraw.reshape(-1, 1)
-      X1 = Interpolate(data.time, data.mask, X1)
-      if self.X1N is None:
-        self.X1N = np.array(X1)
-      else:
-        self.X1N = np.hstack([self.X1N, X1])
-      del X1
-      del data
+    # Setup
+    self._setup(**kwargs)
 
     # Run
     self.run()
-
-class nPLDPowell(nPLDBase, Detrender):
-  '''
-  An experimental model using a non-linear optimizer to find the
-  cross-validation parameter lambda.
-  
-  '''
-  
-  def __init__(self, *args, **kwargs):
-    '''
-    
-    '''
-    
-    # Initialize
-    super(nPLDPowell, self).__init__(*args, **kwargs)
-    
-    # Check for saved model
-    if not self.load_model('nPLD'):
-      raise Exception("Can't find `nPLD` model for target.")
-      
-    # Plot original
-    self.plot_aperture([self.dvs1.top_right() for i in range(4)])  
-    self.plot_lc(self.dvs1.left(), info_right = 'nPLD', color = 'k')
-    
-    # Cross-validate
-    self.powell_cross_validate()
-    self.compute()
-    self.cdpp6_arr = self.get_cdpp_arr()
-    self.cdpp6 = self.get_cdpp()
-    
-    # Plot new
-    self.plot_lc(self.dvs1.left(), info_right = 'Powell', color = 'k')
-    
-    # Save
-    self.plot_final(self.dvs1.top_left())
-    self.plot_info(self.dvs1)
-    self.save_model()
-    
-  def powell_cross_validate(self):
-    '''
-
-    '''
-    
-    # Loop over all chunks
-    for b, brkpt in enumerate(self.breakpoints):
-    
-      log.info("Cross-validating chunk %d/%d..." % (b + 1, len(self.breakpoints))) 
-        
-      # Mask for current chunk 
-      m = self.get_masked_chunk(b)
-        
-      # Mask transits and outliers
-      time = self.time[m]
-      flux = self.fraw[m]
-      ferr = self.fraw_err[m]
-      med = np.nanmedian(self.fraw)
-    
-      # Setup the GP
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-      gp.compute(time, ferr)
-    
-      # The masks
-      masks = list(Chunks(np.arange(0, len(time)), len(time) // self.cdivs))
-      
-      # The pre-computed matrices
-      pre_v = [self.cv_precompute(mask, b) for mask in masks]
-      
-      # Call the minimizer
-      self.lam[b] = 10 ** fmin_powell(self.validation_scatter, np.log10(self.lam[b]), 
-                                      args = (b, masks, pre_v, gp, flux, time, med),
-                                      maxfun = 1, disp = False)
-      
-  def validation_scatter(self, loglam, b, masks, pre_v, gp, flux, time, med):
-    '''
-    
-    '''
-    
-    # Update the lambda matrix
-    self.lam[b] = 10 ** loglam 
-  
-    # The scatter in each segment
-    scatter = np.zeros(len(masks))
-  
-    # Loop over the different masks
-    for i, mask in enumerate(masks):
-
-      # Validation set
-      model = self.cv_compute(b, *pre_v[i])
-      gpm, _ = gp.predict(flux - model - med, time[mask])
-      fdet = (flux - model)[mask] - gpm
-      scatter[i] = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
-                                                 np.nanmedian(fdet / med))) /
-                                                 np.sqrt(len(mask)))
-    
-    # Take the maximum
-    scatter = np.max(scatter)
-    
-    return scatter
