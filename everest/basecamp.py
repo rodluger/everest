@@ -214,8 +214,20 @@ class Basecamp(object):
       # This block of the masked covariance matrix
       mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
-      # The normalized flux
-      f = self.fraw[m] - np.nanmedian(self.fraw[m]) # ***
+      # Backwards compatibility. For K2 campaigns 1 and 2 LC light curves,
+      # we (stupidly) subtracted the global median flux when solving for the
+      # model during cross-validating. This is not ideal, as we want the light
+      # curve to be *locally* zero-median when computing the model. The C01
+      # and C02 light curves should eventually be run again, at which point
+      # we can get rid of this next line. The precision in those light curves
+      # should improve by about 1 ppm once we do that.
+      if (self.mission == 'k2') and (self.cadence == 'lc') and ((self.season == 1) or (self.season == 2)):
+        med = np.nanmedian(self.fraw)
+      else:
+        med = np.nanmedian(self.fraw[m])
+      
+      # Normalize the flux
+      f = self.fraw[m] - med
       
       # The X^2 matrices
       A = np.zeros((len(m), len(m)))
