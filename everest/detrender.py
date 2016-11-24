@@ -228,7 +228,7 @@ class Detrender(Basecamp):
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
     K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
-    med = np.nanmedian(self.fraw)
+    med = np.nanmedian(flux) # ***
     
     # Now mask the validation set
     M = lambda x, axis = 0: np.delete(x, mask, axis = axis)
@@ -362,7 +362,7 @@ class Detrender(Basecamp):
       time = self.time[m]
       flux = self.fraw[m]
       ferr = self.fraw_err[m]
-      med = np.nanmedian(self.fraw)
+      med = np.nanmedian(flux) # ***
     
       # The precision in the validation set
       validation = [[] for k, _ in enumerate(self.lambda_arr)]
@@ -998,7 +998,7 @@ class rPLD(pld.rPLD, Detrender):
 
 class nPLD(pld.nPLD, Detrender):
   '''
-  A wrapper aroundn the "neighboring stars" *PLD* model. This model uses the 
+  A wrapper around the "neighboring stars" *PLD* model. This model uses the 
   *PLD* vectors of neighboring stars to help in the de-trending and can lead 
   to increased performance over the regular :py:class:`rPLD` model, 
   particularly for dimmer stars.

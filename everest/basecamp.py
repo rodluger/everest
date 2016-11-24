@@ -215,7 +215,7 @@ class Basecamp(object):
       mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
       # The normalized flux
-      f = self.fraw[m] - np.nanmedian(self.fraw)
+      f = self.fraw[m] - np.nanmedian(self.fraw[m]) # ***
       
       # The X^2 matrices
       A = np.zeros((len(m), len(m)))
