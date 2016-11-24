@@ -181,10 +181,6 @@ class Detrender(Basecamp):
     # Initialize model params 
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
-    self._A = [[None for i in range(self.pld_order)] for b in range(nseg)]
-    self._B = [[None for i in range(self.pld_order)] for b in range(nseg)]
-    self._mK = [None for b in range(nseg)]
-    self._f = [None for b in range(nseg)]
     self.X1N = None
     self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
@@ -348,12 +344,19 @@ class Detrender(Basecamp):
     ax = np.atleast_1d(ax)
     for b, brkpt in enumerate(self.breakpoints):
     
-      log.info("Cross-validating chunk %d/%d..." % (b + 1, len(self.breakpoints)))
+      log.info("Cross-validating chunk %d/%d..." % (b + 1, len(self.breakpoints)))      
       med_training = np.zeros_like(self.lambda_arr)
       med_validation = np.zeros_like(self.lambda_arr)
         
       # Mask for current chunk 
       m = self.get_masked_chunk(b)
+      
+      # Check that we have enough data
+      if len(m) < 3 * self.cdivs:
+        self.cdppv_arr[b] = np.nan
+        self.lam[b][self.lam_idx] = -np.inf
+        log.info("Insufficient data to run cross-validation on this chunk.")
+        continue
         
       # Mask transits and outliers
       time = self.time[m]

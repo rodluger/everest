@@ -121,8 +121,7 @@ class nPLD(object):
       if len(self.neighbors) < num_neighbors:
         log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
     else:
-      log.error("No neighbors found! Aborting.")
-      return
+      raise Exception("No neighbors found! Aborting.")
     
     for neighbor in self.neighbors:
       log.info("Loading data for neighboring target %d..." % neighbor)

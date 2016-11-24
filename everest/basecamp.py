@@ -195,55 +195,46 @@ class Basecamp(object):
     
     raise NotImplementedError("Can't set this property.") 
   
-  def precompute(self):
+  def compute(self):
     '''
-    Pre-compute some expensive matrices used during the regularization step 
-    and store them in memory.
-    
+    Compute the model for the current value of lambda.
+
     '''
-    
+
+    log.info('Computing the model...')
+
     # Loop over all chunks
+    model = [None for b in self.breakpoints]
     for b, brkpt in enumerate(self.breakpoints):
     
       # Masks for current chunk
       m = self.get_masked_chunk(b)
       c = self.get_chunk(b)
       
+      # This block of the masked covariance matrix
+      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      
+      # The normalized flux
+      f = self.fraw[m] - np.nanmedian(self.fraw)
+      
+      # The X^2 matrices
+      A = np.zeros((len(m), len(m)))
+      B = np.zeros((len(c), len(m)))
+      
       # Loop over all orders
       for n in range(self.pld_order):
+
         # Only compute up to the current PLD order
-        if self.lam_idx >= n:
-          X2 = self.X(n,m)
-          X1 = self.X(n,c)
-          self._A[b][n] = np.dot(X2, X2.T)
-          self._B[b][n] = np.dot(X1, X2.T)
-          del X1, X2
-          
-      # This block of the masked covariance matrix
-      self._mK[b] = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+        if (self.lam_idx >= n) and (self.lam[b][n] is not None):
+          XM = self.X(n,m)
+          XC = self.X(n,c)
+          A += self.lam[b][n] * np.dot(XM, XM.T)
+          B += self.lam[b][n] * np.dot(XC, XM.T)
+          del XM, XC
       
-      # Normalized flux
-      self._f[b] = self.fraw[m] - np.nanmedian(self.fraw)  
-  
-  def compute(self, precompute = True):
-    '''
-    Compute the model for the current value of lambda.
-    
-    :param bool precompute: Precompute the expensive :py:obj:`A` and :py:obj:`B` matrices? Default :py:obj:`True`
-    
-    '''
-
-    log.info('Computing the model...')
-    if precompute:
-      self.precompute()
-
-    # Loop over all chunks
-    model = [None for b in self.breakpoints]
-    for b, brkpt in enumerate(self.breakpoints):
-      A = np.sum([l * a for l, a in zip(self.lam[b], self._A[b]) if l is not None], axis = 0)
-      B = np.sum([l * b for l, b in zip(self.lam[b], self._B[b]) if l is not None], axis = 0)
-      W = np.linalg.solve(self._mK[b] + A, self._f[b])
+      W = np.linalg.solve(mK + A, f)
       model[b] = np.dot(B, W)
+      del A, B, W
 
     # Join the chunks after applying the correct offset
     if len(model) > 1:
