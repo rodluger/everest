@@ -1,5 +1,5 @@
-from everest.k2 import TargetDirectory, FITSFile
-from everest.k2.aux import GetK2Campaign
+from everest.missions.k2 import TargetDirectory, FITSFile
+from everest.missions.k2.aux import GetK2Campaign
 import os
 try:
   import pyfits
