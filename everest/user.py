@@ -268,6 +268,17 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
         self.saturated = f[1].header['SATUR']
         self.saturation_tolerance = f[1].header['SATTOL']
         self.time = f[1].data['TIME']
+        
+        # Backwards-compatibility for K2 C01 and C02 LC data,
+        # for which we subtracted the *global* median when
+        # normalizing the flux during model evaluation. In
+        # more recent versions, we subtract the local (chunk)
+        # median.
+        try:
+          f[1].header['GLOBMED']
+          self.local_median = False
+        except KeyError:
+          self.local_median = True
           
         # Chunk arrays
         self.breakpoints = []

@@ -86,6 +86,7 @@ class Detrender(Basecamp):
   :param float leps: The fractional tolerance when optimizing :math:`\Lambda`. The chosen value of \
                      :math:`\Lambda` will be within this amount of the minimum of the CDPP curve. \
                      Default 0.05
+  :param bool local_median: For backwards-compatibility only. Default :py:obj:`True`
   :param int max_pixels: The maximum number of pixels. Very large apertures are likely to cause memory \
                          errors, particularly for high order PLD. If the chosen aperture exceeds this many \
                          pixels, a different aperture is chosen from the dataset. If no apertures with fewer \
@@ -161,6 +162,7 @@ class Detrender(Basecamp):
     self.max_pixels = kwargs.get('max_pixels', 75)
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
     self.gp_factor = kwargs.get('gp_factor', 100.)
+    self.local_median = kwargs.get('local_median', True)
     
     # Handle breakpointing. The breakpoint is the *last* index of each 
     # light curve chunk.
@@ -228,7 +230,10 @@ class Detrender(Basecamp):
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
     K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
-    med = np.nanmedian(flux)
+    if self.local_median:
+      med = np.nanmedian(flux)
+    else:
+      med = np.nanmedian(self.fraw)
     
     # Now mask the validation set
     M = lambda x, axis = 0: np.delete(x, mask, axis = axis)
@@ -362,8 +367,11 @@ class Detrender(Basecamp):
       time = self.time[m]
       flux = self.fraw[m]
       ferr = self.fraw_err[m]
-      med = np.nanmedian(flux)
-    
+      if self.local_median:
+        med = np.nanmedian(flux)
+      else:
+        med = np.nanmedian(self.fraw)
+        
       # The precision in the validation set
       validation = [[] for k, _ in enumerate(self.lambda_arr)]
     

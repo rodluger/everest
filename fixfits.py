@@ -15,6 +15,12 @@ for i, ID in enumerate(stars):
   file = os.path.join(TargetDirectory(ID, campaign), FITSFile(ID, campaign))
   if os.path.exists(file):
     with pyfits.open(file, 'update') as f:
+      
+      # Add global median keyword
+      if f[1].header.get('GLOBMED') is None:
+        f[1].header.set('GLOBMED', 1, 'Backwards-compatibility fix')
+      
+      # Add leading zeros to breakpoints and lambda
       if len(f) == 6:
         h = f[1].header
         if h.get('BRKPT1') is None:
