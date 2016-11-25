@@ -18,8 +18,11 @@ for i, ID in enumerate(stars):
       
       # Add global median keyword
       if f[1].header.get('GLOBMED') is None:
-        f[1].header.set('GLOBMED', 1, 'Backwards-compatibility fix')
-      
+        f[1].header.set('GLOBMED', 1, 'Backwards-compatibility fix', 'GITER')
+      else:
+        f[1].header.remove('GLOBMED')
+        f[1].header.set('GLOBMED', 1, 'Backwards-compatibility fix', 'GITER')
+        
       # Add leading zeros to breakpoints and lambda
       if len(f) == 6:
         h = f[1].header
