@@ -31,7 +31,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'rPLD', 'nPLD']
+__all__ = ['Detrender', 'rPLD', 'nPLD', 'nPLD2']
 
 class Detrender(Basecamp):
   '''
@@ -1012,6 +1012,33 @@ class nPLD(pld.nPLD, Detrender):
     
     # Initialize
     super(nPLD, self).__init__(*args, **kwargs)
+    
+    # Check for saved model
+    if self.load_model():
+      return
+    
+    # Setup
+    self._setup(**kwargs)
+
+    # Run
+    self.run()
+
+class nPLD2(pld.nPLD, Detrender):
+  '''
+  A wrapper around the "neighboring stars" *PLD* model. This model uses the 
+  *PLD* vectors of neighboring stars to help in the de-trending and can lead 
+  to increased performance over the regular :py:class:`rPLD` model, 
+  particularly for dimmer stars.
+    
+  '''
+        
+  def __init__(self, *args, **kwargs):
+    '''
+    
+    '''
+    
+    # Initialize
+    super(nPLD2, self).__init__(*args, **kwargs)
     
     # Check for saved model
     if self.load_model():

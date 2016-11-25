@@ -172,7 +172,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
       InitLog(self.logfile, logging.DEBUG, screen_level, False)
       self.download_fits()
       self.load_fits()
-      self.init_model()
+      self._weights = None
     
     @property
     def name(self):
@@ -197,21 +197,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
       '''
       
       pass
-    
-    def init_model(self):
-      '''
-      
-      '''
-      
-      log.info("Initializing %s model for %d." % (self.name, self.ID))
-      self._A = [[None for i in range(self.pld_order)] for b in self.breakpoints]
-      self._B = [[None for i in range(self.pld_order)] for b in self.breakpoints]
-      self._mK = [None for b in self.breakpoints]
-      self._f = [None for b in self.breakpoints]
-      self._X = None
-      self._weights = None
-      self.K = GetCovariance(self.kernel_params, self.time, self.fraw_err)
-      
+          
     def load_fits(self):
       '''
       
@@ -388,7 +374,10 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
       transitmask = self.transitmask
       fraw_err = self.fraw_err
       breakpoints = self.breakpoints
-      ms = 4
+      if self.cadence == 'sc':
+        ms = 2
+      else:
+        ms = 4
       
       # Get the cdpps
       cdpps = [[self.get_cdpp(self.flux), self.get_cdpp_arr(self.flux)],
@@ -417,7 +406,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
         ax.plot(O3(time), O3(flux), 'b.', markersize = ms, alpha = 0.25)
         
         # Plot the GP
-        if n == 0 and plot_gp:
+        if n == 0 and plot_gp and self.cadence != 'sc':
           M = lambda x: np.delete(x, bnmask)
           _, amp, tau = self.kernel_params
           gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
