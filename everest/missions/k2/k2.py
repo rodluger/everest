@@ -83,15 +83,15 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   }
   elif cadence == 'sc':
     breakpoints = {
-                  0: [],
+                  0: np.array(np.linspace(0, 112590, 21)[1:-1], dtype = int),
                   1: np.array(np.linspace(0, 120660, 21)[1:-1], dtype = int),
                   2: np.array(np.linspace(0, 115680, 21)[1:-1], dtype = int),
-                  3: [],
-                  4: [],
-                  5: [],
-                  6: [],
-                  7: [],
-                  8: [],
+                  3: np.array(np.linspace(0, 101580, 21)[1:-1], dtype = int),
+                  4: np.array(np.linspace(0, 101580, 21)[1:-1], dtype = int),
+                  5: np.array(np.linspace(0, 109890, 21)[1:-1], dtype = int),
+                  6: np.array(np.linspace(0, 115890, 21)[1:-1], dtype = int),
+                  7: np.array(np.linspace(0, 121290, 21)[1:-1], dtype = int),
+                  8: np.array(np.linspace(0, 115590, 21)[1:-1], dtype = int),
                   9: [],
                  10: [],
                  11: [],

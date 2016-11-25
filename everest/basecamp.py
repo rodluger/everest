@@ -221,10 +221,10 @@ class Basecamp(object):
       # and C02 light curves should eventually be run again, at which point
       # we can get rid of this next line. The precision in those light curves
       # should improve by about 1 ppm once we do that.
-      #if (self.mission == 'k2') and (self.cadence == 'lc') and ((self.season == 1) or (self.season == 2)):
-      #  med = np.nanmedian(self.fraw)
-      #else:
-      med = np.nanmedian(self.fraw[m])
+      if (self.mission == 'k2') and (self.cadence == 'lc') and ((self.season == 1) or (self.season == 2)):
+        med = np.nanmedian(self.fraw)
+      else:
+        med = np.nanmedian(self.fraw[m])
       
       # Normalize the flux
       f = self.fraw[m] - med
