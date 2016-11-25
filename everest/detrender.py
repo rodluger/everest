@@ -139,7 +139,7 @@ class Detrender(Basecamp):
       kwargs.pop('cadence', None)
       kwargs.pop('clobber', None)
       lc = self.__class__(ID, is_parent = True, **kwargs)
-      kwargs.update({'kernel_params': lc.kernel_params,
+      kwargs.update({'kernel_params': kwargs.get('kernel_params', lc.kernel_params),
                      'optimize_gp': False})
       del lc
     

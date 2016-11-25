@@ -137,8 +137,11 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
   # Download the FITS file if necessary
   fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence)
   model_name = pyfits.getheader(fitsfile, 1)['MODEL']
-
-  class Star(getattr(pld, model_name), Basecamp):
+  
+  # Get the actual class corresponding to the model
+  model = getattr(pld, model_name.split('.')[0])
+  
+  class Star(model, Basecamp):
     '''
   
     '''
