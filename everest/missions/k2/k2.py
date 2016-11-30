@@ -62,15 +62,15 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   # Select LC or SC
   if cadence == 'lc':
     breakpoints = {
-                   0: [],       # OK; campaign is really short
-                   1: [2210],   #
-                   2: [2042],   # OK
-                   3: [2140],   #
-                   4: [1750],   #
-                   5: [1774],   #
-                   6: [2143],   # OK
-                   7: [2065],   # There's no stable point in this campaign
-                   8: [1950],   # This campaign needs to be redone (was 2084)
+                   0: [],             # OK
+                   1: [2210],         #
+                   2: [2042],         # OK
+                   3: [2140],         #
+                   4: [520, 2153],    # Used to be [1750]
+                   5: [1774],         #
+                   6: [2143],         # OK
+                   7: [2065],         # 
+                   8: [1950],         # 
                    9: [],
                   10: [],
                   11: [],

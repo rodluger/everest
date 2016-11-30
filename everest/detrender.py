@@ -30,7 +30,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD']
+__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD', 'tPLD']
 
 class Detrender(Basecamp):
   '''
@@ -1122,3 +1122,63 @@ class rPLD(Detrender):
     self.gppp = np.nan
     self.model = np.zeros_like(self.time)
     self.loaded = True
+
+class tPLD(Detrender):
+  '''
+  Test PLD.
+    
+  '''
+        
+  def setup(self, **kwargs):
+    '''
+    
+    '''
+    
+    # Get neighbors
+    self.parent_model = kwargs.get('parent_model', None)
+    num_neighbors = kwargs.get('neighbors', 10)
+    self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                   cadence = self.cadence,
+                                   model = self.parent_model,
+                                   neighbors = num_neighbors, 
+                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                   cdpp_range = kwargs.get('cdpp_range', None),
+                                   aperture_name = self.aperture_name)
+    if len(self.neighbors):
+      if len(self.neighbors) < num_neighbors:
+        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
+    else:
+      raise Exception("No neighbors found! Aborting.")
+    
+    for neighbor in self.neighbors:
+      log.info("Loading data for neighboring target %d..." % neighbor)
+      if self.parent_model is not None and self.cadence == 'lc':
+        # We load the `parent` model. The advantage here is that outliers have
+        # properly been identified and masked. I haven't tested this on short
+        # cadence data, so I'm going to just forbid it...
+        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
+      else:
+        # We load the data straight from the TPF. Much quicker, since no model must
+        # be run in advance. Downside is we don't know where the outliers are. But based
+        # on tests with K2 data, the de-trending is actually *better* if the outliers are
+        # included! These are mostly thruster fire events and other artifacts common to
+        # all the stars, so it makes sense that we might want to keep them in the design
+        # matrix.
+        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
+                             cadence = self.cadence,
+                             aperture_name = self.aperture_name, 
+                             saturated_aperture_name = self.saturated_aperture_name, 
+                             max_pixels = self.max_pixels,
+                             saturation_tolerance = self.saturation_tolerance)
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+      
+      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
+      X1 = data.fpix / data.fraw.reshape(-1, 1)
+      X1 = Interpolate(data.time, data.mask, X1)
+      if self.X1N is None:
+        self.X1N = np.array(X1)
+      else:
+        self.X1N = np.hstack([self.X1N, X1])
+      del X1
+      del data
