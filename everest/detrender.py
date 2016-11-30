@@ -85,7 +85,6 @@ class Detrender(Basecamp):
   :param float leps: The fractional tolerance when optimizing :math:`\Lambda`. The chosen value of \
                      :math:`\Lambda` will be within this amount of the minimum of the CDPP curve. \
                      Default 0.05
-  :param bool local_median: For backwards-compatibility only. Default :py:obj:`True`
   :param int max_pixels: The maximum number of pixels. Very large apertures are likely to cause memory \
                          errors, particularly for high order PLD. If the chosen aperture exceeds this many \
                          pixels, a different aperture is chosen from the dataset. If no apertures with fewer \
@@ -156,7 +155,6 @@ class Detrender(Basecamp):
     self.max_pixels = kwargs.get('max_pixels', 75)
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
     self.gp_factor = kwargs.get('gp_factor', 100.)
-    self.local_median = kwargs.get('local_median', True)
     
     # Handle breakpointing. The breakpoint is the *last* index of each 
     # light curve chunk.
@@ -177,6 +175,8 @@ class Detrender(Basecamp):
     # Initialize model params 
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
+    self.reclam = None
+    self.recmask = []
     self.X1N = None
     self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
@@ -242,10 +242,7 @@ class Detrender(Basecamp):
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
     K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
-    if self.local_median:
-      med = np.nanmedian(flux)
-    else:
-      med = np.nanmedian(self.fraw)
+    med = np.nanmedian(flux)
     
     # Now mask the validation set
     M = lambda x, axis = 0: np.delete(x, mask, axis = axis)
@@ -379,10 +376,7 @@ class Detrender(Basecamp):
       time = self.time[m]
       flux = self.fraw[m]
       ferr = self.fraw_err[m]
-      if self.local_median:
-        med = np.nanmedian(flux)
-      else:
-        med = np.nanmedian(self.fraw)
+      med = np.nanmedian(flux)
         
       # The precision in the validation set
       validation = [[] for k, _ in enumerate(self.lambda_arr)]
@@ -812,6 +806,10 @@ class Detrender(Basecamp):
       
       # Update the last breakpoint to the correct value
       self.breakpoints[-1] = len(self.time) - 1
+      
+      # Get PLD normalization
+      self.get_norm()
+      
       self.loaded = True
   
   def load_model(self, name = None):
@@ -1101,9 +1099,16 @@ class rPLD(Detrender):
     
     '''
     
+    # Load the parent model
     self.parent_model = kwargs.get('parent_model', 'nPLD')
     self.load_model(self.parent_model)
+    
+    # Save static copies of the de-trended flux, the outlier mask and the lambda array
     self._norm = np.array(self.flux)
+    self.recmask = np.array(self.mask)
+    self.reclam = np.array(self.lam)
+    
+    # Now reset the model params
     self.optimize_gp = False
     nseg = len(self.breakpoints)
     self.lam_idx = -1
@@ -1115,11 +1120,5 @@ class rPLD(Detrender):
     self.cdppr = np.nan
     self.cdppv = np.nan
     self.gppp = np.nan
-  
-  @property
-  def norm(self):
-    '''
-    
-    '''
-    
-    return self._norm
+    self.model = np.zeros_like(self.time)
+    self.loaded = True

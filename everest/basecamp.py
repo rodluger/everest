@@ -126,7 +126,7 @@ class Basecamp(object):
     
     '''
     
-    return self.fraw
+    return self._norm
     
   @norm.setter
   def norm(self, value):
@@ -194,6 +194,13 @@ class Basecamp(object):
     
     raise NotImplementedError("Can't set this property.") 
   
+  def get_norm(self):
+    '''
+    
+    '''
+    
+    return self.fraw
+  
   def X(self, i, j = slice(None, None, None)):
     '''
     Computes the design matrix at the given *PLD* order and the given indices. 
@@ -230,11 +237,8 @@ class Basecamp(object):
       # This block of the masked covariance matrix
       mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
-      # Backwards compatibility fix (K2 C01 and C02 LC)
-      if self.local_median:
-        med = np.nanmedian(self.fraw[m])
-      else:
-        med = np.nanmedian(self.fraw)
+      # Get median
+      med = np.nanmedian(self.fraw[m])
       
       # Normalize the flux
       f = self.fraw[m] - med

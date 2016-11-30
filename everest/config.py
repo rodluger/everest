@@ -57,3 +57,6 @@ QUALITY_BAD = 23
 QUALITY_NAN = 24
 #: Everest quality bit: masked because data was an outlier
 QUALITY_OUT = 25
+#: Everest quality bit: masked because data was an outlier
+QUALITY_REC = 26
+#: Everest quality bit: masked in the original model (for recursive PLD only)

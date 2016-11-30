@@ -12,7 +12,7 @@ These *FITS* files make up the public :py:mod:`everest` catalog.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
-from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT
+from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC
 try:
   import pyfits
 except ImportError:
@@ -92,6 +92,8 @@ def LightcurveHDU(model):
   for c in range(len(model.breakpoints)):
     for o in range(model.pld_order):
       cards.append(('LAMB%02d%02d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
+      if model.name == 'rPLD':
+        cards.append(('RECL%02d%02d' % (c + 1, o + 1), model.reclam[c][o], 'Cross-validation parameter'))
   cards.append(('LEPS', model.leps, 'Cross-validation tolerance'))
   cards.append(('MAXPIX', model.max_pixels, 'Maximum size of TPF aperture'))
   for i, source in enumerate(model.nearby[:99]):
@@ -115,6 +117,7 @@ def LightcurveHDU(model):
   quality[model.badmask] += 2 ** (QUALITY_BAD - 1)
   quality[model.nanmask] += 2 ** (QUALITY_NAN - 1)
   quality[model.outmask] += 2 ** (QUALITY_OUT - 1)
+  quality[model.recmask] += 2 ** (QUALITY_REC - 1)
 
   # Create the arrays list
   arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),

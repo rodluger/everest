@@ -11,7 +11,7 @@ from . import __version__ as EVEREST_VERSION
 from . import missions
 from .basecamp import Basecamp
 from .gp import GetCovariance
-from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, EVEREST_DEV, EVEREST_FITS
+from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, EVEREST_DEV, EVEREST_FITS
 from .utils import InitLog, Formatter
 import george
 import os, sys, platform
@@ -174,6 +174,87 @@ class Everest(Basecamp):
     self.load_fits()
     self._weights = None
   
+  def compute(self):
+    '''
+    
+    '''
+    
+    if self.model_name == 'rPLD':
+      self.get_norm()
+    super(Everest, self).compute()
+  
+  def get_norm(self):
+    '''
+    
+    '''
+    
+    log.info('Computing the PLD normalization...')
+    
+    # Loop over all chunks
+    mod = [None for b in self.breakpoints]
+    for b, brkpt in enumerate(self.breakpoints):
+      
+      # Unmasked chunk
+      c = self.get_chunk(b)
+      
+      # Masked chunk (original mask plus user transit mask)
+      inds = np.array(list(set(np.concatenate([self.transitmask, self.recmask]))), dtype = int)
+      M = np.delete(np.arange(len(self.time)), inds, axis = 0)
+      if b > 0:
+        m = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
+      else:
+        m = M[M <= self.breakpoints[b] + self.bpad]
+
+      # This block of the masked covariance matrix
+      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      
+      # Get median
+      med = np.nanmedian(self.fraw[m])
+      
+      # Normalize the flux
+      f = self.fraw[m] - med
+      
+      # The X^2 matrices
+      A = np.zeros((len(m), len(m)))
+      B = np.zeros((len(c), len(m)))
+      
+      # Loop over all orders
+      for n in range(self.pld_order):
+        XM = self.X(n,m)
+        XC = self.X(n,c)
+        A += self.reclam[b][n] * np.dot(XM, XM.T)
+        B += self.reclam[b][n] * np.dot(XC, XM.T)
+        del XM, XC
+      
+      W = np.linalg.solve(mK + A, f)
+      mod[b] = np.dot(B, W)
+      del A, B, W
+
+    # Join the chunks after applying the correct offset
+    if len(mod) > 1:
+
+      # First chunk
+      model = mod[0][:-self.bpad]
+  
+      # Center chunks
+      for m in mod[1:-1]:
+        offset = model[-1] - m[self.bpad - 1]
+        model = np.concatenate([model, m[self.bpad:-self.bpad] + offset])
+  
+      # Last chunk
+      offset = model[-1] - mod[-1][self.bpad - 1]
+      model = np.concatenate([model, mod[-1][self.bpad:] + offset])      
+  
+    else:
+
+      model = mod[0]
+  
+    # Subtract the global median
+    model -= np.nanmedian(model)
+
+    # Save the norm
+    self._norm = self.fraw - model
+    
   def download_fits(self):
     '''
     TODO.
@@ -251,18 +332,8 @@ class Everest(Basecamp):
       self.saturated = f[1].header['SATUR']
       self.saturation_tolerance = f[1].header['SATTOL']
       self.time = f[1].data['TIME']
+      self._norm = np.array(self.fraw)
       
-      # Backwards-compatibility for K2 C01 and C02 LC data,
-      # for which we subtracted the *global* median when
-      # normalizing the flux during model evaluation. In
-      # more recent versions, we subtract the local (chunk)
-      # median.
-      try:
-        f[1].header['GLOBMED']
-        self.local_median = False
-      except KeyError:
-        self.local_median = True
-        
       # Chunk arrays
       self.breakpoints = []
       self.cdpp6_arr = []
@@ -278,11 +349,14 @@ class Everest(Basecamp):
           break
       self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
                    for c in range(len(self.breakpoints))]
-      
+      if self.model_name == 'rPLD':
+        self.reclam = [[f[1].header['RECL%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
+                        for c in range(len(self.breakpoints))]
     # Masks
     self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
     self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
     self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
+    self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
       
     # These are not stored in the fits file; we don't need them
     self.saturated_aperture_name = None
@@ -306,7 +380,7 @@ class Everest(Basecamp):
                         right = 0.95, hspace = 0.05, wspace = 0.05)
     ax = ax.flatten()
     fig.canvas.set_window_title('%s %d' % (self._mission.IDSTRING, self.ID))
-    super(Star, self).plot_aperture(ax, labelsize = 12) 
+    super(Everest, self).plot_aperture(ax, labelsize = 12) 
     
     if show:
       pl.show()
@@ -329,7 +403,7 @@ class Everest(Basecamp):
            colspan = 4, rowspan = 18) for j in range(len(self.breakpoints) * 2)]
     ax = np.array(ax).reshape(2 * len(self.breakpoints), -1)
     cax = np.array(cax)
-    super(Star, self).plot_weights(ax, cax)
+    super(Everest, self).plot_weights(ax, cax)
     
     if show:
       pl.show()
