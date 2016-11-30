@@ -160,7 +160,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
             for n in [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]:
               if n[0] >= 0 and n[0] < tpf_big_aperture.shape[0]:
                 if n[1] >= 0 and n[1] < tpf_big_aperture.shape[1]:
-                  if tpf_big_aperture[n[0]][n[1]] == 1:
+                  if tpf_aperture[n[0]][n[1]] == 1:
                     tpf_big_aperture[i][j] = 1
     
     # Is there short cadence data?
@@ -312,7 +312,10 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     if saturated_aperture_name is None:
       saturated_aperture_name = 'k2sff_19'
     saturated_aperture = apertures[saturated_aperture_name]
-    assert saturated_aperture is not None, "Invalid aperture selected."
+    if saturated_aperture is None:
+      log.error("Invalid aperture selected. Defaulting to `tpf_big`.")
+      saturated_aperture_name = 'tpf_big'
+      saturated_aperture = apertures[saturated_aperture_name]
     
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
@@ -352,7 +355,10 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     if aperture_name is None:
       aperture_name = 'k2sff_15'
     aperture = apertures[aperture_name]
-    assert aperture is not None, "Invalid aperture selected."
+    if aperture is None:
+      log.error("Invalid aperture selected. Defaulting to `tpf_big`.")
+      aperture_name = 'tpf_big'
+      aperture = apertures[aperture_name]
 
   # Now we check if the aperture is too big. Can lead to memory errors...
   # Treat saturated and unsaturated stars differently.

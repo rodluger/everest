@@ -188,7 +188,7 @@ def Everest(ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', 
       '''
       
       self.load_fits()
-      self.init_model()
+      self._weights = None
     
     def download_fits(self):
       '''
