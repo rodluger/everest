@@ -199,7 +199,7 @@ class Basecamp(object):
     
     '''
     
-    return self.fraw
+    self._norm = self.fraw
   
   def X(self, i, j = slice(None, None, None)):
     '''
