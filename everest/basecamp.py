@@ -121,6 +121,22 @@ class Basecamp(object):
     raise NotImplementedError("Can't set this property.") 
   
   @property
+  def norm(self):
+    '''
+    
+    '''
+    
+    return self.fraw
+    
+  @norm.setter
+  def norm(self, value):
+    '''
+    
+    '''
+    
+    raise NotImplementedError("Can't set this property.") 
+    
+  @property
   def cdpps(self):
     '''
     The string version of the current value of the CDPP in *ppm*. This displays the CDPP for
@@ -155,24 +171,7 @@ class Basecamp(object):
     '''
     
     raise NotImplementedError("Can't set this property.")
-    
-  @property
-  def X(self):
-    '''
-    The current *PLD* design matrix.
-    
-    '''
-    
-    return self._DesignMatrix
-  
-  @X.setter
-  def X(self, value):
-    '''
-    
-    '''
-    
-    raise NotImplementedError("Can't set this property.") 
-  
+
   @property
   def weights(self):
     '''
@@ -194,6 +193,23 @@ class Basecamp(object):
     '''
     
     raise NotImplementedError("Can't set this property.") 
+  
+  def X(self, i, j = slice(None, None, None)):
+    '''
+    Computes the design matrix at the given *PLD* order and the given indices. 
+    The columns are the *PLD* vectors for the target at the
+    corresponding order, computed as the product of the fractional pixel
+    flux of all sets of :py:obj:`n` pixels, where :py:obj:`n` is the *PLD*
+    order.
+    
+    '''
+
+    X1 = self.fpix[j] / self.norm[j].reshape(-1, 1)
+    X = np.product(list(multichoose(X1.T, i + 1)), axis = 1).T
+    if self.X1N is not None:
+      return np.hstack([X, self.X1N[j] ** (i + 1)])
+    else:
+      return X
   
   def compute(self):
     '''

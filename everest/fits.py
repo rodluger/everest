@@ -107,7 +107,6 @@ def LightcurveHDU(model):
   cards.append(('OPTGP', model.optimize_gp, 'GP optimization performed?'))
   cards.append(('OSIGMA', model.osigma, 'Outlier tolerance (standard deviations)'))
   cards.append(('PLDORDER', model.pld_order, 'PLD de-trending order'))
-  cards.append(('RECRSVE', model.recursive, 'Recursive PLD?'))
   cards.append(('SATUR', model.saturated, 'Is target saturated?'))
   cards.append(('SATTOL', model.saturation_tolerance, 'Fractional saturation tolerance'))
   

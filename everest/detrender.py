@@ -13,7 +13,6 @@ specific de-trending methods are implemented as subclasses.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import missions
 from .basecamp import Basecamp
-from . import pld
 from .config import EVEREST_DAT
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
@@ -31,7 +30,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'rPLD', 'nPLD']
+__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD']
 
 class Detrender(Basecamp):
   '''
@@ -95,11 +94,6 @@ class Detrender(Basecamp):
   :param float osigma: The outlier standard deviation threshold. Default 5
   :param int oiter: The maximum number of steps taken during iterative sigma clipping. Default 10
   :param int pld_order: The pixel level decorrelation order. Default `3`. Higher orders may cause memory errors
-  :param bool recursive: Calculate the fractional pixel flux recursively? If :py:obj:`False`, \
-                         always computes the fractional pixel flux as :math:`f_{ij}/\sum_i{f_{ij}}`. \
-                         If :py:obj:`True`, uses the current de-trended flux as the divisor in an attempt \
-                         to minimize the amount of instrumental information that is divided out in this \
-                         step: :math:`f_{ij}/(\sum_i{f_{ij}} - M)`. Default :py:obj:`True`
   :param str saturated_aperture_name: If the target is found to be saturated, de-trending is performed \
                                       on this aperture instead. Defaults to the mission default
   :param float saturation_tolerance: The tolerance when determining whether or not to collapse a column \
@@ -119,7 +113,6 @@ class Detrender(Basecamp):
     self.cadence = kwargs.get('cadence', 'lc').lower()
     if self.cadence not in ['lc', 'sc']:
       raise ValueError("Invalid cadence selected.")
-    self.recursive = kwargs.get('recursive', True)
     self.make_fits = kwargs.get('make_fits', True)
     self.mission = kwargs.get('mission', 'k2')
     self.clobber = kwargs.get('clobber', False)
@@ -137,9 +130,10 @@ class Detrender(Basecamp):
     # the GP based on the short cadence light curve
     if self.cadence == 'sc':
       log.info("Loading long cadence model...")
-      kwargs.pop('cadence', None)
-      kwargs.pop('clobber', None)
-      lc = self.__class__(ID, is_parent = True, **kwargs)
+      kwcpy = dict(kwargs)
+      kwcpy.pop('cadence', None)
+      kwcpy.pop('clobber', None)
+      lc = self.__class__(ID, is_parent = True, **kwcpy)
       kwargs.update({'kernel_params': kwargs.get('kernel_params', lc.kernel_params),
                      'optimize_gp': False})
       del lc
@@ -198,7 +192,17 @@ class Detrender(Basecamp):
     # Initialize plotting
     self.dvs1 = DVS1(len(self.breakpoints), pld_order = self.pld_order)
     self.dvs2 = DVS2(len(self.breakpoints))
-  
+    
+    # Check for saved model
+    if self.load_model():
+      return
+    
+    # Setup (subclass-specific)
+    self.setup(**kwargs)
+    
+    # Run
+    self.run()
+    
   @property
   def name(self):
     '''
@@ -218,6 +222,14 @@ class Detrender(Basecamp):
     '''
     
     raise NotImplementedError("Can't set this property.") 
+  
+  def setup(self, **kwargs):
+    '''
+    A subclass-specific routine.
+    
+    '''
+    
+    pass
   
   def cv_precompute(self, mask, b):
     '''
@@ -980,53 +992,134 @@ class Detrender(Basecamp):
     
       self.exception_handler(self.debug)
 
-class rPLD(pld.rPLD, Detrender):
+class sPLD(Detrender):
   '''
-  A wrapper around the standard PLD model.
+  The standard PLD model. Nothing fancy.
   
   '''
         
-  def __init__(self, *args, **kwargs):
-    '''
-    
-    '''
-    
-    # Initialize
-    super(rPLD, self).__init__(*args, **kwargs)
-    
-    # Check for saved model
-    if self.load_model():
-      return
-    
-    # Setup
-    self._setup(**kwargs)
-    
-    # Run
-    self.run()
+  pass
 
-class nPLD(pld.nPLD, Detrender):
+class nPLD(Detrender):
   '''
-  A wrapper around the "neighboring stars" *PLD* model. This model uses the 
+  The "neighboring stars" *PLD* model. This model uses the 
   *PLD* vectors of neighboring stars to help in the de-trending and can lead 
   to increased performance over the regular :py:class:`rPLD` model, 
   particularly for dimmer stars.
     
   '''
         
-  def __init__(self, *args, **kwargs):
+  def setup(self, **kwargs):
+    '''
+    This is called during production de-trending, prior to
+    calling the :py:pbj:`Detrender.run()` method.
+    
+    :param tuple cdpp_range:  If :py:obj:`parent_model` is set, neighbors are selected only if \
+                              their de-trended CDPPs fall within this range. Default `None`
+    :param tuple mag_range:   Only select neighbors whose magnitudes are within this range. \
+                              Default (11., 13.) 
+    :param int neighbors:     The number of neighboring stars to use in the de-trending. The \
+                              higher this number, the more signals there are and hence the more \
+                              de-trending information there is. However, the neighboring star \
+                              signals are regularized together with the target's signals, so adding \
+                              too many neighbors will inevitably reduce the contribution of the \
+                              target's own signals, which may reduce performance. Default `10`
+    :param str parent_model:  By default, :py:class:`nPLD` is run in stand-alone mode. The neighbor \
+                              signals are computed directly from their TPFs, so there is no need to \
+                              have run *PLD* on them beforehand. However, if :py:obj:`parent_model` \
+                              is set, :py:class:`nPLD` will use information from the \
+                              :py:obj:`parent_model` model of each neighboring star when de-trending. \
+                              This is particularly useful for identifying outliers in the neighbor \
+                              signals and preventing them from polluting the current target. Setting \
+                              :py:obj:`parent_model` to :py:class:`rPLD`, for instance, will use the \
+                              outlier information in the :py:class:`rPLD` model of the neighbors \
+                              (this must have been run ahead of time). Note, however, that tests with \
+                              *K2* data show that including outliers in the neighbor signals actually \
+                              *improves* the performance, since many of these outliers are associated \
+                              with events such as thruster firings and are present in all light curves, \
+                              and therefore *help* in the de-trending. Default `None`
+    
     '''
     
-    '''
+    # Get neighbors
+    self.parent_model = kwargs.get('parent_model', None)
+    num_neighbors = kwargs.get('neighbors', 10)
+    self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                   cadence = self.cadence,
+                                   model = self.parent_model,
+                                   neighbors = num_neighbors, 
+                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                   cdpp_range = kwargs.get('cdpp_range', None),
+                                   aperture_name = self.aperture_name)
+    if len(self.neighbors):
+      if len(self.neighbors) < num_neighbors:
+        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
+    else:
+      raise Exception("No neighbors found! Aborting.")
     
-    # Initialize
-    super(nPLD, self).__init__(*args, **kwargs)
-    
-    # Check for saved model
-    if self.load_model():
-      return
-    
-    # Setup
-    self._setup(**kwargs)
+    for neighbor in self.neighbors:
+      log.info("Loading data for neighboring target %d..." % neighbor)
+      if self.parent_model is not None and self.cadence == 'lc':
+        # We load the `parent` model. The advantage here is that outliers have
+        # properly been identified and masked. I haven't tested this on short
+        # cadence data, so I'm going to just forbid it...
+        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
+      else:
+        # We load the data straight from the TPF. Much quicker, since no model must
+        # be run in advance. Downside is we don't know where the outliers are. But based
+        # on tests with K2 data, the de-trending is actually *better* if the outliers are
+        # included! These are mostly thruster fire events and other artifacts common to
+        # all the stars, so it makes sense that we might want to keep them in the design
+        # matrix.
+        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
+                             cadence = self.cadence,
+                             aperture_name = self.aperture_name, 
+                             saturated_aperture_name = self.saturated_aperture_name, 
+                             max_pixels = self.max_pixels,
+                             saturation_tolerance = self.saturation_tolerance)
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+      
+      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
+      X1 = data.fpix / data.fraw.reshape(-1, 1)
+      X1 = Interpolate(data.time, data.mask, X1)
+      if self.X1N is None:
+        self.X1N = np.array(X1)
+      else:
+        self.X1N = np.hstack([self.X1N, X1])
+      del X1
+      del data
 
-    # Run
-    self.run()
+class rPLD(Detrender):
+  '''
+  The recursive PLD model.
+  
+  '''
+  
+  def setup(self, **kwargs):
+    '''
+    
+    '''
+    
+    self.parent_model = kwargs.get('parent_model', 'nPLD')
+    self.load_model(self.parent_model)
+    self._norm = np.array(self.flux)
+    self.optimize_gp = False
+    nseg = len(self.breakpoints)
+    self.lam_idx = -1
+    self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
+    self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
+    self.cdppr_arr = np.array([np.nan for b in range(nseg)])
+    self.cdppv_arr = np.array([np.nan for b in range(nseg)])
+    self.cdpp6 = np.nan
+    self.cdppr = np.nan
+    self.cdppv = np.nan
+    self.gppp = np.nan
+  
+  @property
+  def norm(self):
+    '''
+    
+    '''
+    
+    return self._norm

@@ -21,7 +21,7 @@ else:
   # This is a regular everest run
   from .import config
   from . import basecamp, detrender, dvs, fits, gp, inject, math, \
-                missions, pld, pool, transit, user, utils
+                missions, pool, transit, user, utils
   from .detrender import *
   from .inject import *
   from .missions import *
