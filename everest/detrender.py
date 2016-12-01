@@ -30,7 +30,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD', 'tPLD']
+__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD']
 
 class Detrender(Basecamp):
   '''
@@ -510,8 +510,8 @@ class Detrender(Basecamp):
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r-', alpha = 0.25)
       ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
       ax[0].margins(0.1, 0.1)
+      ax[0].set_xticks(1, np.arange(len(self.breakpoints)) + 1)
       ax[0].set_xticklabels([])
-      ax[0].get_xaxis().set_major_formatter(Formatter.Chunk)
       
       # Now plot the CDPP and approximate validation CDPP
       cdpp_arr = self.get_cdpp_arr()
@@ -523,7 +523,7 @@ class Detrender(Basecamp):
       ax[1].margins(0.1, 0.1)
       ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
       ax[1].set_xlabel(r'Chunk', fontsize = 5)
-      ax[1].get_xaxis().set_major_formatter(Formatter.Chunk)
+      ax[1].set_xticks(1, np.arange(len(self.breakpoints)) + 1)
       
   def finalize(self):
     '''
@@ -655,7 +655,11 @@ class Detrender(Basecamp):
     else:
       ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
       ax.set_rasterization_zorder(0)
-
+    # Hack: Plot invisible first and last points to ensure the x axis limits are the
+    # same in the other plots, where we also plot outliers!
+    ax.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    ax.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    
     # Plot the GP (long cadence only)
     if self.cadence == 'lc':
       _, amp, tau = self.kernel_params
@@ -765,6 +769,11 @@ class Detrender(Basecamp):
     else:
       ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
       ax2.set_rasterization_zorder(0)
+    # Hack: Plot invisible first and last points to ensure the x axis limits are the
+    # same in the other plots, where we also plot outliers!
+    ax.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    ax.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    
     ax2.annotate('LC', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
                 fontweight = 'bold') 
@@ -1132,63 +1141,3 @@ class rPLD(Detrender):
     self.gppp = np.nan
     self.model = np.zeros_like(self.time)
     self.loaded = True
-
-class tPLD(Detrender):
-  '''
-  Test PLD.
-    
-  '''
-        
-  def setup(self, **kwargs):
-    '''
-    
-    '''
-    
-    # Get neighbors
-    self.parent_model = kwargs.get('parent_model', None)
-    num_neighbors = kwargs.get('neighbors', 10)
-    self.neighbors = self._mission.GetNeighbors(self.ID, 
-                                   cadence = self.cadence,
-                                   model = self.parent_model,
-                                   neighbors = num_neighbors, 
-                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
-                                   cdpp_range = kwargs.get('cdpp_range', None),
-                                   aperture_name = self.aperture_name)
-    if len(self.neighbors):
-      if len(self.neighbors) < num_neighbors:
-        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
-    else:
-      raise Exception("No neighbors found! Aborting.")
-    
-    for neighbor in self.neighbors:
-      log.info("Loading data for neighboring target %d..." % neighbor)
-      if self.parent_model is not None and self.cadence == 'lc':
-        # We load the `parent` model. The advantage here is that outliers have
-        # properly been identified and masked. I haven't tested this on short
-        # cadence data, so I'm going to just forbid it...
-        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
-      else:
-        # We load the data straight from the TPF. Much quicker, since no model must
-        # be run in advance. Downside is we don't know where the outliers are. But based
-        # on tests with K2 data, the de-trending is actually *better* if the outliers are
-        # included! These are mostly thruster fire events and other artifacts common to
-        # all the stars, so it makes sense that we might want to keep them in the design
-        # matrix.
-        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
-                             cadence = self.cadence,
-                             aperture_name = self.aperture_name, 
-                             saturated_aperture_name = self.saturated_aperture_name, 
-                             max_pixels = self.max_pixels,
-                             saturation_tolerance = self.saturation_tolerance)
-        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
-        data.fraw = np.sum(data.fpix, axis = 1)
-      
-      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
-      X1 = data.fpix / data.fraw.reshape(-1, 1)
-      X1 = Interpolate(data.time, data.mask, X1)
-      if self.X1N is None:
-        self.X1N = np.array(X1)
-      else:
-        self.X1N = np.hstack([self.X1N, X1])
-      del X1
-      del data
