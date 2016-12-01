@@ -218,3 +218,5 @@ class Formatter(object):
   CDPP1F = FuncFormatter(lambda x, p : '%.1f' % x)
   #: Floating point formatter for a CDPP axis (2 digits after decimal)
   CDPP2F = FuncFormatter(lambda x, p : '%.2f' % x)
+  #: Integer formatter for chunk number
+  Chunk = FuncFormatter(lambda x, p : '%2d' % x)

@@ -504,13 +504,14 @@ class Detrender(Basecamp):
     
     else:
         
-      # We're just going to plot lambda as a function of chunk number (DEBUG)
+      # We're just going to plot lambda as a function of chunk number
       bs = np.arange(len(self.breakpoints))
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r.')
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r-', alpha = 0.25)
       ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
       ax[0].margins(0.1, 0.1)
       ax[0].set_xticklabels([])
+      ax[0].get_xaxis().set_major_formatter(Formatter.Chunk)
       
       # Now plot the CDPP and approximate validation CDPP
       cdpp_arr = self.get_cdpp_arr()
@@ -520,8 +521,9 @@ class Detrender(Basecamp):
       ax[1].plot(bs + 1, cdppv_arr, 'r.')
       ax[1].plot(bs + 1, cdppv_arr, 'r-', alpha = 0.25)
       ax[1].margins(0.1, 0.1)
-      ax[1].set_ylabel(r'CDPP', fontsize = 5)
+      ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
       ax[1].set_xlabel(r'Chunk', fontsize = 5)
+      ax[1].get_xaxis().set_major_formatter(Formatter.Chunk)
       
   def finalize(self):
     '''
@@ -615,12 +617,20 @@ class Detrender(Basecamp):
     # Appearance
     if len(self.cdpp6_arr) == 2:
       ax.annotate('%.2f ppm' % self.cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 12)
+                  ha = 'left', va = 'top', fontsize = 10)
       ax.annotate('%.2f ppm' % self.cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                  ha = 'right', va = 'top', fontsize = 12)
+                  ha = 'right', va = 'top', fontsize = 10)
+    elif len(self.cdpp6_arr) < 6:
+      for n in range(len(self.cdpp6_arr)):
+        if n > 0:
+          x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+        else:
+          x = 0.02
+        ax.annotate('%.2f ppm' % self.cdpp6_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                    ha = 'left', va = 'top', fontsize = 8)
     else:
       ax.annotate('%.2f ppm' % self.cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 12)
+                  ha = 'left', va = 'top', fontsize = 10)
     ax.annotate(info_right, xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
                 fontweight = 'bold')            
