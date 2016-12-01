@@ -771,8 +771,8 @@ class Detrender(Basecamp):
       ax2.set_rasterization_zorder(0)
     # Hack: Plot invisible first and last points to ensure the x axis limits are the
     # same in the other plots, where we also plot outliers!
-    ax.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
-    ax.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    ax2.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    ax2.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
     
     ax2.annotate('LC', xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
