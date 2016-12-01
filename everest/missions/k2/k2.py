@@ -53,6 +53,8 @@ def Season(EPIC, **kwargs):
 
 def Breakpoints(EPIC, cadence = 'lc', **kwargs):  
   '''
+  ..note :: The number corresponding to a given breakpoint is the number \
+            of cadences *since the beginning of the campaign*.
   
   '''
   
@@ -62,15 +64,15 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   # Select LC or SC
   if cadence == 'lc':
     breakpoints = {
-                   0: [],             # OK
+                   0: [],             # 
                    1: [2210],         #
                    2: [2042],         # OK
                    3: [2140],         #
                    4: [520, 2153],    # OK
-                   5: [1774],         #
+                   5: [1774],         # OK
                    6: [2143],         # OK
                    7: [1192, 2319],   # OK
-                   8: [1950],         # 
+                   8: [1068, 1950],   # 
                    9: [],
                   10: [],
                   11: [],
