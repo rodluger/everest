@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Inject']
 
-def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
+def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
            mask = False, trn_win = 5, poly_order = 3, make_fits = False, **kwargs):
   '''
   Run one of the :py:obj:`everest` models with injected transits and attempt to recover the
@@ -30,7 +30,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
   as :py:obj:`rec_depth_control`. The results are plotted on page 2 of the data validation summary.
   
   :param int ID: The target id
-  :param str model: The name of the :py:obj:`everest` model to run. Default `"nPLD"`
+  :param str inj_model: The name of the :py:obj:`everest` model to run. Default `"nPLD"`
   :param float t0: The transit ephemeris in days. Default is to draw from the uniform distributon [0., :py:obj:`per`)
   :param float per: The injected planet period in days. Default is to draw from the uniform distribution [2, 10]
   :param float dur: The transit duration in days. Must be in the range [0.05, 0.5]. Default 0.1
@@ -50,7 +50,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     t0 = per * np.random.random()
   
   # Get the actual class
-  _model = eval(model)
+  _model = eval(inj_model)
   inject = {'t0': t0, 'per': per, 'dur': dur, 'depth': depth, 'mask': mask,
             'poly_order': poly_order, 'trn_win': trn_win}
   
@@ -274,4 +274,4 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       super(Injection, self).finalize()
       self.recover_depth()
     
-  return Injection(ID, inject = inject, parent_class = model, make_fits = make_fits, **kwargs)
+  return Injection(ID, inject = inject, parent_class = inj_model, make_fits = make_fits, **kwargs)

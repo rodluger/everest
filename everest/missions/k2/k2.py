@@ -65,7 +65,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   if cadence == 'lc':
     breakpoints = {
                    0: [],             # 
-                   1: [2210],         #
+                   1: [2210],         # OK
                    2: [2042],         # OK
                    3: [2140],         # OK
                    4: [520, 2153],    # OK
