@@ -30,7 +30,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
   as :py:obj:`rec_depth_control`. The results are plotted on page 2 of the data validation summary.
   
   :param int ID: The target id
-  :param str model: The name of the :py:obj:`everest` model to run. Default `"PLD"`
+  :param str model: The name of the :py:obj:`everest` model to run. Default `"nPLD"`
   :param float t0: The transit ephemeris in days. Default is to draw from the uniform distributon [0., :py:obj:`per`)
   :param float per: The injected planet period in days. Default is to draw from the uniform distribution [2, 10]
   :param float dur: The transit duration in days. Must be in the range [0.05, 0.5]. Default 0.1
@@ -102,15 +102,6 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       if self.inject['mask']:
         self.transitmask = np.array(list(set(np.concatenate([self.transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
 
-      # Now inject into the short cadence, if available
-      if self.has_sc:
-        transit_model = Transit(self.sc_time, t0 = self.inject['t0'], per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['depth'])
-        for i in range(self.sc_fpix.shape[1]):
-          self.sc_fpix[:,i] *= transit_model 
-        self.sc_fraw = np.sum(self.sc_fpix, axis = 1)
-        if self.inject['mask']:
-          self.sc_transitmask = np.array(list(set(np.concatenate([self.sc_transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
- 
     def recover_depth(self):
       '''
       Recovers the injected transit depth from the long cadence data with a simple LLS solver.
