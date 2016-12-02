@@ -1,4 +1,3 @@
-
 # ----- These need work! -------
 
 class s3nPLD(nPLD):

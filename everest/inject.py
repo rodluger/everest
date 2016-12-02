@@ -9,7 +9,7 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .detrender import *
 from .transit import Transit
-from .dvs import DVS1, DVS2
+from .dvs import DVS
 import os, sys
 import numpy as np
 import matplotlib.pyplot as pl
@@ -189,14 +189,18 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
         T = (T - t0 - per / 2.) % per - per / 2.  
         self.inject.update({'fold_time%s' % tag: T, 'fold_flux%s' % tag: D})
 
-    def plot_page2(self):
+    def plot_final(self, ax):
       '''
-      Plots the injection recovery results on page 2 of the DVS.
+      Plots the injection recovery results.
       
       '''
+      
+      from mpl_toolkits.axes_grid.inset_locator import inset_axes
+      ax.axis('off')
+      ax1 = inset_axes(ax, width="47%", height="100%", loc=6)
+      ax2 = inset_axes(ax, width="47%", height="100%", loc=7)
     
       # Plot the recovered folded transits
-      ax1 = self.dvs2.lc1()      
       ax1.plot(self.inject['fold_time'], self.inject['fold_flux'], 'k.', alpha = 0.3)
       x = np.linspace(np.min(self.inject['fold_time']), np.max(self.inject['fold_time']), 500)
       try:
@@ -215,16 +219,15 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax1.annotate('True depth:\nRecovered depth:',
                    xy = (0.02, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax1.annotate('%.6f\n%.6f' % (self.inject['depth'], self.inject['rec_depth']),
-                   xy = (0.25, 0.025), 
+                   xy = (0.4, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax1.margins(0, None)
       ax1.ticklabel_format(useOffset=False)
 
-      # Plot the recovered folded transits (control)
-      ax2 = self.dvs2.lc2()      
+      # Plot the recovered folded transits (control)     
       ax2.plot(self.inject['fold_time_control'], self.inject['fold_flux_control'], 'k.', alpha = 0.3)
       x = np.linspace(np.min(self.inject['fold_time_control']), np.max(self.inject['fold_time_control']), 500)
       try:
@@ -243,11 +246,11 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax2.annotate('True depth:\nRecovered depth:',
                    xy = (0.02, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax2.annotate('%.6f\n%.6f' % (self.inject['depth'], self.inject['rec_depth_control']),
-                   xy = (0.25, 0.025), 
+                   xy = (0.4, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax2.margins(0, None)
       ax2.ticklabel_format(useOffset=False)
       N = int(0.995 * len(self.inject['fold_flux_control']))
@@ -257,10 +260,11 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ylim = (lo - pad, hi + pad)   
       ax2.set_ylim(ylim) 
       ax1.set_ylim(ylim)
-    
-      # Plot the PLD weights
-      self.plot_weights(*self.dvs2.weights_grid())
-    
+      
+      ax2.set_yticklabels([])
+      for tick in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_xticklabels():
+        tick.set_fontsize(5)
+      
     def finalize(self):
       '''
       Calls the depth recovery routine at the end of the de-trending step.

@@ -18,7 +18,7 @@ from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
-from .dvs import DVS1, DVS2
+from .dvs import DVS
 import os, sys
 import numpy as np
 import george
@@ -190,8 +190,7 @@ class Detrender(Basecamp):
     self._weights = None
     
     # Initialize plotting
-    self.dvs1 = DVS1(len(self.breakpoints), pld_order = self.pld_order)
-    self.dvs2 = DVS2(len(self.breakpoints))
+    self.dvs = DVS(len(self.breakpoints), pld_order = self.pld_order)
     
     # Check for saved model
     if self.load_model():
@@ -447,8 +446,8 @@ class Detrender(Basecamp):
       log.info("Found optimum solution at log(lambda) = %.1f." % np.log10(self.lam[b][self.lam_idx]))
       
       # Plotting: There's not enough space in the DVS to show the cross-val results
-      # for more than two light curve segments.
-      if len(self.breakpoints) <= 2:
+      # for more than three light curve segments.
+      if len(self.breakpoints) <= 3:
       
         # Plotting hack: first x tick will be -infty
         lambda_arr = np.array(self.lambda_arr)
@@ -468,12 +467,14 @@ class Detrender(Basecamp):
         ax[b].set_ylim(lo - 0.15 * rng, hi + 0.15 * rng)
         if rng > 2:
           ax[b].get_yaxis().set_major_formatter(Formatter.CDPP)
-          ax[b].get_yaxis().set_major_locator(MaxNLocator(integer = True))
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(4, integer = True))
         elif rng > 0.2:
           ax[b].get_yaxis().set_major_formatter(Formatter.CDPP1F)
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(4))
         else:
           ax[b].get_yaxis().set_major_formatter(Formatter.CDPP2F)
-        
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(4))
+          
         # Fix the x ticks
         xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
         ax[b].set_xticks(xticks)
@@ -481,7 +482,7 @@ class Detrender(Basecamp):
         pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
         ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
         ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
-                       ha = 'left', va = 'bottom', fontsize = 8, alpha = 0.5, 
+                       ha = 'left', va = 'bottom', fontsize = 7, alpha = 0.25, 
                        fontweight = 'bold')
     
     # Finally, compute the model
@@ -494,7 +495,7 @@ class Detrender(Basecamp):
       axis.spines['top'].set_visible(False)
       axis.xaxis.set_ticks_position('bottom')
     
-    if len(self.breakpoints) <= 2:
+    if len(self.breakpoints) <= 3:
 
       # A hack to mark the first xtick as -infty
       labels = ['%.1f' % x for x in xticks]
@@ -698,7 +699,7 @@ class Detrender(Basecamp):
     '''
     Plots miscellaneous de-trending information on the data validation summary figure.
     
-    :param dvs: A :py:class:`dvs.DVS1` or :py:class:`dvs.DVS2` figure instance
+    :param dvs: A :py:class:`dvs.DVS` figure instance
     
     '''
     
@@ -728,63 +729,12 @@ class Detrender(Basecamp):
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
     
-    axr.annotate(r"GP %.3f ppm" % (self.cdppg),
-                 xy = (0.5, 0.2), xycoords = 'axes fraction',
-                 ha = 'center', va = 'center', fontsize = 8, color = 'k',
-                 fontstyle = 'italic')
-      
-  def plot_page2(self):
-    '''
-    Plots the second page of the data validation summary.
-    
-    '''
-    
-    # Plot the raw light curve
-    ax1 = self.dvs2.lc1()    
-    if self.cadence == 'lc':
-      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.5)
-    else:
-      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.05, zorder = -1)
-      ax1.set_rasterization_zorder(0)
-    ax1.annotate('Raw', xy = (0.98, 0.025), xycoords = 'axes fraction', 
-                ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
-                fontweight = 'bold') 
-    ax1.margins(0.01, 0.1)  
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    flux = np.delete(self.flux, bnmask)
-    N = int(0.995 * len(flux))
-    hi, lo = flux[np.argsort(flux)][[N,-N]]
-    fsort = flux[np.argsort(flux)]
-    pad = (hi - lo) * 0.1
-    ylim = (lo - pad, hi + pad)   
-    ax1.set_ylim(ylim)   
-    ax1.get_yaxis().set_major_formatter(Formatter.Flux) 
-
-    # Plot the de-trended light curve
-    ax2 = self.dvs2.lc2()
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    M = lambda x: np.delete(x, bnmask)
-    if self.cadence == 'lc':
-      ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
-    else:
-      ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
-      ax2.set_rasterization_zorder(0)
-    # Hack: Plot invisible first and last points to ensure the x axis limits are the
-    # same in the other plots, where we also plot outliers!
-    ax2.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
-    ax2.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
-    
-    ax2.annotate('LC', xy = (0.98, 0.025), xycoords = 'axes fraction', 
-                ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
-                fontweight = 'bold') 
-    ax2.margins(0.01, 0.1)          
-    ax2.set_ylim(ylim)   
-    ax2.get_yaxis().set_major_formatter(Formatter.Flux) 
-    
-    # Plot the PLD weights
-    if len(self.breakpoints) <= 2:
-      self.plot_weights(*self.dvs2.weights_grid())
-    
+    if not np.isnan(self.cdppg) and self.cdppg > 0:
+      axr.annotate(r"GP %.3f ppm" % (self.cdppg),
+                   xy = (0.5, 0.2), xycoords = 'axes fraction',
+                   ha = 'center', va = 'center', fontsize = 8, color = 'k',
+                   fontstyle = 'italic')
+        
   def load_tpf(self):
     '''
     Loads the target pixel file.
@@ -884,8 +834,7 @@ class Detrender(Basecamp):
     d.pop('_f', None)
     d.pop('_mK', None)
     d.pop('K', None)
-    d.pop('dvs1', None)
-    d.pop('dvs2', None)
+    d.pop('dvs', None)
     d.pop('clobber', None)
     d.pop('clobber_tpf', None)
     d.pop('_mission', None)
@@ -894,10 +843,8 @@ class Detrender(Basecamp):
     
     # Save the DVS
     pdf = PdfPages(os.path.join(self.dir, self.name + '.pdf'))
-    pdf.savefig(self.dvs1.fig)
-    pl.close(self.dvs1.fig)
-    pdf.savefig(self.dvs2.fig)
-    pl.close(self.dvs2.fig)
+    pdf.savefig(self.dvs.fig)
+    pl.close(self.dvs.fig)
     d = pdf.infodict()
     d['Title'] = 'EVEREST: %s de-trending of %s %d' % (self.name, self._mission.IDSTRING, self.ID)
     d['Author'] = 'Rodrigo Luger'
@@ -966,8 +913,7 @@ class Detrender(Basecamp):
       # Load raw data
       log.info("Loading target data...")
       self.load_tpf()
-      self.plot_aperture([self.dvs1.top_right() for i in range(4)])  
-      self.plot_aperture([self.dvs2.top_right() for i in range(4)]) 
+      self.plot_aperture([self.dvs.top_right() for i in range(4)])
       self.init_kernel()
       M = self.apply_mask(np.arange(len(self.time)))
       self.cdppr_arr = self.get_cdpp_arr()
@@ -978,7 +924,7 @@ class Detrender(Basecamp):
       self.cdppv = self.cdppr
 
       log.info("%s (Raw): CDPP = %s" % (self.name, self.cdpps))
-      self.plot_lc(self.dvs1.left(), info_right = 'Raw', color = 'k')
+      self.plot_lc(self.dvs.left(), info_right = 'Raw', color = 'k')
       
       # Loop
       for n in range(self.pld_order):
@@ -986,20 +932,18 @@ class Detrender(Basecamp):
         self.get_outliers()
         if n > 0 and self.optimize_gp:
           self.update_gp()
-        self.cross_validate(self.dvs1.right(), info = 'CV%d' % n)
+        self.cross_validate(self.dvs.right(), info = 'CV%d' % n)
         self.cdpp_arr = self.get_cdpp_arr()
         self.cdppv_arr *= self.cdpp_arr
         self.cdpp = self.get_cdpp()
         self.cdppv = np.nanmean(self.cdppv_arr)
         log.info("%s (%d/%d): CDPP = %s" % (self.name, n + 1, self.pld_order, self.cdpps))
-        self.plot_lc(self.dvs1.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
+        self.plot_lc(self.dvs.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
         
       # Save
       self.finalize()
-      self.plot_final(self.dvs1.top_left())
-      self.plot_page2()
-      self.plot_info(self.dvs1)
-      self.plot_info(self.dvs2)
+      self.plot_final(self.dvs.top_left())
+      self.plot_info(self.dvs)
       self.save_model()
       
       if self.make_fits:
