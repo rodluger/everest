@@ -631,7 +631,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
         
         # Reject if CDPP out of range
         if cdpp_range is not None:
-          cdpp = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp6']
+          cdpp = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp']
           if (cdpp > cdpp_hi) or (cdpp < cdpp_lo):
             continue
     
@@ -674,7 +674,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
                          ('%09d' % stars[i])[4:], model + '.npz')
         try:
           data = np.load(nf)
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp6'][()], data['cdppv'][()], len(data['outmask']), int(data['saturated'])), file = f)
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], data['cdppv'][()], len(data['outmask']), int(data['saturated'])), file = f)
         except:
           print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, 0, 0), file = f)
       print("")
