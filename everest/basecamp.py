@@ -292,7 +292,17 @@ class Basecamp(object):
 
   def compute_joint(self):
     '''
-
+    Compute the model in a single step, allowing for covariance
+    between cadences in different chunks. This should in principle
+    help remove kinks at the breakpoints, but is more expensive to
+    compute. 
+    
+    .. warning:: Everest does not cross-validate with this sort of \
+                 model (it's too expensive), so care is needed when using \
+                 light curves de-trended with this method, as they may not \
+                 be optimized against over-fitting/under-fitting. I suspect \
+                 it doesn't matter much, though.
+    
     '''
 
     log.info('Computing the model...')
