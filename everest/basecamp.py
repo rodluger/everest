@@ -11,6 +11,7 @@ from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .gp import GetCovariance, GetKernelParams
+from scipy.linalg import block_diag
 import os, sys
 import numpy as np
 import george
@@ -289,6 +290,61 @@ class Basecamp(object):
     self.cdpp = self.get_cdpp()
     self._weights = None
 
+  def compute_joint(self):
+    '''
+
+    '''
+
+    log.info('Computing the model...')
+    A = [None for b in self.breakpoints]
+    B = [None for b in self.breakpoints]
+    
+    # Loop over all chunks
+    for b, brkpt in enumerate(self.breakpoints):
+    
+      # Masks for current chunk
+      m = self.get_masked_chunk(b, pad = False)
+      c = self.get_chunk(b, pad = False)
+      
+      # The X^2 matrices
+      A[b] = np.zeros((len(m), len(m)))
+      B[b] = np.zeros((len(c), len(m)))
+      
+      # Loop over all orders
+      for n in range(self.pld_order):
+
+        # Only compute up to the current PLD order
+        if (self.lam_idx >= n) and (self.lam[b][n] is not None):
+          XM = self.X(n,m)
+          XC = self.X(n,c)
+          A[b] += self.lam[b][n] * np.dot(XM, XM.T)
+          B[b] += self.lam[b][n] * np.dot(XC, XM.T)
+          del XM, XC
+    
+    # Merge chunks. BIGA and BIGB are sparse, but unfortunately
+    # scipy.sparse doesn't handle sparse matrix inversion all that
+    # well when the *result* is not itself sparse. So we're sticking
+    # with regular np.linalg.
+    BIGA = block_diag(*A)
+    del A
+    BIGB = block_diag(*B)
+    del B
+    
+    # Compute the model
+    mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    f = self.apply_mask(self.fraw)
+    f -= np.nanmedian(f)
+    W = np.linalg.solve(mK + BIGA, f)
+    self.model = np.dot(BIGB, W)
+
+    # Subtract the global median
+    self.model -= np.nanmedian(self.model)
+    
+    # Get the CDPP and reset the weights
+    self.cdpp_arr = self.get_cdpp_arr()
+    self.cdpp = self.get_cdpp()
+    self._weights = None
+
   def apply_mask(self, x = None):
     '''
     Returns the outlier mask, an array of indices corresponding to the non-outliers.
@@ -302,7 +358,7 @@ class Basecamp(object):
     else:
       return np.delete(x, self.mask, axis = 0)
 
-  def get_chunk(self, b, x = None):
+  def get_chunk(self, b, x = None, pad = True):
     '''
     Returns the indices corresponding to a given light curve chunk.
     
@@ -313,15 +369,15 @@ class Basecamp(object):
 
     M = np.arange(len(self.time))
     if b > 0:
-      res = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
+      res = M[(M > self.breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self.breakpoints[b] + int(pad) * self.bpad)]
     else:
-      res = M[M <= self.breakpoints[b] + self.bpad]
+      res = M[M <= self.breakpoints[b] + int(pad) * self.bpad]
     if x is None:
       return res
     else:
       return x[res]
     
-  def get_masked_chunk(self, b, x = None):
+  def get_masked_chunk(self, b, x = None, pad = True):
     '''
     Same as :py:meth:`get_chunk`, but first removes the outlier indices.
     :param int b: The index of the chunk to return
@@ -331,9 +387,9 @@ class Basecamp(object):
     
     M = self.apply_mask(np.arange(len(self.time)))
     if b > 0:
-      res = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
+      res = M[(M > self.breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self.breakpoints[b] + int(pad) * self.bpad)]
     else:
-      res = M[M <= self.breakpoints[b] + self.bpad]
+      res = M[M <= self.breakpoints[b] + int(pad) * self.bpad]
     if x is None:
       return res
     else:
