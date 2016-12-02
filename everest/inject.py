@@ -27,7 +27,7 @@ def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.0
   The depth is stored in the :py:obj:`inject` attribute of the model (a dictionary) as 
   :py:obj:`rec_depth`. A control injection is also performed, in which the transits are injected 
   into the de-trended data; the recovered depth in the control run is stored in :py:obj:`inject` 
-  as :py:obj:`rec_depth_control`. The results are plotted on page 2 of the data validation summary.
+  as :py:obj:`rec_depth_control`.
   
   :param int ID: The target id
   :param str inj_model: The name of the :py:obj:`everest` model to run. Default `"nPLD"`
