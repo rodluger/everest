@@ -73,15 +73,15 @@ def LightcurveHDU(model):
   for c in range(len(model.breakpoints)):
     cards.append(('BRKPT%02d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
   cards.append(('CDIVS', model.cdivs, 'Cross-validation subdivisions'))
-  cards.append(('CDPP6', model.cdpp6, 'Average de-trended 6-hr CDPP'))
-  cards.append(('CDPPR', model.cdppr, 'Raw 6-hr CDPP'))
-  cards.append(('CDPPV', model.cdppv, 'Average validation 6-hr CDPP'))
-  cards.append(('CDPPG', model.gppp, 'Average GP-de-trended 6-hr CDPP'))
+  cards.append(('CDPP', model.cdpp, 'Average de-trended CDPP'))
+  cards.append(('CDPPR', model.cdppr, 'Raw CDPP'))
+  cards.append(('CDPPV', model.cdppv, 'Average validation CDPP'))
+  cards.append(('CDPPG', model.cdppg, 'Average GP-de-trended CDPP'))
   for i in range(99):
     try:
-      cards.append(('CDPP6%02d' % (i + 1), model.cdpp6_arr[i] if not np.isnan(model.cdpp6_arr[i]) else 0, 'Chunk de-trended 6-hr CDPP'))
-      cards.append(('CDPPR%02d' % (i + 1), model.cdppr_arr[i] if not np.isnan(model.cdppr_arr[i]) else 0, 'Chunk raw 6-hr CDPP'))
-      cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i] if not np.isnan(model.cdppv_arr[i]) else 0, 'Chunk validation 6-hr CDPP'))
+      cards.append(('CDPP%02d' % (i + 1), model.cdpp_arr[i] if not np.isnan(model.cdpp_arr[i]) else 0, 'Chunk de-trended CDPP'))
+      cards.append(('CDPPR%02d' % (i + 1), model.cdppr_arr[i] if not np.isnan(model.cdppr_arr[i]) else 0, 'Chunk raw CDPP'))
+      cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i] if not np.isnan(model.cdppv_arr[i]) else 0, 'Chunk validation CDPP'))
     except:
       break
   cards.append(('GITER', model.giter, 'Number of GP optimiziation iterations'))

@@ -15,7 +15,7 @@ from . import missions
 from .basecamp import Basecamp
 from .config import EVEREST_DAT
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
-from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
+from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
 from .dvs import DVS1, DVS2
@@ -178,13 +178,13 @@ class Detrender(Basecamp):
     self.reclam = None
     self.recmask = []
     self.X1N = None
-    self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
+    self.cdpp_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
     self.cdppv_arr = np.array([np.nan for b in range(nseg)])
-    self.cdpp6 = np.nan
+    self.cdpp = np.nan
     self.cdppr = np.nan
     self.cdppv = np.nan
-    self.gppp = np.nan
+    self.cdppg = np.nan
     self.neighbors = []
     self.loaded = False
     self._weights = None
@@ -615,21 +615,21 @@ class Detrender(Basecamp):
         ax.axvline(self.time[brkpt], color = 'r', ls = '-', alpha = 0.025)
         
     # Appearance
-    if len(self.cdpp6_arr) == 2:
-      ax.annotate('%.2f ppm' % self.cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+    if len(self.cdpp_arr) == 2:
+      ax.annotate('%.2f ppm' % self.cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
                   ha = 'left', va = 'top', fontsize = 10)
-      ax.annotate('%.2f ppm' % self.cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+      ax.annotate('%.2f ppm' % self.cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
                   ha = 'right', va = 'top', fontsize = 10)
-    elif len(self.cdpp6_arr) < 6:
-      for n in range(len(self.cdpp6_arr)):
+    elif len(self.cdpp_arr) < 6:
+      for n in range(len(self.cdpp_arr)):
         if n > 0:
           x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
         else:
           x = 0.02
-        ax.annotate('%.2f ppm' % self.cdpp6_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+        ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
                     ha = 'left', va = 'top', fontsize = 8)
     else:
-      ax.annotate('%.2f ppm' % self.cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
+      ax.annotate('%.2f ppm' % self.cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
                   ha = 'left', va = 'top', fontsize = 10)
     ax.annotate(info_right, xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
@@ -671,12 +671,12 @@ class Detrender(Basecamp):
       ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
       
       # Compute the CDPP of the GP-detrended flux
-      self.gppp = CDPP6(self.apply_mask(self.flux - y + med), cadence = self.cadence)
+      self.cdppg = self._mission.CDPP(self.apply_mask(self.flux - y + med), cadence = self.cadence)
     
     else:
       
       # We're not going to calculate this
-      self.gppp = 0.
+      self.cdppg = 0.
       
     # Appearance
     ax.annotate('Final', xy = (0.98, 0.025), xycoords = 'axes fraction', 
@@ -707,7 +707,7 @@ class Detrender(Basecamp):
                  xy = (0.5, 0.5), xycoords = 'axes fraction', 
                  ha = 'center', va = 'center', fontsize = 18)
     
-    axc.annotate(r"%.2f ppm $\rightarrow$ %.2f ppm" % (self.cdppr, self.cdpp6),
+    axc.annotate(r"%.2f ppm $\rightarrow$ %.2f ppm" % (self.cdppr, self.cdpp),
                  xy = (0.5, 0.2), xycoords = 'axes fraction',
                  ha = 'center', va = 'center', fontsize = 8, color = 'k',
                  fontstyle = 'italic')
@@ -728,7 +728,7 @@ class Detrender(Basecamp):
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
     
-    axr.annotate(r"GP %.3f ppm" % (self.gppp),
+    axr.annotate(r"GP %.3f ppm" % (self.cdppg),
                  xy = (0.5, 0.2), xycoords = 'axes fraction',
                  ha = 'center', va = 'center', fontsize = 8, color = 'k',
                  fontstyle = 'italic')
@@ -971,13 +971,13 @@ class Detrender(Basecamp):
       self.init_kernel()
       M = self.apply_mask(np.arange(len(self.time)))
       self.cdppr_arr = self.get_cdpp_arr()
-      self.cdpp6_arr = np.array(self.cdppr_arr)
+      self.cdpp_arr = np.array(self.cdppr_arr)
       self.cdppv_arr = np.array(self.cdppr_arr)
       self.cdppr = self.get_cdpp()
-      self.cdpp6 = self.cdppr
+      self.cdpp = self.cdppr
       self.cdppv = self.cdppr
 
-      log.info("%s (Raw): CDPP6 = %s" % (self.name, self.cdpps))
+      log.info("%s (Raw): CDPP = %s" % (self.name, self.cdpps))
       self.plot_lc(self.dvs1.left(), info_right = 'Raw', color = 'k')
       
       # Loop
@@ -987,9 +987,9 @@ class Detrender(Basecamp):
         if n > 0 and self.optimize_gp:
           self.update_gp()
         self.cross_validate(self.dvs1.right(), info = 'CV%d' % n)
-        self.cdpp6_arr = self.get_cdpp_arr()
-        self.cdppv_arr *= self.cdpp6_arr
-        self.cdpp6 = self.get_cdpp()
+        self.cdpp_arr = self.get_cdpp_arr()
+        self.cdppv_arr *= self.cdpp_arr
+        self.cdpp = self.get_cdpp()
         self.cdppv = np.nanmean(self.cdppv_arr)
         log.info("%s (%d/%d): CDPP = %s" % (self.name, n + 1, self.pld_order, self.cdpps))
         self.plot_lc(self.dvs1.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
@@ -1132,12 +1132,12 @@ class rPLD(Detrender):
     nseg = len(self.breakpoints)
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
-    self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
+    self.cdpp_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
     self.cdppv_arr = np.array([np.nan for b in range(nseg)])
-    self.cdpp6 = np.nan
+    self.cdpp = np.nan
     self.cdppr = np.nan
     self.cdppv = np.nan
-    self.gppp = np.nan
+    self.cdppg = np.nan
     self.model = np.zeros_like(self.time)
     self.loaded = True

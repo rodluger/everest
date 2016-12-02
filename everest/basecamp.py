@@ -9,7 +9,7 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
-from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
+from .math import Chunks, Scatter, SavGol, Interpolate
 from .gp import GetCovariance, GetKernelParams
 import os, sys
 import numpy as np
@@ -144,7 +144,7 @@ class Basecamp(object):
     
     '''
     
-    return " / ".join(["%.2f ppm" % c for c in self.cdpp6_arr]) + (" (%.2f ppm)" % self.cdpp6)
+    return " / ".join(["%.2f ppm" % c for c in self.cdpp_arr]) + (" (%.2f ppm)" % self.cdpp)
   
   @cdpps.setter
   def cdpps(self, value):
@@ -285,8 +285,8 @@ class Basecamp(object):
     self.model -= np.nanmedian(self.model)
     
     # Get the CDPP and reset the weights
-    self.cdpp6_arr = self.get_cdpp_arr()
-    self.cdpp6 = self.get_cdpp()
+    self.cdpp_arr = self.get_cdpp_arr()
+    self.cdpp = self.get_cdpp()
     self._weights = None
 
   def apply_mask(self, x = None):
@@ -379,23 +379,23 @@ class Basecamp(object):
   
   def get_cdpp_arr(self, flux = None):
     '''
-    Returns the 6-hr CDPP value in *ppm* for each of the chunks in the light curve.
+    Returns the CDPP value in *ppm* for each of the chunks in the light curve.
     
     '''
     
     if flux is None:
       flux = self.flux
-    return np.array([CDPP6(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b, _ in enumerate(self.breakpoints)])
+    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b, _ in enumerate(self.breakpoints)])
   
   def get_cdpp(self, flux = None):
     '''
-    Returns the scalar 6-hr CDPP for the light curve.
+    Returns the scalar CDPP for the light curve.
     
     '''
     
     if flux is None:
       flux = self.flux
-    return CDPP6(self.apply_mask(flux), cadence = self.cadence)
+    return self._mission.CDPP(self.apply_mask(flux), cadence = self.cadence)
   
   def plot_weights(self, ax, cax):
     '''

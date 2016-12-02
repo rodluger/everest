@@ -11,7 +11,7 @@ from ... import __version__ as EVEREST_VERSION
 from .aux import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
-from ...math import SavGol, Interpolate
+from ...math import SavGol, Interpolate, Scatter
 try:
   import pyfits
 except ImportError:
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
-           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl']
+           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP']
 
 def Setup():
   '''
@@ -72,7 +72,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                    5: [1774],         # OK
                    6: [2143],         # OK
                    7: [1192, 2319],   # OK
-                   8: [1068, 1950],   # 
+                   8: [1950],         # OK
                    9: [],
                   10: [],
                   11: [],
@@ -112,6 +112,21 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
     return breakpoints[campaign]
   else:
     return None
+
+def CDPP(flux, mask = [], cadence = 'lc'):
+  '''
+  Compute the proxy 6-hr CDPP metric.
+  
+  '''
+  
+  if cadence == 'lc':
+    rmswin = 13
+    svgwin = 49
+  else:
+    rmswin = 13 * 30
+    svgwin = 50 * 30 - 1
+  flux_savgol = SavGol(np.delete(flux, mask), win = svgwin)
+  return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
 
 def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
             aperture_name = 'k2sff_15', saturated_aperture_name = 'k2sff_19',

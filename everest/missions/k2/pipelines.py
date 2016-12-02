@@ -7,7 +7,6 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from ...math import CDPP6
 from ...config import EVEREST_SRC
 import os, sys, shutil
 import k2plr
@@ -62,7 +61,8 @@ def plot(ID, pipeline = 'everest1', show = True):
   ax.set_ylim(ylim)
   
   # Show the CDPP
-  ax.annotate('%.2f ppm' % CDPP6(flux), 
+  from .k2 import CDPP
+  ax.annotate('%.2f ppm' % CDPP(flux), 
               xy = (0.98, 0.975), xycoords = 'axes fraction', 
               ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
   
@@ -82,6 +82,9 @@ def get_cdpp(campaign, pipeline = 'everest1'):
   '''
   
   '''
+  
+  #
+  from .k2 import CDPP
   
   # Check pipeline
   assert pipeline.lower() in Pipelines, 'Invalid pipeline: `%s`.' % pipeline
@@ -126,7 +129,7 @@ def get_cdpp(campaign, pipeline = 'everest1'):
           flux = k2plr.K2SC(EPIC).pdcflux
         mask = np.where(np.isnan(flux))[0]
         flux = np.delete(flux, mask)
-        cdpp = CDPP6(flux)
+        cdpp = CDPP(flux)
       except (HTTPError, TypeError, ValueError):
         print("{:>09d} {:>15.3f}".format(EPIC, 0), file = outfile)
         continue

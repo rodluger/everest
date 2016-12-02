@@ -83,13 +83,13 @@ def Smooth(x, window_len = 100, window = 'hanning'):
   y = np.convolve(w / w.sum(), s, mode = 'same')
   return y[window_len:-window_len + 1]
 
-def RMS(y, win = 13, remove_outliers = False):
+def Scatter(y, win = 13, remove_outliers = False):
   '''
-  Return the CDPP (the 6-hr rms) in ppm based on the median running standard deviation for
-  a window size of 13 cadences (~6 hours) as in VJ14.
+  Return the scatter in ppm based on the median running standard deviation for
+  a window size of :py:obj:`win` = 13 cadences (for K2, this is ~6.5 hours, as in VJ14).
   
   :param ndarray y: The array whose CDPP is to be computed
-  :param int win: The window size in cadences. Default `13` (6.5 hours)
+  :param int win: The window size in cadences. Default `13`
   :param bool remove_outliers: Clip outliers at 5 sigma before computing the CDPP? Default `False`
   
   '''
@@ -122,23 +122,6 @@ def SavGol(y, win = 49):
   else:
     return y
   
-def CDPP6(flux, mask = [], cadence = 'lc'):
-  '''
-  Compute the proxy 6-hr CDPP metric.
-  
-  .. todo:: This should be tailored to individual missions.
-  
-  '''
-  
-  if cadence == 'lc':
-    rmswin = 13
-    svgwin = 49
-  else:
-    rmswin = 13 * 30
-    svgwin = 50 * 30 - 1
-  flux_savgol = SavGol(np.delete(flux, mask), win = svgwin)
-  return RMS(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
-
 def NumRegressors(npix, pld_order, cross_terms = True):
   '''
   

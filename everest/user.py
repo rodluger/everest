@@ -287,10 +287,10 @@ class Everest(Basecamp):
       self.bpad = f[1].header['BPAD']
       self.cadn = f[1].data['CADN']
       self.cdivs = f[1].header['CDIVS']
-      self.cdpp6 = f[1].header['CDPP6']
+      self.cdpp = f[1].header['CDPP']
       self.cdppr = f[1].header['CDPPR']
       self.cdppv = f[1].header['CDPPV']
-      self.gppp = f[1].header['CDPPG']
+      self.cdppg = f[1].header['CDPPG']
       self.fpix = f[2].data['FPIX']
       self.pixel_images = [f[4].data['STAMP1'], f[4].data['STAMP2'], f[4].data['STAMP3']]
       self.fraw = f[1].data['FRAW']
@@ -336,13 +336,13 @@ class Everest(Basecamp):
       
       # Chunk arrays
       self.breakpoints = []
-      self.cdpp6_arr = []
+      self.cdpp_arr = []
       self.cdppv_arr = []
       self.cdppr_arr = []
       for c in range(99):
         try:
           self.breakpoints.append(f[1].header['BRKPT%02d' % (c + 1)])
-          self.cdpp6_arr.append(f[1].header['CDPP6%02d' % (c + 1)])
+          self.cdpp_arr.append(f[1].header['CDPP%02d' % (c + 1)])
           self.cdppr_arr.append(f[1].header['CDPPR%02d' % (c + 1)])
           self.cdppv_arr.append(f[1].header['CDPPV%02d' % (c + 1)])
         except KeyError:
@@ -450,14 +450,14 @@ class Everest(Basecamp):
     # Get the cdpps
     cdpps = [[self.get_cdpp(self.flux), self.get_cdpp_arr(self.flux)],
              [self.get_cdpp(self.fraw), self.get_cdpp_arr(self.fraw)]]
-    self.cdpp6 = cdpps[0][0]
-    self.cdpp6_arr = cdpps[0][1]
+    self.cdpp = cdpps[0][0]
+    self.cdpp_arr = cdpps[0][1]
     
-    for n, ax, flux, label, cdpp in zip([0,1], axes, fluxes, labels, cdpps):
+    for n, ax, flux, label, c in zip([0,1], axes, fluxes, labels, cdpps):
       
       # Initialize CDPP
-      cdpp6 = cdpp[0]
-      cdpp6_arr = cdpp[1]
+      cdpp = c[0]
+      cdpp_arr = c[1]
         
       # Plot the good data points
       ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
@@ -490,24 +490,24 @@ class Everest(Basecamp):
       ax.set_ylabel(label, fontsize = 18)
       for brkpt in breakpoints[:-1]:
         ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
-      if len(cdpp6_arr) == 2:
-        ax.annotate('%.2f ppm' % cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+      if len(cdpp_arr) == 2:
+        ax.annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
                     ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
-        ax.annotate('%.2f ppm' % cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+        ax.annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
                     ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
-      elif len(cdpp6_arr) < 6:
-        for n in range(len(cdpp6_arr)):
+      elif len(cdpp_arr) < 6:
+        for n in range(len(cdpp_arr)):
           if n > 0:
             x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
           else:
             x = 0.02
-          ax.annotate('%.2f ppm' % cdpp6_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
-                      ha = 'left', va = 'top', fontsize = 8)
+          ax.annotate('%.2f ppm' % cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                      ha = 'left', va = 'top', fontsize = 10, zorder = 99, color = 'r')
       else:
-        ax.annotate('%.2f ppm' % cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
+        ax.annotate('%.2f ppm' % cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
                     ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
       ax.margins(0.01, 0.1)          
-  
+
       # Get y lims that bound 99% of the flux
       f = np.concatenate([np.delete(f, bnmask) for f in fluxes])
       N = int(0.995 * len(f))
@@ -550,7 +550,7 @@ class Everest(Basecamp):
     
     # Show total CDPP improvement
     pl.figtext(0.5, 0.94, '%s %d' % (self._mission.IDSTRING, self.ID), fontsize = 18, ha = 'center', va = 'bottom')
-    pl.figtext(0.5, 0.905, r'$%.2f\ \mathrm{ppm} \rightarrow %.2f\ \mathrm{ppm}$' % (self.cdppr, self.cdpp6), fontsize = 14, ha = 'center', va = 'bottom')
+    pl.figtext(0.5, 0.905, r'$%.2f\ \mathrm{ppm} \rightarrow %.2f\ \mathrm{ppm}$' % (self.cdppr, self.cdpp), fontsize = 14, ha = 'center', va = 'bottom')
     
     if show:
       pl.show()
@@ -585,3 +585,139 @@ class Everest(Basecamp):
     for t in np.arange(t0, self.time[-1] + dur, period):
       mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
     self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
+  
+  def _chunk_diag(self, show = True, plot_bad = True, plot_out = True):
+    '''
+  
+    '''
+
+    log.info('Plotting the light curve...')
+  
+    # Set up axes    
+    fig, ax = pl.subplots(len(self.breakpoints), figsize = (10, 8))
+    fig.canvas.set_window_title('EVEREST Light curve')
+    if self.cadence == 'sc':
+      ms = 2
+    else:
+      ms = 4
+    
+    # Calculate the fluxes and cdpps
+    fluxes = [None for i in range(len(self.breakpoints))]
+    cdpps = [None for i in range(len(self.breakpoints))]
+    for b in range(len(self.breakpoints)):    
+      m = self.get_masked_chunk(b)
+      c = np.arange(len(self.time))
+      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      med = np.nanmedian(self.fraw[m])
+      f = self.fraw[m] - med
+      A = np.zeros((len(m), len(m)))
+      B = np.zeros((len(c), len(m)))
+      for n in range(self.pld_order):
+        if (self.lam_idx >= n) and (self.lam[b][n] is not None):
+          XM = self.X(n,m)
+          XC = self.X(n,c)
+          A += self.lam[b][n] * np.dot(XM, XM.T)
+          B += self.lam[b][n] * np.dot(XC, XM.T)
+          del XM, XC
+      W = np.linalg.solve(mK + A, f)
+      model = np.dot(B, W)
+      del A, B, W
+      fluxes[b] = self.fraw - model + np.nanmedian(model)
+      cdpps[b] = self.get_cdpp_arr(fluxes[b])
+    
+    # Loop over all chunks
+    for i in range(len(self.breakpoints)):
+    
+      # Get current flux/cdpp
+      flux = fluxes[i]
+      cdpp_arr = cdpps[i]
+      
+      # Plot the good data points
+      ax[i].plot(self.apply_mask(self.time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+  
+      # Plot the outliers
+      bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
+      O1 = lambda x: x[self.outmask]
+      O2 = lambda x: x[bnmask]
+      O3 = lambda x: x[self.transitmask]
+      if plot_out:
+        ax[i].plot(O1(self.time), O1(flux), ls = 'none', color = "#777777", marker = '.', markersize = ms, alpha = 0.5)
+      if plot_bad:
+        ax[i].plot(O2(self.time), O2(flux), 'r.', markersize = ms, alpha = 0.25)
+      ax[i].plot(O3(self.time), O3(flux), 'b.', markersize = ms, alpha = 0.25)
+      
+      # Appearance
+      if i == len(self.breakpoints) - 1: 
+        ax[i].set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+      ax[i].set_ylabel('Flux %d' % (i + 1), fontsize = 18)
+      for brkpt in self.breakpoints[:-1]:
+        ax[i].axvline(self.time[brkpt], color = 'r', ls = '--', alpha = 0.25)
+      if len(self.breakpoints) == 2:
+        ax[i].annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                       ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+        ax[i].annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+                       ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+      elif len(self.breakpoints) < 6:
+        for n in range(len(self.breakpoints)):
+          if n > 0:
+            x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+          else:
+            x = 0.02
+          ax[i].annotate('%.2f ppm' % cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                         ha = 'left', va = 'top', fontsize = 10, zorder = 99, color = 'r')
+      else:
+        ax[i].annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                       ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+      ax[i].margins(0.01, 0.1)
+      if i == 0:
+        a = self.time[0]
+      else:
+        a = self.time[self.breakpoints[i-1]]
+      b = self.time[self.breakpoints[i]]
+      ax[i].axvspan(a, b, color = 'b', alpha = 0.1, zorder = -99)
+      
+      # Get y lims that bound 99% of the flux
+      f = np.concatenate([np.delete(f, bnmask) for f in fluxes])
+      N = int(0.995 * len(f))
+      hi, lo = f[np.argsort(f)][[N,-N]]
+      fsort = f[np.argsort(f)]
+      pad = (hi - lo) * 0.1
+      ylim = (lo - pad, hi + pad)
+      ax[i].set_ylim(ylim)   
+      ax[i].get_yaxis().set_major_formatter(Formatter.Flux)
+  
+      # Indicate off-axis outliers
+      for j in np.where(flux < ylim[0])[0]:
+        if j in bnmask:
+          color = "#ffcccc"
+          if not plot_bad: 
+            continue
+        elif j in self.outmask:
+          color = "#cccccc"
+          if not plot_out:
+            continue
+        else:
+          color = "#ccccff"
+        ax[i].annotate('', xy=(self.time[j], ylim[0]), xycoords = 'data',
+                       xytext = (0, 15), textcoords = 'offset points',
+                       arrowprops=dict(arrowstyle = "-|>", color = color))
+      for j in np.where(flux > ylim[1])[0]:
+        if j in bnmask:
+          color = "#ffcccc"
+          if not plot_bad:
+            continue
+        elif j in self.outmask:
+          color = "#cccccc"
+          if not plot_out:
+            continue
+        else:
+          color = "#ccccff"
+        ax[i].annotate('', xy=(self.time[j], ylim[1]), xycoords = 'data',
+                       xytext = (0, -15), textcoords = 'offset points',
+                       arrowprops=dict(arrowstyle = "-|>", color = color))
+
+    if show:
+      pl.show()
+      pl.close()
+    else:
+      return fig, axes
