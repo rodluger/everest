@@ -495,6 +495,14 @@ class Everest(Basecamp):
                     ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
         ax.annotate('%.2f ppm' % cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
                     ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+      elif len(cdpp6_arr) < 6:
+        for n in range(len(cdpp6_arr)):
+          if n > 0:
+            x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+          else:
+            x = 0.02
+          ax.annotate('%.2f ppm' % cdpp6_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                      ha = 'left', va = 'top', fontsize = 8)
       else:
         ax.annotate('%.2f ppm' % cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
                     ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)

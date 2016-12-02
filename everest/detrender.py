@@ -510,7 +510,7 @@ class Detrender(Basecamp):
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r-', alpha = 0.25)
       ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
       ax[0].margins(0.1, 0.1)
-      ax[0].set_xticks(1, np.arange(len(self.breakpoints)) + 1)
+      ax[0].set_xticks(np.arange(1, len(self.breakpoints) + 1))
       ax[0].set_xticklabels([])
       
       # Now plot the CDPP and approximate validation CDPP
@@ -523,7 +523,7 @@ class Detrender(Basecamp):
       ax[1].margins(0.1, 0.1)
       ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
       ax[1].set_xlabel(r'Chunk', fontsize = 5)
-      ax[1].set_xticks(1, np.arange(len(self.breakpoints)) + 1)
+      ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
       
   def finalize(self):
     '''
