@@ -15,6 +15,8 @@ from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
 
 class Frame(object):
   '''
+  A not-so-elegant object that adds an inset axis at a given
+  position within a matplotlib axes instance when called.
   
   '''
   
@@ -52,6 +54,10 @@ class Frame(object):
     
 class DVS(object):
   '''
+  The "Data Validation Summary" figure container.
+  
+  :param int nchunks: The number of light curve segments. Default 2
+  :param int pld_order: The PLD order. Default 3
   
   '''
   
@@ -101,6 +107,7 @@ class DVS(object):
     
   def title(self):
     '''
+    Returns the axis instance where the title will be printed
     
     '''
     
@@ -108,6 +115,7 @@ class DVS(object):
 
   def footer(self):
     '''
+    Returns the axis instance where the footer will be printed
     
     '''
     
@@ -115,6 +123,8 @@ class DVS(object):
   
   def top_right(self):
     '''
+    Returns the axis instance at the top right of the page,
+    where the postage stamp and aperture is displayed
     
     '''
     
@@ -124,6 +134,8 @@ class DVS(object):
   
   def top_left(self):
     '''
+    Returns the axis instance at the top left of the page,
+    where the final de-trended light curve is displayed
     
     '''
     
@@ -131,6 +143,8 @@ class DVS(object):
   
   def left(self):
     '''
+    Returns the current axis instance on the left side of
+    the page where each successive light curve is displayed
     
     '''
     
@@ -140,6 +154,8 @@ class DVS(object):
 
   def right(self):
     '''
+    Returns the current axis instance on the right side of the
+    page, where cross-validation information is displayed
     
     '''
     
