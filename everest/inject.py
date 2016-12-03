@@ -101,7 +101,10 @@ def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.0
       self.fraw = np.sum(self.fpix, axis = 1)
       if self.inject['mask']:
         self.transitmask = np.array(list(set(np.concatenate([self.transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
-
+      
+      # Update the PLD normalization
+      self.get_norm()
+      
     def recover_depth(self):
       '''
       Recovers the injected transit depth from the long cadence data with a simple LLS solver.

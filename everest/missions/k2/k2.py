@@ -911,8 +911,8 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
     
     # Define some useful stuff for plotting
     depths = [1e-2, 1e-3, 1e-4]
-    ranges = [(0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0., 2.), (0., 2.)]
-    nbins = [30, 30, 30]
+    ranges = [(0.5, 1.5), (0.5, 1.5), (0., 2.)]
+    nbins = [30, 30, 20]
     ymax = [0.6, 0.25, 0.15]
     xticks = [[0.5, 0.75, 1., 1.25, 1.5], [0.5, 0.75, 1., 1.25, 1.5], [0., 0.5, 1., 1.5, 2.0]]
     
@@ -926,11 +926,11 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
       
         # Control
         ax[i,j].hist(control, bins = nbins[i], range = ranges[i], color = 'r', 
-                  histtype = 'step', weights = np.ones_like(control) / len(control))
+                     histtype = 'step', weights = np.ones_like(control) / len(control))
   
         # Recovered
         ax[i,j].hist(recovered, bins = nbins[i], range = ranges[i], color = 'b', 
-                  histtype = 'step', weights = np.ones_like(recovered) / len(recovered))
+                     histtype = 'step', weights = np.ones_like(recovered) / len(recovered))
       
         # Indicate center
         ax[i,j].axvline(1., color = 'k', ls = '--')
