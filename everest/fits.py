@@ -108,6 +108,10 @@ def LightcurveHDU(model):
   cards.append(('OITER', model.oiter, 'Number of outlier search iterations'))
   cards.append(('OPTGP', model.optimize_gp, 'GP optimization performed?'))
   cards.append(('OSIGMA', model.osigma, 'Outlier tolerance (standard deviations)'))
+  for i, planet in enumerate(model.planets):
+    cards.append(('P%02dT0' % (i + 1), planet[0], 'Planet transit time (days)'))
+    cards.append(('P%02dPER' % (i + 1), planet[1], 'Planet transit period (days)'))
+    cards.append(('P%02dDUR' % (i + 1), planet[2], 'Planet transit duration (days)'))
   cards.append(('PLDORDER', model.pld_order, 'PLD de-trending order'))
   cards.append(('SATUR', model.saturated, 'Is target saturated?'))
   cards.append(('SATTOL', model.saturation_tolerance, 'Fractional saturation tolerance'))

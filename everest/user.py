@@ -333,6 +333,15 @@ class Everest(Basecamp):
       self.oiter = f[1].header['OITER']
       self.optimize_gp = f[1].header['OPTGP']
       self.osigma = f[1].header['OSIGMA']
+      self.planets = []
+      for i in range(99):
+        try:
+          t0 = f[1].header['P%02dT0' % (i + 1)]
+          per = f[1].header['P%02dPER' % (i + 1)]
+          dur = f[1].header['P%02dDUR' % (i + 1)]
+          self.planets.append((t0, per, dur))
+        except KeyError:
+          break
       self.quality = f[1].data['QUALITY']
       self.saturated = f[1].header['SATUR']
       self.saturation_tolerance = f[1].header['SATTOL']
