@@ -190,19 +190,6 @@ class DataContainer(object):
     self.hires = None
     self.saturated = None
     self.meta = None
-    self.sc_cadn = None
-    self.sc_time = None
-    self.sc_fpix = None
-    self.sc_fraw = None
-    self.sc_fpix_err = None
-    self.sc_fraw_err = None
-    self.sc_nanmask = None
-    self.sc_badmask = None
-    self.sc_outmask = None
-    self.sc_Xpos = None
-    self.sc_Ypos = None
-    self.sc_meta = None
-    self.sc_model = None
 
 class Formatter(object):
   '''

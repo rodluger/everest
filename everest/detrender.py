@@ -155,7 +155,11 @@ class Detrender(Basecamp):
     self.max_pixels = kwargs.get('max_pixels', 75)
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
     self.gp_factor = kwargs.get('gp_factor', 100.)
-    
+    self.planets = kwargs.get('planets', [])
+    if type(self.planets) is tuple and len(self.planets) == 3 and not hasattr(self.planets[0], '__len__'):
+      self.planets = [self.planets]
+    for planet in self.planets:
+      assert len(planet) == 3, "Planets must be provided as (`t0`, `per`, `dur`) tuples."
     # Handle breakpointing. The breakpoint is the *last* index of each 
     # light curve chunk.
     bkpts = kwargs.get('breakpoints', True)
@@ -343,6 +347,23 @@ class Detrender(Basecamp):
         minr = r
     return min(maxm, minr)
 
+  def fobj(self, y, y0, t, gp, mask):
+    '''
+    
+    '''
+    
+    if self.cadence == 'lc':
+      # Note that we're computing the MAD, not the
+      # standard deviation, as this handles extremely variable
+      # stars much better!
+      gpm, _ = gp.predict(y - y0, t[mask])
+      fdet = (y[mask] - gpm) / y0
+      scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet - np.nanmedian(fdet))) / np.sqrt(len(mask)))
+      return scatter
+    else:
+      # We're going to minimize the total variation instead
+      return 1.e6 * np.sum(np.abs(np.diff(y[mask]))) / len(mask) / y0
+      
   def cross_validate(self, ax, info = ''):
     '''
     Cross-validate to find the optimal value of :py:obj:`lambda`.
@@ -407,26 +428,14 @@ class Detrender(Basecamp):
       
           # Update the lambda matrix
           self.lam[b][self.lam_idx] = lam
-      
-          # Training set. Note that we're computing the MAD, not the
-          # standard deviation, as this handles extremely variable
-          # stars much better!
+
+          # Training set
           model = self.cv_compute(b, *pre_t)
-          gpm, _ = gp.predict(flux - model - med, time[mask])
-          fdet = (flux - model)[mask] - gpm
-          scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
-                                                  np.nanmedian(fdet / med))) /
-                                                  np.sqrt(len(mask)))
-          training[k].append(scatter)
-      
+          training[k].append(self.fobj(flux - model, med, time, gp, mask))
+          
           # Validation set
           model = self.cv_compute(b, *pre_v)
-          gpm, _ = gp.predict(flux - model - med, time[mask])
-          fdet = (flux - model)[mask] - gpm
-          scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
-                                                  np.nanmedian(fdet / med))) /
-                                                  np.sqrt(len(mask)))
-          validation[k].append(scatter)
+          validation[k].append(self.fobj(flux - model, med, time, gp, mask))
       
       # Finalize
       training = np.array(training)
@@ -901,6 +910,21 @@ class Detrender(Basecamp):
       tau = 30.0
       self.kernel_params = [white, amp, tau]
   
+  def mask_planets(self):
+    '''
+    
+    '''
+    
+    
+    for i, planet in enumerate(self.planets):
+      log.info('Masking planet #%d...' % (i + 1))
+      t0, period, dur = planet
+      mask = []
+      t0 += np.ceil((self.time[0] - dur - t0) / period) * period
+      for t in np.arange(t0, self.time[-1] + dur, period):
+        mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
+      self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
+  
   def run(self):
     '''
     Runs the de-trending step.
@@ -912,6 +936,7 @@ class Detrender(Basecamp):
       # Load raw data
       log.info("Loading target data...")
       self.load_tpf()
+      self.mask_planets()
       self.plot_aperture([self.dvs.top_right() for i in range(4)])
       self.init_kernel()
       M = self.apply_mask(np.arange(len(self.time)))
