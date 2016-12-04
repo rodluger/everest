@@ -118,10 +118,15 @@ def LightcurveHDU(model):
   quality[model.nanmask] += 2 ** (QUALITY_NAN - 1)
   quality[model.outmask] += 2 ** (QUALITY_OUT - 1)
   quality[model.recmask] += 2 ** (QUALITY_REC - 1)
-
+  
+  # When de-trending, we interpolated to fill in NaN fluxes. Here
+  # we insert the NaNs back in, since there's no actual physical
+  # information at those cadences.
+  flux = np.array(model.flux); flux[model.nanmask] = np.nan
+  
   # Create the arrays list
   arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),
-            pyfits.Column(name = 'FLUX', format = 'D', array = model.flux, unit = 'e-/s'),
+            pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
             pyfits.Column(name = 'FRAW', format = 'D', array = model.fraw, unit = 'e-/s'),
             pyfits.Column(name = 'FRAW_ERR', format = 'D', array = model.fraw_err, unit = 'e-/s'),
             pyfits.Column(name = 'QUALITY', format = 'J', array = quality),

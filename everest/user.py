@@ -181,8 +181,13 @@ class Everest(Basecamp):
     
     if self.model_name == 'rPLD':
       self.get_norm()
+    
+    # Compute as normal
     super(Everest, self).compute()
-  
+    
+    # Make NaN cadences NaNs
+    self.flux[self.nanmask] = np.nan
+    
   def get_norm(self):
     '''
     
@@ -565,6 +570,7 @@ class Everest(Basecamp):
 
   def _plot_weights(self, show = True):
     '''
+    .. warning:: Untested!
     
     '''
     

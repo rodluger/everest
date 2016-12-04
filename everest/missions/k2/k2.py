@@ -541,6 +541,10 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   
   '''
   
+  # Zero neighbors?
+  if neighbors == 0:
+    return []
+  
   # Get the IDs
   campaign = Season(EPIC)
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T

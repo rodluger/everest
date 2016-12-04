@@ -578,9 +578,8 @@ class Detrender(Basecamp):
     ylim = self.get_ylim()
     
     # Plot the outliers
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     O1 = lambda x: x[self.outmask]
-    O2 = lambda x: x[bnmask]
+    O2 = lambda x: x[self.badmask]
     if self.cadence == 'lc':
       ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
       ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.25)
@@ -588,7 +587,7 @@ class Detrender(Basecamp):
       ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.25, zorder = -1)
       ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
     for i in np.where(self.flux < ylim[0])[0]:
-      if i in bnmask:
+      if i in self.badmask:
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
@@ -598,7 +597,7 @@ class Detrender(Basecamp):
                   xytext = (0, 15), textcoords = 'offset points',
                   arrowprops=dict(arrowstyle = "-|>", color = color))
     for i in np.where(self.flux > ylim[1])[0]:
-      if i in bnmask:
+      if i in self.badmask:
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
@@ -1064,7 +1063,8 @@ class rPLD(Detrender):
     
     # Load the parent model
     self.parent_model = kwargs.get('parent_model', 'nPLD')
-    self.load_model(self.parent_model)
+    if not self.load_model(self.parent_model):
+      raise Exception('Unable to load parent model.')
     
     # Save static copies of the de-trended flux, the outlier mask and the lambda array
     self._norm = np.array(self.flux)
