@@ -149,7 +149,7 @@ def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
   str_v = "EVEREST_DAT=%s,NODES=%d,EPIC=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
-          0 if EPIC is None else EPIC, nodes, campaign, subcampaign, strkwargs)
+          nodes, 0 if EPIC is None else EPIC, campaign, subcampaign, strkwargs)
   if EPIC is None:
     if subcampaign == -1:
       str_name = 'c%02d' % campaign
