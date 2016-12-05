@@ -170,6 +170,8 @@ class Detrender(Basecamp):
     else:
       self.breakpoints = np.array([999999])
     nseg = len(self.breakpoints)
+    self.cv_min = kwargs.get('cv_min', 'mad').lower()
+    assert self.cv_min in ['mad', 'tv'], "Invalid value for `cv_min`."
 
     # Get the pld order
     pld_order = kwargs.get('pld_order', 3)
@@ -352,7 +354,7 @@ class Detrender(Basecamp):
     
     '''
     
-    if self.cadence == 'lc':
+    if self.cv_min == 'mad':
       # Note that we're computing the MAD, not the
       # standard deviation, as this handles extremely variable
       # stars much better!
@@ -360,7 +362,7 @@ class Detrender(Basecamp):
       fdet = (y[mask] - gpm) / y0
       scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet - np.nanmedian(fdet))) / np.sqrt(len(mask)))
       return scatter
-    else:
+    elif self.cv_min == 'tv':
       # We're going to minimize the total variation instead
       return 1.e6 * np.sum(np.abs(np.diff(y[mask]))) / len(mask) / y0
       
