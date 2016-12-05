@@ -662,7 +662,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
   
   # Compute the statistics
   sub = np.array([s[0] for s in GetK2Campaign(campaign)], dtype = int)
-  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (model, int(campaign)))
+  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model, int(campaign)))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
       print("EPIC               Kp           Raw CDPP     Everest CDPP      Validation        Outliers       Saturated", file = f)
@@ -713,21 +713,21 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     # Get the comparison model stats
     if compare_to.lower() == 'everest1':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                   'tables', 'c%02d_everest1.tsv' % int(campaign)), unpack = True)
+                                   'tables', 'c%02d_everest1.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)   
     elif compare_to.lower() == 'k2sc':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                   'tables', 'c%02d_k2sc.tsv' % int(campaign)), unpack = True)
+                                   'tables', 'c%02d_k2sc.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
     elif compare_to.lower() == 'k2sff':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                   'tables', 'c%02d_k2sff.tsv' % int(campaign)), unpack = True)
+                                   'tables', 'c%02d_k2sff.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
     elif compare_to.lower() == 'kepler':
       kic, kepler_kp, kepler_cdpp6 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                         'tables', 'kepler.tsv'), unpack = True)
+                                         'tables', 'kepler.cdpp'), unpack = True)
     else:
-      compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (compare_to, int(campaign)))
+      compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (compare_to, int(campaign)))
       epic_1, _, _, cdpp6_1, _, _, _ = np.loadtxt(compfile, unpack = True, skiprows = 2)
       epic_1 = np.array(epic_1, dtype = int)
       inds = np.array([e in sub for e in epic_1])

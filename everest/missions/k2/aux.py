@@ -130,7 +130,7 @@ def Campaign(EPIC, **kwargs):
 def GetK2Stars(clobber = False):
   '''
   Download and return a :py:obj:`dict` of all *K2* stars organized by campaign. Saves each
-  campaign to a `csv` file in the `everest/missions/k2/tables` directory.
+  campaign to a `.stars` file in the `everest/missions/k2/tables` directory.
   
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
   
@@ -149,14 +149,14 @@ def GetK2Stars(clobber = False):
     for campaign in stars.keys():
       if not os.path.exists(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables')):
         os.makedirs(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables'))
-      with open(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.csv' % campaign), 'w') as f:
+      with open(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % campaign), 'w') as f:
         for star in stars[campaign]:
           print(",".join([str(s) for s in star]), file = f)
   
   # Return
   res = {}
   for campaign in range(18):
-    f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.csv' % campaign)
+    f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % campaign)
     if os.path.exists(f):
       with open(f, 'r') as file:
         lines = file.readlines() 

@@ -90,7 +90,7 @@ def get_cdpp(campaign, pipeline = 'everest1'):
   assert pipeline.lower() in Pipelines, 'Invalid pipeline: `%s`.' % pipeline
   
   # Create file if it doesn't exist
-  file = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.tsv' % (int(campaign), pipeline))
+  file = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(campaign), pipeline))
   if not os.path.exists(file):
     open(file, 'a').close()
 
@@ -136,3 +136,113 @@ def get_cdpp(campaign, pipeline = 'everest1'):
 
       # Log to file
       print("{:>09d} {:>15.3f}".format(EPIC, cdpp), file = outfile)
+
+def get_outliers(campaign):
+  '''
+  TODO
+  
+  '''
+  
+  # Create file if it doesn't exist
+  file = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.out' % (int(campaign), pipeline))
+  if not os.path.exists(file):
+    open(file, 'a').close()
+
+  # Get all EPIC stars
+  from .aux import GetK2Campaign
+  stars = GetK2Campaign(campaign, epics_only = True) 
+  nstars = len(stars)
+
+  # Remove ones we've done
+  with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    done = np.loadtxt(file, dtype = float)
+  if len(done):
+    done = [int(s) for s in done[:,0]]
+  stars = list(set(stars) - set(done))
+  n = len(done) + 1
+
+  # Open the output file
+  with open(file, 'a', 1) as outfile:
+
+    # Loop over all to get the CDPP
+    for EPIC in stars:
+
+      # Progress
+      sys.stdout.write('\rRunning target %d/%d...' % (n, nstars))
+      sys.stdout.flush()
+      n += 1
+  
+  # Get the Everest data
+  star = everest.Everest(EPIC, quiet = True)
+  time = star.time
+  fevr = star.flux
+  mask = star.mask
+
+  # Get the original Everest data
+  try:
+    star = k2plr.EVEREST(EPIC)
+  except:
+    fev1 = None
+    star = None
+  if star is not None:
+    if (len(star.time) == len(time)) and (np.abs(star.time[0] - time[0]) < tol) and (np.abs(star.time[-1] - time[-1]) < tol):
+      fev1 = star.flux
+    else:
+      fev1 = np.zeros_like(fevr) * np.nan
+      j = 0
+      for i, t in enumerate(time):
+        if np.abs(star.time[j] - t) < tol:
+          fev1[i] = star.flux[j]
+          j += 1
+
+  # Get the K2SFF data
+  try:
+    star = k2plr.K2SFF(EPIC)
+  except:
+    fsff = None
+    star = None
+  if star is not None:
+    if (len(star.time) == len(time)) and (np.abs(star.time[0] - time[0]) < tol) and (np.abs(star.time[-1] - time[-1]) < tol):
+      fsff = star.fcor
+    else:
+      fsff = np.zeros_like(fevr) * np.nan
+      j = 0
+      for i, t in enumerate(time):
+        if np.abs(star.time[j] - t) < tol:
+          fsff[i] = star.fcor[j]
+          j += 1
+
+  # Get the K2SC data
+  try:
+    star = k2plr.K2SC(EPIC)
+  except:
+    fksc = None
+    star = None
+  if star is not None:
+    if (len(star.time) == len(time)) and (np.abs(star.time[0] - time[0]) < tol) and (np.abs(star.time[-1] - time[-1]) < tol):
+      fksc = star.pdcflux
+    else:
+      fksc = np.zeros_like(fevr) * np.nan
+      j = 0
+      for i, t in enumerate(time):
+        if np.abs(star.time[j] - t) < tol:
+          fksc[i] = star.pdcflux[j]
+          j += 1
+
+  # Outliers for Everest and K2SFF
+  outliers = [0, 0, 0, 0]
+  for i, flux in enumerate([fevr, fev1, fsff, fksc]):
+  
+    # Remove flagged cadences
+    flux = np.delete(flux, mask)
+  
+    inds = np.array([], dtype = int)
+    n = 1
+    while len(inds) < n:
+      n = len(inds)
+      f = everest.math.SavGol(np.delete(flux, inds))
+      med = np.nanmedian(f)
+      MAD = 1.4826 * np.nanmedian(np.abs(f - med))
+      inds = np.append(inds, np.where((f > med + sigma * MAD) | (f < med - sigma * MAD))[0])
+    outliers[i] = len(inds)
