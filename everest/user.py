@@ -569,7 +569,7 @@ class Everest(Basecamp):
     
     '''
     
-    return getattr(missions, mission).pipelines.plot(self.ID, *args, **kwargs)
+    return getattr(missions, self.mission).pipelines.plot(self.ID, *args, **kwargs)
   
   def mask_planet(self, t0, period, dur = 0.2):
     '''

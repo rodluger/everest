@@ -321,10 +321,18 @@ def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
                 err[m][d] += 1
     for d, depth in enumerate(depths):
       for m, mask in enumerate(['F', 'T']):
-        if type(c) is int:
-          print("{:>4d}{:>8s}{:>14g}{:>10d}{:>10d}{:>9d}".format(c, mask, depth, total, done[m][d], err[m][d]))
+        if done[m][d] == total:
+          color = GREEN
         else:
-          print("{:>4.1f}{:>8s}{:>14g}{:>10d}{:>10d}{:>9d}".format(c, mask, depth, total, done[m][d], err[m][d]))
+          color = BLACK
+        if err[m][d] > 0:
+          errcolor = RED
+        else:
+          errcolor = ''
+        if type(c) is int:
+          print("%s{:>4d}{:>8s}{:>14g}{:>10d}{:>10d}%s{:>9d}\033[0m".format(c, mask, depth, total, done[m][d], err[m][d]) % (color, errcolor))
+        else:
+          print("%s{:>4.1f}{:>8s}{:>14g}{:>10d}{:>10d}%s{:>9d}\033[0m".format(c, mask, depth, total, done[m][d], err[m][d]) % (color, errcolor))
 
 def EverestModel(ID, model = 'nPLD', **kwargs):
   '''
