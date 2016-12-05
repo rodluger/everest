@@ -7,7 +7,7 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from ...config import EVEREST_SRC
+from ...config import EVEREST_SRC, EVEREST_DAT
 import os, sys, shutil
 import k2plr
 from k2plr.config import KPLR_ROOT
@@ -137,7 +137,7 @@ def get_cdpp(campaign, pipeline = 'everest1'):
       # Log to file
       print("{:>09d} {:>15.3f}".format(EPIC, cdpp), file = outfile)
 
-def get_outliers(campaign, sigma = 5, tol = 0.005):
+def get_outliers(campaign, model = 'nPLD', sigma = 5, tol = 0.005):
   '''
   
   '''
@@ -173,10 +173,16 @@ def get_outliers(campaign, sigma = 5, tol = 0.005):
       n += 1
   
       # Get the Everest data
-      star = everest.Everest(EPIC, quiet = True)
-      time = star.time
-      fevr = star.flux
-      mask = star.mask
+      nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
+                       ('%09d' % EPIC)[:4] + '00000', 
+                       ('%09d' % EPIC)[4:], model + '.npz')
+      if not os.path.exists(nf):
+        continue
+        
+      data = np.load(nf)
+      time = data['time']
+      fevr = data['fraw'] - data['model']
+      mask = np.array(list(set(np.concatenate([data['outmask'], data['transitmask'], data['nanmask']]))), dtype = int)
 
       # Get the original Everest data
       try:

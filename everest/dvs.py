@@ -83,7 +83,7 @@ class DVS(object):
     self.body_top_right = [GetFrame(12, 116, 21, 26), GetFrame(12, 139, 21, 26), 
                            GetFrame(12 + hght, 116, 21, 26), GetFrame(12 + hght, 139, 21, 26)]
     self.body_left = [GetFrame(12 + hght * n, 6, 102, 26) for n in range(1,2 + pld_order)]
-    if nchunks == 2:
+    if (nchunks == 2) or (nchunks > 3):
       self.body_right = [Frame(self.fig, 
                         [pl.subplot2grid((nrows, 160), (12 + hght * n, 116), colspan=44, rowspan=13), 
                          pl.subplot2grid((nrows, 160), (25 + hght * n, 116), colspan=44, rowspan=13)]) 
