@@ -196,11 +196,15 @@ def _Run(campaign, subcampaign, strkwargs):
     # Run
     pool.map(m, stars)
 
-def Status(campaign = range(18), model = 'nPLD', purge = False, **kwargs):
+def Status(campaign = range(18), model = 'nPLD', purge = False, injection = False, **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
 
   '''
+  
+  # Injection?
+  if injection:
+    return InjectionStatus(campaign = campaign, model = model, purge = purge, **kwargs)
   
   if not hasattr(campaign, '__len__'):
     if type(campaign) is int:
@@ -278,6 +282,49 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, **kwargs):
         else:
           print("         %s   %s   %s   %s" % (A, B, C, D))
           print()
+
+def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False, 
+                    depths = [0.01, 0.001, 0.0001], **kwargs):
+  '''
+  Shows the progress of the injection de-trending runs for the specified campaign(s).
+
+  '''
+  
+  if not hasattr(campaign, '__len__'):
+    if type(campaign) is int:
+      # Return the subcampaigns
+      all_stars = [s for s in GetK2Campaign(campaign, split = True, epics_only = True)]
+      campaign = [campaign + 0.1 * n for n in range(10)]
+    else:
+      all_stars = [[s for s in GetK2Campaign(campaign, epics_only = True)]]
+      campaign = [campaign]
+  else:
+    all_stars = [[s for s in GetK2Campaign(c, epics_only = True)] for c in campaign]
+  print("CAMP      MASK       DEPTH     TOTAL      DONE     ERRORS")
+  print("----      ----       -----     -----      ----     ------")
+  for c, stars in zip(campaign, all_stars):
+    if len(stars) == 0:
+      continue
+    done = [[0 for d in depths], [0 for d in depths]]
+    err = [[0 for d in depths], [0 for d in depths]]
+    total = len(stars)
+    if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)):
+      path = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)
+      for folder in os.listdir(path):
+        for subfolder in os.listdir(os.path.join(path, folder)):
+          ID = int(folder[:4] + subfolder)
+          for m, mask in enumerate(['U', 'M']):
+            for d, depth in enumerate(depths):
+              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, '%s_Inject_%s%g.npz' % (model, mask, depth))):
+                done[m][d] += 1
+              elif os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, '%s_Inject_%s%g.err' % (model, mask, depth))):
+                err[m][d] += 1
+    for d, depth in enumerate(depths):
+      for m, mask in enumerate(['F', 'T']):
+        if type(c) is int:
+          print("{:>4d}{:>8s}{:>14g}{:>10d}{:>10d}{:>9d}".format(c, mask, depth, total, done[m][d], err[m][d]))
+        else:
+          print("{:>4.1f}{:>8s}{:>14g}{:>10d}{:>10d}{:>9d}".format(c, mask, depth, total, done[m][d], err[m][d]))
 
 def EverestModel(ID, model = 'nPLD', **kwargs):
   '''
