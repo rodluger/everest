@@ -586,9 +586,10 @@ class Detrender(Basecamp):
       ax.set_rasterization_zorder(0)
     ylim = self.get_ylim()
     
-    # Plot the outliers
+    # Plot the outliers, but not the NaNs
+    badmask = [i for i in self.badmask if i not in self.nanmask]
     O1 = lambda x: x[self.outmask]
-    O2 = lambda x: x[self.badmask]
+    O2 = lambda x: x[badmask]
     if self.cadence == 'lc':
       ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
       ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.25)
@@ -596,7 +597,7 @@ class Detrender(Basecamp):
       ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.25, zorder = -1)
       ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
     for i in np.where(self.flux < ylim[0])[0]:
-      if i in self.badmask:
+      if i in badmask:
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
@@ -606,7 +607,7 @@ class Detrender(Basecamp):
                   xytext = (0, 15), textcoords = 'offset points',
                   arrowprops=dict(arrowstyle = "-|>", color = color))
     for i in np.where(self.flux > ylim[1])[0]:
-      if i in self.badmask:
+      if i in badmask:
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
