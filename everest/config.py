@@ -10,8 +10,11 @@ the data files, and the MAST url.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from . import __version__ as EVEREST_VERSION
 import os
 import urllib
+import logging
+log = logging.getLogger(__name__)
 
 #: Is this the development (pre-publication) version?
 EVEREST_DEV = os.environ.get('EVEREST2_DEV', 0)
@@ -33,7 +36,7 @@ MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
 #: The directory containing the Kepler PRF files
 KEPPRF_DIR = os.path.expanduser(os.environ.get("KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF"))) 
 
-def MAST_VERSION():
+def MAST_VERSION(default = EVEREST_VERSION):
   '''
   Returns the current :py:mod:`everest` version on MAST.
   
@@ -41,10 +44,15 @@ def MAST_VERSION():
   
   url = MAST_ROOT + 'version.txt'
   r = urllib.request.Request(url)
-  handler = urllib.request.urlopen(r)
+  try:
+    handler = urllib.request.urlopen(r, timeout = 3)
+  except:
+    log.error("Cannot access MAST: operation timed out.")
+    return default
   code = handler.getcode()
   if int(code) != 200:
-    raise Exception("Error code {0} for URL '{1}'".format(code, url))
+    log.error("Error code {0} for URL '{1}'".format(code, url))
+    return default
   data = handler.read().decode('utf-8')
   if data.endswith('\n'):
     data = data[:-1]
