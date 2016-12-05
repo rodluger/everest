@@ -455,8 +455,9 @@ class Everest(Basecamp):
   
       # Plot the outliers
       bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
+      bmask = [i for i in self.badmask if i not in self.nanmask]
       O1 = lambda x: x[outmask]
-      O2 = lambda x: x[bnmask]
+      O2 = lambda x: x[bmask]
       O3 = lambda x: x[transitmask]
       if plot_out:
         ax.plot(O1(time), O1(flux), ls = 'none', color = "#777777", marker = '.', markersize = ms, alpha = 0.5)
@@ -511,7 +512,7 @@ class Everest(Basecamp):
   
       # Indicate off-axis outliers
       for i in np.where(flux < ylim[0])[0]:
-        if i in bnmask:
+        if i in bmask:
           color = "#ffcccc"
           if not plot_bad: 
             continue
@@ -519,13 +520,15 @@ class Everest(Basecamp):
           color = "#cccccc"
           if not plot_out:
             continue
+        elif i in nanmask:
+          continue
         else:
           color = "#ccccff"
         ax.annotate('', xy=(time[i], ylim[0]), xycoords = 'data',
                     xytext = (0, 15), textcoords = 'offset points',
                     arrowprops=dict(arrowstyle = "-|>", color = color))
       for i in np.where(flux > ylim[1])[0]:
-        if i in bnmask:
+        if i in bmask:
           color = "#ffcccc"
           if not plot_bad:
             continue
@@ -533,6 +536,8 @@ class Everest(Basecamp):
           color = "#cccccc"
           if not plot_out:
             continue
+        elif i in nanmask:
+          continue
         else:
           color = "#ccccff"
         ax.annotate('', xy=(time[i], ylim[1]), xycoords = 'data',

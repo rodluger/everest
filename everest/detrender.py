@@ -601,6 +601,8 @@ class Detrender(Basecamp):
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
+      elif i in self.nanmask:
+        continue
       else:
         color = "#ccccff"
       ax.annotate('', xy=(self.time[i], ylim[0]), xycoords = 'data',
@@ -611,6 +613,8 @@ class Detrender(Basecamp):
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
+      elif i in self.nanmask:
+        continue
       else:
         color = "#ccccff"
       ax.annotate('', xy=(self.time[i], ylim[1]), xycoords = 'data',
