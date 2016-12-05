@@ -96,7 +96,7 @@ def _Download(campaign, subcampaign):
           print(l)
         continue
 
-def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100, 
+def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100, 
         mpn = None, email = None, queue = None, **kwargs):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
@@ -148,12 +148,15 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   else:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = "EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
-          nodes, campaign, subcampaign, strkwargs)
-  if subcampaign == -1:
-    str_name = 'c%02d' % campaign
+  str_v = "EVEREST_DAT=%s,NODES=%d,EPIC=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
+          0 if EPIC is None else EPIC, nodes, campaign, subcampaign, strkwargs)
+  if EPIC is None:
+    if subcampaign == -1:
+      str_name = 'c%02d' % campaign
+    else:
+      str_name = 'c%02d.%d' % (campaign, subcampaign)
   else:
-    str_name = 'c%02d.%d' % (campaign, subcampaign)
+    str_name = 'EPIC%d' % EPIC
   str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
@@ -171,7 +174,7 @@ def Run(campaign = 0, nodes = 5, ppn = 12, walltime = 100,
   print("Submitting the job...")
   subprocess.call(qsub_args)
 
-def _Run(campaign, subcampaign, strkwargs):
+def _Run(campaign, subcampaign, epic, strkwargs):
   '''
   The actual function that runs a given campaign; this must
   be called from ``missions/k2/run.pbs``.
@@ -186,16 +189,24 @@ def _Run(campaign, subcampaign, strkwargs):
   
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
-  # Initialize our multiprocessing pool
-  with Pool() as pool:
-    # Are we doing a subcampaign?
-    if subcampaign != -1:
-      campaign = campaign + 0.1 * subcampaign
-    # Get all the stars
-    stars = GetK2Campaign(campaign, epics_only = True)
-    # Run
-    pool.map(m, stars)
-
+  
+  # Are we running a campaign or a single target?
+  if epic == 0:  
+  
+    # Initialize our multiprocessing pool
+    with Pool() as pool:
+      # Are we doing a subcampaign?
+      if subcampaign != -1:
+        campaign = campaign + 0.1 * subcampaign
+      # Get all the stars
+      stars = GetK2Campaign(campaign, epics_only = True)
+      # Run
+      pool.map(m, stars)
+  
+  else:
+    
+    m(epic)
+    
 def Status(campaign = range(18), model = 'nPLD', purge = False, injection = False, **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
