@@ -222,7 +222,7 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
             if np.abs(time[j] - t) < tol:
               ftmp[i] = flux[j]
               j += 1
-              if j > len(time):
+              if j == len(time) - 1:
                 break
           flux = ftmp
           
