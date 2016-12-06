@@ -93,7 +93,7 @@ def Scatter(y, win = 13, remove_outliers = False):
   :param bool remove_outliers: Clip outliers at 5 sigma before computing the CDPP? Default `False`
   
   '''
-
+    
   if remove_outliers:
     # Remove 5-sigma outliers from data 
     # smoothed on a 1 day timescale
@@ -109,9 +109,11 @@ def Scatter(y, win = 13, remove_outliers = False):
         out.append(i)    
     out = np.array(out, dtype = int)
     y = np.delete(y, out)
+  if len(y):
+    return 1.e6 * np.nanmedian([np.std(yi)/np.sqrt(win) for yi in Chunks(y, win, all = True)])
+  else:
+    return np.nan
     
-  return 1.e6 * np.nanmedian([np.std(yi)/np.sqrt(win) for yi in Chunks(y, win, all = True)])
-
 def SavGol(y, win = 49):
   '''
   

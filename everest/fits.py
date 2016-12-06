@@ -119,10 +119,10 @@ def LightcurveHDU(model):
   
   # Add the EVEREST quality flags to the QUALITY array
   quality = np.array(model.quality)
-  quality[model.badmask] += 2 ** (QUALITY_BAD - 1)
-  quality[model.nanmask] += 2 ** (QUALITY_NAN - 1)
-  quality[model.outmask] += 2 ** (QUALITY_OUT - 1)
-  quality[model.recmask] += 2 ** (QUALITY_REC - 1)
+  quality[np.array(model.badmask, dtype = int)] += 2 ** (QUALITY_BAD - 1)
+  quality[np.array(model.nanmask, dtype = int)] += 2 ** (QUALITY_NAN - 1)
+  quality[np.array(model.outmask, dtype = int)] += 2 ** (QUALITY_OUT - 1)
+  quality[np.array(model.recmask, dtype = int)] += 2 ** (QUALITY_REC - 1)
   
   # When de-trending, we interpolated to fill in NaN fluxes. Here
   # we insert the NaNs back in, since there's no actual physical

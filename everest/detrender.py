@@ -399,7 +399,7 @@ class Detrender(Basecamp):
       # Check that we have enough data
       if len(m) < 3 * self.cdivs:
         self.cdppv_arr[b] = np.nan
-        self.lam[b][self.lam_idx] = -np.inf
+        self.lam[b][self.lam_idx] = 0.
         log.info("Insufficient data to run cross-validation on this chunk.")
         continue
         

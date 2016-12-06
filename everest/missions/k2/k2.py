@@ -85,11 +85,12 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   }
   elif cadence == 'sc':
     breakpoints = {
-                  0: np.array(np.linspace(0, 112590, 31)[1:-1], dtype = int),
-                  1: np.array([ 8044,  12066,  16088,  20135,  24132,  28154,  32176,  36198,
-                               40220,  44242,  48264,  52286,  56308,  60330,  64352,  68374,
-                               72396,  76418,  80440,  84462,  88509,  92506,  96528, 100550,
-                              104572, 108594, 112616, 116638]),
+                  0: np.array(np.linspace(0, 112590, 31)[1:-1], dtype = int),     # OK
+                  1: np.array([ 8044,   12066,  16088,  20135,  24132,  28154,    # OK
+                                32176,  36198,  40220,  44242,  48264,  52286,  
+                                56308,  60330,  64352,  68374,  72396,  76418,  
+                                80440,  84462,  88509,  92506,  96528,  100550,
+                                104572, 108594, 112616, 116638]),
                   2: np.array(np.linspace(0, 115680, 31)[1:-1], dtype = int),
                   3: np.array(np.linspace(0, 101580, 31)[1:-1], dtype = int),
                   4: np.array(np.linspace(0, 101580, 31)[1:-1], dtype = int),
@@ -129,8 +130,11 @@ def CDPP(flux, mask = [], cadence = 'lc'):
     rmswin = 13 * 30
     svgwin = 50 * 30 - 1
   flux_savgol = SavGol(np.delete(flux, mask), win = svgwin)
-  return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
-
+  if len(flux_savgol):
+    return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
+  else:
+    return np.nan
+    
 def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
             aperture_name = 'k2sff_15', saturated_aperture_name = 'k2sff_19',
             max_pixels = 75, download_only = False, saturation_tolerance = -0.1, 
