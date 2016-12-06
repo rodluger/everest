@@ -588,7 +588,6 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
     elif n == 2:
       mag_lo -= 1
       mag_hi += 1
-      import pdb; pdb.set_trace()
     
     # Loop over all stars
     for star, kp, channel, sc in zip(epics, kepmags, channels, short_cadence):

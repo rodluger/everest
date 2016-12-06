@@ -1056,7 +1056,7 @@ class nPLD(Detrender):
       if len(self.neighbors) < num_neighbors:
         log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
     elif num_neighbors > 0:
-      raise Exception("No neighbors found! Aborting.")
+      log.warn("No neighbors found! Running standard PLD...")
     
     for neighbor in self.neighbors:
       log.info("Loading data for neighboring target %d..." % neighbor)
