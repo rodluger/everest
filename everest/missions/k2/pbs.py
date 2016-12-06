@@ -184,6 +184,9 @@ def _Run(campaign, subcampaign, epic, strkwargs):
   # Get kwargs from string
   kwargs = pickle.loads(strkwargs.replace('%%%', '\n').encode('utf-8'))
   
+  # Check the cadence
+  cadence = kwargs.get('cadence', 'lc')
+  
   # Model wrapper
   m = FunctionWrapper(EverestModel, **kwargs)
   
@@ -199,7 +202,7 @@ def _Run(campaign, subcampaign, epic, strkwargs):
       if subcampaign != -1:
         campaign = campaign + 0.1 * subcampaign
       # Get all the stars
-      stars = GetK2Campaign(campaign, epics_only = True)
+      stars = GetK2Campaign(campaign, epics_only = True, cadence = cadence)
       # Run
       pool.map(m, stars)
   

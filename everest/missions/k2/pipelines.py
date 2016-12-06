@@ -8,6 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ...config import EVEREST_SRC, EVEREST_DAT
+from ...math import SavGol
 import os, sys, shutil
 import k2plr
 from k2plr.config import KPLR_ROOT
@@ -18,7 +19,7 @@ import warnings
 import logging
 log = logging.getLogger(__name__)
 
-Pipelines = ['everest1', 'k2sff', 'k2sc']
+Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc']
 
 def plot(ID, pipeline = 'everest1', show = True):
   '''
@@ -27,7 +28,11 @@ def plot(ID, pipeline = 'everest1', show = True):
   
   # Get the data
   log.info('Downloading %s light curve for %d...' % (pipeline, ID))
-  if pipeline.lower() == 'everest1':
+  if pipeline.lower() == 'everest2':
+    s = k2plr.EVEREST(ID, version = 2)
+    time = s.time
+    flux = s.flux
+  elif pipeline.lower() == 'everest1':
     s = k2plr.EVEREST(ID, version = 1)
     time = s.time
     flux = s.flux
@@ -121,7 +126,9 @@ def get_cdpp(campaign, pipeline = 'everest1'):
       
       # Get the CDPP
       try:
-        if pipeline.lower() == 'everest1':
+        if pipeline.lower() == 'everest2':
+          flux = k2plr.EVEREST(EPIC, version = 2).flux
+        elif pipeline.lower() == 'everest1':
           flux = k2plr.EVEREST(EPIC, version = 1).flux
         elif pipeline.lower() == 'k2sff':
           flux = k2plr.K2SFF(EPIC).fcor
@@ -137,10 +144,17 @@ def get_cdpp(campaign, pipeline = 'everest1'):
       # Log to file
       print("{:>09d} {:>15.3f}".format(EPIC, cdpp), file = outfile)
 
-def get_outliers(campaign, model = 'nPLD', sigma = 5, tol = 0.005):
+def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
   '''
   
   '''
+  
+  # Imports
+  from .aux import GetK2Campaign
+  client = k2plr.API()
+  
+  # Check pipeline
+  assert pipeline.lower() in Pipelines, 'Invalid pipeline: `%s`.' % pipeline
   
   # Create file if it doesn't exist
   file = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.out' % (int(campaign), pipeline))
@@ -148,7 +162,6 @@ def get_outliers(campaign, model = 'nPLD', sigma = 5, tol = 0.005):
     open(file, 'a').close()
 
   # Get all EPIC stars
-  from .aux import GetK2Campaign
   stars = GetK2Campaign(campaign, epics_only = True) 
   nstars = len(stars)
 
@@ -164,96 +177,75 @@ def get_outliers(campaign, model = 'nPLD', sigma = 5, tol = 0.005):
   # Open the output file
   with open(file, 'a', 1) as outfile:
 
-    # Loop over all stars
+    # Loop over all to get the CDPP
     for EPIC in stars:
 
       # Progress
       sys.stdout.write('\rRunning target %d/%d...' % (n, nstars))
       sys.stdout.flush()
       n += 1
-  
-      # Get the Everest data
-      nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
-                       ('%09d' % EPIC)[:4] + '00000', 
-                       ('%09d' % EPIC)[4:], model + '.npz')
-      if not os.path.exists(nf):
-        continue
-        
-      data = np.load(nf)
-      time = data['time']
-      fevr = data['fraw'] - data['model']
-      mask = np.array(list(set(np.concatenate([data['outmask'], data['transitmask'], data['nanmask']]))), dtype = int)
-
-      # Get the original Everest data
-      try:
-        star = k2plr.EVEREST(EPIC)
-      except:
-        fev1 = None
-        star = None
-      if star is not None:
-        if (len(star.time) == len(time)) and (np.abs(star.time[0] - time[0]) < tol) and (np.abs(star.time[-1] - time[-1]) < tol):
-          fev1 = star.flux
-        else:
-          fev1 = np.zeros_like(fevr) * np.nan
-          j = 0
-          for i, t in enumerate(time):
-            if np.abs(star.time[j] - t) < tol:
-              fev1[i] = star.flux[j]
-              j += 1
-
-      # Get the K2SFF data
-      try:
-        star = k2plr.K2SFF(EPIC)
-      except:
-        fsff = None
-        star = None
-      if star is not None:
-        if (len(star.time) == len(time)) and (np.abs(star.time[0] - time[0]) < tol) and (np.abs(star.time[-1] - time[-1]) < tol):
-          fsff = star.fcor
-        else:
-          fsff = np.zeros_like(fevr) * np.nan
-          j = 0
-          for i, t in enumerate(time):
-            if np.abs(star.time[j] - t) < tol:
-              fsff[i] = star.fcor[j]
-              j += 1
-
-      # Get the K2SC data
-      try:
-        star = k2plr.K2SC(EPIC)
-      except:
-        fksc = None
-        star = None
-      if star is not None:
-        if (len(star.time) == len(time)) and (np.abs(star.time[0] - time[0]) < tol) and (np.abs(star.time[-1] - time[-1]) < tol):
-          fksc = star.pdcflux
-        else:
-          fksc = np.zeros_like(fevr) * np.nan
-          j = 0
-          for i, t in enumerate(time):
-            if np.abs(star.time[j] - t) < tol:
-              fksc[i] = star.pdcflux[j]
-              j += 1
-
-      # Finally, compute the number of outliers for each
-      outliers = [-1, -1, -1, -1]
-      for i, flux in enumerate([fevr, fev1, fsff, fksc]):
-        
-        if flux is not None:
-        
-          # Remove flagged cadences
-          flux = np.delete(flux, mask)
-  
-          inds = np.array([], dtype = int)
-          n = 1
-          while len(inds) < n:
-            n = len(inds)
-            f = everest.math.SavGol(np.delete(flux, inds))
-            med = np.nanmedian(f)
-            MAD = 1.4826 * np.nanmedian(np.abs(f - med))
-            inds = np.append(inds, np.where((f > med + sigma * MAD) | (f < med - sigma * MAD))[0])
-          
-          outliers[i] = len(inds)
       
+      # Get the number of outliers
+      try:
+        if pipeline.lower() == 'everest2':
+          data = k2plr.EVEREST(EPIC, version = 2)
+          flux = data.flux
+          time = data.time
+        elif pipeline.lower() == 'everest1':
+          data = k2plr.EVEREST(EPIC, version = 1)
+          flux = data.flux
+          time = data.time
+        elif pipeline.lower() == 'k2sff':
+          data = k2plr.K2SFF(EPIC)
+          flux = data.fcor
+          time = data.time
+        elif pipeline.lower() == 'k2sc':
+          data = k2plr.K2SC(EPIC)
+          flux = data.pdcflux
+          time = data.time
+        
+        # Get the raw K2 data
+        with client.k2_star(EPIC).get_target_pixel_files()[0].open() as f:
+          k2_qual = np.array(f[1].data.field('QUALITY'), dtype=int)
+          k2_time = np.array(f[1].data.field('TIME'), dtype='float64') 
+          mask = []
+          for b in [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]:
+            mask += list(np.where(k2_qual & 2 ** (b - 1))[0])
+          mask = np.array(sorted(list(set(mask))))
+          
+        # Fill in missing cadences, if any
+        tol = 0.005
+        if not ((len(time) == len(k2_time)) and (np.abs(time[0] - k2_time[0]) < tol) and (np.abs(time[-1] - k2_time[-1]) < tol)):
+          ftmp = np.zeros_like(k2_time) * np.nan
+          j = 0
+          for i, t in enumerate(k2_time):
+            if np.abs(time[j] - t) < tol:
+              ftmp[i] = flux[j]
+              j += 1
+          flux = ftmp
+          
+        # Remove flagged cadences
+        flux = np.delete(flux, mask)
+        
+        # Remove nans
+        nanmask = np.where(np.isnan(flux))[0]
+        flux = np.delete(flux, nanmask)
+        
+        # Iterative sigma clipping
+        inds = np.array([], dtype = int)
+        m = 1
+        while len(inds) < m:
+          m = len(inds)
+          f = SavGol(np.delete(flux, inds))
+          med = np.nanmedian(f)
+          MAD = 1.4826 * np.nanmedian(np.abs(f - med))
+          inds = np.append(inds, np.where((f > med + sigma * MAD) | (f < med - sigma * MAD))[0])
+        nout = len(inds)
+        ntot = len(flux)
+
+      except AssertionError: #(HTTPError, TypeError, ValueError):
+        print("{:>09d} {:>5d} {:>5d}".format(EPIC, -1, -1), file = outfile)
+        continue
+
       # Log to file
-      print("{:>09d}{:>05d}{:>05d}{:>05d}{:>05d}".format(EPIC, outliers[0], outliers[1], outliers[2], outliers[3]), file = outfile)
+      print("{:>09d} {:>5d} {:>5d}".format(EPIC, nout, ntot), file = outfile)
