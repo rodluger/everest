@@ -296,6 +296,7 @@ class Everest(Basecamp):
       self.cdppr = f[1].header['CDPPR']
       self.cdppv = f[1].header['CDPPV']
       self.cdppg = f[1].header['CDPPG']
+      self.cv_min = f[1].header['CVMIN']
       self.fpix = f[2].data['FPIX']
       self.pixel_images = [f[4].data['STAMP1'], f[4].data['STAMP2'], f[4].data['STAMP3']]
       self.fraw = f[1].data['FRAW']
