@@ -96,13 +96,13 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                                 23702,  27088,  30474,  33860,  37246,  40632,  
                                 44018,  47404,  50790,  54176,  57562,  60948,  
                                 64334,  67720,  71106,  74492,  77878,  81264,
-                                84650,  88036,  91422,  94808,  98194, 101579]),
+                                84650,  88036,  91422,  94808,  98194]),
                   4: np.array(np.linspace(0, 101580, 31)[1:-1], dtype = int),
                   5: np.array([  3663,   7326,  10989,  14652,  18315,  21978,    # OK
                                 25641,  29304,  32967,  36630,  40293,  43956,  
                                 47619,  51282,  54945,  58608,  62271,  65934,  
                                 69597,  73260,  76923,  80646,  84249,  87912,
-                                91575,  95238,  98901, 102564, 106227, 109889]),
+                                91575,  95238,  98901, 102564, 106227]),
                   6: np.array(np.linspace(0, 115890, 31)[1:-1], dtype = int),
                   7: np.array(np.linspace(0, 121290, 31)[1:-1], dtype = int),
                   8: np.array(np.linspace(0, 115590, 31)[1:-1], dtype = int),
@@ -432,13 +432,13 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     for j in range(aperture.shape[1]):
       if np.any(f97[:,j] > satflx):
         for i in range(aperture.shape[0]):
-          if (i+2 < aperture.shape[0]) and aperture[i+2,j]:
+          if (i+2 < aperture.shape[0]) and aperture[i+2,j] and f97[i,j] > 0:
+              aperture[i,j] = 1
+          elif (i+1 < aperture.shape[0]) and aperture[i+1,j] and f97[i,j] > 0:
             aperture[i,j] = 1
-          elif (i+1 < aperture.shape[0]) and aperture[i+1,j]:
+          elif (i-1 >= 0) and aperture[i-1,j] and f97[i,j] > 0:
             aperture[i,j] = 1
-          elif (i-1 >= 0) and aperture[i-1,j]:
-            aperture[i,j] = 1
-          elif (i-2 >= 0) and aperture[i-2,j]:
+          elif (i-2 >= 0) and aperture[i-2,j] and f97[i,j] > 0:
             aperture[i,j] = 1
     
     for j in range(aperture.shape[1]):
