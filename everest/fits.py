@@ -84,6 +84,7 @@ def LightcurveHDU(model):
       cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i] if not np.isnan(model.cdppv_arr[i]) else 0, 'Chunk validation CDPP'))
     except:
       break
+  cards.append(('CVMIN', model.cv_min, 'Cross-validation objective function'))
   cards.append(('GITER', model.giter, 'Number of GP optimiziation iterations'))
   cards.append(('GPFACTOR', model.gp_factor, 'GP amplitude initialization factor'))
   cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))

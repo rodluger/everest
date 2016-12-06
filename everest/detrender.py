@@ -68,6 +68,8 @@ class Detrender(Basecamp):
                       break up the light curve. Default :py:obj:`True`
   :param int cdivs: The number of light curve subdivisions when cross-validating. During each iteration, \
                     one of these subdivisions will be masked and used as the validation set. Default 3
+  :param str cv_min: The quantity to be minimized during cross-validation. Default `MAD` (median absolute 
+                     deviation). Can also be set to `TV` (total variation).
   :param int giter: The number of iterations when optimizing the GP. During each iteration, the minimizer \
                     is initialized with a perturbed guess; after :py:obj:`giter` iterations, the step with \
                     the highest likelihood is kept. Default 3
@@ -92,6 +94,13 @@ class Detrender(Basecamp):
   :param bool optimize_gp: Perform the GP optimization steps? Default :py:obj:`True`
   :param float osigma: The outlier standard deviation threshold. Default 5
   :param int oiter: The maximum number of steps taken during iterative sigma clipping. Default 10
+  :param planets: Any transiting planets/EBs that should be explicitly masked during cross-validation. It is not \
+                  usually necessary to specify these at the cross-validation stage, since deep transits are \
+                  masked as outliers and shallow transits do not affect the lambda optimization. However, \
+                  it *is* necessary to mask deep transits in short cadence mode, since these can heavily \
+                  bias the cross-validation scheme to lower values of lambda, leading to severe underfitting. \
+                  This parameter should be a tuple or a list of tuples in the form (`t0`, `period`, `duration`) \
+                  for each of the planets to be masked (all values in days).
   :param int pld_order: The pixel level decorrelation order. Default `3`. Higher orders may cause memory errors
   :param str saturated_aperture_name: If the target is found to be saturated, de-trending is performed \
                                       on this aperture instead. Defaults to the mission default
