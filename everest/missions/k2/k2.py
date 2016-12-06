@@ -578,8 +578,17 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   targets = []
   
   # First look for nearby targets, then relax the constraint
-  for nearby in [True, False]:
-  
+  # If still no targets, widen magnitude range
+  for n in range(3):
+    
+    if n == 0:
+      nearby = True
+    elif n == 1:
+      nearby = False
+    elif n == 2:
+      mag_lo -= 1
+      mag_hi += 1
+    
     # Loop over all stars
     for star, kp, channel, sc in zip(epics, kepmags, channels, short_cadence):
     
