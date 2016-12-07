@@ -434,16 +434,16 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       if np.any(f97[:,j] > satflx):
         for i in range(aperture.shape[0]):
           if (i+2 < aperture.shape[0]) and aperture[i+2,j] and f97[i,j] > 0:
-            aperture[i,j] = 1
+            aperture[i,j] = 2
             ext += 1
           elif (i+1 < aperture.shape[0]) and aperture[i+1,j] and f97[i,j] > 0:
-            aperture[i,j] = 1
+            aperture[i,j] = 2
             ext += 1
           elif (i-1 >= 0) and aperture[i-1,j] and f97[i,j] > 0:
-            aperture[i,j] = 1
+            aperture[i,j] = 2
             ext += 1
           elif (i-2 >= 0) and aperture[i-2,j] and f97[i,j] > 0:
-            aperture[i,j] = 1
+            aperture[i,j] = 2
             ext += 1
     if ext: log.info("Extended saturated columns by %d pixel(s)." % ext)        
     
