@@ -130,7 +130,7 @@ def Campaign(EPIC, **kwargs):
 def GetK2Stars(clobber = False):
   '''
   Download and return a :py:obj:`dict` of all *K2* stars organized by campaign. Saves each
-  campaign to a `csv` file in the `everest/missions/k2/tables` directory.
+  campaign to a `.stars` file in the `everest/missions/k2/tables` directory.
   
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
   
@@ -149,14 +149,14 @@ def GetK2Stars(clobber = False):
     for campaign in stars.keys():
       if not os.path.exists(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables')):
         os.makedirs(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables'))
-      with open(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.csv' % campaign), 'w') as f:
+      with open(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % campaign), 'w') as f:
         for star in stars[campaign]:
           print(",".join([str(s) for s in star]), file = f)
   
   # Return
   res = {}
   for campaign in range(18):
-    f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.csv' % campaign)
+    f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % campaign)
     if os.path.exists(f):
       with open(f, 'r') as file:
         lines = file.readlines() 
@@ -169,7 +169,7 @@ def GetK2Stars(clobber = False):
 
   return res
 
-def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False):
+def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False, cadence = 'lc'):
   '''
   Return all stars in a given *K2* campaign.
   
@@ -181,6 +181,7 @@ def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False):
                      subcampaigns as a separate list. Default :py:obj:`False`
   :param bool epics_only: If :py:obj:`True`, returns only the EPIC numbers. If :py:obj:`False`, returns
                           metadata associated with each target. Default :py:obj:`False`
+  :param str cadence: Long (:py:obj:`lc`) or short (:py:obj:`sc`) cadence? Default :py:obj:`lc`.
                           
   '''
   
@@ -189,7 +190,10 @@ def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False):
     all = all[int(campaign)]
   else:
     return []
-
+  
+  if cadence == 'sc':
+    all = [a for a in all if a[3]]
+  
   if epics_only:
     all = [a[0] for a in all]
   if type(campaign) is int or type(campaign) is np.int64:

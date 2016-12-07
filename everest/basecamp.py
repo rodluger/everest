@@ -9,8 +9,9 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
-from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
+from .math import Chunks, Scatter, SavGol, Interpolate
 from .gp import GetCovariance, GetKernelParams
+from scipy.linalg import block_diag
 import os, sys
 import numpy as np
 import george
@@ -121,6 +122,22 @@ class Basecamp(object):
     raise NotImplementedError("Can't set this property.") 
   
   @property
+  def norm(self):
+    '''
+    
+    '''
+    
+    return self._norm
+    
+  @norm.setter
+  def norm(self, value):
+    '''
+    
+    '''
+    
+    raise NotImplementedError("Can't set this property.") 
+    
+  @property
   def cdpps(self):
     '''
     The string version of the current value of the CDPP in *ppm*. This displays the CDPP for
@@ -128,7 +145,7 @@ class Basecamp(object):
     
     '''
     
-    return " / ".join(["%.2f ppm" % c for c in self.cdpp6_arr]) + (" (%.2f ppm)" % self.cdpp6)
+    return " / ".join(["%.2f ppm" % c for c in self.cdpp_arr]) + (" (%.2f ppm)" % self.cdpp)
   
   @cdpps.setter
   def cdpps(self, value):
@@ -155,24 +172,7 @@ class Basecamp(object):
     '''
     
     raise NotImplementedError("Can't set this property.")
-    
-  @property
-  def X(self):
-    '''
-    The current *PLD* design matrix.
-    
-    '''
-    
-    return self._DesignMatrix
-  
-  @X.setter
-  def X(self, value):
-    '''
-    
-    '''
-    
-    raise NotImplementedError("Can't set this property.") 
-  
+
   @property
   def weights(self):
     '''
@@ -195,6 +195,30 @@ class Basecamp(object):
     
     raise NotImplementedError("Can't set this property.") 
   
+  def get_norm(self):
+    '''
+    
+    '''
+    
+    self._norm = self.fraw
+  
+  def X(self, i, j = slice(None, None, None)):
+    '''
+    Computes the design matrix at the given *PLD* order and the given indices. 
+    The columns are the *PLD* vectors for the target at the
+    corresponding order, computed as the product of the fractional pixel
+    flux of all sets of :py:obj:`n` pixels, where :py:obj:`n` is the *PLD*
+    order.
+    
+    '''
+
+    X1 = self.fpix[j] / self.norm[j].reshape(-1, 1)
+    X = np.product(list(multichoose(X1.T, i + 1)), axis = 1).T
+    if self.X1N is not None:
+      return np.hstack([X, self.X1N[j] ** (i + 1)])
+    else:
+      return X
+  
   def compute(self):
     '''
     Compute the model for the current value of lambda.
@@ -214,11 +238,8 @@ class Basecamp(object):
       # This block of the masked covariance matrix
       mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
       
-      # Backwards compatibility fix (K2 C01 and C02 LC)
-      if self.local_median:
-        med = np.nanmedian(self.fraw[m])
-      else:
-        med = np.nanmedian(self.fraw)
+      # Get median
+      med = np.nanmedian(self.fraw[m])
       
       # Normalize the flux
       f = self.fraw[m] - med
@@ -265,8 +286,73 @@ class Basecamp(object):
     self.model -= np.nanmedian(self.model)
     
     # Get the CDPP and reset the weights
-    self.cdpp6_arr = self.get_cdpp_arr()
-    self.cdpp6 = self.get_cdpp()
+    self.cdpp_arr = self.get_cdpp_arr()
+    self.cdpp = self.get_cdpp()
+    self._weights = None
+
+  def compute_joint(self):
+    '''
+    Compute the model in a single step, allowing for covariance
+    between cadences in different chunks. This should in principle
+    help remove kinks at the breakpoints, but is more expensive to
+    compute. 
+    
+    .. warning:: Everest does not cross-validate with this sort of \
+                 model (it's too expensive), so care is needed when using \
+                 light curves de-trended with this method, as they may not \
+                 be optimized against over-fitting/under-fitting. I suspect \
+                 it doesn't matter much, though.
+    
+    '''
+
+    log.info('Computing the model...')
+    A = [None for b in self.breakpoints]
+    B = [None for b in self.breakpoints]
+    
+    # Loop over all chunks
+    for b, brkpt in enumerate(self.breakpoints):
+    
+      # Masks for current chunk
+      m = self.get_masked_chunk(b, pad = False)
+      c = self.get_chunk(b, pad = False)
+      
+      # The X^2 matrices
+      A[b] = np.zeros((len(m), len(m)))
+      B[b] = np.zeros((len(c), len(m)))
+      
+      # Loop over all orders
+      for n in range(self.pld_order):
+
+        # Only compute up to the current PLD order
+        if (self.lam_idx >= n) and (self.lam[b][n] is not None):
+          XM = self.X(n,m)
+          XC = self.X(n,c)
+          A[b] += self.lam[b][n] * np.dot(XM, XM.T)
+          B[b] += self.lam[b][n] * np.dot(XC, XM.T)
+          del XM, XC
+    
+    # Merge chunks. BIGA and BIGB are sparse, but unfortunately
+    # scipy.sparse doesn't handle sparse matrix inversion all that
+    # well when the *result* is not itself sparse. So we're sticking
+    # with regular np.linalg.
+    BIGA = block_diag(*A)
+    del A
+    BIGB = block_diag(*B)
+    del B
+    
+    # Compute the model
+    mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    f = self.apply_mask(self.fraw)
+    f -= np.nanmedian(f)
+    W = np.linalg.solve(mK + BIGA, f)
+    self.model = np.dot(BIGB, W)
+
+    # Subtract the global median
+    self.model -= np.nanmedian(self.model)
+    
+    # Get the CDPP and reset the weights
+    self.cdpp_arr = self.get_cdpp_arr()
+    self.cdpp = self.get_cdpp()
     self._weights = None
 
   def apply_mask(self, x = None):
@@ -282,7 +368,7 @@ class Basecamp(object):
     else:
       return np.delete(x, self.mask, axis = 0)
 
-  def get_chunk(self, b, x = None):
+  def get_chunk(self, b, x = None, pad = True):
     '''
     Returns the indices corresponding to a given light curve chunk.
     
@@ -293,15 +379,15 @@ class Basecamp(object):
 
     M = np.arange(len(self.time))
     if b > 0:
-      res = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
+      res = M[(M > self.breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self.breakpoints[b] + int(pad) * self.bpad)]
     else:
-      res = M[M <= self.breakpoints[b] + self.bpad]
+      res = M[M <= self.breakpoints[b] + int(pad) * self.bpad]
     if x is None:
       return res
     else:
       return x[res]
     
-  def get_masked_chunk(self, b, x = None):
+  def get_masked_chunk(self, b, x = None, pad = True):
     '''
     Same as :py:meth:`get_chunk`, but first removes the outlier indices.
     :param int b: The index of the chunk to return
@@ -311,9 +397,9 @@ class Basecamp(object):
     
     M = self.apply_mask(np.arange(len(self.time)))
     if b > 0:
-      res = M[(M > self.breakpoints[b - 1] - self.bpad) & (M <= self.breakpoints[b] + self.bpad)]
+      res = M[(M > self.breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self.breakpoints[b] + int(pad) * self.bpad)]
     else:
-      res = M[M <= self.breakpoints[b] + self.bpad]
+      res = M[M <= self.breakpoints[b] + int(pad) * self.bpad]
     if x is None:
       return res
     else:
@@ -321,8 +407,8 @@ class Basecamp(object):
     
   def get_weights(self):
     '''
-    Computes the PLD weights vector :py:obj:`w` (for plotting and/or computing the short
-    cadence model).
+    Computes the PLD weights vector :py:obj:`w`.
+    Not currently used in the code.
     
     '''
     
@@ -359,164 +445,24 @@ class Basecamp(object):
   
   def get_cdpp_arr(self, flux = None):
     '''
-    Returns the 6-hr CDPP value in *ppm* for each of the chunks in the light curve.
+    Returns the CDPP value in *ppm* for each of the chunks in the light curve.
     
     '''
     
     if flux is None:
       flux = self.flux
-    return np.array([CDPP6(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b, _ in enumerate(self.breakpoints)])
+    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b, _ in enumerate(self.breakpoints)])
   
   def get_cdpp(self, flux = None):
     '''
-    Returns the scalar 6-hr CDPP for the light curve.
+    Returns the scalar CDPP for the light curve.
     
     '''
     
     if flux is None:
       flux = self.flux
-    return CDPP6(self.apply_mask(flux), cadence = self.cadence)
+    return self._mission.CDPP(self.apply_mask(flux), cadence = self.cadence)
   
-  def plot_weights(self, ax, cax):
-    '''
-    Plots the *PLD* weights on the CCD for each of the *PLD* orders.
-    
-    .. note:: Only works for light curves with zero or one breakpoints.
-    
-    '''
-    
-    # Check number of segments
-    if len(self.breakpoints) > 2:
-      return
-    
-    # Loop over all PLD orders and over all chunks
-    npix = len(self.fpix[1])
-    ap = self.aperture.flatten()
-    ncol = 1 + 2 * (len(self.weights[0]) - 1)
-    raw_weights = np.zeros((len(self.breakpoints), ncol, self.aperture.shape[0], self.aperture.shape[1]), dtype = float)
-    scaled_weights = np.zeros((len(self.breakpoints), ncol, self.aperture.shape[0], self.aperture.shape[1]), dtype = float)
-    
-    # Loop over orders
-    for o in range(len(self.weights[0])):
-      if o == 0:
-        oi = 0
-      else:
-        oi = 1 + 2 * (o - 1)
-        
-      # Loop over chunks
-      for b in range(len(self.weights)):
-      
-        c = self.get_chunk(b)
-        rw_ii = np.zeros(npix); rw_ij = np.zeros(npix)
-        sw_ii = np.zeros(npix); sw_ij = np.zeros(npix)
-        X = np.nanmedian(self.X(o,c), axis = 0)
-      
-        # Compute all sets of pixels at this PLD order, then
-        # loop over them and assign the weights to the correct pixels
-        sets = np.array(list(multichoose(np.arange(npix).T, o + 1)))
-        for i, s in enumerate(sets):
-          if (o == 0) or (s[0] == s[1]):
-            # Not the cross-terms
-            j = s[0]
-            rw_ii[j] += self.weights[b][o][i]
-            sw_ii[j] += X[i] * self.weights[b][o][i]
-          else:
-            # Cross-terms
-            for j in s:
-              rw_ij[j] += self.weights[b][o][i]
-              sw_ij[j] += X[i] * self.weights[b][o][i]
-          
-        # Make the array 2D and plot it
-        rw = np.zeros_like(ap, dtype = float)
-        sw = np.zeros_like(ap, dtype = float)
-        n = 0
-        for i, a in enumerate(ap):
-          if (a & 1):
-            rw[i] = rw_ii[n]
-            sw[i] = sw_ii[n]
-            n += 1
-        raw_weights[b][oi] = rw.reshape(*self.aperture.shape)
-        scaled_weights[b][oi] = sw.reshape(*self.aperture.shape)
-
-        if o > 0:
-          # Make the array 2D and plot it
-          rw = np.zeros_like(ap, dtype = float)
-          sw = np.zeros_like(ap, dtype = float)
-          n = 0
-          for i, a in enumerate(ap):
-            if (a & 1):
-              rw[i] = rw_ij[n]
-              sw[i] = sw_ij[n]
-              n += 1
-          raw_weights[b][oi + 1] = rw.reshape(*self.aperture.shape)
-          scaled_weights[b][oi + 1] = sw.reshape(*self.aperture.shape)
-
-    # Plot the images
-    log.info('Plotting the PLD weights...')
-    rdbu = pl.get_cmap('RdBu_r')
-    rdbu.set_bad('k')
-    for b in range(len(self.weights)):
-      rmax = max([-raw_weights[b][o].min() for o in range(ncol)] +
-                 [raw_weights[b][o].max() for o in range(ncol)])
-      smax = max([-scaled_weights[b][o].min() for o in range(ncol)] +
-                 [scaled_weights[b][o].max() for o in range(ncol)])
-      for o in range(ncol):
-        imr = ax[2 * b, o].imshow(raw_weights[b][o], aspect = 'auto', interpolation = 'nearest', cmap = rdbu, origin = 'lower', vmin = -rmax, vmax = rmax)
-        ims = ax[2 * b + 1, o].imshow(scaled_weights[b][o], aspect = 'auto', interpolation = 'nearest', cmap = rdbu, origin = 'lower', vmin=-smax, vmax=smax)
-    
-      # Colorbars
-      def fmt(x, pos):
-        a, b = '{:.0e}'.format(x).split('e')
-        b = int(b)
-        if float(a) > 0:
-          a = r'+' + a
-        elif float(a) == 0:
-          return ''
-        return r'${} \times 10^{{{}}}$'.format(a, b) 
-      cbr = pl.colorbar(imr, cax = cax[2 * b], format = FuncFormatter(fmt))
-      cbr.ax.tick_params(labelsize = 8) 
-      cbs = pl.colorbar(ims, cax = cax[2 * b + 1], format = FuncFormatter(fmt))
-      cbs.ax.tick_params(labelsize = 8) 
-  
-    # Plot aperture contours
-    def PadWithZeros(vector, pad_width, iaxis, kwargs):
-      vector[:pad_width[0]] = 0
-      vector[-pad_width[1]:] = 0
-      return vector
-    ny, nx = self.aperture.shape
-    contour = np.zeros((ny,nx))
-    contour[np.where(self.aperture)] = 1
-    contour = np.lib.pad(contour, 1, PadWithZeros)
-    highres = zoom(contour, 100, order = 0, mode='nearest') 
-    extent = np.array([-1, nx, -1, ny])
-    for axis in ax.flatten():
-      axis.contour(highres, levels=[0.5], extent=extent, origin='lower', colors='r', linewidths=1)
-      
-      # Check for saturated columns
-      for x in range(self.aperture.shape[0]):
-        for y in range(self.aperture.shape[1]):
-          if self.aperture[x][y] == AP_SATURATED_PIXEL:
-            axis.fill([y - 0.5, y + 0.5, y + 0.5, y - 0.5], 
-                      [x - 0.5, x - 0.5, x + 0.5, x + 0.5], fill = False, hatch='xxxxx', color = 'r', lw = 0)
-      
-      axis.set_xlim(-0.5, nx - 0.5)
-      axis.set_ylim(-0.5, ny - 0.5)
-      axis.set_xticks([]) 
-      axis.set_yticks([])
-  
-    # Labels
-    titles = [r'$1^{\mathrm{st}}$', 
-              r'$2^{\mathrm{nd}}\ (i = j)$',
-              r'$2^{\mathrm{nd}}\ (i \neq j)$',
-              r'$3^{\mathrm{rd}}\ (i = j)$',
-              r'$3^{\mathrm{rd}}\ (i \neq j)$'] + ['' for i in range(10)]
-    for i, axis in enumerate(ax[0]):
-      axis.set_title(titles[i], fontsize = 12)
-    for j in range(len(self.weights)):
-      ax[2 * j, 0].text(-0.55, -0.15, r'$%d$' % (j + 1), fontsize = 16, transform = ax[2 * j, 0].transAxes)
-      ax[2 * j, 0].set_ylabel(r'$w_{ij}$', fontsize = 18)
-      ax[2 * j + 1, 0].set_ylabel(r'$\bar{X}_{ij} \cdot w_{ij}$', fontsize = 18)
-
   def plot_aperture(self, axes, labelsize = 8):
     '''
     Plots the aperture and the pixel images at the beginning, middle, and end of 

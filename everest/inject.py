@@ -9,7 +9,7 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .detrender import *
 from .transit import Transit
-from .dvs import DVS1, DVS2
+from .dvs import DVS
 import os, sys
 import numpy as np
 import matplotlib.pyplot as pl
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Inject']
 
-def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
+def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
            mask = False, trn_win = 5, poly_order = 3, make_fits = False, **kwargs):
   '''
   Run one of the :py:obj:`everest` models with injected transits and attempt to recover the
@@ -27,10 +27,10 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
   The depth is stored in the :py:obj:`inject` attribute of the model (a dictionary) as 
   :py:obj:`rec_depth`. A control injection is also performed, in which the transits are injected 
   into the de-trended data; the recovered depth in the control run is stored in :py:obj:`inject` 
-  as :py:obj:`rec_depth_control`. The results are plotted on page 2 of the data validation summary.
+  as :py:obj:`rec_depth_control`.
   
   :param int ID: The target id
-  :param str model: The name of the :py:obj:`everest` model to run. Default `"PLD"`
+  :param str inj_model: The name of the :py:obj:`everest` model to run. Default `"nPLD"`
   :param float t0: The transit ephemeris in days. Default is to draw from the uniform distributon [0., :py:obj:`per`)
   :param float per: The injected planet period in days. Default is to draw from the uniform distribution [2, 10]
   :param float dur: The transit duration in days. Must be in the range [0.05, 0.5]. Default 0.1
@@ -50,7 +50,7 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
     t0 = per * np.random.random()
   
   # Get the actual class
-  _model = eval(model)
+  _model = eval(inj_model)
   inject = {'t0': t0, 'per': per, 'dur': dur, 'depth': depth, 'mask': mask,
             'poly_order': poly_order, 'trn_win': trn_win}
   
@@ -101,16 +101,10 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       self.fraw = np.sum(self.fpix, axis = 1)
       if self.inject['mask']:
         self.transitmask = np.array(list(set(np.concatenate([self.transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
-
-      # Now inject into the short cadence, if available
-      if self.has_sc:
-        transit_model = Transit(self.sc_time, t0 = self.inject['t0'], per = self.inject['per'], dur = self.inject['dur'], depth = self.inject['depth'])
-        for i in range(self.sc_fpix.shape[1]):
-          self.sc_fpix[:,i] *= transit_model 
-        self.sc_fraw = np.sum(self.sc_fpix, axis = 1)
-        if self.inject['mask']:
-          self.sc_transitmask = np.array(list(set(np.concatenate([self.sc_transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
- 
+      
+      # Update the PLD normalization
+      self.get_norm()
+      
     def recover_depth(self):
       '''
       Recovers the injected transit depth from the long cadence data with a simple LLS solver.
@@ -198,14 +192,18 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
         T = (T - t0 - per / 2.) % per - per / 2.  
         self.inject.update({'fold_time%s' % tag: T, 'fold_flux%s' % tag: D})
 
-    def plot_page2(self):
+    def plot_final(self, ax):
       '''
-      Plots the injection recovery results on page 2 of the DVS.
+      Plots the injection recovery results.
       
       '''
+      
+      from mpl_toolkits.axes_grid.inset_locator import inset_axes
+      ax.axis('off')
+      ax1 = inset_axes(ax, width="47%", height="100%", loc=6)
+      ax2 = inset_axes(ax, width="47%", height="100%", loc=7)
     
       # Plot the recovered folded transits
-      ax1 = self.dvs2.lc1()      
       ax1.plot(self.inject['fold_time'], self.inject['fold_flux'], 'k.', alpha = 0.3)
       x = np.linspace(np.min(self.inject['fold_time']), np.max(self.inject['fold_time']), 500)
       try:
@@ -224,16 +222,15 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax1.annotate('True depth:\nRecovered depth:',
                    xy = (0.02, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax1.annotate('%.6f\n%.6f' % (self.inject['depth'], self.inject['rec_depth']),
-                   xy = (0.25, 0.025), 
+                   xy = (0.4, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax1.margins(0, None)
       ax1.ticklabel_format(useOffset=False)
 
-      # Plot the recovered folded transits (control)
-      ax2 = self.dvs2.lc2()      
+      # Plot the recovered folded transits (control)     
       ax2.plot(self.inject['fold_time_control'], self.inject['fold_flux_control'], 'k.', alpha = 0.3)
       x = np.linspace(np.min(self.inject['fold_time_control']), np.max(self.inject['fold_time_control']), 500)
       try:
@@ -252,11 +249,11 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ax2.annotate('True depth:\nRecovered depth:',
                    xy = (0.02, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax2.annotate('%.6f\n%.6f' % (self.inject['depth'], self.inject['rec_depth_control']),
-                   xy = (0.25, 0.025), 
+                   xy = (0.4, 0.025), 
                    xycoords = 'axes fraction', 
-                   ha = 'left', va = 'bottom', fontsize = 8, color = 'r')
+                   ha = 'left', va = 'bottom', fontsize = 6, color = 'r')
       ax2.margins(0, None)
       ax2.ticklabel_format(useOffset=False)
       N = int(0.995 * len(self.inject['fold_flux_control']))
@@ -266,10 +263,11 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       ylim = (lo - pad, hi + pad)   
       ax2.set_ylim(ylim) 
       ax1.set_ylim(ylim)
-    
-      # Plot the PLD weights
-      self.plot_weights(*self.dvs2.weights_grid())
-    
+      
+      ax2.set_yticklabels([])
+      for tick in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_xticklabels():
+        tick.set_fontsize(5)
+      
     def finalize(self):
       '''
       Calls the depth recovery routine at the end of the de-trending step.
@@ -279,4 +277,4 @@ def Inject(ID, model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.001,
       super(Injection, self).finalize()
       self.recover_depth()
     
-  return Injection(ID, inject = inject, parent_class = model, make_fits = make_fits, **kwargs)
+  return Injection(ID, inject = inject, parent_class = inj_model, make_fits = make_fits, **kwargs)

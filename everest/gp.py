@@ -18,6 +18,15 @@ log = logging.getLogger(__name__)
 
 def GetCovariance(kernel_params, time, errors):
   '''
+  Returns the covariance matrix for a given light curve
+  segment.
+  
+  :param array_like kernel_params: A list of kernel parameters (white noise amplitude, \
+                                   red noise amplitude, and red noise timescale)
+  :param array_like time: The time array (*N*)
+  :param array_like errors: The data error array (*N*)
+  
+  :returns: The covariance matrix :py:obj:`K` (*N*,*N*)                                 
   
   '''
 

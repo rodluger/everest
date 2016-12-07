@@ -12,7 +12,7 @@ These *FITS* files make up the public :py:mod:`everest` catalog.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
-from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT
+from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC
 try:
   import pyfits
 except ImportError:
@@ -73,17 +73,18 @@ def LightcurveHDU(model):
   for c in range(len(model.breakpoints)):
     cards.append(('BRKPT%02d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
   cards.append(('CDIVS', model.cdivs, 'Cross-validation subdivisions'))
-  cards.append(('CDPP6', model.cdpp6, 'Average de-trended 6-hr CDPP'))
-  cards.append(('CDPPR', model.cdppr, 'Raw 6-hr CDPP'))
-  cards.append(('CDPPV', model.cdppv, 'Average validation 6-hr CDPP'))
-  cards.append(('CDPPG', model.gppp, 'Average GP-de-trended 6-hr CDPP'))
+  cards.append(('CDPP', model.cdpp, 'Average de-trended CDPP'))
+  cards.append(('CDPPR', model.cdppr, 'Raw CDPP'))
+  cards.append(('CDPPV', model.cdppv, 'Average validation CDPP'))
+  cards.append(('CDPPG', model.cdppg, 'Average GP-de-trended CDPP'))
   for i in range(99):
     try:
-      cards.append(('CDPP6%02d' % (i + 1), model.cdpp6_arr[i] if not np.isnan(model.cdpp6_arr[i]) else 0, 'Chunk de-trended 6-hr CDPP'))
-      cards.append(('CDPPR%02d' % (i + 1), model.cdppr_arr[i] if not np.isnan(model.cdppr_arr[i]) else 0, 'Chunk raw 6-hr CDPP'))
-      cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i] if not np.isnan(model.cdppv_arr[i]) else 0, 'Chunk validation 6-hr CDPP'))
+      cards.append(('CDPP%02d' % (i + 1), model.cdpp_arr[i] if not np.isnan(model.cdpp_arr[i]) else 0, 'Chunk de-trended CDPP'))
+      cards.append(('CDPPR%02d' % (i + 1), model.cdppr_arr[i] if not np.isnan(model.cdppr_arr[i]) else 0, 'Chunk raw CDPP'))
+      cards.append(('CDPPV%02d' % (i + 1), model.cdppv_arr[i] if not np.isnan(model.cdppv_arr[i]) else 0, 'Chunk validation CDPP'))
     except:
       break
+  cards.append(('CVMIN', model.cv_min, 'Cross-validation objective function'))
   cards.append(('GITER', model.giter, 'Number of GP optimiziation iterations'))
   cards.append(('GPFACTOR', model.gp_factor, 'GP amplitude initialization factor'))
   cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))
@@ -92,6 +93,8 @@ def LightcurveHDU(model):
   for c in range(len(model.breakpoints)):
     for o in range(model.pld_order):
       cards.append(('LAMB%02d%02d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
+      if model.name == 'rPLD':
+        cards.append(('RECL%02d%02d' % (c + 1, o + 1), model.reclam[c][o], 'Cross-validation parameter'))
   cards.append(('LEPS', model.leps, 'Cross-validation tolerance'))
   cards.append(('MAXPIX', model.max_pixels, 'Maximum size of TPF aperture'))
   for i, source in enumerate(model.nearby[:99]):
@@ -106,20 +109,29 @@ def LightcurveHDU(model):
   cards.append(('OITER', model.oiter, 'Number of outlier search iterations'))
   cards.append(('OPTGP', model.optimize_gp, 'GP optimization performed?'))
   cards.append(('OSIGMA', model.osigma, 'Outlier tolerance (standard deviations)'))
+  for i, planet in enumerate(model.planets):
+    cards.append(('P%02dT0' % (i + 1), planet[0], 'Planet transit time (days)'))
+    cards.append(('P%02dPER' % (i + 1), planet[1], 'Planet transit period (days)'))
+    cards.append(('P%02dDUR' % (i + 1), planet[2], 'Planet transit duration (days)'))
   cards.append(('PLDORDER', model.pld_order, 'PLD de-trending order'))
-  cards.append(('RECRSVE', model.recursive, 'Recursive PLD?'))
   cards.append(('SATUR', model.saturated, 'Is target saturated?'))
   cards.append(('SATTOL', model.saturation_tolerance, 'Fractional saturation tolerance'))
   
   # Add the EVEREST quality flags to the QUALITY array
   quality = np.array(model.quality)
-  quality[model.badmask] += 2 ** (QUALITY_BAD - 1)
-  quality[model.nanmask] += 2 ** (QUALITY_NAN - 1)
-  quality[model.outmask] += 2 ** (QUALITY_OUT - 1)
-
+  quality[np.array(model.badmask, dtype = int)] += 2 ** (QUALITY_BAD - 1)
+  quality[np.array(model.nanmask, dtype = int)] += 2 ** (QUALITY_NAN - 1)
+  quality[np.array(model.outmask, dtype = int)] += 2 ** (QUALITY_OUT - 1)
+  quality[np.array(model.recmask, dtype = int)] += 2 ** (QUALITY_REC - 1)
+  
+  # When de-trending, we interpolated to fill in NaN fluxes. Here
+  # we insert the NaNs back in, since there's no actual physical
+  # information at those cadences.
+  flux = np.array(model.flux); flux[model.nanmask] = np.nan
+  
   # Create the arrays list
   arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),
-            pyfits.Column(name = 'FLUX', format = 'D', array = model.flux, unit = 'e-/s'),
+            pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
             pyfits.Column(name = 'FRAW', format = 'D', array = model.fraw, unit = 'e-/s'),
             pyfits.Column(name = 'FRAW_ERR', format = 'D', array = model.fraw_err, unit = 'e-/s'),
             pyfits.Column(name = 'QUALITY', format = 'J', array = quality),

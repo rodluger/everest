@@ -13,13 +13,12 @@ specific de-trending methods are implemented as subclasses.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import missions
 from .basecamp import Basecamp
-from . import pld
 from .config import EVEREST_DAT
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
-from .math import Chunks, RMS, CDPP6, SavGol, Interpolate
+from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
-from .dvs import DVS1, DVS2
+from .dvs import DVS
 import os, sys
 import numpy as np
 import george
@@ -31,7 +30,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'rPLD', 'nPLD']
+__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD']
 
 class Detrender(Basecamp):
   '''
@@ -69,6 +68,8 @@ class Detrender(Basecamp):
                       break up the light curve. Default :py:obj:`True`
   :param int cdivs: The number of light curve subdivisions when cross-validating. During each iteration, \
                     one of these subdivisions will be masked and used as the validation set. Default 3
+  :param str cv_min: The quantity to be minimized during cross-validation. Default `MAD` (median absolute 
+                     deviation). Can also be set to `TV` (total variation).
   :param int giter: The number of iterations when optimizing the GP. During each iteration, the minimizer \
                     is initialized with a perturbed guess; after :py:obj:`giter` iterations, the step with \
                     the highest likelihood is kept. Default 3
@@ -86,7 +87,6 @@ class Detrender(Basecamp):
   :param float leps: The fractional tolerance when optimizing :math:`\Lambda`. The chosen value of \
                      :math:`\Lambda` will be within this amount of the minimum of the CDPP curve. \
                      Default 0.05
-  :param bool local_median: For backwards-compatibility only. Default :py:obj:`True`
   :param int max_pixels: The maximum number of pixels. Very large apertures are likely to cause memory \
                          errors, particularly for high order PLD. If the chosen aperture exceeds this many \
                          pixels, a different aperture is chosen from the dataset. If no apertures with fewer \
@@ -94,12 +94,14 @@ class Detrender(Basecamp):
   :param bool optimize_gp: Perform the GP optimization steps? Default :py:obj:`True`
   :param float osigma: The outlier standard deviation threshold. Default 5
   :param int oiter: The maximum number of steps taken during iterative sigma clipping. Default 10
+  :param planets: Any transiting planets/EBs that should be explicitly masked during cross-validation. It is not \
+                  usually necessary to specify these at the cross-validation stage, since deep transits are \
+                  masked as outliers and shallow transits do not affect the lambda optimization. However, \
+                  it *is* necessary to mask deep transits in short cadence mode, since these can heavily \
+                  bias the cross-validation scheme to lower values of lambda, leading to severe underfitting. \
+                  This parameter should be a tuple or a list of tuples in the form (`t0`, `period`, `duration`) \
+                  for each of the planets to be masked (all values in days).
   :param int pld_order: The pixel level decorrelation order. Default `3`. Higher orders may cause memory errors
-  :param bool recursive: Calculate the fractional pixel flux recursively? If :py:obj:`False`, \
-                         always computes the fractional pixel flux as :math:`f_{ij}/\sum_i{f_{ij}}`. \
-                         If :py:obj:`True`, uses the current de-trended flux as the divisor in an attempt \
-                         to minimize the amount of instrumental information that is divided out in this \
-                         step: :math:`f_{ij}/(\sum_i{f_{ij}} - M)`. Default :py:obj:`True`
   :param str saturated_aperture_name: If the target is found to be saturated, de-trending is performed \
                                       on this aperture instead. Defaults to the mission default
   :param float saturation_tolerance: The tolerance when determining whether or not to collapse a column \
@@ -119,7 +121,6 @@ class Detrender(Basecamp):
     self.cadence = kwargs.get('cadence', 'lc').lower()
     if self.cadence not in ['lc', 'sc']:
       raise ValueError("Invalid cadence selected.")
-    self.recursive = kwargs.get('recursive', True)
     self.make_fits = kwargs.get('make_fits', True)
     self.mission = kwargs.get('mission', 'k2')
     self.clobber = kwargs.get('clobber', False)
@@ -137,9 +138,10 @@ class Detrender(Basecamp):
     # the GP based on the short cadence light curve
     if self.cadence == 'sc':
       log.info("Loading long cadence model...")
-      kwargs.pop('cadence', None)
-      kwargs.pop('clobber', None)
-      lc = self.__class__(ID, is_parent = True, **kwargs)
+      kwcpy = dict(kwargs)
+      kwcpy.pop('cadence', None)
+      kwcpy.pop('clobber', None)
+      lc = self.__class__(ID, is_parent = True, **kwcpy)
       kwargs.update({'kernel_params': kwargs.get('kernel_params', lc.kernel_params),
                      'optimize_gp': False})
       del lc
@@ -162,8 +164,11 @@ class Detrender(Basecamp):
     self.max_pixels = kwargs.get('max_pixels', 75)
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
     self.gp_factor = kwargs.get('gp_factor', 100.)
-    self.local_median = kwargs.get('local_median', True)
-    
+    self.planets = kwargs.get('planets', [])
+    if type(self.planets) is tuple and len(self.planets) == 3 and not hasattr(self.planets[0], '__len__'):
+      self.planets = [self.planets]
+    for planet in self.planets:
+      assert len(planet) == 3, "Planets must be provided as (`t0`, `per`, `dur`) tuples."
     # Handle breakpointing. The breakpoint is the *last* index of each 
     # light curve chunk.
     bkpts = kwargs.get('breakpoints', True)
@@ -174,6 +179,8 @@ class Detrender(Basecamp):
     else:
       self.breakpoints = np.array([999999])
     nseg = len(self.breakpoints)
+    self.cv_min = kwargs.get('cv_min', 'mad').lower()
+    assert self.cv_min in ['mad', 'tv'], "Invalid value for `cv_min`."
 
     # Get the pld order
     pld_order = kwargs.get('pld_order', 3)
@@ -183,22 +190,33 @@ class Detrender(Basecamp):
     # Initialize model params 
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
+    self.reclam = None
+    self.recmask = []
     self.X1N = None
-    self.cdpp6_arr = np.array([np.nan for b in range(nseg)])
+    self.cdpp_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
     self.cdppv_arr = np.array([np.nan for b in range(nseg)])
-    self.cdpp6 = np.nan
+    self.cdpp = np.nan
     self.cdppr = np.nan
     self.cdppv = np.nan
-    self.gppp = np.nan
+    self.cdppg = np.nan
     self.neighbors = []
     self.loaded = False
     self._weights = None
     
     # Initialize plotting
-    self.dvs1 = DVS1(len(self.breakpoints), pld_order = self.pld_order)
-    self.dvs2 = DVS2(len(self.breakpoints))
-  
+    self.dvs = DVS(len(self.breakpoints), pld_order = self.pld_order)
+    
+    # Check for saved model
+    if self.load_model():
+      return
+    
+    # Setup (subclass-specific)
+    self.setup(**kwargs)
+    
+    # Run
+    self.run()
+    
   @property
   def name(self):
     '''
@@ -219,6 +237,14 @@ class Detrender(Basecamp):
     
     raise NotImplementedError("Can't set this property.") 
   
+  def setup(self, **kwargs):
+    '''
+    A subclass-specific routine.
+    
+    '''
+    
+    pass
+  
   def cv_precompute(self, mask, b):
     '''
     Pre-compute the matrices :py:obj:`A` and :py:obj:`B` (cross-validation step only)
@@ -230,10 +256,7 @@ class Detrender(Basecamp):
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
     K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
-    if self.local_median:
-      med = np.nanmedian(flux)
-    else:
-      med = np.nanmedian(self.fraw)
+    med = np.nanmedian(flux)
     
     # Now mask the validation set
     M = lambda x, axis = 0: np.delete(x, mask, axis = axis)
@@ -335,6 +358,23 @@ class Detrender(Basecamp):
         minr = r
     return min(maxm, minr)
 
+  def fobj(self, y, y0, t, gp, mask):
+    '''
+    
+    '''
+    
+    if self.cv_min == 'mad':
+      # Note that we're computing the MAD, not the
+      # standard deviation, as this handles extremely variable
+      # stars much better!
+      gpm, _ = gp.predict(y - y0, t[mask])
+      fdet = (y[mask] - gpm) / y0
+      scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet - np.nanmedian(fdet))) / np.sqrt(len(mask)))
+      return scatter
+    elif self.cv_min == 'tv':
+      # We're going to minimize the total variation instead
+      return 1.e6 * np.sum(np.abs(np.diff(y[mask]))) / len(mask) / y0
+      
   def cross_validate(self, ax, info = ''):
     '''
     Cross-validate to find the optimal value of :py:obj:`lambda`.
@@ -359,7 +399,7 @@ class Detrender(Basecamp):
       # Check that we have enough data
       if len(m) < 3 * self.cdivs:
         self.cdppv_arr[b] = np.nan
-        self.lam[b][self.lam_idx] = -np.inf
+        self.lam[b][self.lam_idx] = 0.
         log.info("Insufficient data to run cross-validation on this chunk.")
         continue
         
@@ -367,10 +407,7 @@ class Detrender(Basecamp):
       time = self.time[m]
       flux = self.fraw[m]
       ferr = self.fraw_err[m]
-      if self.local_median:
-        med = np.nanmedian(flux)
-      else:
-        med = np.nanmedian(self.fraw)
+      med = np.nanmedian(flux)
         
       # The precision in the validation set
       validation = [[] for k, _ in enumerate(self.lambda_arr)]
@@ -402,26 +439,14 @@ class Detrender(Basecamp):
       
           # Update the lambda matrix
           self.lam[b][self.lam_idx] = lam
-      
-          # Training set. Note that we're computing the MAD, not the
-          # standard deviation, as this handles extremely variable
-          # stars much better!
+
+          # Training set
           model = self.cv_compute(b, *pre_t)
-          gpm, _ = gp.predict(flux - model - med, time[mask])
-          fdet = (flux - model)[mask] - gpm
-          scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
-                                                  np.nanmedian(fdet / med))) /
-                                                  np.sqrt(len(mask)))
-          training[k].append(scatter)
-      
+          training[k].append(self.fobj(flux - model, med, time, gp, mask))
+          
           # Validation set
           model = self.cv_compute(b, *pre_v)
-          gpm, _ = gp.predict(flux - model - med, time[mask])
-          fdet = (flux - model)[mask] - gpm
-          scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
-                                                  np.nanmedian(fdet / med))) /
-                                                  np.sqrt(len(mask)))
-          validation[k].append(scatter)
+          validation[k].append(self.fobj(flux - model, med, time, gp, mask))
       
       # Finalize
       training = np.array(training)
@@ -441,8 +466,8 @@ class Detrender(Basecamp):
       log.info("Found optimum solution at log(lambda) = %.1f." % np.log10(self.lam[b][self.lam_idx]))
       
       # Plotting: There's not enough space in the DVS to show the cross-val results
-      # for more than two light curve segments.
-      if len(self.breakpoints) <= 2:
+      # for more than three light curve segments.
+      if len(self.breakpoints) <= 3:
       
         # Plotting hack: first x tick will be -infty
         lambda_arr = np.array(self.lambda_arr)
@@ -462,12 +487,14 @@ class Detrender(Basecamp):
         ax[b].set_ylim(lo - 0.15 * rng, hi + 0.15 * rng)
         if rng > 2:
           ax[b].get_yaxis().set_major_formatter(Formatter.CDPP)
-          ax[b].get_yaxis().set_major_locator(MaxNLocator(integer = True))
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(4, integer = True))
         elif rng > 0.2:
           ax[b].get_yaxis().set_major_formatter(Formatter.CDPP1F)
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(4))
         else:
           ax[b].get_yaxis().set_major_formatter(Formatter.CDPP2F)
-        
+          ax[b].get_yaxis().set_major_locator(MaxNLocator(4))
+          
         # Fix the x ticks
         xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
         ax[b].set_xticks(xticks)
@@ -475,7 +502,7 @@ class Detrender(Basecamp):
         pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
         ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
         ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
-                       ha = 'left', va = 'bottom', fontsize = 8, alpha = 0.5, 
+                       ha = 'left', va = 'bottom', fontsize = 7, alpha = 0.25, 
                        fontweight = 'bold')
     
     # Finally, compute the model
@@ -488,7 +515,7 @@ class Detrender(Basecamp):
       axis.spines['top'].set_visible(False)
       axis.xaxis.set_ticks_position('bottom')
     
-    if len(self.breakpoints) <= 2:
+    if len(self.breakpoints) <= 3:
 
       # A hack to mark the first xtick as -infty
       labels = ['%.1f' % x for x in xticks]
@@ -498,12 +525,13 @@ class Detrender(Basecamp):
     
     else:
         
-      # We're just going to plot lambda as a function of chunk number (DEBUG)
+      # We're just going to plot lambda as a function of chunk number
       bs = np.arange(len(self.breakpoints))
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r.')
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r-', alpha = 0.25)
       ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
       ax[0].margins(0.1, 0.1)
+      ax[0].set_xticks(np.arange(1, len(self.breakpoints) + 1))
       ax[0].set_xticklabels([])
       
       # Now plot the CDPP and approximate validation CDPP
@@ -514,8 +542,9 @@ class Detrender(Basecamp):
       ax[1].plot(bs + 1, cdppv_arr, 'r.')
       ax[1].plot(bs + 1, cdppv_arr, 'r-', alpha = 0.25)
       ax[1].margins(0.1, 0.1)
-      ax[1].set_ylabel(r'CDPP', fontsize = 5)
+      ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
       ax[1].set_xlabel(r'Chunk', fontsize = 5)
+      ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
       
   def finalize(self):
     '''
@@ -568,10 +597,10 @@ class Detrender(Basecamp):
       ax.set_rasterization_zorder(0)
     ylim = self.get_ylim()
     
-    # Plot the outliers
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
+    # Plot the outliers, but not the NaNs
+    badmask = [i for i in self.badmask if i not in self.nanmask]
     O1 = lambda x: x[self.outmask]
-    O2 = lambda x: x[bnmask]
+    O2 = lambda x: x[badmask]
     if self.cadence == 'lc':
       ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
       ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.25)
@@ -579,20 +608,24 @@ class Detrender(Basecamp):
       ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.25, zorder = -1)
       ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
     for i in np.where(self.flux < ylim[0])[0]:
-      if i in bnmask:
+      if i in badmask:
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
+      elif i in self.nanmask:
+        continue
       else:
         color = "#ccccff"
       ax.annotate('', xy=(self.time[i], ylim[0]), xycoords = 'data',
                   xytext = (0, 15), textcoords = 'offset points',
                   arrowprops=dict(arrowstyle = "-|>", color = color))
     for i in np.where(self.flux > ylim[1])[0]:
-      if i in bnmask:
+      if i in badmask:
         color = "#ffcccc"
       elif i in self.outmask:
         color = "#cccccc"
+      elif i in self.nanmask:
+        continue
       else:
         color = "#ccccff"
       ax.annotate('', xy=(self.time[i], ylim[1]), xycoords = 'data',
@@ -607,14 +640,22 @@ class Detrender(Basecamp):
         ax.axvline(self.time[brkpt], color = 'r', ls = '-', alpha = 0.025)
         
     # Appearance
-    if len(self.cdpp6_arr) == 2:
-      ax.annotate('%.2f ppm' % self.cdpp6_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 12)
-      ax.annotate('%.2f ppm' % self.cdpp6_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                  ha = 'right', va = 'top', fontsize = 12)
+    if len(self.cdpp_arr) == 2:
+      ax.annotate('%.2f ppm' % self.cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                  ha = 'left', va = 'top', fontsize = 10)
+      ax.annotate('%.2f ppm' % self.cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+                  ha = 'right', va = 'top', fontsize = 10)
+    elif len(self.cdpp_arr) < 6:
+      for n in range(len(self.cdpp_arr)):
+        if n > 0:
+          x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+        else:
+          x = 0.02
+        ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                    ha = 'left', va = 'top', fontsize = 8)
     else:
-      ax.annotate('%.2f ppm' % self.cdpp6, xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 12)
+      ax.annotate('%.2f ppm' % self.cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                  ha = 'left', va = 'top', fontsize = 10)
     ax.annotate(info_right, xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
                 fontweight = 'bold')            
@@ -639,7 +680,11 @@ class Detrender(Basecamp):
     else:
       ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
       ax.set_rasterization_zorder(0)
-
+    # Hack: Plot invisible first and last points to ensure the x axis limits are the
+    # same in the other plots, where we also plot outliers!
+    ax.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    ax.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
+    
     # Plot the GP (long cadence only)
     if self.cadence == 'lc':
       _, amp, tau = self.kernel_params
@@ -651,12 +696,12 @@ class Detrender(Basecamp):
       ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
       
       # Compute the CDPP of the GP-detrended flux
-      self.gppp = CDPP6(self.apply_mask(self.flux - y + med), cadence = self.cadence)
+      self.cdppg = self._mission.CDPP(self.apply_mask(self.flux - y + med), cadence = self.cadence)
     
     else:
       
       # We're not going to calculate this
-      self.gppp = 0.
+      self.cdppg = 0.
       
     # Appearance
     ax.annotate('Final', xy = (0.98, 0.025), xycoords = 'axes fraction', 
@@ -678,7 +723,7 @@ class Detrender(Basecamp):
     '''
     Plots miscellaneous de-trending information on the data validation summary figure.
     
-    :param dvs: A :py:class:`dvs.DVS1` or :py:class:`dvs.DVS2` figure instance
+    :param dvs: A :py:class:`dvs.DVS` figure instance
     
     '''
     
@@ -687,7 +732,7 @@ class Detrender(Basecamp):
                  xy = (0.5, 0.5), xycoords = 'axes fraction', 
                  ha = 'center', va = 'center', fontsize = 18)
     
-    axc.annotate(r"%.2f ppm $\rightarrow$ %.2f ppm" % (self.cdppr, self.cdpp6),
+    axc.annotate(r"%.2f ppm $\rightarrow$ %.2f ppm" % (self.cdppr, self.cdpp),
                  xy = (0.5, 0.2), xycoords = 'axes fraction',
                  ha = 'center', va = 'center', fontsize = 8, color = 'k',
                  fontstyle = 'italic')
@@ -708,58 +753,12 @@ class Detrender(Basecamp):
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
     
-    axr.annotate(r"GP %.3f ppm" % (self.gppp),
-                 xy = (0.5, 0.2), xycoords = 'axes fraction',
-                 ha = 'center', va = 'center', fontsize = 8, color = 'k',
-                 fontstyle = 'italic')
-      
-  def plot_page2(self):
-    '''
-    Plots the second page of the data validation summary.
-    
-    '''
-    
-    # Plot the raw light curve
-    ax1 = self.dvs2.lc1()    
-    if self.cadence == 'lc':
-      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.5)
-    else:
-      ax1.plot(self.time, self.fraw, ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.05, zorder = -1)
-      ax1.set_rasterization_zorder(0)
-    ax1.annotate('Raw', xy = (0.98, 0.025), xycoords = 'axes fraction', 
-                ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
-                fontweight = 'bold') 
-    ax1.margins(0.01, 0.1)  
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    flux = np.delete(self.flux, bnmask)
-    N = int(0.995 * len(flux))
-    hi, lo = flux[np.argsort(flux)][[N,-N]]
-    fsort = flux[np.argsort(flux)]
-    pad = (hi - lo) * 0.1
-    ylim = (lo - pad, hi + pad)   
-    ax1.set_ylim(ylim)   
-    ax1.get_yaxis().set_major_formatter(Formatter.Flux) 
-
-    # Plot the de-trended light curve
-    ax2 = self.dvs2.lc2()
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    M = lambda x: np.delete(x, bnmask)
-    if self.cadence == 'lc':
-      ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
-    else:
-      ax2.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
-      ax2.set_rasterization_zorder(0)
-    ax2.annotate('LC', xy = (0.98, 0.025), xycoords = 'axes fraction', 
-                ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
-                fontweight = 'bold') 
-    ax2.margins(0.01, 0.1)          
-    ax2.set_ylim(ylim)   
-    ax2.get_yaxis().set_major_formatter(Formatter.Flux) 
-    
-    # Plot the PLD weights
-    if len(self.breakpoints) <= 2:
-      self.plot_weights(*self.dvs2.weights_grid())
-    
+    if not np.isnan(self.cdppg) and self.cdppg > 0:
+      axr.annotate(r"GP %.3f ppm" % (self.cdppg),
+                   xy = (0.5, 0.2), xycoords = 'axes fraction',
+                   ha = 'center', va = 'center', fontsize = 8, color = 'k',
+                   fontstyle = 'italic')
+        
   def load_tpf(self):
     '''
     Loads the target pixel file.
@@ -800,6 +799,10 @@ class Detrender(Basecamp):
       
       # Update the last breakpoint to the correct value
       self.breakpoints[-1] = len(self.time) - 1
+      
+      # Get PLD normalization
+      self.get_norm()
+      
       self.loaded = True
   
   def load_model(self, name = None):
@@ -855,8 +858,7 @@ class Detrender(Basecamp):
     d.pop('_f', None)
     d.pop('_mK', None)
     d.pop('K', None)
-    d.pop('dvs1', None)
-    d.pop('dvs2', None)
+    d.pop('dvs', None)
     d.pop('clobber', None)
     d.pop('clobber_tpf', None)
     d.pop('_mission', None)
@@ -865,10 +867,8 @@ class Detrender(Basecamp):
     
     # Save the DVS
     pdf = PdfPages(os.path.join(self.dir, self.name + '.pdf'))
-    pdf.savefig(self.dvs1.fig)
-    pl.close(self.dvs1.fig)
-    pdf.savefig(self.dvs2.fig)
-    pl.close(self.dvs2.fig)
+    pdf.savefig(self.dvs.fig)
+    pl.close(self.dvs.fig)
     d = pdf.infodict()
     d['Title'] = 'EVEREST: %s de-trending of %s %d' % (self.name, self._mission.IDSTRING, self.ID)
     d['Author'] = 'Rodrigo Luger'
@@ -926,6 +926,21 @@ class Detrender(Basecamp):
       tau = 30.0
       self.kernel_params = [white, amp, tau]
   
+  def mask_planets(self):
+    '''
+    
+    '''
+    
+    
+    for i, planet in enumerate(self.planets):
+      log.info('Masking planet #%d...' % (i + 1))
+      t0, period, dur = planet
+      mask = []
+      t0 += np.ceil((self.time[0] - dur - t0) / period) * period
+      for t in np.arange(t0, self.time[-1] + dur, period):
+        mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
+      self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
+  
   def run(self):
     '''
     Runs the de-trending step.
@@ -937,19 +952,19 @@ class Detrender(Basecamp):
       # Load raw data
       log.info("Loading target data...")
       self.load_tpf()
-      self.plot_aperture([self.dvs1.top_right() for i in range(4)])  
-      self.plot_aperture([self.dvs2.top_right() for i in range(4)]) 
+      self.mask_planets()
+      self.plot_aperture([self.dvs.top_right() for i in range(4)])
       self.init_kernel()
       M = self.apply_mask(np.arange(len(self.time)))
       self.cdppr_arr = self.get_cdpp_arr()
-      self.cdpp6_arr = np.array(self.cdppr_arr)
+      self.cdpp_arr = np.array(self.cdppr_arr)
       self.cdppv_arr = np.array(self.cdppr_arr)
       self.cdppr = self.get_cdpp()
-      self.cdpp6 = self.cdppr
+      self.cdpp = self.cdppr
       self.cdppv = self.cdppr
 
-      log.info("%s (Raw): CDPP6 = %s" % (self.name, self.cdpps))
-      self.plot_lc(self.dvs1.left(), info_right = 'Raw', color = 'k')
+      log.info("%s (Raw): CDPP = %s" % (self.name, self.cdpps))
+      self.plot_lc(self.dvs.left(), info_right = 'Raw', color = 'k')
       
       # Loop
       for n in range(self.pld_order):
@@ -957,20 +972,18 @@ class Detrender(Basecamp):
         self.get_outliers()
         if n > 0 and self.optimize_gp:
           self.update_gp()
-        self.cross_validate(self.dvs1.right(), info = 'CV%d' % n)
-        self.cdpp6_arr = self.get_cdpp_arr()
-        self.cdppv_arr *= self.cdpp6_arr
-        self.cdpp6 = self.get_cdpp()
+        self.cross_validate(self.dvs.right(), info = 'CV%d' % n)
+        self.cdpp_arr = self.get_cdpp_arr()
+        self.cdppv_arr *= self.cdpp_arr
+        self.cdpp = self.get_cdpp()
         self.cdppv = np.nanmean(self.cdppv_arr)
         log.info("%s (%d/%d): CDPP = %s" % (self.name, n + 1, self.pld_order, self.cdpps))
-        self.plot_lc(self.dvs1.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
+        self.plot_lc(self.dvs.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
         
       # Save
       self.finalize()
-      self.plot_final(self.dvs1.top_left())
-      self.plot_page2()
-      self.plot_info(self.dvs1)
-      self.plot_info(self.dvs2)
+      self.plot_final(self.dvs.top_left())
+      self.plot_info(self.dvs)
       self.save_model()
       
       if self.make_fits:
@@ -980,53 +993,136 @@ class Detrender(Basecamp):
     
       self.exception_handler(self.debug)
 
-class rPLD(pld.rPLD, Detrender):
+class sPLD(Detrender):
   '''
-  A wrapper around the standard PLD model.
+  The standard PLD model. Nothing fancy.
   
   '''
         
-  def __init__(self, *args, **kwargs):
-    '''
-    
-    '''
-    
-    # Initialize
-    super(rPLD, self).__init__(*args, **kwargs)
-    
-    # Check for saved model
-    if self.load_model():
-      return
-    
-    # Setup
-    self._setup(**kwargs)
-    
-    # Run
-    self.run()
+  pass
 
-class nPLD(pld.nPLD, Detrender):
+class nPLD(Detrender):
   '''
-  A wrapper around the "neighboring stars" *PLD* model. This model uses the 
+  The "neighboring stars" *PLD* model. This model uses the 
   *PLD* vectors of neighboring stars to help in the de-trending and can lead 
   to increased performance over the regular :py:class:`rPLD` model, 
   particularly for dimmer stars.
     
   '''
         
-  def __init__(self, *args, **kwargs):
+  def setup(self, **kwargs):
+    '''
+    This is called during production de-trending, prior to
+    calling the :py:pbj:`Detrender.run()` method.
+    
+    :param tuple cdpp_range:  If :py:obj:`parent_model` is set, neighbors are selected only if \
+                              their de-trended CDPPs fall within this range. Default `None`
+    :param tuple mag_range:   Only select neighbors whose magnitudes are within this range. \
+                              Default (11., 13.) 
+    :param int neighbors:     The number of neighboring stars to use in the de-trending. The \
+                              higher this number, the more signals there are and hence the more \
+                              de-trending information there is. However, the neighboring star \
+                              signals are regularized together with the target's signals, so adding \
+                              too many neighbors will inevitably reduce the contribution of the \
+                              target's own signals, which may reduce performance. Default `10`
+    :param str parent_model:  By default, :py:class:`nPLD` is run in stand-alone mode. The neighbor \
+                              signals are computed directly from their TPFs, so there is no need to \
+                              have run *PLD* on them beforehand. However, if :py:obj:`parent_model` \
+                              is set, :py:class:`nPLD` will use information from the \
+                              :py:obj:`parent_model` model of each neighboring star when de-trending. \
+                              This is particularly useful for identifying outliers in the neighbor \
+                              signals and preventing them from polluting the current target. Setting \
+                              :py:obj:`parent_model` to :py:class:`rPLD`, for instance, will use the \
+                              outlier information in the :py:class:`rPLD` model of the neighbors \
+                              (this must have been run ahead of time). Note, however, that tests with \
+                              *K2* data show that including outliers in the neighbor signals actually \
+                              *improves* the performance, since many of these outliers are associated \
+                              with events such as thruster firings and are present in all light curves, \
+                              and therefore *help* in the de-trending. Default `None`
+    
     '''
     
-    '''
+    # Get neighbors
+    self.parent_model = kwargs.get('parent_model', None)
+    num_neighbors = kwargs.get('neighbors', 10)
+    self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                   cadence = self.cadence,
+                                   model = self.parent_model,
+                                   neighbors = num_neighbors, 
+                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                   cdpp_range = kwargs.get('cdpp_range', None),
+                                   aperture_name = self.aperture_name)
+    if len(self.neighbors):
+      if len(self.neighbors) < num_neighbors:
+        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
+    elif num_neighbors > 0:
+      log.warn("No neighbors found! Running standard PLD...")
     
-    # Initialize
-    super(nPLD, self).__init__(*args, **kwargs)
-    
-    # Check for saved model
-    if self.load_model():
-      return
-    
-    # Setup
-    self._setup(**kwargs)
+    for neighbor in self.neighbors:
+      log.info("Loading data for neighboring target %d..." % neighbor)
+      if self.parent_model is not None and self.cadence == 'lc':
+        # We load the `parent` model. The advantage here is that outliers have
+        # properly been identified and masked. I haven't tested this on short
+        # cadence data, so I'm going to just forbid it...
+        data = eval(self.parent_model)(neighbor, mission = self.mission, is_parent = True)
+      else:
+        # We load the data straight from the TPF. Much quicker, since no model must
+        # be run in advance. Downside is we don't know where the outliers are. But based
+        # on tests with K2 data, the de-trending is actually *better* if the outliers are
+        # included! These are mostly thruster fire events and other artifacts common to
+        # all the stars, so it makes sense that we might want to keep them in the design
+        # matrix.
+        data = self._mission.GetData(neighbor, season = self.season, clobber = self.clobber_tpf, 
+                             cadence = self.cadence,
+                             aperture_name = self.aperture_name, 
+                             saturated_aperture_name = self.saturated_aperture_name, 
+                             max_pixels = self.max_pixels,
+                             saturation_tolerance = self.saturation_tolerance)
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+      
+      # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
+      X1 = data.fpix / data.fraw.reshape(-1, 1)
+      X1 = Interpolate(data.time, data.mask, X1)
+      if self.X1N is None:
+        self.X1N = np.array(X1)
+      else:
+        self.X1N = np.hstack([self.X1N, X1])
+      del X1
+      del data
 
-    # Run
-    self.run()
+class rPLD(Detrender):
+  '''
+  The recursive PLD model.
+  
+  '''
+  
+  def setup(self, **kwargs):
+    '''
+    
+    '''
+    
+    # Load the parent model
+    self.parent_model = kwargs.get('parent_model', 'nPLD')
+    if not self.load_model(self.parent_model):
+      raise Exception('Unable to load parent model.')
+    
+    # Save static copies of the de-trended flux, the outlier mask and the lambda array
+    self._norm = np.array(self.flux)
+    self.recmask = np.array(self.mask)
+    self.reclam = np.array(self.lam)
+    
+    # Now reset the model params
+    self.optimize_gp = False
+    nseg = len(self.breakpoints)
+    self.lam_idx = -1
+    self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
+    self.cdpp_arr = np.array([np.nan for b in range(nseg)])
+    self.cdppr_arr = np.array([np.nan for b in range(nseg)])
+    self.cdppv_arr = np.array([np.nan for b in range(nseg)])
+    self.cdpp = np.nan
+    self.cdppr = np.nan
+    self.cdppv = np.nan
+    self.cdppg = np.nan
+    self.model = np.zeros_like(self.time)
+    self.loaded = True

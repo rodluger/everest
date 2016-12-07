@@ -11,7 +11,7 @@ from ... import __version__ as EVEREST_VERSION
 from .aux import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
-from ...math import SavGol, Interpolate
+from ...math import SavGol, Interpolate, Scatter
 try:
   import pyfits
 except ImportError:
@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
-           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl']
+           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP']
 
 def Setup():
   '''
@@ -53,6 +53,8 @@ def Season(EPIC, **kwargs):
 
 def Breakpoints(EPIC, cadence = 'lc', **kwargs):  
   '''
+  ..note :: The number corresponding to a given breakpoint is the number \
+            of cadences *since the beginning of the campaign*.
   
   '''
   
@@ -62,15 +64,15 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   # Select LC or SC
   if cadence == 'lc':
     breakpoints = {
-                   0: [],       # OK; campaign is really short
-                   1: [2210],   #
-                   2: [2042],   # OK
-                   3: [2140],   #
-                   4: [1750],   #
-                   5: [1774],   #
-                   6: [2143],   # OK
-                   7: [2065],   # There's no stable point in this campaign
-                   8: [1950],   # This campaign needs to be redone (was 2084)
+                   0: [665],          # OK
+                   1: [2210],         # OK
+                   2: [2042],         # OK
+                   3: [2140],         # OK
+                   4: [520, 2153],    # OK
+                   5: [1774],         # OK
+                   6: [2143],         # OK
+                   7: [1192, 2319],   # OK
+                   8: [1950],         # OK
                    9: [],
                   10: [],
                   11: [],
@@ -83,15 +85,27 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   }
   elif cadence == 'sc':
     breakpoints = {
-                  0: np.array(np.linspace(0, 112590, 21)[1:-1], dtype = int),
-                  1: np.array(np.linspace(0, 120660, 21)[1:-1], dtype = int),
-                  2: np.array(np.linspace(0, 115680, 21)[1:-1], dtype = int),
-                  3: np.array(np.linspace(0, 101580, 21)[1:-1], dtype = int),
-                  4: np.array(np.linspace(0, 101580, 21)[1:-1], dtype = int),
-                  5: np.array(np.linspace(0, 109890, 21)[1:-1], dtype = int),
-                  6: np.array(np.linspace(0, 115890, 21)[1:-1], dtype = int),
-                  7: np.array(np.linspace(0, 121290, 21)[1:-1], dtype = int),
-                  8: np.array(np.linspace(0, 115590, 21)[1:-1], dtype = int),
+                  0: np.array(np.linspace(0, 112590, 31)[1:-1], dtype = int),     # OK
+                  1: np.array([ 8044,   12066,  16088,  20135,  24132,  28154,    # OK
+                                32176,  36198,  40220,  44242,  48264,  52286,  
+                                56308,  60330,  64352,  68374,  72396,  76418,  
+                                80440,  84462,  88509,  92506,  96528,  100550,
+                                104572, 108594, 112616, 116638]),
+                  2: np.array(np.linspace(0, 115680, 31)[1:-1], dtype = int),
+                  3: np.array([  3316,  6772,   10158,  13694,  16930,  20316,    # OK
+                                23702,  27088,  30474,  33860,  37246,  40632,  
+                                44018,  47404,  50790,  54176,  57562,  60948,  
+                                64334,  67720,  71106,  74492,  77878,  81264,
+                                84650,  88036,  91422,  94808,  98194]),
+                  4: np.array(np.linspace(0, 101580, 31)[1:-1], dtype = int),
+                  5: np.array([  3663,   7326,  10989,  14652,  18315,  21978,    # OK
+                                25641,  29304,  32967,  36630,  40293,  43956,  
+                                47619,  51282,  54945,  58608,  62271,  65934,  
+                                69597,  73260,  76923,  80646,  84249,  87912,
+                                91575,  95238,  98901, 102564, 106227]),
+                  6: np.array(np.linspace(0, 115890, 31)[1:-1], dtype = int),
+                  7: np.array(np.linspace(0, 121290, 31)[1:-1], dtype = int),
+                  8: np.array(np.linspace(0, 115590, 31)[1:-1], dtype = int),
                   9: [],
                  10: [],
                  11: [],
@@ -111,6 +125,24 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   else:
     return None
 
+def CDPP(flux, mask = [], cadence = 'lc'):
+  '''
+  Compute the proxy 6-hr CDPP metric.
+  
+  '''
+  
+  if cadence == 'lc':
+    rmswin = 13
+    svgwin = 49
+  else:
+    rmswin = 13 * 30
+    svgwin = 50 * 30 - 1
+  flux_savgol = SavGol(np.delete(flux, mask), win = svgwin)
+  if len(flux_savgol):
+    return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
+  else:
+    return np.nan
+    
 def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
             aperture_name = 'k2sff_15', saturated_aperture_name = 'k2sff_19',
             max_pixels = 75, download_only = False, saturation_tolerance = -0.1, 
@@ -160,7 +192,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
             for n in [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]:
               if n[0] >= 0 and n[0] < tpf_big_aperture.shape[0]:
                 if n[1] >= 0 and n[1] < tpf_big_aperture.shape[1]:
-                  if tpf_big_aperture[n[0]][n[1]] == 1:
+                  if tpf_aperture[n[0]][n[1]] == 1:
                     tpf_big_aperture[i][j] = 1
     
     # Is there short cadence data?
@@ -312,7 +344,10 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     if saturated_aperture_name is None:
       saturated_aperture_name = 'k2sff_19'
     saturated_aperture = apertures[saturated_aperture_name]
-    assert saturated_aperture is not None, "Invalid aperture selected."
+    if saturated_aperture is None:
+      log.error("Invalid aperture selected. Defaulting to `tpf_big`.")
+      saturated_aperture_name = 'tpf_big'
+      saturated_aperture = apertures[saturated_aperture_name]
     
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
@@ -352,7 +387,10 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     if aperture_name is None:
       aperture_name = 'k2sff_15'
     aperture = apertures[aperture_name]
-    assert aperture is not None, "Invalid aperture selected."
+    if aperture is None:
+      log.error("Invalid aperture selected. Defaulting to `tpf_big`.")
+      aperture_name = 'tpf_big'
+      aperture = apertures[aperture_name]
 
   # Now we check if the aperture is too big. Can lead to memory errors...
   # Treat saturated and unsaturated stars differently.
@@ -385,7 +423,24 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     ncol = 0
     fpixnew = []
     ferrnew = []
-
+    
+    # HACK: K2SFF sometimes clips the heads/tails of saturated columns
+    # That's really bad, since that's where all the information is. Let's
+    # artificially extend the aperture by two pixels at the top and bottom
+    # of each saturated column. This *could* increase contamination, but
+    # it's unlikely since the saturated target is by definition really bright
+    for j in range(aperture.shape[1]):
+      if np.any(f97[:,j] > satflx):
+        for i in range(aperture.shape[0]):
+          if (i+2 < aperture.shape[0]) and aperture[i+2,j] and f97[i,j] > 0:
+              aperture[i,j] = 1
+          elif (i+1 < aperture.shape[0]) and aperture[i+1,j] and f97[i,j] > 0:
+            aperture[i,j] = 1
+          elif (i-1 >= 0) and aperture[i-1,j] and f97[i,j] > 0:
+            aperture[i,j] = 1
+          elif (i-2 >= 0) and aperture[i-2,j] and f97[i,j] > 0:
+            aperture[i,j] = 1
+    
     for j in range(aperture.shape[1]):
       if np.any(f97[:,j] > satflx):
         marked = False
@@ -518,6 +573,10 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   
   '''
   
+  # Zero neighbors?
+  if neighbors == 0:
+    return []
+  
   # Get the IDs
   campaign = Season(EPIC)
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T
@@ -548,8 +607,17 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   targets = []
   
   # First look for nearby targets, then relax the constraint
-  for nearby in [True, False]:
-  
+  # If still no targets, widen magnitude range
+  for n in range(3):
+    
+    if n == 0:
+      nearby = True
+    elif n == 1:
+      nearby = False
+    elif n == 2:
+      mag_lo -= 1
+      mag_hi += 1
+    
     # Loop over all stars
     for star, kp, channel, sc in zip(epics, kepmags, channels, short_cadence):
     
@@ -608,7 +676,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
         
         # Reject if CDPP out of range
         if cdpp_range is not None:
-          cdpp = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp6']
+          cdpp = np.load(os.path.join(TargetDirectory(star, campaign), model + '.npz'))['cdpp']
           if (cdpp > cdpp_hi) or (cdpp < cdpp_lo):
             continue
     
@@ -635,7 +703,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
   
   # Compute the statistics
   sub = np.array([s[0] for s in GetK2Campaign(campaign)], dtype = int)
-  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (model, int(campaign)))
+  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model, int(campaign)))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
       print("EPIC               Kp           Raw CDPP     Everest CDPP      Validation        Outliers       Saturated", file = f)
@@ -651,7 +719,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
                          ('%09d' % stars[i])[4:], model + '.npz')
         try:
           data = np.load(nf)
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp6'][()], data['cdppv'][()], len(data['outmask']), int(data['saturated'])), file = f)
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], data['cdppv'][()], len(data['outmask']), int(data['saturated'])), file = f)
         except:
           print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, 0, 0), file = f)
       print("")
@@ -686,21 +754,21 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     # Get the comparison model stats
     if compare_to.lower() == 'everest1':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                   'tables', 'c%02d_everest1.tsv' % int(campaign)), unpack = True)
+                                   'tables', 'c%02d_everest1.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)   
     elif compare_to.lower() == 'k2sc':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                   'tables', 'c%02d_k2sc.tsv' % int(campaign)), unpack = True)
+                                   'tables', 'c%02d_k2sc.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
     elif compare_to.lower() == 'k2sff':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                   'tables', 'c%02d_k2sff.tsv' % int(campaign)), unpack = True)
+                                   'tables', 'c%02d_k2sff.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
     elif compare_to.lower() == 'kepler':
       kic, kepler_kp, kepler_cdpp6 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-                                         'tables', 'kepler.tsv'), unpack = True)
+                                         'tables', 'kepler.cdpp'), unpack = True)
     else:
-      compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.tsv' % (compare_to, int(campaign)))
+      compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (compare_to, int(campaign)))
       epic_1, _, _, cdpp6_1, _, _, _ = np.loadtxt(compfile, unpack = True, skiprows = 2)
       epic_1 = np.array(epic_1, dtype = int)
       inds = np.array([e in sub for e in epic_1])
@@ -888,8 +956,8 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
     
     # Define some useful stuff for plotting
     depths = [1e-2, 1e-3, 1e-4]
-    ranges = [(0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0.5, 1.5), (0., 2.), (0., 2.)]
-    nbins = [30, 30, 30]
+    ranges = [(0.5, 1.5), (0.5, 1.5), (0., 2.)]
+    nbins = [30, 30, 20]
     ymax = [0.6, 0.25, 0.15]
     xticks = [[0.5, 0.75, 1., 1.25, 1.5], [0.5, 0.75, 1., 1.25, 1.5], [0., 0.5, 1., 1.5, 2.0]]
     
@@ -903,11 +971,11 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
       
         # Control
         ax[i,j].hist(control, bins = nbins[i], range = ranges[i], color = 'r', 
-                  histtype = 'step', weights = np.ones_like(control) / len(control))
+                     histtype = 'step', weights = np.ones_like(control) / len(control))
   
         # Recovered
         ax[i,j].hist(recovered, bins = nbins[i], range = ranges[i], color = 'b', 
-                  histtype = 'step', weights = np.ones_like(recovered) / len(recovered))
+                     histtype = 'step', weights = np.ones_like(recovered) / len(recovered))
       
         # Indicate center
         ax[i,j].axvline(1., color = 'k', ls = '--')
