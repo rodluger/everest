@@ -35,6 +35,41 @@ def PadWithZeros(vector, pad_width, iaxis, kwargs):
     vector[-pad_width[1]:] = 0
     return vector
 
+class Fit(object):
+    '''
+
+    '''
+    
+    def __init__(self, parent, params):
+        '''
+
+        '''
+
+        # Convert the list ``params`` into individual variables
+        i = (len(params) - 1) // 5
+        self.f = params[:i]
+        self.x = params[i:2 * i]
+        self.y = params[2 * i:3 * i]
+        self.wx = params[3 * i:4 * i]
+        self.wy = params[4 * i:5 * i]
+        self.a = params[-1]
+        self.fit = parent.PRF2DET(self.f, self.x, self.y, self.wx, self.wy, self.a)
+        self._parent = parent
+        
+    @property
+    def fit0(self):
+        '''
+        Returns the PRF fit for *only* the desired target.
+        
+        '''
+        
+        i = np.argmax(self._parent.IDs == self._parent.ID)
+        if i == 0 and self._parent.IDs[0] != self._parent.ID:
+          # This shouldn't happen. If it does, the target
+          # is somehow missing from the `nearby` list.
+          raise ValueError("Target not found in list!")
+        return self._parent.PRF2DET([self.f[i]], [self.x[i]], [self.y[i]], [self.wx[i]], [self.wy[i]], self.a)
+        
 class CrowdingTarget(object):
     '''
 
@@ -147,7 +182,6 @@ class CrowdingTarget(object):
             xpos = f[1].data['pos_corr1']
             ypos = f[1].data['pos_corr2']
 
-        KEPPRF_DIR = '/Users/nks1994/Documents/Research/KeplerPRF'
         # Get PRF file name
         if int(module) < 10:
             prefix = 'kplr0'
@@ -238,28 +272,8 @@ class CrowdingTarget(object):
             self.bic.append(chisq + len(answer) * np.log(len(self.fpix)))
 
             # Save the guess fit and the answer fit
-            self.guesses.append(self.Fit(guess))
-            self.answers.append(self.Fit(answer))
-
-    def Fit(self, params):
-        '''
-        A little class "factory". Returns a simple :py:class:`Fit` object that
-        contains information about the PRF fit.
-
-        '''
-
-        # Convert the list ``params`` into individual variables
-        i = (len(params) - 1) // 5
-        f = params[:i]
-        x = params[i:2 * i]
-        y = params[2 * i:3 * i]
-        wx = params[3 * i:4 * i]
-        wy = params[4 * i:5 * i]
-        a = params[-1]
-        fit = self.PRF2DET(f, x, y, wx, wy, a)
-
-        # A fancy way of instantiating a class in one line
-        return type('Fit', (object,), {'f': f, 'x': x, 'y': y, 'wx': wx, 'wy': wy, 'a': a, 'fit': fit})
+            self.guesses.append(Fit(self, guess))
+            self.answers.append(Fit(self, answer))
 
     def PRF(self, params):
         '''
@@ -268,7 +282,7 @@ class CrowdingTarget(object):
         '''
 
         # calculate PRF model binned to the detector pixel size
-        fit = self.Fit(params)
+        fit = Fit(self, params)
         x = fit.x
         y = fit.y
         f = fit.f
@@ -276,7 +290,7 @@ class CrowdingTarget(object):
         wy = fit.wy
         a = fit.a
         PRFfit = fit.fit
-
+        
         # calculate the sum squared difference between data and model
         PRFres = np.nansum(((self.fpix[self.index] - PRFfit) / self.ferr) ** 2)
 
@@ -326,7 +340,7 @@ class CrowdingTarget(object):
                     yy = y - INTy + FRCy
                     dx = xx * cosa - yy * sina
                     dy = xx * sina + yy * cosa
-                    PRFfit[j,k] += PRFfit[j,k] + self.splineInterpolation(dy * wy[i], dx * wx[i]) * flux[i]
+                    PRFfit[j,k] = PRFfit[j,k] + self.splineInterpolation(dy * wy[i], dx * wx[i]) * flux[i]
 
         return PRFfit
 
@@ -343,6 +357,7 @@ class CrowdingTarget(object):
         self.nearby = self.nearby[np.argsort([source.mag for source in self.nearby])]
         self.nearby = self.nearby[:self.nsrc]
         self.nsrc = len(self.nearby)
+        self.IDs = [source.ID for source in self.nearby]
 
     def findCrowding(self):
         '''
@@ -356,7 +371,7 @@ class CrowdingTarget(object):
             if i == 0:
                 continue
             else:
-                self.c_postage.append(np.nansum(self.answers[i].fit) / np.nansum(self.fpix[0]))
+                self.c_postage.append(np.nansum(self.answers[i].fit0) / np.nansum(self.fpix[0]))
 
         contour = np.zeros((self.ny, self.nx))
         contour[np.where(self.aperture)] = 1
@@ -370,15 +385,14 @@ class CrowdingTarget(object):
         for i in range(self.ny):
             for j in range(self.nx):
 
-                self.c_pixel[i][j] = self.fpix[0][i][j]
+                self.c_pixel[i][j] = self.answers[-1].fit0[i][j] / self.fpix[self.index][i][j]
 
                 if contour[i][j] == 1:
-                    f1.append(self.fpix[0][i][j])
-                    a1.append(self.answers[1].fit[i][j])
+                    f1.append(self.fpix[self.index][i][j])
+                    a1.append(self.answers[-1].fit0[i][j])
 
         # crowding parameter for aperture
         self.c_aperture = np.nansum(a1) / np.nansum(f1)
-
 
     def plot(self):
         '''
@@ -456,5 +470,8 @@ c.findSolution(3000)
 
 # Find crowding parameter for postage stamp, aperture, and pixel
 c.findCrowding()
+print(c.c_postage)
+print(c.c_aperture)
+print(c.c_pixel)
 
 c.plot()
