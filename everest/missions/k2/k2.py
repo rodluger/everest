@@ -447,6 +447,8 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
             ext += 1
     if ext: log.info("Extended saturated columns by %d pixel(s)." % ext)        
     
+    import pdb; pdb.set_trace()
+    
     for j in range(aperture.shape[1]):
       if np.any(f97[:,j] > satflx):
         marked = False
