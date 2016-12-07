@@ -744,6 +744,9 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     inds = np.array([e in sub for e in epic])
     epic = epic[inds]
     kp = kp[inds]
+    # HACK: Campaign 0 magnitudes are reported only to the nearest tenth,
+    # so let's add a little noise to spread them out for nicer plotting
+    kp = kp + 0.1 * (0.5 - np.random.random(len(kp)))
     cdpp6r = cdpp6r[inds]
     cdpp6 = cdpp6[inds]
     cdpp6v = cdpp6v[inds]
@@ -757,7 +760,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     # Control transparency
     alpha_kepler = 0.03
     alpha_unsat = min(0.1, 2000. / (1 + len(unsat[0])))
-    alpha_sat = min(1., 60. / (1 + len(sat[0])))
+    alpha_sat = min(1., 180. / (1 + len(sat[0])))
 
     # Get the comparison model stats
     if compare_to.lower() == 'everest1':

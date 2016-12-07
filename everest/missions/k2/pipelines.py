@@ -245,7 +245,7 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
         nout = len(inds)
         ntot = len(flux)
 
-      except AssertionError: #(HTTPError, TypeError, ValueError):
+      except (HTTPError, TypeError, ValueError):
         print("{:>09d} {:>5d} {:>5d}".format(EPIC, -1, -1), file = outfile)
         continue
 
