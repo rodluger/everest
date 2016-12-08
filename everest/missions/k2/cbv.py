@@ -12,7 +12,10 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from ...config import EVEREST_DAT
 from .aux import GetK2Campaign
 import numpy as np
-from wpca import WPCA
+try:
+  from wpca import WPCA
+except:
+  WPCA = None
 from scipy.signal import savgol_filter, medfilt
 import george
 import matplotlib.pyplot as pl
@@ -216,101 +219,116 @@ def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1,
   
   return som
 
-def GetPrincipalComponents(fluxes, nflx, som, npc = 3, **kwargs):
+def GetCBVs(fluxes, nflx, som, nreg = 3, pca = False, plot = False, **kwargs):
   '''
   
   '''
   
-  # Find the best matching pixel for each light curve.
-  # Store the indices in the `pixel_lcs` map.
+  # Find the best matching neuron for each light curve.
+  # Store the indices in the `lcinds` map.
   ki, kj, sz = som.shape
   N = len(fluxes)
-  pixel_lcs = [[[] for j in range(kj)] for i in range(ki)]
+  lcinds = [[[] for j in range(kj)] for i in range(ki)]
   evratio = [[[] for j in range(kj)] for i in range(ki)]
   for n in range(N):
     bi, bj = np.unravel_index(np.argmin([np.sum((nflx[n] - som[i][j]) ** 2) 
                                          for i in range(ki) for j in range(kj)]), 
                                          (ki, kj))
-    pixel_lcs[bi][bj].append(n)
+    lcinds[bi][bj].append(n)
   
-  # Get the top `npc` principal components in each pixel
-  pc = [[[] for j in range(kj)] for i in range(ki)]
-  for i in range(ki):
-    for j in range(kj):
-      n = pixel_lcs[i][j]
-      pca = WPCA(n_components = npc)
-      pc[i][j] = pca.fit_transform((fluxes[n] / np.nanmedian(fluxes[n], 
-                                    axis = 1).reshape(-1, 1)).T, 
-                                    weights = np.array([np.nanmedian(np.sqrt(f)) * 
-                                    np.ones_like(f) for f in fluxes[n]]).T).T
-      evratio[i][j] = pca.explained_variance_ratio_
+  # Get our CBVs
+  if pca:
   
-  # We're going to guess that the SOM pixel corresponding
-  # to the instrumental component is the one with the largest
-  # value of `n * evratio`, where `n` is the number of light curves
-  # in the pixel and `evratio` is the explained variance ratio
-  # of the first principal component. This isn't rigorous, but
-  # seems to work in practice. We then create a simple design
-  # matrix out of the SOM array in that pixel for fitting.
-  i, j = np.unravel_index(np.argmax([len(pixel_lcs[i][j]) * evratio[i][j][0] 
-                                     for i in range(ki) for j in range(kj)]), 
-                                     (ki, kj))
-  X = np.hstack([som[i][j].reshape(sz, 1), np.ones((sz, 1))])
+    # Get the top `nreg` principal components in each pixel
+    pc = [[[] for j in range(kj)] for i in range(ki)]
+    for i in range(ki):
+      for j in range(kj):
+        n = lcinds[i][j]
+        pca = WPCA(n_components = nreg)
+        pc[i][j] = pca.fit_transform((fluxes[n] / np.nanmedian(fluxes[n], 
+                                      axis = 1).reshape(-1, 1)).T, 
+                                      weights = np.array([np.nanmedian(np.sqrt(f)) * 
+                                      np.ones_like(f) for f in fluxes[n]]).T).T
+        evratio[i][j] = pca.explained_variance_ratio_
   
-  return np.array(pixel_lcs), np.array(pc), np.array(evratio), X
+    # We're going to guess that the SOM pixel corresponding
+    # to the instrumental component is the one with the largest
+    # value of `n * evratio`, where `n` is the number of light curves
+    # in the pixel and `evratio` is the explained variance ratio
+    # of the first principal component. This isn't rigorous, but
+    # seems to work in practice. We then create a simple design
+    # matrix out of the SOM array in that pixel for fitting.
+    ij = np.argmax([len(lcinds[i][j]) * evratio[i][j][0] 
+                    for i in range(ki) for j in range(kj)])
+    i, j = np.unravel_index(ij, (ki, kj))
+    X = np.hstack([pc[i][j].T, np.ones(sz).reshape(-1, 1)])
+    pixels = [(i,j),]
+    
+  else:
+  
+    # We're going to use the SOM arrays themselves as CBVs, ordered by
+    # the number of light curves in each
+    pc = None
+    lflat = [lcinds[i][j] for i in range(ki) for j in range(kj)]
+    sflat = np.array([som[i][j] for i in range(ki) for j in range(kj)])
+    pixels = np.argsort([-len(n) for n in lflat])[:nreg]
+    X = np.hstack([sflat[pixels].T, np.ones((sz, 1))])
+    pixels = [np.unravel_index(p, (ki, kj)) for p in pixels]
+    
+  if plot:
+    PlotSOM(nflx, som, lcinds, pc, pixels, **kwargs)
+  
+  return X
 
-def PlotSOM(nflx, som, pixel_lcs, pc, evratio, **kwargs):
+def PlotSOM(nflx, som, lcinds, pc, pixels, **kwargs):
   '''
   
   '''
   
   # Setup
-  ki, kj = pixel_lcs.shape
+  ki, kj, _ = som.shape
   N, sz = nflx.shape
+  fig, ax = pl.subplots(1, figsize = (ki * 5, kj * 5))
   
-  fig0, ax0 = pl.subplots(1, figsize = (ki * 5, kj * 5))
-  fig1, ax1 = pl.subplots(1, figsize = (ki * 5, kj * 5))
-  ax = [ax0, ax1]
-  
-  # Plot the light curves, SOMs and PCs in each pixel
+  # Plot the light curves, and SOMs / PCs in each pixel
   for i in range(ki):
     for j in range(kj):
       
       # The light curves
-      for n in pixel_lcs[i][j]:
-        ax[0].plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
-                  j + 0.5 - 0.4 + 0.8 * nflx[n], 
-                  'k-', alpha = min(1., 100. / N))
+      for n in lcinds[i][j]:
+        ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
+                j + 0.5 - 0.4 + 0.8 * nflx[n], 
+                'k-', alpha = min(1., 100. / N))
       
-      # The Kohonen pixel
-      ax[0].plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
-                 j + 0.5 - 0.4 + 0.8 * som[i][j], 'r-')
+      if pc is not None:
       
-      # The principal components
-      for p, c in zip(pc[i][j], ['r', 'b', 'g', 'y', 'purple']):
-        ax[1].plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
+        # The principal components
+        for p, c in zip(pc[i][j], ['r', 'b', 'g', 'y', 'purple']):
+          ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
                   j + 0.5 - 0.4 + 0.8 * (p - np.min(p)) / (np.max(p) - np.min(p)), 
                   ls = '-', color = c)
+                  
+      else:
       
-      ax[0].annotate('%d' % (len(pixel_lcs[i][j])), 
-                    xy = (i + 0.5, j + 0.95), 
-                    xycoords = 'data', va = 'center', ha = 'center', 
-                    zorder = 99, fontsize = 18)
+        # The Kohonen pixel
+        ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
+                j + 0.5 - 0.4 + 0.8 * som[i][j], 'r-')
       
-      ax[1].annotate(', '.join([r'%.2f' % e for e in evratio[i][j]]), 
-                    xy = (i + 0.5, j + 0.95), 
-                    xycoords = 'data', va = 'center', ha = 'center', 
-                    zorder = 99, fontsize = 18)
+      # Indicate the number of light curves in this pixel
+      ax.annotate('%d' % (len(lcinds[i][j])), 
+                  xy = (i + 0.5, j + 0.95), 
+                  xycoords = 'data', va = 'center', ha = 'center', 
+                  zorder = 99, fontsize = 18, color = 'b' if (i,j) in pixels else 'k')
       
-  for axis in ax:
-    axis.get_xaxis().set_major_locator(MaxNLocator(integer=True))
-    axis.get_yaxis().set_major_locator(MaxNLocator(integer=True))
-    axis.grid(True, which = 'major', axis = 'both', linestyle = '-')
-    axis.set_xlim(0, ki)
-    axis.set_ylim(0, kj)
+      
+  ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
+  ax.get_yaxis().set_major_locator(MaxNLocator(integer=True))
+  ax.grid(True, which = 'major', axis = 'both', linestyle = '-')
+  ax.set_xlim(0, ki)
+  ax.set_ylim(0, kj)
   pl.show()
 
-def Run(campaign, clobber = False, smooth = True, **kwargs):
+def Run(campaign, clobber = False, smooth_in = True, smooth_out = True, **kwargs):
   '''
   
   '''
@@ -324,6 +342,9 @@ def Run(campaign, clobber = False, smooth = True, **kwargs):
     time = lcs['time']
     breakpoints = lcs['breakpoints']
     fluxes = lcs['fluxes']
+  
+  # DEBUG
+  quit()
     
   X = [None for b in range(len(breakpoints))]
   for b in range(len(breakpoints)):
@@ -334,7 +355,7 @@ def Run(campaign, clobber = False, smooth = True, **kwargs):
     f = fluxes[:, inds]
     
     # Smooth the fluxes to compute the SOM?
-    if smooth:
+    if smooth_in:
       for n in range(len(f)):
         f[n] = savgol_filter(f[n], 99, 2)
     
@@ -346,12 +367,14 @@ def Run(campaign, clobber = False, smooth = True, **kwargs):
     # Compute the SOM
     som = SOM(t, f, nflx, **kwargs)
     
-    # Now get the principal components
-    pixel_lcs, pc, evratio, X[b] = GetPrincipalComponents(f, nflx, som, **kwargs)
-  
-    # Plot
-    #PlotSOM(nflx, som, pixel_lcs, pc, evratio, **kwargs)
-
+    # Now get the CBVs
+    X[b] = GetCBVs(f, nflx, som, **kwargs)
+    
+    # Smooth the regressors?
+    if smooth_out:
+      for n in range(X[b].shape[1] - 1):
+        X[b][:,n] = savgol_filter(X[b][:,n], 99, 2)
+    
   for n in range(len(fluxes)):
     
     model = [None for b in range(len(breakpoints))]
@@ -361,7 +384,7 @@ def Run(campaign, clobber = False, smooth = True, **kwargs):
       inds = GetChunk(time, breakpoints, b)
       
       # GP regression
-      gp = george.GP((0.00 * np.nanmedian(fluxes[n,inds])) ** 2 * george.kernels.Matern32Kernel(1000. ** 2))
+      gp = george.GP((0.005 * np.nanmedian(fluxes[n,inds])) ** 2 * george.kernels.Matern32Kernel(1000. ** 2))
       gp.compute(time[inds], np.ones_like(time[inds]) * np.nanmedian(np.sqrt(fluxes[n,inds])))
       A = np.dot(X[b].T, gp.solver.apply_inverse(X[b]))
       B = np.dot(X[b].T, gp.solver.apply_inverse(fluxes[n,inds]))
