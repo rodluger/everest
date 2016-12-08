@@ -104,7 +104,7 @@ def GetLightCurves(campaign, model = 'nPLD', module = range(99), **kwargs):
     if n == 0:
       time = t
       breakpoints = data['breakpoints']
-    
+      
     # Get de-trended light curve
     y = data['fraw'] - data['model'] 
     
@@ -147,12 +147,11 @@ def GetLightCurves(campaign, model = 'nPLD', module = range(99), **kwargs):
   # Add back the last breakpoint (signals end of light curve)
   breakpoints = np.append(breakpoints, [len(time) - 1])
   
-  # -*- HACK -*-
-  # We need to shift the breakpoint a little for C00 so that it 
-  # lines up with the data gap. It's a long story, but this
-  # hack fixes an issue with discontinuities.
+  # -*- HACKS -*-
   if campaign == 0:
-    breakpoints[0] += 2
+    breakpoints[0] = 501
+  elif campaign == 1:
+    breakpoints[0] = 1818
   
   return time, breakpoints, fluxes
 
@@ -342,10 +341,7 @@ def Run(campaign, clobber = False, smooth_in = True, smooth_out = True, **kwargs
     time = lcs['time']
     breakpoints = lcs['breakpoints']
     fluxes = lcs['fluxes']
-  
-  # DEBUG
-  quit()
-    
+
   X = [None for b in range(len(breakpoints))]
   for b in range(len(breakpoints)):
     
