@@ -8,6 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ... import __version__ as EVEREST_VERSION
+from . import cbv
 from .aux import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
@@ -20,7 +21,7 @@ except ImportError:
   except ImportError:
     raise Exception('Please install the `pyfits` package.')
 import matplotlib.pyplot as pl
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import ScalarFormatter, MaxNLocator
 import k2plr as kplr; kplr_client = kplr.API()
 from k2plr.config import KPLR_ROOT
 import numpy as np
@@ -895,7 +896,7 @@ def HasShortCadence(EPIC, season = None):
   else:
     return None
 
-def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = True, **kwargs):
+def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = True, show = True, **kwargs):
   '''
   
   '''
@@ -957,20 +958,20 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
     mrecovered /= depth
     
     # Set up the plot
-    fig, ax = pl.subplots(3,2, figsize = (10,12))
-    fig.subplots_adjust(hspace = 0.25)
+    fig, ax = pl.subplots(3,2, figsize = (9,12))
+    fig.subplots_adjust(hspace = 0.29)
     ax[0,0].set_title(r'Default', fontsize = 18)
     ax[0,1].set_title(r'Masked', fontsize = 18)
-    ax[0,0].set_ylabel(r'D$_0$ = 10$^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
-    ax[1,0].set_ylabel(r'D$_0$ = 10$^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
-    ax[2,0].set_ylabel(r'D$_0$ = 10$^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[0,0].set_ylabel(r'$D_0 = 10^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[1,0].set_ylabel(r'$D_0 = 10^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[2,0].set_ylabel(r'$D_0 = 10^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
     
     # Define some useful stuff for plotting
     depths = [1e-2, 1e-3, 1e-4]
-    ranges = [(0.5, 1.5), (0.5, 1.5), (0., 2.)]
+    ranges = [(0.75, 1.25), (0.5, 1.5), (0., 2.)]
     nbins = [30, 30, 20]
-    ymax = [0.6, 0.25, 0.15]
-    xticks = [[0.5, 0.75, 1., 1.25, 1.5], [0.5, 0.75, 1., 1.25, 1.5], [0., 0.5, 1., 1.5, 2.0]]
+    ymax = [0.4, 0.25, 0.16]
+    xticks = [[0.75, 0.875, 1., 1.125, 1.25], [0.5, 0.75, 1., 1.25, 1.5], [0., 0.5, 1., 1.5, 2.0]]
     
     # Plot
     for i in range(3): 
@@ -995,37 +996,44 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
         if len(recovered):
           au = len(np.where(recovered > ranges[i][1])[0]) / len(recovered)
           al = len(np.where(recovered < ranges[i][0])[0]) / len(recovered)
-          ax[i,j].annotate('%.2f' % al, xy = (0.01, 0.95), xycoords = 'axes fraction', 
-                        xytext = (0.1, 0.95), ha = 'left', va = 'center', color = 'b',
+          ax[i,j].annotate('%.2f' % al, xy = (0.01, 0.93), xycoords = 'axes fraction', 
+                        xytext = (0.1, 0.93), ha = 'left', va = 'center', color = 'b',
                         arrowprops = dict(arrowstyle="->",color='b'))
-          ax[i,j].annotate('%.2f' % au, xy = (0.99, 0.95), xycoords = 'axes fraction', 
-                        xytext = (0.9, 0.95), ha = 'right', va = 'center', color = 'b',
+          ax[i,j].annotate('%.2f' % au, xy = (0.99, 0.93), xycoords = 'axes fraction', 
+                        xytext = (0.9, 0.93), ha = 'right', va = 'center', color = 'b',
                         arrowprops = dict(arrowstyle="->",color='b'))
         if len(control):  
           cu = len(np.where(control > ranges[i][1])[0]) / len(control)
           cl = len(np.where(control < ranges[i][0])[0]) / len(control)
-          ax[i,j].annotate('%.2f' % cl, xy = (0.01, 0.88), xycoords = 'axes fraction', 
-                        xytext = (0.1, 0.88), ha = 'left', va = 'center', color = 'r',
+          ax[i,j].annotate('%.2f' % cl, xy = (0.01, 0.86), xycoords = 'axes fraction', 
+                        xytext = (0.1, 0.86), ha = 'left', va = 'center', color = 'r',
                         arrowprops = dict(arrowstyle="->",color='r'))
-          ax[i,j].annotate('%.2f' % cu, xy = (0.99, 0.88), xycoords = 'axes fraction', 
-                        xytext = (0.9, 0.88), ha = 'right', va = 'center', color = 'r',
+          ax[i,j].annotate('%.2f' % cu, xy = (0.99, 0.86), xycoords = 'axes fraction', 
+                        xytext = (0.9, 0.86), ha = 'right', va = 'center', color = 'r',
                         arrowprops = dict(arrowstyle="->",color='r'))
                 
         # Indicate the median
         if len(recovered):
-          ax[i,j].annotate('M = %.2f' % np.median(recovered), xy = (0.3, 0.5), ha = 'right',
-                        xycoords = 'axes fraction', color = 'b', fontsize = 14)
+          ax[i,j].annotate('M = %.2f' % np.median(recovered), xy = (0.35, 0.5), ha = 'right',
+                        xycoords = 'axes fraction', color = 'b', fontsize = 16)
         if len(control):
-          ax[i,j].annotate('M = %.2f' % np.median(control), xy = (0.7, 0.5), ha = 'left',
-                        xycoords = 'axes fraction', color = 'r', fontsize = 14)
+          ax[i,j].annotate('M = %.2f' % np.median(control), xy = (0.65, 0.5), ha = 'left',
+                        xycoords = 'axes fraction', color = 'r', fontsize = 16)
   
         # Tweaks
         ax[i,j].set_xticks(xticks[i])
         ax[i,j].set_xlim(xticks[i][0], xticks[i][-1])
-        ax[i,j].set_ylim(0, ymax[i])
-        ax[i,j].set_xlabel(r'D/D$_0$', fontsize = 14)
-
-    pl.show()
+        ax[i,j].set_ylim(-0.005, ymax[i])
+        ax[i,j].set_xlabel(r'$D/D_0$', fontsize = 16)
+        
+        ax[i,j].get_yaxis().set_major_locator(MaxNLocator(5))
+        for tick in ax[i,j].get_xticklabels() + ax[i,j].get_yticklabels():
+          tick.set_fontsize(14)
+        
+    if show:
+      pl.show()
+    else:
+      return fig, ax
 
 def HDUCards(headers, hdu = 0):
   '''

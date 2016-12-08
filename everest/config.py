@@ -19,11 +19,16 @@ log = logging.getLogger(__name__)
 #: Is this the development (pre-publication) version?
 EVEREST_DEV = os.environ.get('EVEREST2_DEV', 0)
 if EVEREST_DEV:
+  
   # Dev version hack: enforce a non-ui backend
   import platform
+  import matplotlib as mpl
   if platform.system() == "Linux":
-    import matplotlib as mpl
     mpl.use("Agg", warn=False)
+  
+  # Dev version hack: custom font
+  mpl.rc('font', family='serif') 
+  mpl.rc('font', serif='Palatino Linotype')
 
 #: The :py:mod:`everest` data directory
 EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.join("~", ".everest2")))                               
