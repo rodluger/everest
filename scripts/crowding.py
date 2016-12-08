@@ -39,7 +39,7 @@ class Fit(object):
     '''
 
     '''
-    
+
     def __init__(self, parent, params):
         '''
 
@@ -55,21 +55,21 @@ class Fit(object):
         self.a = params[-1]
         self.fit = parent.PRF2DET(self.f, self.x, self.y, self.wx, self.wy, self.a)
         self._parent = parent
-        
+
     @property
     def fit0(self):
         '''
         Returns the PRF fit for *only* the desired target.
-        
+
         '''
-        
+
         i = np.argmax(self._parent.IDs == self._parent.ID)
         if i == 0 and self._parent.IDs[0] != self._parent.ID:
           # This shouldn't happen. If it does, the target
           # is somehow missing from the `nearby` list.
           raise ValueError("Target not found in list!")
         return self._parent.PRF2DET([self.f[i]], [self.x[i]], [self.y[i]], [self.wx[i]], [self.wy[i]], self.a)
-        
+
 class CrowdingTarget(object):
     '''
 
@@ -290,7 +290,7 @@ class CrowdingTarget(object):
         wy = fit.wy
         a = fit.a
         PRFfit = fit.fit
-        
+
         # calculate the sum squared difference between data and model
         PRFres = np.nansum(((self.fpix[self.index] - PRFfit) / self.ferr) ** 2)
 
@@ -366,18 +366,14 @@ class CrowdingTarget(object):
         '''
 
         # crowding parameter for entire postage stamp
-        self.c_postage = []
-        for i in range(len(self.answers)):
-            if i == 0:
-                continue
-            else:
-                self.c_postage.append(np.nansum(self.answers[i].fit0) / np.nansum(self.fpix[0]))
+        self.c_postage = np.nansum(self.answers[-1].fit0) / np.nansum(self.answers[-1].fit)
 
+        # add aperture
         contour = np.zeros((self.ny, self.nx))
         contour[np.where(self.aperture)] = 1
 
-        f1 = []
-        a1 = []
+        ap_total = []
+        ap_target = []
 
         # crowding parameter for each pixel
         self.c_pixel = np.zeros((self.ny,self.nx))
@@ -385,14 +381,14 @@ class CrowdingTarget(object):
         for i in range(self.ny):
             for j in range(self.nx):
 
-                self.c_pixel[i][j] = self.answers[-1].fit0[i][j] / self.fpix[self.index][i][j]
+                self.c_pixel[i][j] = self.answers[-1].fit0[i][j] / self.answers[-1].fit[i][j]
 
                 if contour[i][j] == 1:
-                    f1.append(self.fpix[self.index][i][j])
-                    a1.append(self.answers[-1].fit0[i][j])
+                    ap_total.append(self.answers[-1].fit[i][j])
+                    ap_target.append(self.answers[-1].fit0[i][j])
 
         # crowding parameter for aperture
-        self.c_aperture = np.nansum(a1) / np.nansum(f1)
+        self.c_aperture = np.nansum(ap_target) / np.nansum(ap_total)
 
     def plot(self):
         '''
@@ -401,67 +397,76 @@ class CrowdingTarget(object):
 
         rdbu = pl.get_cmap('RdBu_r')
 
-        fig, ax = pl.subplots(2, self.nsrc, figsize = (12, 8))
-        if self.nsrc == 1:
-          ax = ax.reshape(2,1)
+        fig, ax = pl.subplots(2, 2, figsize = (8, 8))
         vmax = np.max([np.nanmax(self.fpix[self.index])] + [np.nanmax(a.fit) for a in self.answers[1:]])
         vmin = np.min([np.nanmin(self.fpix[self.index])] + [np.nanmin(a.fit) for a in self.answers[1:]])
         vmax = max(vmax, -vmin)
         vmin = -vmax
 
-        ax[0,0].set_ylabel('Fits', fontsize = 18)
-        ax[1,0].set_ylabel('Residuals', fontsize = 18)
+        # Show the data
+        ax[0,0].imshow(self.fpix[self.index], interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
+        ax[0,0].set_title('Data')
+
+        # Show the fit
+        ax[0,1].imshow(self.answers[-1].fit, interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
+        ax[0,1].set_title('Fit')
+
+        ax[0,1].annotate(r'$\mathrm{Sources}: %i$' % self.nsrc,
+                         xy = (0.025, 0.95), xycoords = 'axes fraction',
+                         ha = 'left', va = 'top', color = 'k', fontsize = 12)
+
+        # Add aperture contour
+        contour = np.zeros((self.ny, self.nx))
+        contour[np.where(self.aperture)] = 1
+        contour = np.lib.pad(contour, 1, PadWithZeros)
+        highres = zoom(contour, 100, order = 0, mode='nearest')
+        extent = np.array([-1, self.nx, -1, self.ny])
+
+        # Show aperture and set bounds
+        for i in range(2):
+            for j in range(2):
+                ax[i,j].contour(highres, levels=[0.5], extent=extent, origin='lower', colors='r', linewidths=1)
+                ax[i,j].set_xlim(-0.5, self.nx - 0.5)
+                ax[i,j].set_ylim(self.ny - 0.5, -0.5)
 
         for n in range(self.nsrc):
 
-            ax[0,n].set_title('%d sources' % (n + 1), fontsize = 18)
-
-            # Show the fit
-            ax[0,n].imshow(self.answers[n + 1].fit, interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
-
-            # Show the residuals
-            ax[1,n].imshow(self.fpix[self.index] - self.answers[n + 1].fit, interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
-
-            # Get aperture contour
-            contour = np.zeros((self.ny, self.nx))
-            contour[np.where(self.aperture)] = 1
-            contour = np.lib.pad(contour, 1, PadWithZeros)
-            highres = zoom(contour, 100, order = 0, mode='nearest')
-            extent = np.array([-1, self.nx, -1, self.ny])
-
-            # Plot the aperture contour
-            for m in range(2):
-              ax[m,n].contour(highres, levels=[0.5], extent=extent, origin='lower', colors='r', linewidths=1)
-
-            # Calculate the fractional error in the fit
-            err = np.sqrt(np.nansum((self.fpix[self.index] - self.answers[n + 1].fit) ** 2) / np.nansum(self.fpix[self.index] ** 2))
-
             # Display the catalog positions
-            for i in range(n + 1):
-                ax[0,n].plot(self.nearby[i].x - self.nearby[i].x0,
-                             self.nearby[i].y - self.nearby[i].y0,
-                             'ko', markeredgecolor = 'none', alpha = 0.5,
-                             markersize = 10)
+            ax[0,1].plot(self.nearby[n].x - self.nearby[n].x0,
+                         self.nearby[n].y - self.nearby[n].y0,
+                         'ko', markeredgecolor = 'none', alpha = 0.5,
+                         markersize = 10)
 
             # Display the solution positions
-            ax[0,n].plot(self.answers[n + 1].x - self.nearby[n].x0,
-                         self.answers[n + 1].y - self.nearby[n].y0,
+            ax[0,1].plot(self.answers[n+1].x - self.nearby[n].x0,
+                         self.answers[n+1].y - self.nearby[n].y0,
                          'ro', markeredgecolor = 'none',
                          markersize = 3)
 
-            # Display fit info
-            ax[1,n].annotate(r'$\log(\chi^2) = %.3f$' % np.log10(self.chisq[n + 1]),
-                             xy = (0.025, 0.95), xycoords = 'axes fraction',
-                             ha = 'left', va = 'top', color = 'k', fontsize = 12)
-            ax[1,n].annotate(r'$\mathrm{ERROR} = %.1f$' % (100 * err) + r'$\%$',
-                             xy = (0.975, 0.05), xycoords = 'axes fraction',
-                             ha = 'right', va = 'bottom', color = 'k', fontsize = 12)
+        # Calculate the fractional error in the fit
+        err = np.sqrt(np.nansum((self.fpix[self.index] - self.answers[-1].fit) ** 2) / np.nansum(self.fpix[self.index] ** 2))
 
-            # Set limits
-            ax[0,n].set_xlim(-0.5, self.nx - 0.5)
-            ax[0,n].set_ylim(self.ny - 0.5, -0.5)
-            ax[1,n].set_xlim(-0.5, self.nx - 0.5)
-            ax[1,n].set_ylim(self.ny - 0.5, -0.5)
+        # Display fit info
+        ax[1,0].annotate(r'$\log(\chi^2) = %.3f$' % np.log10(self.chisq[-1]),
+                         xy = (0.025, 0.95), xycoords = 'axes fraction',
+                         ha = 'left', va = 'top', color = 'k', fontsize = 12)
+        ax[1,0].annotate(r'$\mathrm{ERROR} = %.1f$' % (100 * err) + r'$\%$',
+                         xy = (0.975, 0.05), xycoords = 'axes fraction',
+                         ha = 'right', va = 'bottom', color = 'k', fontsize = 12)
+
+        # Show the residuals
+        ax[1,0].imshow(self.fpix[self.index] - self.answers[-1].fit, interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
+        ax[1,0].set_title('Residuals')
+
+        # Show the crowding
+        ax[1,1].imshow(self.c_pixel, interpolation='nearest', cmap=rdbu)
+        ax[1,1].set_title('Crowding')
+        ax[1,1].annotate(r'$C_{total} = %.3f$' % self.c_postage,
+                         xy = (0.025, 0.95), xycoords = 'axes fraction',
+                         ha = 'left', va = 'top', color = 'k', fontsize = 12)
+        ax[1,1].annotate(r'$C_{aperture} = %.3f$' % self.c_aperture,
+                         xy = (0.975, 0.05), xycoords = 'axes fraction',
+                         ha = 'right', va = 'bottom', color = 'k', fontsize = 12)
 
         pl.show()
 
@@ -470,8 +475,5 @@ c.findSolution(3000)
 
 # Find crowding parameter for postage stamp, aperture, and pixel
 c.findCrowding()
-print(c.c_postage)
-print(c.c_aperture)
-print(c.c_pixel)
 
 c.plot()
