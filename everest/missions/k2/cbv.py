@@ -218,7 +218,7 @@ def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1,
   
   return som
 
-def GetCBVs(fluxes, nflx, som, nreg = 3, pca = False, plot = False, **kwargs):
+def GetCBVs(fluxes, nflx, som, nreg = 1, pca = False, plot = False, **kwargs):
   '''
   
   '''
@@ -386,10 +386,17 @@ def Run(campaign, clobber = False, smooth_in = True, smooth_out = True, **kwargs
       B = np.dot(X[b].T, gp.solver.apply_inverse(fluxes[n,inds]))
       C = np.linalg.solve(A, B)
       model[b] = np.dot(X[b], C)
+      
+      # Vertical alignment
+      if b == 0:
+        model[b] -= np.nanmedian(model[b])
+      else:
+        model[b] += (model[b - 1][-1] - model[b][0])
+    
     model = np.concatenate(model)
     
     fig, ax = pl.subplots(2, figsize = (12, 6))
     ax[0].plot(time, fluxes[n], 'k.', markersize = 3)
-    ax[0].plot(time, model, 'r-')
-    ax[1].plot(time, fluxes[n] - model + np.nanmedian(fluxes[n]), 'k.', markersize = 3)
+    ax[0].plot(time, model + np.nanmedian(fluxes[n]), 'r-')
+    ax[1].plot(time, fluxes[n] - model, 'k.', markersize = 3)
     pl.show()
