@@ -12,19 +12,15 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from ...config import EVEREST_DAT
 from .aux import GetK2Campaign
 import numpy as np
-try:
-  from wpca import WPCA
-except:
-  WPCA = None
 from scipy.signal import savgol_filter, medfilt
 import george
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
-import os
+import os, sys
 import logging
 log = logging.getLogger(__name__)
 
-def GetChunk(time, breakpoints, b):
+def GetChunk(time, breakpoints, b, mask = []):
   '''
   Returns the indices corresponding to a given light curve chunk.
   
@@ -32,7 +28,7 @@ def GetChunk(time, breakpoints, b):
 
   '''
 
-  M = np.arange(len(time))
+  M = np.delete(np.arange(len(time)), mask, axis = 0)
   if b > 0:
     res = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
   else:
@@ -45,7 +41,7 @@ def fObj(res, **kwargs):
   
   '''
   
-  return -0.5 * np.sum(res ** 2)
+  return -0.5 * np.nansum(res ** 2)
 
 def Channels(module):
   '''
@@ -64,7 +60,7 @@ def Channels(module):
   else:
     return None
 
-def GetLightCurves(campaign, model = 'nPLD', module = range(99), **kwargs):
+def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
   '''
   
   '''
@@ -132,7 +128,7 @@ def GetLightCurves(campaign, model = 'nPLD', module = range(99), **kwargs):
   masks = np.array(masks)
   bad = np.where(np.sum(masks, axis = 0) == masks.shape[0])[0]
   
-  # Re-compute breakpoints.
+  # Re-compute breakpoints
   segs = np.zeros_like(time)
   for i in range(1,len(time)):
     segs[i] = np.argmax(breakpoints > i - 1)
@@ -141,6 +137,7 @@ def GetLightCurves(campaign, model = 'nPLD', module = range(99), **kwargs):
   breakpoints = np.where(np.diff(segs))[0]
   
   # Now delete the bad points from the arrays
+  time_orig = np.array(time)
   time = np.delete(time, bad)
   fluxes = np.delete(np.array(fluxes), bad, axis = 1)
   
@@ -153,10 +150,10 @@ def GetLightCurves(campaign, model = 'nPLD', module = range(99), **kwargs):
   elif campaign == 1:
     breakpoints[0] = 1818
   
-  return time, breakpoints, fluxes
+  return time_orig, time, breakpoints, fluxes
 
 def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1, 
-        niter = 100, periodic = False, **kwargs):
+        niter = 30, periodic = False, **kwargs):
   '''
   
   ''' 
@@ -171,25 +168,23 @@ def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1,
     
   # Normalize the fluxes
   if nflx is None:
-    maxf = np.max(fluxes, axis = 0)
-    minf = np.min(fluxes, axis = 0)
+    maxf = np.nanmax(fluxes, axis = 0)
+    minf = np.nanmin(fluxes, axis = 0)
     nflx = (fluxes - minf) / (maxf - minf)
   
   # Do `niter` iterations of the SOM
   for t in range(niter):
   
-    print("Iteration %d/%d..." % (t + 1, niter))
-  
     # Loop over all light curves
     for n in range(N):
   
       # Find best matching pixel for this light curve
-      bi, bj = np.unravel_index(np.argmax([fObj(nflx[n] - som[i][j]) 
+      bi, bj = np.unravel_index(np.nanargmax([fObj(nflx[n] - som[i][j]) 
                                            for i in range(ki) for j in range(kj)]), 
                                            (ki, kj))
     
       # Trick: flip light curve upside-down and see if we get a better match
-      bi_, bj_ = np.unravel_index(np.argmax([fObj(1 - nflx[n] - som[i][j]) 
+      bi_, bj_ = np.unravel_index(np.nanargmax([fObj(1 - nflx[n] - som[i][j]) 
                                              for i in range(ki) for j in range(kj)]), 
                                              (ki, kj))
       if fObj(1 - nflx[n] - som[bi_][bj_]) > fObj(nflx[n] - som[bi][bj]):
@@ -218,7 +213,7 @@ def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1,
   
   return som
 
-def GetCBVs(fluxes, nflx, som, nreg = 1, pca = False, plot = False, **kwargs):
+def GetRegressor(fluxes, nflx, som, **kwargs):
   '''
   
   '''
@@ -230,56 +225,24 @@ def GetCBVs(fluxes, nflx, som, nreg = 1, pca = False, plot = False, **kwargs):
   lcinds = [[[] for j in range(kj)] for i in range(ki)]
   evratio = [[[] for j in range(kj)] for i in range(ki)]
   for n in range(N):
-    bi, bj = np.unravel_index(np.argmin([np.sum((nflx[n] - som[i][j]) ** 2) 
+    bi, bj = np.unravel_index(np.argmin([np.nansum((nflx[n] - som[i][j]) ** 2) 
                                          for i in range(ki) for j in range(kj)]), 
                                          (ki, kj))
     lcinds[bi][bj].append(n)
   
-  # Get our CBVs
-  if pca:
-  
-    # Get the top `nreg` principal components in each pixel
-    pc = [[[] for j in range(kj)] for i in range(ki)]
-    for i in range(ki):
-      for j in range(kj):
-        n = lcinds[i][j]
-        pca = WPCA(n_components = nreg)
-        pc[i][j] = pca.fit_transform((fluxes[n] / np.nanmedian(fluxes[n], 
-                                      axis = 1).reshape(-1, 1)).T, 
-                                      weights = np.array([np.nanmedian(np.sqrt(f)) * 
-                                      np.ones_like(f) for f in fluxes[n]]).T).T
-        evratio[i][j] = pca.explained_variance_ratio_
-  
-    # We're going to guess that the SOM pixel corresponding
-    # to the instrumental component is the one with the largest
-    # value of `n * evratio`, where `n` is the number of light curves
-    # in the pixel and `evratio` is the explained variance ratio
-    # of the first principal component. This isn't rigorous, but
-    # seems to work in practice. We then create a simple design
-    # matrix out of the SOM array in that pixel for fitting.
-    ij = np.argmax([len(lcinds[i][j]) * evratio[i][j][0] 
-                    for i in range(ki) for j in range(kj)])
-    i, j = np.unravel_index(ij, (ki, kj))
-    X = np.hstack([pc[i][j].T, np.ones(sz).reshape(-1, 1)])
-    pixels = [(i,j),]
+  # We're going to use the SOM pixel with the largest number
+  # of light curves as our CBV regressor
+  lflat = [lcinds[i][j] for i in range(ki) for j in range(kj)]
+  sflat = np.array([som[i][j] for i in range(ki) for j in range(kj)])
+  pixel = np.nanargmax([len(n) for n in lflat])
+  ij = np.unravel_index(pixel, (ki, kj))
     
-  else:
+  # Plot the results
+  PlotSOM(nflx, som, lcinds, ij, **kwargs)
   
-    # We're going to use the SOM arrays themselves as CBVs, ordered by
-    # the number of light curves in each
-    pc = None
-    lflat = [lcinds[i][j] for i in range(ki) for j in range(kj)]
-    sflat = np.array([som[i][j] for i in range(ki) for j in range(kj)])
-    pixels = np.argsort([-len(n) for n in lflat])[:nreg]
-    X = np.hstack([sflat[pixels].T, np.ones((sz, 1))])
-    pixels = [np.unravel_index(p, (ki, kj)) for p in pixels]
-    
-  if plot:
-    PlotSOM(nflx, som, lcinds, pc, pixels, **kwargs)
-  
-  return X
+  return sflat[pixel]
 
-def PlotSOM(nflx, som, lcinds, pc, pixels, **kwargs):
+def PlotSOM(nflx, som, lcinds, ij, figname = 'som.pdf', **kwargs):
   '''
   
   '''
@@ -288,6 +251,7 @@ def PlotSOM(nflx, som, lcinds, pc, pixels, **kwargs):
   ki, kj, _ = som.shape
   N, sz = nflx.shape
   fig, ax = pl.subplots(1, figsize = (ki * 5, kj * 5))
+  fig.subplots_adjust(left = 0.01, right = 0.99, bottom = 0.02, top = 0.98)
   
   # Plot the light curves, and SOMs / PCs in each pixel
   for i in range(ki):
@@ -299,104 +263,186 @@ def PlotSOM(nflx, som, lcinds, pc, pixels, **kwargs):
                 j + 0.5 - 0.4 + 0.8 * nflx[n], 
                 'k-', alpha = min(1., 100. / N))
       
-      if pc is not None:
+      # The Kohonen pixel
+      ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
+              j + 0.5 - 0.4 + 0.8 * som[i][j], 'r-', lw = 2)
       
-        # The principal components
-        for p, c in zip(pc[i][j], ['r', 'b', 'g', 'y', 'purple']):
-          ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
-                  j + 0.5 - 0.4 + 0.8 * (p - np.min(p)) / (np.max(p) - np.min(p)), 
-                  ls = '-', color = c)
-                  
-      else:
-      
-        # The Kohonen pixel
-        ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
-                j + 0.5 - 0.4 + 0.8 * som[i][j], 'r-')
+      # The mean light curve, just for reference
+      ax.plot(np.linspace(i + 0.5 - 0.4, i + 0.5 + 0.4, sz), 
+              j + 0.5 - 0.4 + 0.8 * np.mean([nflx[n] for n in lcinds[i][j]], axis = 0), 'b-')
       
       # Indicate the number of light curves in this pixel
       ax.annotate('%d' % (len(lcinds[i][j])), 
                   xy = (i + 0.5, j + 0.95), 
                   xycoords = 'data', va = 'center', ha = 'center', 
-                  zorder = 99, fontsize = 18, color = 'b' if (i,j) in pixels else 'k')
-      
+                  zorder = 99, fontsize = 18, color = 'b' if ij == (i,j) else 'k')
       
   ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
   ax.get_yaxis().set_major_locator(MaxNLocator(integer=True))
   ax.grid(True, which = 'major', axis = 'both', linestyle = '-')
   ax.set_xlim(0, ki)
   ax.set_ylim(0, kj)
+  ax.set_xticklabels([])
+  ax.set_yticklabels([])
+  fig.savefig(figname)
+  pl.close()
+
+def FitLightCurve(time, flux, breakpoints, X, mask = [], align = 'model'):
+  '''
+  
+  '''
+  
+  # Loop over all the light curve segments
+  model = [None for b in range(len(breakpoints))]
+  weights = [None for b in range(len(breakpoints))]
+  for b in range(len(breakpoints)):
+    
+    # Get the indices for this light curve segment
+    inds = GetChunk(time, breakpoints, b, mask = mask)
+        
+    # Ordinary least squares
+    mX = np.delete(X[b], mask, axis = 0)
+    A = np.dot(mX.T, mX)
+    B = np.dot(mX.T, flux[inds])
+    weights[b] = np.linalg.solve(A, B)
+    model[b] = np.dot(X[b], weights[b])
+    
+    # Vertical alignment
+    if b == 0:
+      model[b] -= np.nanmedian(model[b])
+    else:
+      if align == 'model':
+        model[b] += (model[b - 1][-1] - model[b][0])
+      elif align == 'flux':
+        model[b] += (model[b - 1][-1] - model[b][0]) - (flux[inds[0] - 1] - flux[inds[0]])
+      else:
+        raise ValueError("Invalid value for `align`.")
+  
+  # Join model and normalize  
+  model = np.concatenate(model)
+  model -= np.nanmedian(model)
+  
+  fig, ax = pl.subplots(2, figsize = (12, 6), sharex = True)
+  ax[0].plot(time, flux, 'k.', markersize = 3)
+  ax[0].plot(time, model + np.nanmedian(flux), 'r-')
+  ax[1].plot(time, flux - model, 'k.', markersize = 3)
+  ax[0].set_ylabel('Original Flux', fontsize = 16)
+  ax[1].set_ylabel('Corrected Flux', fontsize = 16)
+  ax[1].set_xlabel('Time (BJD - 2454833)', fontsize = 16)
+  ax[0].margins(0.01, None)
+  
   pl.show()
 
-def Run(campaign, clobber = False, smooth_in = True, smooth_out = True, **kwargs):
+def Compute(time, fluxes, breakpoints, smooth_in = True, smooth_out = True, 
+            nreg = 2, path = '', **kwargs):
   '''
   
   '''
   
-  # Get the light curves
-  if clobber or not os.path.exists('lcs.npz'):
-    time, breakpoints, fluxes = GetLightCurves(campaign, **kwargs)
-    np.savez('lcs.npz', time = time, breakpoints = breakpoints, fluxes = fluxes)
-  else:
-    lcs = np.load('lcs.npz')
-    time = lcs['time']
-    breakpoints = lcs['breakpoints']
-    fluxes = lcs['fluxes']
-
   X = [None for b in range(len(breakpoints))]
   for b in range(len(breakpoints)):
     
     # Get the indices for this light curve segment
     inds = GetChunk(time, breakpoints, b)
     t = time[inds]
-    f = fluxes[:, inds]
+    f = np.array(fluxes[:, inds])
     
     # Smooth the fluxes to compute the SOM?
     if smooth_in:
-      for n in range(len(f)):
-        f[n] = savgol_filter(f[n], 99, 2)
+      for i in range(len(f)):
+        f[i] = savgol_filter(f[i], 99, 2)
     
-    # Normalize the fluxes
-    maxf = np.max(f, axis = 1).reshape(-1, 1)
-    minf = np.min(f, axis = 1).reshape(-1, 1)
-    nflx = (f - minf) / (maxf - minf)
+    # The design matrix for the current chunk
+    X[b] = np.ones_like(t).reshape(-1, 1)
+    
+    # Run `nreg` iterations
+    for n in range(nreg):
+      
+      log.info('Computing: segment %d/%d, iteration %d/%d...' %
+              (b + 1, len(breakpoints), n + 1, nreg))
+      
+      # Normalize the fluxes
+      maxf = np.nanmax(f, axis = 1).reshape(-1, 1)
+      minf = np.nanmin(f, axis = 1).reshape(-1, 1)
+      nflx = (f - minf) / (maxf - minf)
 
-    # Compute the SOM
-    som = SOM(t, f, nflx, **kwargs)
+      # Compute the SOM
+      som = SOM(t, f, nflx, **kwargs)
     
-    # Now get the CBVs
-    X[b] = GetCBVs(f, nflx, som, **kwargs)
-    
-    # Smooth the regressors?
-    if smooth_out:
-      for n in range(X[b].shape[1] - 1):
-        X[b][:,n] = savgol_filter(X[b][:,n], 99, 2)
-    
-  for n in range(len(fluxes)):
-    
-    model = [None for b in range(len(breakpoints))]
-    for b in range(len(breakpoints)):
+      # Now get the regressor
+      cbv = GetRegressor(f, nflx, som, figname = 
+                         os.path.join(path, 'Seg%02d_Iter%02d.pdf' % 
+                         (b + 1, n + 1)), **kwargs)
+      if smooth_out:
+        cbv = savgol_filter(cbv, 99, 2)
       
-      # Get the indices for this light curve segment
-      inds = GetChunk(time, breakpoints, b)
+      # Append to our design matrix
+      X[b] = np.hstack([X[b], cbv.reshape(-1, 1)])
       
-      # GP regression
-      gp = george.GP((0.005 * np.nanmedian(fluxes[n,inds])) ** 2 * george.kernels.Matern32Kernel(1000. ** 2))
-      gp.compute(time[inds], np.ones_like(time[inds]) * np.nanmedian(np.sqrt(fluxes[n,inds])))
-      A = np.dot(X[b].T, gp.solver.apply_inverse(X[b]))
-      B = np.dot(X[b].T, gp.solver.apply_inverse(fluxes[n,inds]))
-      C = np.linalg.solve(A, B)
-      model[b] = np.dot(X[b], C)
+      # Recursion. We de-trend each of the light curves with
+      # our design matrix so far, then repeat.
+      if n < nreg - 1:
+        A = np.dot(X[b].T, X[b])
+        for i in range(len(f)):
+          f[i] = fluxes[i, inds] - np.dot(X[b], np.linalg.solve(A, np.dot(X[b].T, fluxes[i, inds])))
+
+  return X
+
+def Run(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwargs):
+  '''
+  
+  '''
+  
+  # Output path
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, '%2d' % module, model)
+  if not os.path.exists(path):
+    os.makedirs(path)
+  
+  # Set up the log file
+  root = logging.getLogger()
+  root.handlers = []
+  root.setLevel(logging.DEBUG)
+  sh = logging.StreamHandler(sys.stdout)
+  if quiet:
+    sh.setLevel(logging.CRITICAL)
+  else:
+    sh.setLevel(logging.DEBUG)
+  sh_formatter = logging.Formatter("[%(funcName)s()]: %(message)s")
+  sh.setFormatter(sh_formatter)
+  root.addHandler(sh)
+  
+  # Get the design matrix
+  xfile = os.path.join(path, 'X.npz')
+  if clobber or not os.path.exists(xfile):
+    
+    # Get the light curves
+    log.info('Obtaining light curves...')
+    lcfile = os.path.join(path, 'lcs.npz')
+    if clobber or not os.path.exists(lcfile):
+      time_orig, time, breakpoints, fluxes = GetLightCurves(campaign, module, model = model, **kwargs)
+      np.savez(lcfile, time_orig = time_orig, time = time, breakpoints = breakpoints, fluxes = fluxes)
+    else:
+      lcs = np.load(lcfile)
+      time_orig = lcs['time_orig']
+      time = lcs['time']
+      breakpoints = lcs['breakpoints']
+      fluxes = lcs['fluxes']
+    
+    # Get the design matrix  
+    X = Compute(time, fluxes, breakpoints, path = path, **kwargs)
+    np.savez(xfile, X = X)
+  
+  else:
       
-      # Vertical alignment
-      if b == 0:
-        model[b] -= np.nanmedian(model[b])
-      else:
-        model[b] += (model[b - 1][-1] - model[b][0])
-    
-    model = np.concatenate(model)
-    
-    fig, ax = pl.subplots(2, figsize = (12, 6))
-    ax[0].plot(time, fluxes[n], 'k.', markersize = 3)
-    ax[0].plot(time, model + np.nanmedian(fluxes[n]), 'r-')
-    ax[1].plot(time, fluxes[n] - model, 'k.', markersize = 3)
-    pl.show()
+    X = np.load(xfile)['X']
+  
+  
+  # DEBUG
+  lcfile = os.path.join(path, 'lcs.npz')
+  lcs = np.load(lcfile)
+  time = lcs['time']
+  breakpoints = lcs['breakpoints']
+  fluxes = lcs['fluxes']
+  for f in fluxes:
+    FitLightCurve(time, f, breakpoints, X)
+  

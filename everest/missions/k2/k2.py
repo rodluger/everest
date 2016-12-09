@@ -42,6 +42,8 @@ def Setup():
   
   if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'stats')):
     os.makedirs(os.path.join(EVEREST_DAT, 'k2', 'stats'))
+  if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'cbv')):
+    os.makedirs(os.path.join(EVEREST_DAT, 'k2', 'cbv'))
   GetK2Stars(clobber = False)
 
 def Season(EPIC, **kwargs):
