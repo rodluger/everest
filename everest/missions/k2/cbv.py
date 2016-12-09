@@ -81,9 +81,7 @@ def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
           ('%09d' % s[0])[4:], model + '.npz'))], dtype = int)
   N = len(stars)
   assert N > 0, "No light curves found."
-  
-  import pdb; pdb.set_trace()
-  
+
   # Loop over all stars and store the fluxes in a list
   fluxes = []
   masks = []
@@ -130,6 +128,10 @@ def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
   masks = np.array(masks)
   bad = np.where(np.sum(masks, axis = 0) == masks.shape[0])[0]
   
+  # Save the original copies for later
+  time0 = np.array(time)
+  breakpoints0 = np.array(breakpoints)
+  
   # Re-compute breakpoints
   segs = np.zeros_like(time)
   for i in range(1,len(time)):
@@ -139,7 +141,6 @@ def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
   breakpoints = np.where(np.diff(segs))[0]
   
   # Now delete the bad points from the arrays
-  time_orig = np.array(time)
   time = np.delete(time, bad)
   fluxes = np.delete(np.array(fluxes), bad, axis = 1)
   
@@ -152,7 +153,7 @@ def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
   elif campaign == 1:
     breakpoints[0] = 1818
   
-  return time_orig, time, breakpoints, fluxes
+  return time, breakpoints, fluxes, time0, breakpoints0
 
 def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1, 
         niter = 30, periodic = False, **kwargs):
@@ -173,7 +174,7 @@ def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1,
     maxf = np.nanmax(fluxes, axis = 0)
     minf = np.nanmin(fluxes, axis = 0)
     nflx = (fluxes - minf) / (maxf - minf)
-  
+
   # Do `niter` iterations of the SOM
   for t in range(niter):
   
@@ -421,23 +422,39 @@ def Run(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwar
     log.info('Obtaining light curves...')
     lcfile = os.path.join(path, 'lcs.npz')
     if clobber or not os.path.exists(lcfile):
-      time_orig, time, breakpoints, fluxes = GetLightCurves(campaign, module, model = model, **kwargs)
-      np.savez(lcfile, time_orig = time_orig, time = time, breakpoints = breakpoints, fluxes = fluxes)
+      time, breakpoints, fluxes, time0, breakpoints0 = GetLightCurves(campaign, module, model = model, **kwargs)
+      np.savez(lcfile, time = time, breakpoints = breakpoints, 
+               fluxes = fluxes, time0 = time0, breakpoints0 = breakpoints0)
     else:
       lcs = np.load(lcfile)
-      time_orig = lcs['time_orig']
       time = lcs['time']
       breakpoints = lcs['breakpoints']
       fluxes = lcs['fluxes']
+      time0 = lcs['time0']
+      breakpoints0 = lcs['breakpoints0']
     
     # Get the design matrix  
     X = Compute(time, fluxes, breakpoints, path = path, **kwargs)
+
+    # Interpolate back to the original time grid
+    X_orig = [None for b in range(len(breakpoints))]
+    for b, Xb in enumerate(X):  
+      inds = GetChunk(time, breakpoints, b)
+      inds_orig = GetChunk(time_orig, breakpoints_orig, b)
+      X_orig[b] = np.empty((len(inds_orig), 0))
+      for n in range(Xb.shape[1]):
+        X_orig[b] = np.hstack([X_orig[b], np.interp(time_orig[inds_orig], time[inds], Xb[:, n]).reshape(-1, 1)])
+    X = X_orig
+    
     np.savez(xfile, X = X)
   
   else:
       
     X = np.load(xfile)['X']
   
+  
+  
+  quit()
   
   # DEBUG
   lcfile = os.path.join(path, 'lcs.npz')
