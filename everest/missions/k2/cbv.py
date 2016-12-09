@@ -19,46 +19,14 @@ from matplotlib.ticker import MaxNLocator
 import os, sys
 import logging
 log = logging.getLogger(__name__)
-
-def GetChunk(time, breakpoints, b, mask = []):
-  '''
-  Returns the indices corresponding to a given light curve chunk.
-  
-  :param int b: The index of the chunk to return
-
-  '''
-
-  M = np.delete(np.arange(len(time)), mask, axis = 0)
-  if b > 0:
-    res = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
-  else:
-    res = M[M <= breakpoints[b]]
-  return res
-
-def fObj(res, **kwargs):
-  '''
-  SOM likelihood function. Nothing fancy.
-  
-  '''
-  
-  return -0.5 * np.nansum(res ** 2)
-
-def Channels(module):
-  '''
-  Returns the channels contained in the given module.
-  
-  '''
-  
-  nums = {2:1, 3:5, 4:9, 6:13, 7:17, 8:21, 9:25, 
-          10:29, 11:33, 12:37, 13:41, 14:45, 15:49, 
-          16:53, 17:57, 18:61, 19:65, 20:69, 22:73, 
-          23:77, 24:81}
-  
-  if module in nums:
-    return [nums[module], nums[module] + 1, 
-            nums[module] + 2, nums[module] + 3]
-  else:
-    return None
+root = logging.getLogger()
+root.handlers = []
+root.setLevel(logging.DEBUG)
+sh = logging.StreamHandler(sys.stdout)
+sh.setLevel(logging.DEBUG)
+sh_formatter = logging.Formatter("[%(funcName)s()]: %(message)s")
+sh.setFormatter(sh_formatter)
+root.addHandler(sh)
 
 def GetLightCurve(EPIC, campaign, model = 'nPLD', **kwargs):
   '''
@@ -153,9 +121,81 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
   
   return time, breakpoints, fluxes
 
+def SavGol(t, y, svwin = 99, svorder = 2, **kwargs):
+  '''
+  Masks NaNs and applies a Savitsky-Golay low-pass filter to `y`
+  
+  '''
+  
+  # Linearly interpolate over nans
+  nans = np.where(np.isnan(y))
+  t_ = np.delete(t, nans)
+  y_ = np.delete(y, nans, axis = 0)
+  yfin = np.array(y)
+  yfin[nans] = np.interp(t[nans], t_, y_)
+  
+  # Apply the savgol filter
+  yfin = savgol_filter(yfin, svwin, svorder)
+  
+  # Re-populate the nans
+  yfin[nans] = np.nan
+  
+  return yfin
+
+def GetChunk(time, breakpoints, b, mask = []):
+  '''
+  Returns the indices corresponding to a given light curve chunk.
+  
+  :param int b: The index of the chunk to return
+
+  '''
+
+  M = np.delete(np.arange(len(time)), mask, axis = 0)
+  if b > 0:
+    res = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
+  else:
+    res = M[M <= breakpoints[b]]
+  return res
+
+def fObj(res, **kwargs):
+  '''
+  SOM likelihood function. Nothing fancy.
+  
+  '''
+  
+  return -0.5 * np.nansum(res ** 2)
+
+def Channels(module):
+  '''
+  Returns the channels contained in the given K2 module.
+  
+  '''
+  
+  nums = {2:1, 3:5, 4:9, 6:13, 7:17, 8:21, 9:25, 
+          10:29, 11:33, 12:37, 13:41, 14:45, 15:49, 
+          16:53, 17:57, 18:61, 19:65, 20:69, 22:73, 
+          23:77, 24:81}
+  
+  if module in nums:
+    return [nums[module], nums[module] + 1, 
+            nums[module] + 2, nums[module] + 3]
+  else:
+    return None
+
 def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1, 
         niter = 30, periodic = False, **kwargs):
   '''
+  Computes a self-organizing map and returns the arrays
+  in each of the pixels/neurons.
+  
+  :param array_like time: The time array
+  :param array_like fluxes: A list of the flux arrays for all the targets
+  :param array_like nflx: The normalized flux arrays
+  :param float alpha_0: The amplitude of the pixel update step. Default 0.1
+  :param int ki: The number of horizontal cells. Default 3
+  :param int kj: The number of vertical cells. Defaul 1
+  :param int niter: The number of SOM iterationrs. Default 30
+  :param bool periodic: Periodic grid boundary conditions? Default `False`
   
   ''' 
    
@@ -216,6 +256,12 @@ def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1,
 
 def GetRegressor(fluxes, nflx, som, **kwargs):
   '''
+  Returns the array in the SOM pixel with the largest number of
+  light curves. This will be used as one of our regressors
+  
+  :param array_like fluxes: The list of fluxes
+  :param array_like nflx: The list of normalized fluxes
+  :param array_like som: The SOM array
   
   '''
   
@@ -245,6 +291,7 @@ def GetRegressor(fluxes, nflx, som, **kwargs):
 
 def PlotSOM(nflx, som, lcinds, ij, figname = 'som.pdf', **kwargs):
   '''
+  Plots the SOM.
   
   '''
   
@@ -291,15 +338,21 @@ def PlotSOM(nflx, som, lcinds, ij, figname = 'som.pdf', **kwargs):
 def Compute(time, fluxes, breakpoints, smooth_in = True, smooth_out = True, 
             nreg = 2, path = '', **kwargs):
   '''
+  Compute the CBV design matrix based on a self-organizing map.
+  
+  :param array_like time: The time array
+  :param array_like fluxes: The list of fluxes
+  :param array_like breakpoints: The indices at which the light curves are to be split. \
+                                 The last element of `breakpoints` should be the index of 
+                                 the last data point in the timeseries.
+  :param bool smooth_in: Smooth the fluxes prior to computing the SOM? Default `True`
+  :param bool smooth_out: Smooth the SOM arrays prior to fitting? Default `True`
+  :param int nreg: The number of regressors; this is equal to the number of SOM recursions. \
+                   Default 2
+  :param str path: The path to the output directory. Default ""
   
   '''
-  
-  # DEBUG. Need to fix savgol with nans
-  smooth_in = False
-  smoouth_out = False
-  # DEBUG. Need to fix recursion with nans
-  nreg = 1
-  
+    
   X = [None for b in range(len(breakpoints))]
   for b in range(len(breakpoints)):
     
@@ -311,7 +364,7 @@ def Compute(time, fluxes, breakpoints, smooth_in = True, smooth_out = True,
     # Smooth the fluxes to compute the SOM?
     if smooth_in:
       for i in range(len(f)):
-        f[i] = savgol_filter(f[i], 99, 2)
+        f[i] = SavGol(t, f[i], **kwargs)
     
     # The design matrix for the current chunk
     X[b] = np.ones_like(t).reshape(-1, 1)
@@ -335,22 +388,30 @@ def Compute(time, fluxes, breakpoints, smooth_in = True, smooth_out = True,
                          os.path.join(path, 'Seg%02d_Iter%02d.pdf' % 
                          (b + 1, n + 1)), **kwargs)
       if smooth_out:
-        cbv = savgol_filter(cbv, 99, 2)
+        cbv = SavGol(t, cbv, **kwargs)
       
       # Append to our design matrix
       X[b] = np.hstack([X[b], cbv.reshape(-1, 1)])
       
       # Recursion. We de-trend each of the light curves with
-      # our design matrix so far, then repeat.
+      # our design matrix so far, then repeat. The tricky bit
+      # is masking the NaNs so we don't get linalg errors.
       if n < nreg - 1:
-        A = np.dot(X[b].T, X[b])
+        nans = np.where(np.isnan(X[b][:,1]))[0]
+        fins = np.delete(np.arange(len(t)), nans)
+        mX = np.delete(X[b], nans, axis = 0)
+        A = np.dot(mX.T, mX)
         for i in range(len(f)):
-          f[i] = fluxes[i, inds] - np.dot(X[b], np.linalg.solve(A, np.dot(X[b].T, fluxes[i, inds])))
-
+          mf = np.delete(fluxes[i,inds], nans)
+          f[i][fins] = mf - np.dot(mX, np.linalg.solve(A, np.dot(mX.T, mf)))
+          if smooth_in:
+            f[i] = SavGol(t, f[i], **kwargs)
+            
   return X
 
-def GetX(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwargs):
+def GetX(campaign, module, model = 'nPLD', clobber = False, **kwargs):
   '''
+  Get the design matrix for a given K2 campaign and module.
   
   '''
   
@@ -358,20 +419,7 @@ def GetX(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwa
   path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, '%2d' % module, model)
   if not os.path.exists(path):
     os.makedirs(path)
-  
-  # Set up the log file
-  root = logging.getLogger()
-  root.handlers = []
-  root.setLevel(logging.DEBUG)
-  sh = logging.StreamHandler(sys.stdout)
-  if quiet:
-    sh.setLevel(logging.CRITICAL)
-  else:
-    sh.setLevel(logging.DEBUG)
-  sh_formatter = logging.Formatter("[%(funcName)s()]: %(message)s")
-  sh.setFormatter(sh_formatter)
-  root.addHandler(sh)
-  
+   
   # Get the design matrix
   xfile = os.path.join(path, 'X.npz')
   if clobber or not os.path.exists(xfile):
@@ -399,8 +447,9 @@ def GetX(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwa
   
   return X
 
-def Fit(EPIC, campaign = None, module = None, align = 'flux', **kwargs):
+def Fit(EPIC, campaign = None, module = None, model = 'nPLD', **kwargs):
   '''
+  Fit a given K2 target with the SOM design matrix and plot the results.
   
   '''
   
@@ -410,9 +459,10 @@ def Fit(EPIC, campaign = None, module = None, align = 'flux', **kwargs):
   if module is None:
     module = Module(EPIC)
   time, flux, breakpoints, mask = GetLightCurve(EPIC, campaign, **kwargs)
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, '%2d' % module, model)
   
   # Get the design matrix  
-  X = GetX(campaign, module, **kwargs)
+  X = GetX(campaign, module, model = model, **kwargs)
   
   # Loop over all the light curve segments
   model = [None for b in range(len(breakpoints))]
@@ -434,19 +484,7 @@ def Fit(EPIC, campaign = None, module = None, align = 'flux', **kwargs):
     if b == 0:
       model[b] -= np.nanmedian(model[b])
     else:
-      if align == 'model':
-        model[b] += (model[b - 1][-1] - model[b][0])
-      elif align == 'flux':
-        model[b] += (model[b - 1][-1] - model[b][0]) - (flux[masked_inds[0] - 1] - flux[masked_inds[0]])
-        
-        
-        fig, ax = pl.subplots(2, sharex=True)
-        ax[0].plot(time, X[:,1])
-        ax[1].plot(time, flux, 'k.', alpha = 0.3)
-        pl.show()
-        quit()
-      else:
-        raise ValueError("Invalid value for `align`.")
+      model[b] += (model[b - 1][-1] - model[b][0])
   
   # Join model and normalize  
   model = np.concatenate(model)
@@ -465,11 +503,29 @@ def Fit(EPIC, campaign = None, module = None, align = 'flux', **kwargs):
   ax[0].margins(0.01, None)
   ax[0].set_xlim(ax[0].get_xlim())
   ax[0].set_ylim(ax[0].get_ylim())
-  ax[1].set_xlim(ax[0].get_xlim())
-  ax[1].set_ylim(ax[0].get_ylim())
+  ax[1].set_xlim(ax[1].get_xlim())
+  ax[1].set_ylim(ax[1].get_ylim())
   
   # Now plot the outliers
   ax[0].plot(time[mask], flux[mask], 'r.', markersize = 3, alpha = 0.5)
   ax[1].plot(time[mask], flux[mask] - model[mask], 'r.', markersize = 3, alpha = 0.5)
   
-  pl.show()
+  pl.suptitle('EPIC %d' % EPIC, fontsize = 20)
+  fig.savefig(os.path.join(path, '%d.pdf' % EPIC))
+  pl.close()
+  
+def FitAll(campaign = 1, module = 18):
+  '''
+  
+  '''
+  
+  all = GetK2Campaign(campaign)
+  stars = np.array([s[0] for s in all if s[2] in channels and 
+          os.path.exists(
+          os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
+          ('%09d' % s[0])[:4] + '00000', 
+          ('%09d' % s[0])[4:], model + '.npz'))], dtype = int)
+  N = len(stars)
+  for n in range(N):
+    log.info("Processing light curve %d/%d..." % (n + 1, N))
+    Fit(stars[n], campaign = campaign, module = module)
