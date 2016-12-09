@@ -514,7 +514,7 @@ def Fit(EPIC, campaign = None, module = None, model = 'nPLD', **kwargs):
   fig.savefig(os.path.join(path, '%d.pdf' % EPIC))
   pl.close()
   
-def FitAll(campaign = 1, module = 18):
+def FitAll(campaign = 1, module = 18, model = 'nPLD'):
   '''
   
   '''
@@ -529,4 +529,4 @@ def FitAll(campaign = 1, module = 18):
   N = len(stars)
   for n in range(N):
     log.info("Processing light curve %d/%d..." % (n + 1, N))
-    Fit(stars[n], campaign = campaign, module = module)
+    Fit(stars[n], campaign = campaign, module = module, model = model)
