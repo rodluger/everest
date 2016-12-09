@@ -82,12 +82,14 @@ def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
   N = len(stars)
   assert N > 0, "No light curves found."
   
+  import pdb; pdb.set_trace()
+  
   # Loop over all stars and store the fluxes in a list
   fluxes = []
   masks = []
   for n in range(N):
     
-    print("Processing light curve %d/%d..." % (n + 1, N))
+    log.info("Processing light curve %d/%d..." % (n + 1, N))
     
     # De-trended light curve file name
     nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
