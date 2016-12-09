@@ -520,6 +520,7 @@ def FitAll(campaign = 1, module = 18):
   '''
   
   all = GetK2Campaign(campaign)
+  channels = Channels(module)
   stars = np.array([s[0] for s in all if s[2] in channels and 
           os.path.exists(
           os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
