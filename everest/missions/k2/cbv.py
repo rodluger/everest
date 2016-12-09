@@ -380,9 +380,8 @@ def GetX(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwa
     log.info('Obtaining light curves...')
     lcfile = os.path.join(path, 'lcs.npz')
     if clobber or not os.path.exists(lcfile):
-      time, breakpoints, fluxes, time0, breakpoints0 = GetStars(campaign, module, model = model, **kwargs)
-      np.savez(lcfile, time = time, breakpoints = breakpoints, 
-               fluxes = fluxes, time0 = time0, breakpoints0 = breakpoints0)
+      time, breakpoints, fluxes = GetStars(campaign, module, model = model, **kwargs)
+      np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes)
     else:
       lcs = np.load(lcfile)
       time = lcs['time']
