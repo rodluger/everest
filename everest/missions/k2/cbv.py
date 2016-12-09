@@ -10,7 +10,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ...config import EVEREST_DAT
-from .aux import GetK2Campaign
+from .aux import GetK2Campaign, Campaign, Module
 import numpy as np
 from scipy.signal import savgol_filter, medfilt
 import george
@@ -60,7 +60,28 @@ def Channels(module):
   else:
     return None
 
-def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
+def GetLightCurve(EPIC, campaign, model = 'nPLD', **kwargs):
+  '''
+  
+  '''
+  
+  # De-trended light curve file name
+  nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
+                    ('%09d' % EPIC)[:4] + '00000', 
+                    ('%09d' % EPIC)[4:], model + '.npz')
+  
+  # Get the data
+  data = np.load(nf)
+  time = data['time']
+  breakpoints = data['breakpoints']
+  flux = data['fraw'] - data['model'] 
+  mask = np.array(list(set(np.concatenate([data['outmask'], data['badmask'], 
+                                          data['nanmask'], data['transitmask']]))), 
+                                          dtype = int)
+  flux[data['nanmask']] = np.nan
+  return time, flux, breakpoints, mask
+  
+def GetStars(campaign, module, model = 'nPLD', **kwargs):
   '''
   
   '''
@@ -124,36 +145,13 @@ def GetLightCurves(campaign, module, model = 'nPLD', **kwargs):
     mask[m] = 1
     masks.append(mask)
   
-  # Remove data points that are missing in all light curves
+  # Make data points that are missing in all light curves NaNs
   masks = np.array(masks)
   bad = np.where(np.sum(masks, axis = 0) == masks.shape[0])[0]
+  fluxes = np.array(fluxes)
+  fluxes[:,bad] = np.nan
   
-  # Save the original copies for later
-  time0 = np.array(time)
-  breakpoints0 = np.array(breakpoints)
-  
-  # Re-compute breakpoints
-  segs = np.zeros_like(time)
-  for i in range(1,len(time)):
-    segs[i] = np.argmax(breakpoints > i - 1)
-  segs[bad] = -1
-  segs = np.delete(segs, bad)  
-  breakpoints = np.where(np.diff(segs))[0]
-  
-  # Now delete the bad points from the arrays
-  time = np.delete(time, bad)
-  fluxes = np.delete(np.array(fluxes), bad, axis = 1)
-  
-  # Add back the last breakpoint (signals end of light curve)
-  breakpoints = np.append(breakpoints, [len(time) - 1])
-  
-  # -*- HACKS -*-
-  if campaign == 0:
-    breakpoints[0] = 501
-  elif campaign == 1:
-    breakpoints[0] = 1818
-  
-  return time, breakpoints, fluxes, time0, breakpoints0
+  return time, breakpoints, fluxes
 
 def SOM(time, fluxes, nflx, alpha_0 = 0.1, ki = 3, kj = 1, 
         niter = 30, periodic = False, **kwargs):
@@ -290,57 +288,17 @@ def PlotSOM(nflx, som, lcinds, ij, figname = 'som.pdf', **kwargs):
   fig.savefig(figname)
   pl.close()
 
-def FitLightCurve(time, flux, breakpoints, X, mask = [], align = 'model'):
-  '''
-  
-  '''
-  
-  # Loop over all the light curve segments
-  model = [None for b in range(len(breakpoints))]
-  weights = [None for b in range(len(breakpoints))]
-  for b in range(len(breakpoints)):
-    
-    # Get the indices for this light curve segment
-    inds = GetChunk(time, breakpoints, b, mask = mask)
-        
-    # Ordinary least squares
-    mX = np.delete(X[b], mask, axis = 0)
-    A = np.dot(mX.T, mX)
-    B = np.dot(mX.T, flux[inds])
-    weights[b] = np.linalg.solve(A, B)
-    model[b] = np.dot(X[b], weights[b])
-    
-    # Vertical alignment
-    if b == 0:
-      model[b] -= np.nanmedian(model[b])
-    else:
-      if align == 'model':
-        model[b] += (model[b - 1][-1] - model[b][0])
-      elif align == 'flux':
-        model[b] += (model[b - 1][-1] - model[b][0]) - (flux[inds[0] - 1] - flux[inds[0]])
-      else:
-        raise ValueError("Invalid value for `align`.")
-  
-  # Join model and normalize  
-  model = np.concatenate(model)
-  model -= np.nanmedian(model)
-  
-  fig, ax = pl.subplots(2, figsize = (12, 6), sharex = True)
-  ax[0].plot(time, flux, 'k.', markersize = 3)
-  ax[0].plot(time, model + np.nanmedian(flux), 'r-')
-  ax[1].plot(time, flux - model, 'k.', markersize = 3)
-  ax[0].set_ylabel('Original Flux', fontsize = 16)
-  ax[1].set_ylabel('Corrected Flux', fontsize = 16)
-  ax[1].set_xlabel('Time (BJD - 2454833)', fontsize = 16)
-  ax[0].margins(0.01, None)
-  
-  pl.show()
-
 def Compute(time, fluxes, breakpoints, smooth_in = True, smooth_out = True, 
             nreg = 2, path = '', **kwargs):
   '''
   
   '''
+  
+  # DEBUG. Need to fix savgol with nans
+  smooth_in = False
+  smoouth_out = False
+  # DEBUG. Need to fix recursion with nans
+  nreg = 1
   
   X = [None for b in range(len(breakpoints))]
   for b in range(len(breakpoints)):
@@ -391,7 +349,7 @@ def Compute(time, fluxes, breakpoints, smooth_in = True, smooth_out = True,
 
   return X
 
-def Run(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwargs):
+def GetX(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwargs):
   '''
   
   '''
@@ -422,7 +380,7 @@ def Run(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwar
     log.info('Obtaining light curves...')
     lcfile = os.path.join(path, 'lcs.npz')
     if clobber or not os.path.exists(lcfile):
-      time, breakpoints, fluxes, time0, breakpoints0 = GetLightCurves(campaign, module, model = model, **kwargs)
+      time, breakpoints, fluxes, time0, breakpoints0 = GetStars(campaign, module, model = model, **kwargs)
       np.savez(lcfile, time = time, breakpoints = breakpoints, 
                fluxes = fluxes, time0 = time0, breakpoints0 = breakpoints0)
     else:
@@ -430,38 +388,89 @@ def Run(campaign, module, model = 'nPLD', clobber = False, quiet = False, **kwar
       time = lcs['time']
       breakpoints = lcs['breakpoints']
       fluxes = lcs['fluxes']
-      time0 = lcs['time0']
-      breakpoints0 = lcs['breakpoints0']
     
     # Get the design matrix  
     X = Compute(time, fluxes, breakpoints, path = path, **kwargs)
-
-    # Interpolate back to the original time grid
-    X_orig = [None for b in range(len(breakpoints))]
-    for b, Xb in enumerate(X):  
-      inds = GetChunk(time, breakpoints, b)
-      inds_orig = GetChunk(time_orig, breakpoints_orig, b)
-      X_orig[b] = np.empty((len(inds_orig), 0))
-      for n in range(Xb.shape[1]):
-        X_orig[b] = np.hstack([X_orig[b], np.interp(time_orig[inds_orig], time[inds], Xb[:, n]).reshape(-1, 1)])
-    X = X_orig
-    
+    X = np.vstack(X)
     np.savez(xfile, X = X)
   
   else:
       
     X = np.load(xfile)['X']
   
+  return X
+
+def Fit(EPIC, campaign = None, module = None, align = 'flux', **kwargs):
+  '''
   
+  '''
   
-  quit()
+  # Get the data
+  if campaign is None:
+    campaign = Campaign(EPIC)
+  if module is None:
+    module = Module(EPIC)
+  time, flux, breakpoints, mask = GetLightCurve(EPIC, campaign, **kwargs)
   
-  # DEBUG
-  lcfile = os.path.join(path, 'lcs.npz')
-  lcs = np.load(lcfile)
-  time = lcs['time']
-  breakpoints = lcs['breakpoints']
-  fluxes = lcs['fluxes']
-  for f in fluxes:
-    FitLightCurve(time, f, breakpoints, X)
+  # Get the design matrix  
+  X = GetX(campaign, module, **kwargs)
   
+  # Loop over all the light curve segments
+  model = [None for b in range(len(breakpoints))]
+  weights = [None for b in range(len(breakpoints))]
+  for b in range(len(breakpoints)):
+    
+    # Get the indices for this light curve segment
+    inds = GetChunk(time, breakpoints, b)
+    masked_inds = GetChunk(time, breakpoints, b, mask = mask)
+
+    # Ordinary least squares
+    mX = X[masked_inds]
+    A = np.dot(mX.T, mX)
+    B = np.dot(mX.T, flux[masked_inds])
+    weights[b] = np.linalg.solve(A, B)
+    model[b] = np.dot(X[inds], weights[b])
+    
+    # Vertical alignment
+    if b == 0:
+      model[b] -= np.nanmedian(model[b])
+    else:
+      if align == 'model':
+        model[b] += (model[b - 1][-1] - model[b][0])
+      elif align == 'flux':
+        model[b] += (model[b - 1][-1] - model[b][0]) - (flux[masked_inds[0] - 1] - flux[masked_inds[0]])
+        
+        
+        fig, ax = pl.subplots(2, sharex=True)
+        ax[0].plot(time, X[:,1])
+        ax[1].plot(time, flux, 'k.', alpha = 0.3)
+        pl.show()
+        quit()
+      else:
+        raise ValueError("Invalid value for `align`.")
+  
+  # Join model and normalize  
+  model = np.concatenate(model)
+  model -= np.nanmedian(model)
+  
+  # Plot the light curve, model, and corrected light curve
+  fig, ax = pl.subplots(2, figsize = (12, 6), sharex = True)
+  ax[0].plot(np.delete(time, mask), np.delete(flux, mask), 'k.', markersize = 3)
+  ax[0].plot(np.delete(time, mask), np.delete(model, mask) + np.nanmedian(flux), 'r-')
+  ax[1].plot(np.delete(time, mask), np.delete(flux - model, mask), 'k.', markersize = 3)
+  ax[0].set_ylabel('Original Flux', fontsize = 16)
+  ax[1].set_ylabel('Corrected Flux', fontsize = 16)
+  ax[1].set_xlabel('Time (BJD - 2454833)', fontsize = 16)
+  
+  # Force the axis range based on the non-outliers
+  ax[0].margins(0.01, None)
+  ax[0].set_xlim(ax[0].get_xlim())
+  ax[0].set_ylim(ax[0].get_ylim())
+  ax[1].set_xlim(ax[0].get_xlim())
+  ax[1].set_ylim(ax[0].get_ylim())
+  
+  # Now plot the outliers
+  ax[0].plot(time[mask], flux[mask], 'r.', markersize = 3, alpha = 0.5)
+  ax[1].plot(time[mask], flux[mask] - model[mask], 'r.', markersize = 3, alpha = 0.5)
+  
+  pl.show()
