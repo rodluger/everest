@@ -61,11 +61,10 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
   '''
   
   # Get the channel numbers
-  channels = []
-  for m in np.atleast_1d(module):
-    c = Channels(m)
-    if c is not None:
-      channels.extend(c)
+  if module == 'all':
+    channels = range(99)
+  else:
+    channels = Channels(module)
   
   # Get the EPIC numbers
   all = GetK2Campaign(campaign)
@@ -422,7 +421,7 @@ def GetX(campaign, module, model = 'nPLD', clobber = False, **kwargs):
   '''
   
   # Output path
-  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, '%2d' % module, model)
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model)
   if not os.path.exists(path):
     os.makedirs(path)
    
@@ -465,7 +464,7 @@ def Fit(EPIC, campaign = None, module = None, model = 'nPLD', **kwargs):
   if module is None:
     module = Module(EPIC)
   time, flux, breakpoints, mask = GetLightCurve(EPIC, campaign, **kwargs)
-  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, '%2d' % module, model)
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model)
   
   # Get the design matrix  
   X = GetX(campaign, module, model = model, **kwargs)
