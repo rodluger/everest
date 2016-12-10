@@ -770,14 +770,29 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'c%02d_everest1.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)   
+      # Outliers: TODO
+      #epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+      #                                  'tables', 'c%02d_everest1.out' % int(campaign)), unpack = True)
+      #out_1 = sort_like(out_1, epic, epic_1)
+      #tot_1 = sort_like(tot_1, epic, epic_1)
     elif compare_to.lower() == 'k2sc':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'c%02d_k2sc.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
+      # Outliers: TODO
+      #epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+      #                                  'tables', 'c%02d_k2sc.out' % int(campaign)), unpack = True)
+      #out_1 = sort_like(out_1, epic, epic_1)
+      #tot_1 = sort_like(tot_1, epic, epic_1)
     elif compare_to.lower() == 'k2sff':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'c%02d_k2sff.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
+      # Outliers: TODO
+      #epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+      #                                  'tables', 'c%02d_k2sff.out' % int(campaign)), unpack = True)
+      #out_1 = sort_like(out_1, epic, epic_1)
+      #tot_1 = sort_like(tot_1, epic, epic_1)
     elif compare_to.lower() == 'kepler':
       kic, kepler_kp, kepler_cdpp6 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                          'tables', 'kepler.cdpp'), unpack = True)
@@ -791,19 +806,22 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1) 
  
     # ------ 1. Plot cdpp vs. mag
-    fig = pl.figure(figsize = (16, 5))
-    fig.canvas.set_window_title('K2 Campaign %s: %s versus %s' % (campaign, model, compare_to))
-    fig.subplots_adjust(left = 0.05, right = 0.95, bottom = 0.125, top = 0.9)
+    
+    
     if compare_to.lower() != 'kepler':
+      fig = pl.figure(figsize = (16, 5))
       ax = [pl.subplot2grid((120, 120), (0,  0), colspan=35, rowspan=120),
             pl.subplot2grid((120, 120), (0,  40), colspan=35, rowspan=120),
-            pl.subplot2grid((120, 120), (0,  80), colspan=29, rowspan=120),
-            pl.subplot2grid((120, 120), (0,  110), colspan=10, rowspan=120)]
+            pl.subplot2grid((120, 120), (0,  80), colspan=35, rowspan=55),
+            pl.subplot2grid((120, 120), (65,  80), colspan=35, rowspan=55)]
     else:
-      ax = [pl.subplot2grid((120, 120), (0,  0), colspan=70, rowspan=120),
+      fig = pl.figure(figsize = (12, 5))
+      ax = [pl.subplot2grid((120, 75), (0,  0), colspan=35, rowspan=120),
             None,
-            pl.subplot2grid((120, 120), (0,  75), colspan=34, rowspan=120),
-            pl.subplot2grid((120, 120), (0,  110), colspan=10, rowspan=120)]
+            pl.subplot2grid((120, 75), (0,  40), colspan=35, rowspan=55),
+            pl.subplot2grid((120, 75), (65,  40), colspan=35, rowspan=55)]
+    fig.canvas.set_window_title('K2 Campaign %s: %s versus %s' % (campaign, model, compare_to))
+    fig.subplots_adjust(left = 0.05, right = 0.95, bottom = 0.125, top = 0.9)
     bins = np.arange(7.5,18.5,0.5)
     if compare_to.lower() != 'kepler':
       ax[0].scatter(kp[unsat], cdpp6_1[unsat], color = 'y', marker = '.', alpha = alpha_unsat)
@@ -856,26 +874,15 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       ax[1].set_title(r'Relative CDPP', fontsize = 18)
       ax[1].set_xlabel('Kepler Magnitude', fontsize = 18)
       
-    # ------ 3. Plot the outliers
-    ax[2].scatter(kp[unsat], outliers[unsat], color = 'k', marker = '.', alpha = alpha_unsat, picker = True)
-    ax[2].scatter(kp[sat], outliers[sat], color = 'r', marker = '.', alpha = alpha_sat, picker = True)
-    ax[3].hist(np.log10(outliers[outliers > 0]), 50, orientation = "horizontal", color = 'k', alpha = 0.5)
+    # ------ 3. Plot the outliers (TODO)
+    ax[2].hist(outliers[outliers < 150], 25, histtype = 'step', color = 'b')
+    #ax[2].hist(out_1[out_1 < 150], 25, histtype = 'step', color = 'y')
     ax[2].set_title('Number of Outliers', fontsize = 18)
-    ax[2].set_xlabel('Kepler Magnitude', fontsize = 18)
-    ax[2].set_xlim(8, 18)
-    ax[2].set_yscale('log')
-    ax[2].set_ylim(0.9, 1e3)
-    ax[2].yaxis.set_major_formatter(ScalarFormatter())
-    ax[3].set_ylim(*np.log10(ax[2].get_ylim()))
-    ax[3].set_xticks([])
-    ax[3].set_yticks([])
-    ax3t = ax[3].twinx()
-    ax3t.set_yscale('log')
-    ax3t.set_ylim(0.9, 1e3)
-    ax3t.yaxis.set_ticklabels([])
+    #ax[3].hist(tot_1, 25, histtype = 'step', color = 'y')
+    ax[3].set_xlabel('Number of Data Points', fontsize = 18)
     
     # Pickable points
-    Picker = StatsPicker([ax[0], ax[1], ax[2]], [kp, kp, kp], [cdpp6, y, outliers], epic, campaign, model = model, compare_to = compare_to)
+    Picker = StatsPicker([ax[0], ax[1]], [kp, kp], [cdpp6, y], epic, campaign, model = model, compare_to = compare_to)
     fig.canvas.mpl_connect('pick_event', Picker)
     
     # Show
