@@ -69,6 +69,17 @@ class Fit(object):
           # is somehow missing from the `nearby` list.
           raise ValueError("Target not found in list!")
         return self._parent.PRF2DET([self.f[i]], [self.x[i]], [self.y[i]], [self.wx[i]], [self.wy[i]], self.a)
+    
+    @property
+    def fits(self):
+        '''
+        Returns a list of the PRF fits for each of the targets individually.
+
+        '''
+
+        return [self._parent.PRF2DET([self.f[i]], [self.x[i]], 
+                                     [self.y[i]], [self.wx[i]], 
+                                     [self.wy[i]], self.a) for i in range(len(self.f))]
 
 class CrowdingTarget(object):
     '''
@@ -307,7 +318,13 @@ class CrowdingTarget(object):
         for elem in f:
             if elem < 0:
                 PRFres = 1.0e300
-
+        
+        # Reject large/small focus factors
+        if np.any(wx > 1.15) or np.any(wx < 0.85):
+            PRFres = 1.0e30
+        if np.any(wy > 1.15) or np.any(wy < 0.85):
+            PRFres = 1.0e30
+        
         return PRFres
 
     def PRF2DET(self, flux, OBJx, OBJy, wx, wy, a):

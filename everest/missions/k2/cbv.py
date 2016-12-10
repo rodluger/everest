@@ -18,13 +18,13 @@ import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import os, sys
 import logging
+log = logging.getLogger(__name__)
 
 def InitLog():
   '''
   
   '''
   
-  log = logging.getLogger(__name__)
   root = logging.getLogger()
   root.handlers = []
   root.setLevel(logging.DEBUG)
@@ -440,7 +440,7 @@ def GetX(campaign, module, model = 'nPLD', clobber = False, **kwargs):
       lcs = np.load(lcfile)
       time = lcs['time']
       breakpoints = lcs['breakpoints']
-      fluxes = lcs['fluxes']
+      fluxes = lcs['fluxes'][:kwargs.get('max_stars', None)]
     
     # Get the design matrix  
     X = Compute(time, fluxes, breakpoints, path = path, **kwargs)
@@ -490,7 +490,11 @@ def Fit(EPIC, campaign = None, module = None, model = 'nPLD', **kwargs):
     if b == 0:
       model[b] -= np.nanmedian(model[b])
     else:
-      model[b] += (model[b - 1][-1] - model[b][0])
+      # Match the first finite model point on either side of the break
+      # We could consider something more elaborate in the future
+      i0 = -1 - np.argmax([np.isfinite(model[b - 1][-i]) for i in range(1, len(model[b - 1]) - 1)])
+      i1 = np.argmax([np.isfinite(model[b][i]) for i in range(len(model[b]))])
+      model[b] += (model[b - 1][i0] - model[b][i1])
   
   # Join model and normalize  
   model = np.concatenate(model)
