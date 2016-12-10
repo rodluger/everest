@@ -403,9 +403,7 @@ class CrowdingTarget(object):
                 if contour[i][j] == 1:
                     ap_total.append(self.answers[-1].fit[i][j])
                     ap_target.append(self.answers[-1].fit0[i][j])
-        
-        import pdb; pdb.set_trace()
-        
+
         # crowding parameter for aperture
         self.c_aperture = np.nansum(ap_target) / np.nansum(ap_total)
 
