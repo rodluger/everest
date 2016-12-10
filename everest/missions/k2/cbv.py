@@ -18,13 +18,13 @@ import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import os, sys
 import logging
+log = logging.getLogger(__name__)
 
 def InitLog():
   '''
   
   '''
   
-  log = logging.getLogger(__name__)
   root = logging.getLogger()
   root.handlers = []
   root.setLevel(logging.DEBUG)
