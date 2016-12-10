@@ -18,15 +18,21 @@ import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 import os, sys
 import logging
-log = logging.getLogger(__name__)
-root = logging.getLogger()
-root.handlers = []
-root.setLevel(logging.DEBUG)
-sh = logging.StreamHandler(sys.stdout)
-sh.setLevel(logging.DEBUG)
-sh_formatter = logging.Formatter("[%(funcName)s()]: %(message)s")
-sh.setFormatter(sh_formatter)
-root.addHandler(sh)
+
+def InitLog():
+  '''
+  
+  '''
+  
+  log = logging.getLogger(__name__)
+  root = logging.getLogger()
+  root.handlers = []
+  root.setLevel(logging.DEBUG)
+  sh = logging.StreamHandler(sys.stdout)
+  sh.setLevel(logging.DEBUG)
+  sh_formatter = logging.Formatter("[%(funcName)s()]: %(message)s")
+  sh.setFormatter(sh_formatter)
+  root.addHandler(sh)
 
 def GetLightCurve(EPIC, campaign, model = 'nPLD', **kwargs):
   '''
