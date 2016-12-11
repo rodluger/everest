@@ -738,10 +738,10 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
           m = 1
           while len(inds) < m:
             m = len(inds)
-            f = SavGol(np.delete(flux, inds))
-            med = np.nanmedian(f)
-            MAD = 1.4826 * np.nanmedian(np.abs(f - med))
-            inds = np.append(inds, np.where((f > med + 5. * MAD) | (f < med - 5. * MAD))[0])
+            ff = SavGol(np.delete(flux, inds))
+            med = np.nanmedian(ff)
+            MAD = 1.4826 * np.nanmedian(np.abs(ff - med))
+            inds = np.append(inds, np.where((ff > med + 5. * MAD) | (ff < med - 5. * MAD))[0])
           nout = len(inds)
           ntot = len(flux)
 
