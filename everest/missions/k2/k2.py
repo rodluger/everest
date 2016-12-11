@@ -890,11 +890,35 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       ax[1].set_xlabel('Kepler Magnitude', fontsize = 18)
       
     # ------ 3. Plot the outliers
-    ax[2].hist(out[out < 150], 25, histtype = 'step', color = 'b')
-    ax[2].hist(out_1[out_1 < 150], 25, histtype = 'step', color = 'y')
+    i = np.argsort(out)
+    a = int(0.95 * len(out))
+    omax = out[i][a]
+    if compare_to.lower() != 'kepler':
+      j = np.argsort(out_1)
+      b = int(0.95 * len(out_1))
+      omax = max(omax, out_1[j][b])
+    ax[2].hist(out, 25, range = (0, omax), histtype = 'step', color = 'b')
+    if compare_to.lower() != 'kepler':
+      ax[2].hist(out_1, 25, range = (0, omax), histtype = 'step', color = 'y')
+    ax[2].margins(0, None)
     ax[2].set_title('Number of Outliers', fontsize = 18)
-    ax[3].hist(tot, 25, histtype = 'step', color = 'b')
-    ax[3].hist(tot_1, 25, histtype = 'step', color = 'y')
+    
+    # Plot the total number of data points
+    i = np.argsort(tot)
+    a = int(0.05 * len(tot))
+    b = int(0.95 * len(tot))
+    tmin = tot[i][a]
+    tmax = tot[i][b]
+    if compare_to.lower() != 'kepler':
+      j = np.argsort(tot_1)
+      c = int(0.05 * len(tot_1))
+      d = int(0.95 * len(tot_1))
+      tmin = min(tmin, tot_1[j][c])
+      tmax = max(tmax, tot_1[j][d])
+    ax[3].hist(tot, 25, range = (tmin, tmax), histtype = 'step', color = 'b')
+    if compare_to.lower() != 'kepler':
+      ax[3].hist(tot_1, 25, range = (tmin, tmax), histtype = 'step', color = 'y')
+    ax[3].margins(0, None)
     ax[3].set_xlabel('Number of Data Points', fontsize = 18)
     
     # Pickable points
