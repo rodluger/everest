@@ -537,5 +537,5 @@ def FitAll(campaign = 1, module = 18, model = 'nPLD'):
           ('%09d' % s[0])[4:], model + '.npz'))], dtype = int)
   N = len(stars)
   for n in range(N):
-    log.info("Processing light curve %d/%d..." % (n + 1, N))
+    log.info("Fitting light curve %d/%d..." % (n + 1, N))
     Fit(stars[n], campaign = campaign, module = module, model = model)

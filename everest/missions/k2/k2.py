@@ -717,8 +717,8 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
   outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model, int(campaign)))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
-      print("EPIC               Kp           Raw CDPP     Everest CDPP      Validation        Outliers       Saturated", file = f)
-      print("---------          ------       ---------    ------------      ----------        --------       ---------", file = f)
+      print("EPIC               Kp           Raw CDPP     Everest CDPP      Validation        Outliers[1]     Outliers[2]     Datapoints     Saturated", file = f)
+      print("---------          ------       ---------    ------------      ----------        -----------     -----------     ----------     ---------", file = f)
       all = GetK2Campaign(int(campaign))
       stars = np.array([s[0] for s in all], dtype = int)
       kpmgs = np.array([s[1] for s in all], dtype = float)
@@ -730,17 +730,33 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
                          ('%09d' % stars[i])[4:], model + '.npz')
         try:
           data = np.load(nf)
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], data['cdppv'][()], len(data['outmask']), int(data['saturated'])), file = f)
+          
+          # Remove NaNs and flagged cadences
+          flux = np.delete(data['fraw'] - data['model'], np.array(list(set(np.concatenate([data['nanmask'], data['badmask']])))))
+          # Iterative sigma clipping to get 5 sigma outliers
+          inds = np.array([], dtype = int)
+          m = 1
+          while len(inds) < m:
+            m = len(inds)
+            f = SavGol(np.delete(flux, inds))
+            med = np.nanmedian(f)
+            MAD = 1.4826 * np.nanmedian(np.abs(f - med))
+            inds = np.append(inds, np.where((f > med + 5. * MAD) | (f < med - 5. * MAD))[0])
+          nout = len(inds)
+          ntot = len(flux)
+
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], data['cdppv'][()], len(data['outmask']), nout, ntot, int(data['saturated'])), file = f)
         except:
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, 0, 0), file = f)
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, 0, 0, 0, 0), file = f)
       print("")
   
   if plot:
   
     # Load all stars
-    epic, kp, cdpp6r, cdpp6, cdpp6v, outliers, saturated = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    epic, kp, cdpp6r, cdpp6, cdpp6v, _, out, tot, saturated = np.loadtxt(outfile, unpack = True, skiprows = 2)
     epic = np.array(epic, dtype = int)
-    outliers = np.array(outliers, dtype = int)
+    out = np.array(out, dtype = int)
+    tot = np.array(tot, dtype = int)
     saturated = np.array(saturated, dtype = int)
 
     # Get only stars in this subcampaign
@@ -753,7 +769,8 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
     cdpp6r = cdpp6r[inds]
     cdpp6 = cdpp6[inds]
     cdpp6v = cdpp6v[inds]
-    outliers = outliers[inds]
+    out = out[inds]
+    tot = tot[inds]
     saturated = saturated[inds]
     sat = np.where(saturated == 1)
     unsat = np.where(saturated == 0)
@@ -770,29 +787,29 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'c%02d_everest1.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)   
-      # Outliers: TODO
-      #epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-      #                                  'tables', 'c%02d_everest1.out' % int(campaign)), unpack = True)
-      #out_1 = sort_like(out_1, epic, epic_1)
-      #tot_1 = sort_like(tot_1, epic, epic_1)
+      # Outliers
+      epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+                                        'tables', 'c%02d_everest1.out' % int(campaign)), unpack = True)
+      out_1 = sort_like(out_1, epic, epic_1)
+      tot_1 = sort_like(tot_1, epic, epic_1)
     elif compare_to.lower() == 'k2sc':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'c%02d_k2sc.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
-      # Outliers: TODO
-      #epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-      #                                  'tables', 'c%02d_k2sc.out' % int(campaign)), unpack = True)
-      #out_1 = sort_like(out_1, epic, epic_1)
-      #tot_1 = sort_like(tot_1, epic, epic_1)
+      # Outliers
+      epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+                                        'tables', 'c%02d_k2sc.out' % int(campaign)), unpack = True)
+      out_1 = sort_like(out_1, epic, epic_1)
+      tot_1 = sort_like(tot_1, epic, epic_1)
     elif compare_to.lower() == 'k2sff':
       epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'c%02d_k2sff.cdpp' % int(campaign)), unpack = True)
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
-      # Outliers: TODO
-      #epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
-      #                                  'tables', 'c%02d_k2sff.out' % int(campaign)), unpack = True)
-      #out_1 = sort_like(out_1, epic, epic_1)
-      #tot_1 = sort_like(tot_1, epic, epic_1)
+      # Outliers
+      epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+                                        'tables', 'c%02d_k2sff.out' % int(campaign)), unpack = True)
+      out_1 = sort_like(out_1, epic, epic_1)
+      tot_1 = sort_like(tot_1, epic, epic_1)
     elif compare_to.lower() == 'kepler':
       kic, kepler_kp, kepler_cdpp6 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                          'tables', 'kepler.cdpp'), unpack = True)
@@ -806,8 +823,6 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1) 
  
     # ------ 1. Plot cdpp vs. mag
-    
-    
     if compare_to.lower() != 'kepler':
       fig = pl.figure(figsize = (16, 5))
       ax = [pl.subplot2grid((120, 120), (0,  0), colspan=35, rowspan=120),
@@ -874,11 +889,12 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       ax[1].set_title(r'Relative CDPP', fontsize = 18)
       ax[1].set_xlabel('Kepler Magnitude', fontsize = 18)
       
-    # ------ 3. Plot the outliers (TODO)
-    ax[2].hist(outliers[outliers < 150], 25, histtype = 'step', color = 'b')
-    #ax[2].hist(out_1[out_1 < 150], 25, histtype = 'step', color = 'y')
+    # ------ 3. Plot the outliers
+    ax[2].hist(out[out < 150], 25, histtype = 'step', color = 'b')
+    ax[2].hist(out_1[out_1 < 150], 25, histtype = 'step', color = 'y')
     ax[2].set_title('Number of Outliers', fontsize = 18)
-    #ax[3].hist(tot_1, 25, histtype = 'step', color = 'y')
+    ax[3].hist(tot, 25, histtype = 'step', color = 'b')
+    ax[3].hist(tot_1, 25, histtype = 'step', color = 'y')
     ax[3].set_xlabel('Number of Data Points', fontsize = 18)
     
     # Pickable points
