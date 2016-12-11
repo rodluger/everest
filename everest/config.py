@@ -25,10 +25,10 @@ if EVEREST_DEV:
   import matplotlib as mpl
   if platform.system() == "Linux":
     mpl.use("Agg", warn=False)
-  
-  # Dev version hack: custom font
-  mpl.rc('font', family='serif') 
-  mpl.rc('font', serif='Palatino Linotype')
+  else:
+    # Dev version hack: custom font
+    mpl.rc('font', family='serif') 
+    mpl.rc('font', serif='Palatino Linotype')
 
 #: The :py:mod:`everest` data directory
 EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.join("~", ".everest2")))                               
