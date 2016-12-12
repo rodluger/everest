@@ -815,12 +815,17 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
                                          'tables', 'kepler.cdpp'), unpack = True)
     else:
       compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (compare_to, int(campaign)))
-      epic_1, _, _, cdpp6_1, _, _, _ = np.loadtxt(compfile, unpack = True, skiprows = 2)
+      
+      epic_1, _, _, cdpp6_1, _, _, out_1, tot_1, saturated = np.loadtxt(compfile, unpack = True, skiprows = 2)
       epic_1 = np.array(epic_1, dtype = int)
       inds = np.array([e in sub for e in epic_1])
       epic_1 = epic_1[inds]
       cdpp6_1 = cdpp6_1[inds]
+      out_1 = out_1[inds]
+      tot_1 = tot_1[inds]
       cdpp6_1 = sort_like(cdpp6_1, epic, epic_1) 
+      out_1 = sort_like(out_1, epic, epic_1)
+      tot_1 = sort_like(tot_1, epic, epic_1)
  
     # ------ 1. Plot cdpp vs. mag
     if compare_to.lower() != 'kepler':

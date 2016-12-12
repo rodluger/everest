@@ -349,12 +349,17 @@ class Detrender(Basecamp):
     maxm = 0
     minr = len(validation)
     for n in range(validation.shape[1]):
+      # The index that minimizes the scatter for this segment
       m = np.nanargmin(validation[:,n])
       if m > maxm:
+        # The largest of the `m`s. 
         maxm = m
+      # The largest index with validation scatter within
+      # `self.leps` of the minimum for this segment
       r = np.where((validation[:,n] - validation[m,n]) / 
                     validation[m,n] <= self.leps)[0][-1]
       if r < minr:
+        # The smallest of the `r`s
         minr = r
     return min(maxm, minr)
 
@@ -1142,7 +1147,12 @@ class pPLD(Detrender):
     # Check for saved model
     if not self.load_model('nPLD'):
       raise Exception("Can't find `nPLD` model for target.")
-  
+    
+    # Powell iterations
+    self.piter = kwargs.get('piter', 3)
+    self.pmaxf = kwargs.get('pmaxf', 300)
+    self.ppert = kwargs.get('ppert', 0.3)
+    
   def run(self):
     '''
     
@@ -1196,11 +1206,32 @@ class pPLD(Detrender):
       # The pre-computed matrices
       pre_v = [self.cv_precompute(mask, b) for mask in masks]
       
-      # Call the minimizer
-      self.lam[b] = 10 ** fmin_powell(self.validation_scatter, np.log10(self.lam[b]), 
-                                      args = (b, masks, pre_v, gp, flux, time, med),
-                                      maxfun = 1, disp = False)
+      # The nPLD solution
+      log_lam_opt = np.array(np.log10(self.lam[b]))
+      minv = self.validation_scatter(log_lam_opt, b, masks, pre_v, gp, flux, time, med)
+      log.info("Powell iteration 0/%d: SIGMAV = %.2f" % (self.piter, minv))
       
+      # Begin main loop
+      for p in range(self.piter):
+        
+        # Perturb the initial condition a bit
+        log_lam = np.array(log_lam_opt) * (1 + self.ppert * np.random.randn(len(log_lam_opt)))
+          
+        # Call the minimizer
+        log_lam, fopt, _, _, _, _ = fmin_powell(self.validation_scatter, log_lam, 
+                                                args = (b, masks, pre_v, gp, flux, time, med),
+                                                maxfun = self.pmaxf, disp = False,
+                                                full_output = True)
+        
+        log.info("Powell iteration %d/%d: SIGMAV = %.2f" % (p + 1, self.piter, fopt))
+        
+        # Did the solution improve?
+        if fopt < minv:
+          log_lam_opt = log_lam
+      
+      # The best solution
+      self.lam[b] = 10 ** log_lam_opt
+        
   def validation_scatter(self, loglam, b, masks, pre_v, gp, flux, time, med):
     '''
     
@@ -1225,5 +1256,5 @@ class pPLD(Detrender):
     
     # Take the maximum
     scatter = np.max(scatter)
-    
+
     return scatter
