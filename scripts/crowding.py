@@ -69,7 +69,7 @@ class Fit(object):
           # is somehow missing from the `nearby` list.
           raise ValueError("Target not found in list!")
         return self._parent.PRF2DET([self.f[i]], [self.x[i]], [self.y[i]], [self.wx[i]], [self.wy[i]], self.a)
-    
+
     @property
     def fits(self):
         '''
@@ -77,8 +77,8 @@ class Fit(object):
 
         '''
 
-        return [self._parent.PRF2DET([self.f[i]], [self.x[i]], 
-                                     [self.y[i]], [self.wx[i]], 
+        return [self._parent.PRF2DET([self.f[i]], [self.x[i]],
+                                     [self.y[i]], [self.wx[i]],
                                      [self.wy[i]], self.a) for i in range(len(self.f))]
 
 class CrowdingTarget(object):
@@ -318,13 +318,13 @@ class CrowdingTarget(object):
         for elem in f:
             if elem < 0:
                 PRFres = 1.0e300
-        
+
         # Reject large/small focus factors
         if np.any(wx > 1.15) or np.any(wx < 0.85):
             PRFres = 1.0e30
         if np.any(wy > 1.15) or np.any(wy < 0.85):
             PRFres = 1.0e30
-        
+
         return PRFres
 
     def PRF2DET(self, flux, OBJx, OBJy, wx, wy, a):
@@ -407,6 +407,12 @@ class CrowdingTarget(object):
         # crowding parameter for aperture
         self.c_aperture = np.nansum(ap_target) / np.nansum(ap_total)
 
+        # weighted crowding parameter
+        self.c_weighted = self.c_pixel * self.answers[-1].fit0 / np.nansum(self.answers[-1].fit0)
+
+        #residual crowding parameter
+        self.c_residual = self.answers[-1].fit0 - self.answers[-1].fit0 * self.c_pixel
+
     def plot(self):
         '''
 
@@ -414,7 +420,7 @@ class CrowdingTarget(object):
 
         rdbu = pl.get_cmap('RdBu_r')
 
-        fig, ax = pl.subplots(2, 2, figsize = (8, 8))
+        fig, ax = pl.subplots(2, 3, figsize = (12, 8))
         vmax = np.max([np.nanmax(self.fpix[self.index])] + [np.nanmax(a.fit) for a in self.answers[1:]])
         vmin = np.min([np.nanmin(self.fpix[self.index])] + [np.nanmin(a.fit) for a in self.answers[1:]])
         vmax = max(vmax, -vmin)
@@ -441,7 +447,7 @@ class CrowdingTarget(object):
 
         # Show aperture and set bounds
         for i in range(2):
-            for j in range(2):
+            for j in range(3):
                 ax[i,j].contour(highres, levels=[0.5], extent=extent, origin='lower', colors='r', linewidths=1)
                 ax[i,j].set_xlim(-0.5, self.nx - 0.5)
                 ax[i,j].set_ylim(self.ny - 0.5, -0.5)
@@ -464,26 +470,32 @@ class CrowdingTarget(object):
         err = np.sqrt(np.nansum((self.fpix[self.index] - self.answers[-1].fit) ** 2) / np.nansum(self.fpix[self.index] ** 2))
 
         # Display fit info
-        ax[1,0].annotate(r'$\log(\chi^2) = %.3f$' % np.log10(self.chisq[-1]),
+        ax[0,2].annotate(r'$\log(\chi^2) = %.3f$' % np.log10(self.chisq[-1]),
                          xy = (0.025, 0.95), xycoords = 'axes fraction',
                          ha = 'left', va = 'top', color = 'k', fontsize = 12)
-        ax[1,0].annotate(r'$\mathrm{ERROR} = %.1f$' % (100 * err) + r'$\%$',
+        ax[0,2].annotate(r'$\mathrm{ERROR} = %.1f$' % (100 * err) + r'$\%$',
                          xy = (0.975, 0.05), xycoords = 'axes fraction',
                          ha = 'right', va = 'bottom', color = 'k', fontsize = 12)
 
         # Show the residuals
-        ax[1,0].imshow(self.fpix[self.index] - self.answers[-1].fit, interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
-        ax[1,0].set_title('Residuals')
+        ax[0,2].imshow(self.fpix[self.index] - self.answers[-1].fit, interpolation = 'nearest', vmin = vmin, vmax = vmax, cmap = rdbu)
+        ax[0,2].set_title('Residuals')
 
         # Show the crowding
-        ax[1,1].imshow(self.c_pixel, interpolation='nearest', cmap=rdbu)
-        ax[1,1].set_title('Crowding')
-        ax[1,1].annotate(r'$C_{total} = %.3f$' % self.c_postage,
+        ax[1,0].imshow(self.c_pixel, interpolation='nearest', cmap=rdbu)
+        ax[1,0].set_title('Pixel Crowding')
+        ax[1,0].annotate(r'$C_{total} = %.3f$' % self.c_postage,
                          xy = (0.025, 0.95), xycoords = 'axes fraction',
                          ha = 'left', va = 'top', color = 'k', fontsize = 12)
-        ax[1,1].annotate(r'$C_{aperture} = %.3f$' % self.c_aperture,
+        ax[1,0].annotate(r'$C_{aperture} = %.3f$' % self.c_aperture,
                          xy = (0.975, 0.05), xycoords = 'axes fraction',
                          ha = 'right', va = 'bottom', color = 'k', fontsize = 12)
+
+        ax[1,1].imshow(self.c_weighted, interpolation='nearest', cmap=rdbu)
+        ax[1,1].set_title('Weighted Crowding')
+
+        ax[1,2].imshow(self.c_residual, interpolation='nearest', cmap=rdbu)
+        ax[1,2].set_title('Residual Crowding')
 
         pl.show()
 
