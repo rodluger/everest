@@ -126,7 +126,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
   
   return time, breakpoints, fluxes
 
-def SavGol(t, y, svwin = 99, svorder = 2, **kwargs):
+def SavGol(t, y, svwin = 499, svorder = 5, **kwargs):
   '''
   Masks NaNs and applies a Savitsky-Golay low-pass filter to `y`
   
@@ -529,7 +529,10 @@ def FitAll(campaign = 1, module = 18, model = 'nPLD'):
   '''
   
   all = GetK2Campaign(campaign)
-  channels = Channels(module)
+  if module == 'all':
+    channels = range(99)
+  else:
+    channels = Channels(module)
   stars = np.array([s[0] for s in all if s[2] in channels and 
           os.path.exists(
           os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
@@ -537,5 +540,5 @@ def FitAll(campaign = 1, module = 18, model = 'nPLD'):
           ('%09d' % s[0])[4:], model + '.npz'))], dtype = int)
   N = len(stars)
   for n in range(N):
-    log.info("Processing light curve %d/%d..." % (n + 1, N))
+    log.info("Fitting light curve %d/%d..." % (n + 1, N))
     Fit(stars[n], campaign = campaign, module = module, model = model)

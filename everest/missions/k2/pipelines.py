@@ -21,12 +21,11 @@ log = logging.getLogger(__name__)
 
 Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc']
 
-def plot(ID, pipeline = 'everest1', show = True):
+def get(ID, pipeline = 'everest1'):
   '''
   
   '''
   
-  # Get the data
   log.info('Downloading %s light curve for %d...' % (pipeline, ID))
   if pipeline.lower() == 'everest2':
     s = k2plr.EVEREST(ID, version = 2)
@@ -46,6 +45,17 @@ def plot(ID, pipeline = 'everest1', show = True):
     flux = s.pdcflux
   else:
     raise ValueError('Invalid pipeline: `%s`.' % pipeline)
+    
+  return time, flux
+  
+
+def plot(ID, pipeline = 'everest1', show = True):
+  '''
+  
+  '''
+  
+  # Get the data
+  time, flux = get(ID, pipeline = pipeline)
   
   # Remove nans
   mask = np.where(np.isnan(flux))[0]
@@ -126,14 +136,7 @@ def get_cdpp(campaign, pipeline = 'everest1'):
       
       # Get the CDPP
       try:
-        if pipeline.lower() == 'everest2':
-          flux = k2plr.EVEREST(EPIC, version = 2).flux
-        elif pipeline.lower() == 'everest1':
-          flux = k2plr.EVEREST(EPIC, version = 1).flux
-        elif pipeline.lower() == 'k2sff':
-          flux = k2plr.K2SFF(EPIC).fcor
-        elif pipeline.lower() == 'k2sc':
-          flux = k2plr.K2SC(EPIC).pdcflux
+        _, flux = get(EPIC, pipeline = pipeline)
         mask = np.where(np.isnan(flux))[0]
         flux = np.delete(flux, mask)
         cdpp = CDPP(flux)
@@ -187,22 +190,7 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
       
       # Get the number of outliers
       try:
-        if pipeline.lower() == 'everest2':
-          data = k2plr.EVEREST(EPIC, version = 2)
-          flux = data.flux
-          time = data.time
-        elif pipeline.lower() == 'everest1':
-          data = k2plr.EVEREST(EPIC, version = 1)
-          flux = data.flux
-          time = data.time
-        elif pipeline.lower() == 'k2sff':
-          data = k2plr.K2SFF(EPIC)
-          flux = data.fcor
-          time = data.time
-        elif pipeline.lower() == 'k2sc':
-          data = k2plr.K2SC(EPIC)
-          flux = data.pdcflux
-          time = data.time
+        time, flux = get(EPIC, pipeline = pipeline)
         
         # Get the raw K2 data
         with client.k2_star(EPIC).get_target_pixel_files()[0].open() as f:
