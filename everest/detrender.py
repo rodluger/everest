@@ -1180,10 +1180,7 @@ class pPLD(Detrender):
     '''
 
     '''
-    
-    # DEBUG
-    self.lam[0] = np.array([  1.00000000e+06,   1.00000000e+09,   3.16227766e+06])
-    
+
     # Loop over all chunks
     for b, brkpt in enumerate(self.breakpoints):
     
