@@ -214,6 +214,7 @@ def Test():
   
   else:
     
+    inds = GetChunk(time, breakpoints, 0)
     data = np.load(outfile)
     new_fluxes = data['new_fluxes']
     
@@ -224,9 +225,9 @@ def Test():
     ax.set_xticklabels([])
     ax.set_yticklabels([])
   
-    ax.plot(time, fluxes[i] - np.nanmedian(fluxes[i]), 'b-', alpha = 0.5)
-    model = fluxes[i] - new_fluxes[i]
+    ax.plot(time[inds], fluxes[i][inds] - np.nanmedian(fluxes[i][inds]), 'b-', alpha = 0.5)
+    model = fluxes[i][inds] - new_fluxes[i][inds]
     model -= np.nanmedian(model)
-    ax.plot(time, model, 'r-')
+    ax.plot(time[inds], model, 'r-')
   
   fig.savefig(os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.pdf'))
