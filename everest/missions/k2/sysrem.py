@@ -60,7 +60,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
   
   for n in range(N):
     
-    log.info("Processing light curve %d/%d..." % (n + 1, N))
+    print("Processing light curve %d/%d..." % (n + 1, N))
     
     # De-trended light curve file name
     nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
