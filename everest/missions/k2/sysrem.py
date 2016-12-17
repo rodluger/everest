@@ -202,7 +202,7 @@ def Test():
   inds = GetChunk(time, breakpoints, 0)
   
   # Get the new fluxes
-  new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels)
+  new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 5)
   
   # Save
   outfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.npz')
