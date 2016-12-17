@@ -8,7 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from .k2 import *
-from . import aux, pbs, pipelines
+from . import aux, pbs, pipelines, sysrem
 from .pbs import Download, Run, Status
 
 #: The string that identifies individual targets for this mission
