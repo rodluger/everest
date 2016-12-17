@@ -13,7 +13,22 @@ import os
 import numpy as np
 import matplotlib.pyplot as pl
 import george
-from george.kernels import Matern32Kernel
+from george.kernels import Matern32Kernel, WhiteKernel
+
+def GetChunk(time, breakpoints, b, mask = []):
+  '''
+  Returns the indices corresponding to a given light curve chunk.
+  
+  :param int b: The index of the chunk to return
+
+  '''
+
+  M = np.delete(np.arange(len(time)), mask, axis = 0)
+  if b > 0:
+    res = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
+  else:
+    res = M[M <= breakpoints[b]]
+  return res
 
 def Channels(module):
   '''
@@ -94,7 +109,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, fluxes, errors, kpars
 
-def SysRem(time, flux, err, nrec = 3, niter = 5, kernels = None):
+def SysRem(time, flux, err, nrec = 3, niter = 10, kernels = None):
   '''
   
   '''
@@ -136,6 +151,9 @@ def SysRem(time, flux, err, nrec = 3, niter = 5, kernels = None):
         # This is the solution allowing red noise in each light curve (slower)
         X = a.reshape(-1,1)
         for j in range(nflx):
+        
+          print("Fitting light curve %d/%d..." % (j + 1, nflx))
+        
           gp = george.GP(kernels[j])
           gp.compute(time, err[j])
           A = np.dot(X.T, gp.solver.apply_inverse(X))
@@ -165,6 +183,27 @@ def Test():
   '''
   
   lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test.npz')
-  time, breakpoints, fluxes, errors, kpars = GetStars(2, 18, model = 'nPLD')
-  np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, 
-           errors = errors, kpars = kpars)
+  if not os.path.exists(lcfile):
+    time, breakpoints, fluxes, errors, kpars = GetStars(2, 18, model = 'nPLD')
+    np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, 
+             errors = errors, kpars = kpars)
+  else:
+    data = np.load(lcfile)
+    time = data['time']
+    breakpoints = data['breakpoints']
+    fluxes = data['fluxes']
+    errors = data['errors']
+    kpars = data['kpars']
+  
+  # Get the kernels
+  kernels = [WhiteKernel(k[0] ** 2) + k[1] ** 2 * Matern32Kernel(k[2] ** 2) for k in kpars]
+  
+  # Let's just do the first segment for now
+  inds = GetChunk(time, breakpoints, 0)
+  
+  # Get the new fluxes
+  new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels)
+  
+  # Save
+  outfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.npz')
+  np.savez(outfile, new_fluxes = new_fluxes)
