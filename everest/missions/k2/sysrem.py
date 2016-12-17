@@ -219,18 +219,19 @@ def Test():
     new_fluxes = data['new_fluxes']
     
   # Set up the plot
-  fig, axes = pl.subplots(5, 5, sharex = True, figsize = (12, 8))
+  fig, axes = pl.subplots(5, 5, figsize = (12, 8))
   fig.subplots_adjust(left = 0.05, right = 0.95, top = 0.95, bottom = 0.05, wspace = 0.025, hspace = 0.025)
   for i, ax in enumerate(axes.flatten()):
     ax.set_xticklabels([])
     ax.set_yticklabels([])
   
-    ax.plot(time[inds], fluxes[i][inds] - np.nanmedian(fluxes[i][inds]), 'b-', alpha = 0.5)
-    model = fluxes[i][inds] - new_fluxes[i][inds]
+    f = fluxes[i][inds] - np.nanmedian(fluxes[i][inds])
+    ax.plot(time[inds], f, 'b-', alpha = 0.5)
+    model = f - new_fluxes[i][inds]
     model -= np.nanmedian(model)
     ax.plot(time[inds], model, 'r-')
     
-    fsort = fluxes[i][inds][np.argsort(fluxes[i][inds])]
+    fsort = f[np.argsort(f)]
     lo = fsort[int(0.01 * len(fsort))]
     hi = fsort[int(0.99 * len(fsort))]
     pad = (hi - lo) * 0.05
