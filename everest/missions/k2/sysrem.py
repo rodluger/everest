@@ -232,8 +232,8 @@ def Test():
     ax.plot(time[inds], model, 'r-')
     
     fsort = f[np.argsort(f)]
-    lo = fsort[int(0.01 * len(fsort))]
-    hi = fsort[int(0.99 * len(fsort))]
+    lo = fsort[int(0.05 * len(fsort))]
+    hi = fsort[int(0.95 * len(fsort))]
     pad = (hi - lo) * 0.05
     ax.set_ylim(lo-pad,hi+pad)
     
