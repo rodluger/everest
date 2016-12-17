@@ -132,7 +132,7 @@ def SysRem(time, flux, err, nrec = 3, niter = 10, kernels = None):
     # Initialize the weights and regressors
     c = np.zeros(nflx)
     a = np.ones(tlen)
-    ri = residuals * invvar
+    ri = y * invvar
   
     # Perform `niter` iterations
     for i in range(niter):
