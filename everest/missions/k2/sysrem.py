@@ -182,6 +182,7 @@ def Test():
   
   '''
   
+  # Input
   lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test.npz')
   if not os.path.exists(lcfile):
     time, breakpoints, fluxes, errors, kpars = GetStars(2, 18, model = 'nPLD')
@@ -195,15 +196,37 @@ def Test():
     errors = data['errors']
     kpars = data['kpars']
   
-  # Get the kernels
-  kernels = [WhiteKernel(k[0] ** 2) + k[1] ** 2 * Matern32Kernel(k[2] ** 2) for k in kpars]
-  
-  # Let's just do the first segment for now
-  inds = GetChunk(time, breakpoints, 0)
-  
-  # Get the new fluxes
-  new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 5)
-  
-  # Save
+  # Output
   outfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.npz')
-  np.savez(outfile, new_fluxes = new_fluxes)
+  if not os.path.exists(outfile):
+  
+    # Get the kernels
+    kernels = [WhiteKernel(k[0] ** 2) + k[1] ** 2 * Matern32Kernel(k[2] ** 2) for k in kpars]
+  
+    # Let's just do the first segment for now
+    inds = GetChunk(time, breakpoints, 0)
+  
+    # Get the new fluxes
+    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 5)
+  
+    # Save
+    np.savez(outfile, new_fluxes = new_fluxes)
+  
+  else:
+    
+    data = np.load(outfile)
+    new_fluxes = data['new_fluxes']
+    
+  # Set up the plot
+  fig, axes = pl.subplots(5, 5, sharex = True, sharey = True, figsize = (12, 8))
+  fig.subplots_adjust(left = 0.05, right = 0.95, top = 0.95, bottom = 0.05, wspace = 0.025, hspace = 0.025)
+  for i, ax in enumerate(axes.flatten()):
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+  
+    ax.plot(time, fluxes[i] - np.nanmedian(fluxes[i]), 'b-', alpha = 0.5)
+    model = fluxes[i] - new_fluxes[i]
+    model -= np.nanmedian(model)
+    ax.plot(time, model, 'r-')
+  
+  fig.savefig(os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.pdf'))
