@@ -101,6 +101,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     # Interpolate over the outliers
     # TODO: Keep the original copy as well in the future
     y = np.interp(t, np.delete(t, m), np.delete(y, m))
+    err = np.interp(t, np.delete(t, m), np.delete(err, m))
        
     # Append to our running lists
     fluxes.append(y)
