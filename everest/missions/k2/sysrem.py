@@ -108,7 +108,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     errors.append(err)
     kpars.append(data['kernel_params'])
     
-  return time, breakpoints, fluxes, errors, kpars
+  return time, breakpoints, np.array(fluxes), np.array(errors), kpars
 
 def SysRem(time, flux, err, nrec = 3, niter = 10, kernels = None):
   '''
