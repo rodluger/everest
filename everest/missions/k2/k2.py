@@ -494,6 +494,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       log.warn("Selected aperture is too big. Proceeding with aperture `%s` instead." % aperture_name)
     
     # Make the pixel flux array 2D
+    import pdb; pdb.set_trace()
     aperture[np.isnan(fpix[0])] = 0
     ap = np.where(aperture & 1)
     fpix2D = np.array([f[ap] for f in fpix], dtype='float64')
