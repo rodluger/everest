@@ -153,7 +153,7 @@ def SysRem(time, flux, err, nrec = 3, niter = 10, kernels = None):
         X = a.reshape(-1,1)
         for j in range(nflx):
         
-          print("Fitting light curve %d/%d..." % (j + 1, nflx))
+          #print("Fitting light curve %d/%d..." % (j + 1, nflx))
         
           gp = george.GP(kernels[j])
           gp.compute(time, err[j])
