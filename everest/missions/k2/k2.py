@@ -351,6 +351,14 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       log.error("Invalid aperture selected. Defaulting to `tpf_big`.")
       saturated_aperture_name = 'tpf_big'
       saturated_aperture = apertures[saturated_aperture_name]
+  
+  # HACK: Some C05 K2SFF apertures don't match the target pixel file
+  # pixel grid size. This is likely because they're defined on the M61
+  # superstamp. We'll just fall back to the tpf apertures for these
+  # stars.
+  if saturated_aperture.shape != fpix.shape[1:]:
+    saturated_aperture_name = 'tpf_big'
+    saturated_aperture = apertures[saturated_aperture_name]
     
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
@@ -394,7 +402,15 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       log.error("Invalid aperture selected. Defaulting to `tpf_big`.")
       aperture_name = 'tpf_big'
       aperture = apertures[aperture_name]
-
+  
+  # HACK: Some C05 K2SFF apertures don't match the target pixel file
+  # pixel grid size. This is likely because they're defined on the M61
+  # superstamp. We'll just fall back to the tpf apertures for these
+  # stars.
+  if aperture.shape != fpix.shape[1:]:
+    aperture_name = 'tpf_big'
+    aperture = apertures[saturated_aperture_name]
+  
   # Now we check if the aperture is too big. Can lead to memory errors...
   # Treat saturated and unsaturated stars differently.
   if saturated:
@@ -494,7 +510,6 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       log.warn("Selected aperture is too big. Proceeding with aperture `%s` instead." % aperture_name)
     
     # Make the pixel flux array 2D
-    import pdb; pdb.set_trace()
     aperture[np.isnan(fpix[0])] = 0
     ap = np.where(aperture & 1)
     fpix2D = np.array([f[ap] for f in fpix], dtype='float64')
