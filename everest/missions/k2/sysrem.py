@@ -93,14 +93,14 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     y = data['fraw'] - data['model'] 
     err = data['fraw_err']
     
-    # Interpolate over NaNs
-    y = np.interp(t, np.delete(t, data['nanmask']), np.delete(y, data['nanmask']))
-    
     # De-weight outliers and bad timestamps 
     m = np.array(list(set(np.concatenate([data['outmask'], data['badmask'], 
                                           data['nanmask'], data['transitmask']]))), 
                                           dtype = int)
-    err[m] = 1.e30
+    
+    # Interpolate over the outliers
+    # TODO: Keep the original copy as well in the future
+    y = np.interp(t, np.delete(t, m), np.delete(y, m))
        
     # Append to our running lists
     fluxes.append(y)
