@@ -14,6 +14,95 @@ import numpy as np
 import matplotlib.pyplot as pl
 import george
 from george.kernels import Matern32Kernel, WhiteKernel
+from scipy.signal import savgol_filter
+from scipy.optimize import fmin_l_bfgs_b
+
+def Chunks(l, n, all = False):
+  '''
+  Returns a generator of consecutive `n`-sized chunks of list `l`.
+  If `all` is `True`, returns **all** `n`-sized chunks in `l`
+  by iterating over the starting point.
+  
+  '''
+  
+  if all:
+    jarr = range(0, n - 1)
+  else:
+    jarr = [0]
+  
+  for j in jarr:
+    for i in range(j, len(l), n):
+      if i + 2 * n <= len(l):
+        yield l[i:i+n]
+      else:
+        if not all:
+          yield l[i:]
+        break
+
+def GetKernelParams(time, flux, errors, giter = 1, guess = None):
+  '''
+  
+  '''
+
+  # Remove 5-sigma outliers to be safe
+  f = flux - savgol_filter(flux, 49, 2) + np.nanmedian(flux)
+  med = np.nanmedian(f)
+  MAD = 1.4826 * np.nanmedian(np.abs(f - med))
+  mask = np.where((f > med + 5 * MAD) | (f < med - 5 * MAD))[0]
+  time = np.delete(time, mask)
+  flux = np.delete(flux, mask)
+  errors = np.delete(errors, mask)
+    
+  # Initial guesses
+  white = np.nanmedian([np.nanstd(c) for c in Chunks(flux, 13)])
+  amp = np.nanstd(flux)
+  tau = 30.0
+  if guess is None:
+    guess = [white, amp, tau]
+    
+  # Bounds
+  bounds = [[0.1 * white, 10. * white], 
+            [1., 10000. * amp],
+            [0.5, 100.]]
+  
+  # Loop
+  llbest = -np.inf
+  xbest = np.array(guess)
+  for i in range(giter):
+    
+    # Randomize an initial guess
+    iguess = [np.inf, np.inf, np.inf]
+    for j, b in enumerate(bounds):
+      tries = 0
+      while (iguess[j] < b[0]) or (iguess[j] > b[1]):
+        iguess[j] = (1 + 0.5 * np.random.randn()) * guess[j]
+        tries += 1
+        if tries > 100:
+          iguess[j] = b[0] + np.random.random() * (b[1] - b[0])
+          break
+    
+    # Optimize
+    x = fmin_l_bfgs_b(NegLnLike, iguess, approx_grad = False, 
+                      bounds = bounds, args = (time, flux, errors),
+                      maxfun = 200)
+    if -x[1] > llbest:
+      llbest = -x[1]
+      xbest = np.array(x[0])
+      
+  return xbest
+
+def NegLnLike(x, time, flux, errors):
+  '''
+  The negative log-likelihood function and its gradient.
+  
+  '''
+  
+  white, amp, tau = x
+  gp = george.GP(WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2))
+  gp.compute(time, errors)
+  nll = -gp.lnlikelihood(flux)
+  ngr = -gp.grad_lnlikelihood(flux) / gp.kernel.pars
+  return nll, ngr
 
 def GetChunk(time, breakpoints, b, mask = []):
   '''
@@ -152,9 +241,7 @@ def SysRem(time, flux, err, nrec = 3, niter = 10, kernels = None):
         # This is the solution allowing red noise in each light curve (slower)
         X = a.reshape(-1,1)
         for j in range(nflx):
-        
-          #print("Fitting light curve %d/%d..." % (j + 1, nflx))
-        
+          
           gp = george.GP(kernels[j])
           gp.compute(time, err[j])
           A = np.dot(X.T, gp.solver.apply_inverse(X))
@@ -199,17 +286,26 @@ def Test():
   
   # Output
   outfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.npz')
+  kfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_kernel.npz')
   if not os.path.exists(outfile):
-  
-    # Get the kernels
-    kernels = [WhiteKernel(k[0] ** 2) + k[1] ** 2 * Matern32Kernel(k[2] ** 2) for k in kpars]
   
     # Let's just do the first segment for now
     inds = GetChunk(time, breakpoints, 0)
   
-    # Get the new fluxes
-    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 5)
-  
+    # Run SysRem with white noise
+    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = None, nrec = 2, niter = 5)
+    
+    # Optimize the GPs
+    kernels = [None for j in range(len(fluxes))]
+    for j in range(len(fluxes)):
+      print("GP: %d/%d" % (j + 1, len(fluxes)))
+      white, amp, tau = GetKernelParams(time[inds], new_fluxes[j], errors[j,inds])
+      kernels[j] = WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2)
+    np.savez(kfile, kernels = kernels)
+    
+    # Re-run SysRem
+    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 10)
+    
     # Save
     np.savez(outfile, new_fluxes = new_fluxes)
   

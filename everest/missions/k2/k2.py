@@ -353,7 +353,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       saturated_aperture = apertures[saturated_aperture_name]
   
   # HACK: Some C05 K2SFF apertures don't match the target pixel file
-  # pixel grid size. This is likely because they're defined on the M61
+  # pixel grid size. This is likely because they're defined on the M67
   # superstamp. We'll just fall back to the tpf apertures for these
   # stars.
   if saturated_aperture.shape != fpix.shape[1:]:
@@ -404,7 +404,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       aperture = apertures[aperture_name]
   
   # HACK: Some C05 K2SFF apertures don't match the target pixel file
-  # pixel grid size. This is likely because they're defined on the M61
+  # pixel grid size. This is likely because they're defined on the M67
   # superstamp. We'll just fall back to the tpf apertures for these
   # stars.
   if aperture.shape != fpix.shape[1:]:
