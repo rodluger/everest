@@ -13,6 +13,7 @@ from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
 from ...utils import ExceptionHook, FunctionWrapper
 from ...pool import Pool
 import os, sys, subprocess
+import numpy as np
 import pickle
 import traceback
 import logging
