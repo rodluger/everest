@@ -210,7 +210,7 @@ def _Run(campaign, subcampaign, epic, strkwargs):
     
     m(epic)
     
-def Status(campaign = range(18), model = 'nPLD', purge = False, injection = False, **kwargs):
+def Status(campaign = range(18), model = 'nPLD', purge = False, injection = False, cadence = 'lc', **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
 
@@ -220,16 +220,20 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
   if injection:
     return InjectionStatus(campaign = campaign, model = model, purge = purge, **kwargs)
   
+  # Cadence
+  if cadence == 'sc':
+    model = '%.sc' % model
+  
   if not hasattr(campaign, '__len__'):
     if type(campaign) is int:
       # Return the subcampaigns
-      all_stars = [s for s in GetK2Campaign(campaign, split = True, epics_only = True)]
+      all_stars = [s for s in GetK2Campaign(campaign, split = True, epics_only = True, cadence = cadence)]
       campaign = [campaign + 0.1 * n for n in range(10)]
     else:
-      all_stars = [[s for s in GetK2Campaign(campaign, epics_only = True)]]
+      all_stars = [[s for s in GetK2Campaign(campaign, epics_only = True, cadence = cadence)]]
       campaign = [campaign]
   else:
-    all_stars = [[s for s in GetK2Campaign(c, epics_only = True)] for c in campaign]
+    all_stars = [[s for s in GetK2Campaign(c, epics_only = True, cadence = cadence)] for c in campaign]
   print("CAMP      TOTAL      DOWNLOADED    PROCESSED      FITS    ERRORS")
   print("----      -----      ----------    ---------      ----    ------")
   for c, stars in zip(campaign, all_stars):
@@ -250,7 +254,7 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
             ID = int(folder[:4] + subfolder)
             if ID in stars:
               down += 1
-              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, FITSFile(ID, c))):
+              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, FITSFile(ID, c, cadence = cadence))):
                 fits += 1
               if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.npz')):
                 proc += 1
