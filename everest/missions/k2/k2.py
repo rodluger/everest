@@ -354,11 +354,9 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   
   # HACK: Some C05 K2SFF apertures don't match the target pixel file
   # pixel grid size. This is likely because they're defined on the M67
-  # superstamp. We'll just fall back to the tpf apertures for these
-  # stars.
+  # superstamp. For now, let's ignore these stars.
   if saturated_aperture.shape != fpix.shape[1:]:
-    saturated_aperture_name = 'tpf_big'
-    saturated_aperture = apertures[saturated_aperture_name]
+    raise Exception("Aperture size mismatch. Aborting.")
     
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
@@ -405,11 +403,9 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   
   # HACK: Some C05 K2SFF apertures don't match the target pixel file
   # pixel grid size. This is likely because they're defined on the M67
-  # superstamp. We'll just fall back to the tpf apertures for these
-  # stars.
+  # superstamp. For now, let's ignore these stars.
   if aperture.shape != fpix.shape[1:]:
-    aperture_name = 'tpf_big'
-    aperture = apertures[saturated_aperture_name]
+    raise Exception("Aperture size mismatch. Aborting.")
   
   # Now we check if the aperture is too big. Can lead to memory errors...
   # Treat saturated and unsaturated stars differently.
