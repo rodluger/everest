@@ -359,6 +359,15 @@ def EverestModel(ID, model = 'nPLD', **kwargs):
   
   if model != 'Inject':
     from ... import detrender
+    
+    # HACK: We need to explicitly mask short cadence planets
+    if kwargs.get('cadence', 'lc') == 'sc':
+      EPIC, t0, period, duration = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+                                   'tables', 'scmasks.tsv'), unpack = True)
+      if ID in EPIC and kwargs.get('planets', None) is None:
+        i = np.argmax(EPIC == ID)
+        kwargs.update({'planets': (t0[i], period[i], 1.25 * duration[i])})
+    
     getattr(detrender, model)(ID, **kwargs)
   else:
     from ...inject import Inject
