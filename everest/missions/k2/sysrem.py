@@ -291,18 +291,24 @@ def Test():
   
     # Let's just do the first segment for now
     inds = GetChunk(time, breakpoints, 0)
-  
-    # Run SysRem with white noise
-    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = None, nrec = 2, niter = 5)
     
-    # Optimize the GPs
-    kernels = [None for j in range(len(fluxes))]
-    for j in range(len(fluxes)):
-      print("GP: %d/%d" % (j + 1, len(fluxes)))
-      white, amp, tau = GetKernelParams(time[inds], new_fluxes[j], errors[j,inds])
-      kernels[j] = WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2)
-    np.savez(kfile, kernels = kernels)
+    if not os.path.exists(kfile):
     
+      # Run SysRem with white noise
+      new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = None, nrec = 2, niter = 5)
+    
+      # Optimize the GPs
+      kernels = [None for j in range(len(fluxes))]
+      for j in range(len(fluxes)):
+        print("GP: %d/%d" % (j + 1, len(fluxes)))
+        white, amp, tau = GetKernelParams(time[inds], new_fluxes[j], errors[j,inds])
+        kernels[j] = WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2)
+      np.savez(kfile, kernels = kernels)
+    else:
+      
+      data = np.load(kfile)
+      kernels = data['kernels']
+      
     # Re-run SysRem
     new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 10)
     
@@ -316,6 +322,7 @@ def Test():
     new_fluxes = data['new_fluxes']
     
   # Set up the plot
+  pl.switch_backend('Agg')
   fig, axes = pl.subplots(5, 5, figsize = (12, 8))
   fig.subplots_adjust(left = 0.05, right = 0.95, top = 0.95, bottom = 0.05, wspace = 0.025, hspace = 0.025)
   for i, ax in enumerate(axes.flatten()):
