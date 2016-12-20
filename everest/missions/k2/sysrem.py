@@ -310,7 +310,7 @@ def Test():
       kpars = data['kpars']
       
     # Re-run SysRem
-    kernels = [kpars[1] ** 2 * Matern32Kernel(kpars[2] ** 2) for kp in kpars]
+    kernels = [kp[1] ** 2 * Matern32Kernel(kp[2] ** 2) for kp in kpars]
     new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 10)
     
     # Save
