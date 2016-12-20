@@ -3,7 +3,7 @@ from everest.missions.k2 import TargetDirectory
 import os
 import shutil
 
-for campaign in [0,1,2,3,4,7]:
+for campaign in [0,1,2,3,4,7,8]:
   all = GetK2Campaign(campaign, epics_only = True)
   sc = GetK2Campaign(campaign, epics_only = True, cadence = 'sc')
   lc = list(set(all) - set(sc))

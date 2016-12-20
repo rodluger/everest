@@ -298,18 +298,19 @@ def Test():
       new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = None, nrec = 2, niter = 5)
     
       # Optimize the GPs
-      kernels = [None for j in range(len(fluxes))]
+      kpars = [None for j in range(len(fluxes))]
       for j in range(len(fluxes)):
         print("GP: %d/%d" % (j + 1, len(fluxes)))
         white, amp, tau = GetKernelParams(time[inds], new_fluxes[j], errors[j,inds])
-        kernels[j] = WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2)
-      np.savez(kfile, kernels = kernels)
+        kpars[j] = [white, amp, tau]
+      np.savez(kfile, kpars = kpars)
     else:
       
       data = np.load(kfile)
-      kernels = data['kernels']
+      kpars = data['kpars']
       
     # Re-run SysRem
+    kernels = [kpars[1] ** 2 * Matern32Kernel(kpars[2] ** 2) for kp in kpars]
     new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 10)
     
     # Save
