@@ -179,7 +179,7 @@ def GetCBVs(campaign, module, model = 'nPLD', clobber = False, **kwargs):
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
-      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds])
+      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds]).T
     
     # Save
     np.savez(xfile, X = X)
