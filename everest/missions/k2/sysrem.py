@@ -311,6 +311,8 @@ def Test():
       
     # Re-run SysRem
     kernels = [kp[1] ** 2 * Matern32Kernel(kp[2] ** 2) for kp in kpars]
+    for j in range(len(errors)):
+      errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 10)
     
     # Save
