@@ -421,7 +421,7 @@ class Everest(Basecamp):
       return fig, ax
 
   def plot(self, show = True, plot_raw = True, plot_gp = True, 
-           plot_bad = True, plot_out = True):
+           plot_bad = True, plot_out = True, plot_cbv = True):
     '''
     Plots the final de-trended light curve.
   
@@ -434,12 +434,18 @@ class Everest(Basecamp):
       fig, axes = pl.subplots(2, figsize = (13, 9), sharex = True)
       fig.subplots_adjust(hspace = 0.1)
       axes = [axes[1], axes[0]]
-      fluxes = [self.flux, self.fraw]
+      if plot_cbv:
+        fluxes = [self.fcor, self.fraw]
+      else:
+        fluxes = [self.flux, self.fraw]
       labels = ['EVEREST Flux', 'Raw Flux']
     else:
       fig, axes = pl.subplots(1, figsize = (13, 6))
       axes = [axes]
-      fluxes = [self.flux]
+      if plot_cbv:
+        fluxes = [self.fcor]
+      else:
+        fluxes = [self.flux]
       labels = ['EVEREST Flux']
     fig.canvas.set_window_title('EVEREST Light curve')
     
@@ -485,14 +491,13 @@ class Everest(Basecamp):
       
       # Plot the GP
       if n == 0 and plot_gp and self.cadence != 'sc':
-        M = lambda x: np.delete(x, bnmask)
         _, amp, tau = self.kernel_params
         gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
         gp.compute(self.apply_mask(time), self.apply_mask(fraw_err))
         med = np.nanmedian(self.apply_mask(flux))
         y, _ = gp.predict(self.apply_mask(flux) - med, time)
         y += med
-        ax.plot(M(time), M(y), 'r-', lw = 0.5, alpha = 0.5)
+        ax.plot(self.apply_mask(time), self.apply_mask(y), 'r-', lw = 0.5, alpha = 0.5)
 
       # Appearance
       if n == 0: 

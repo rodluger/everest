@@ -1248,8 +1248,10 @@ def FitCBVs(model):
     
     if model.cbv_red:
       # Generalized least squares
+      # Doesn't work well, as there's too much power in the GP
+      # and low frequency CBV fits are de-prioritized
       white, amp, tau = model.kernel_params
-      gp = george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
+      gp = george.GP(george.kernels.WhiteKernel(white ** 2) + amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
       mT = model.time[masked_inds]
       mE = model.fraw_err[masked_inds]
       mX = model.XCBV[masked_inds]

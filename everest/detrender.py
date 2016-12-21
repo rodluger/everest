@@ -1059,7 +1059,7 @@ class Detrender(Basecamp):
       self.plot_cbv(cbv.body(), self.fraw, 'Raw')
     
       # Save the CBV pdf
-      pdf = PdfPages(os.path.join(self.dir, 'tmp.pdf'))
+      pdf = PdfPages(os.path.join(self.dir, 'dvs.pdf'))
       pdf.savefig(cbv.fig)
       pl.close(cbv.fig)
       d = pdf.infodict()
@@ -1068,19 +1068,18 @@ class Detrender(Basecamp):
       pdf.close()
       
       # Now merge the two PDFs
-      assert os.path.exists(os.path.join(self.dir, self.name + '.pdf')), "Unable to locate the DVS PDF."
+      assert os.path.exists(os.path.join(self.dir, self.name + '.pdf')), "Unable to locate %s.pdf." % self.name
       output = PdfFileWriter()
-      pdfOne = PdfFileReader(os.path.join(self.dir, 'tmp.pdf'))
+      pdfOne = PdfFileReader(os.path.join(self.dir, 'dvs.pdf'))
       pdfTwo = PdfFileReader(os.path.join(self.dir, self.name + '.pdf'))
       # Add the CBV page
       output.addPage(pdfOne.getPage(0))
-      # Add the DVS page
-      output.addPage(pdfTwo.getPage(pdfTwo.numPages - 1))
-      # Save
-      outputStream = open(os.path.join(self.dir, self.name + '.pdf'), "wb")
+      # Add the original DVS page
+      output.addPage(pdfTwo.getPage(0))
+      # Overwrite `dvs.pdf`
+      outputStream = open(os.path.join(self.dir, 'dvs.pdf'), "wb")
       output.write(outputStream)
       outputStream.close()
-      os.remove(os.path.join(self.dir, 'tmp.pdf'))
       
     # Make the FITS file
     MakeFITS(self)
