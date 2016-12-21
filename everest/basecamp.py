@@ -120,6 +120,26 @@ class Basecamp(object):
     '''
     
     raise NotImplementedError("Can't set this property.") 
+
+  @property
+  def fcor(self):
+    '''
+    The CBV-corrected de-trended flux.
+    
+    '''
+    
+    if self.XCBV is None:
+      return None
+    else:
+      return self.flux - self._mission.FitCBVs(self)
+  
+  @fcor.setter
+  def fcor(self, value):
+    '''
+    
+    '''
+    
+    raise NotImplementedError("Can't set this property.") 
   
   @property
   def norm(self):

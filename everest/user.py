@@ -389,7 +389,6 @@ class Everest(Basecamp):
         self.XCBV = np.hstack([self.XCBV, f[1].data['CBV%02d' % (i + 1)].reshape(-1, 1)])
       except KeyError:
         break
-    self.fcor = f[1].data['FCOR']
     
     # These are not stored in the fits file; we don't need them
     self.saturated_aperture_name = None

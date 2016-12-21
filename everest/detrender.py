@@ -18,7 +18,7 @@ from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
-from .dvs import DVS
+from .dvs import DVS, CBV
 import os, sys
 import numpy as np
 import george
@@ -26,6 +26,7 @@ from scipy.optimize import fmin_powell
 import matplotlib.pyplot as pl
 from matplotlib.ticker import MaxNLocator
 from matplotlib.backends.backend_pdf import PdfPages
+from PyPDF2 import PdfFileReader, PdfFileWriter
 import traceback
 import logging
 log = logging.getLogger(__name__)
@@ -48,7 +49,6 @@ class Detrender(Basecamp):
   :param bool debug: De-trend in debug mode? If :py:obj:`True`, prints all output to screen and \
                      enters :py:obj:`pdb` post-mortem mode for debugging when an error is raised.
                      Default :py:obj:`False`
-  :param bool make_fits: Generate a *FITS* file at the end of rthe run? Default :py:obj:`True`
   :param str mission: The name of the mission. Default `k2`
   
   **Detrender:**
@@ -121,7 +121,6 @@ class Detrender(Basecamp):
     self.cadence = kwargs.get('cadence', 'lc').lower()
     if self.cadence not in ['lc', 'sc']:
       raise ValueError("Invalid cadence selected.")
-    self.make_fits = kwargs.get('make_fits', True)
     self.mission = kwargs.get('mission', 'k2')
     self.clobber = kwargs.get('clobber', False)
     self.debug = kwargs.get('debug', False)
@@ -198,6 +197,7 @@ class Detrender(Basecamp):
     self.reclam = None
     self.recmask = []
     self.X1N = None
+    self.XCBV = None
     self.cdpp_arr = np.array([np.nan for b in range(nseg)])
     self.cdppr_arr = np.array([np.nan for b in range(nseg)])
     self.cdppv_arr = np.array([np.nan for b in range(nseg)])
@@ -729,6 +729,42 @@ class Detrender(Basecamp):
     ax.set_ylim(ylim)   
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
 
+  def plot_cbv(self, ax):
+    '''
+    Plots the final CBV-corrected light curve.
+    
+    '''
+ 
+    # Plot the light curve
+    fcor = np.array(self.fcor)
+    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
+    M = lambda x: np.delete(x, bnmask)
+    if self.cadence == 'lc':
+      ax.plot(M(self.time), M(fcor), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+    else:
+      ax.plot(M(self.time), M(fcor), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+      ax.set_rasterization_zorder(0)
+    # Hack: Plot invisible first and last points to ensure the x axis limits are the
+    # same in the other plots, where we also plot outliers!
+    ax.plot(self.time[0], np.nanmedian(M(fcor)), marker = '.', alpha = 0)
+    ax.plot(self.time[-1], np.nanmedian(M(fcor)), marker = '.', alpha = 0)
+          
+    # Appearance
+    ax.annotate('Corrected', xy = (0.98, 0.025), xycoords = 'axes fraction', 
+                ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
+                fontweight = 'bold') 
+    ax.margins(0.01, 0.1)          
+    
+    # Get y lims that bound 99% of the flux
+    flux = np.delete(fcor, bnmask)
+    N = int(0.995 * len(flux))
+    hi, lo = flux[np.argsort(flux)][[N,-N]]
+    fsort = flux[np.argsort(flux)]
+    pad = (hi - lo) * 0.1
+    ylim = (lo - pad, hi + pad)
+    ax.set_ylim(ylim)   
+    ax.get_yaxis().set_major_formatter(Formatter.Flux)
+
   def plot_info(self, dvs):
     '''
     Plots miscellaneous de-trending information on the data validation summary figure.
@@ -998,13 +1034,53 @@ class Detrender(Basecamp):
       self.plot_info(self.dvs)
       self.save_model()
       
-      if self.make_fits:
-        MakeFITS(self)
-        
     except:
     
       self.exception_handler(self.debug)
 
+  def publish(self):
+    '''
+    
+    '''
+    
+    # Get the CBVs
+    if self.cadence == 'lc':
+      self._mission.GetCBVs(self)
+    
+      # Plot the final corrected light curve
+      cbv = CBV()
+      self.plot_info(cbv)
+      self.plot_cbv(cbv.body())
+      self.plot_final(cbv.body())
+      self.plot_raw(cbv.body())
+    
+      # Save the CBV pdf
+      pdf = PdfPages(os.path.join(self.dir, 'tmp.pdf'))
+      pdf.savefig(cbv.fig)
+      pl.close(cbv.fig)
+      d = pdf.infodict()
+      d['Title'] = 'EVEREST: %s de-trending of %s %d' % (self.name, self._mission.IDSTRING, self.ID)
+      d['Author'] = 'Rodrigo Luger'
+      pdf.close()
+      
+      # Now merge the two PDFs
+      assert os.path.exists(os.path.join(self.dir, self.name + '.pdf')), "Unable to locate the DVS PDF."
+      output = PdfFileWriter()
+      pdfOne = PdfFileReader(file(os.path.join(self.dir, 'tmp.pdf')), "rb")
+      pdfTwo = PdfFileReader(file(os.path.join(self.dir, self.name + '.pdf')), "rb")
+      # Add the CBV page
+      output.addPage(pdfOne.getPage(0))
+      # Add the DVS page
+      output.addPage(pdfTwo.getPage(pdfTwo.numPages - 1))
+      # Save
+      outputStream = file(os.path.join(self.dir, self.name + '.pdf'), "wb")
+      output.write(outputStream)
+      outputStream.close()
+      os.remove(os.path.join(self.dir, 'tmp.pdf'))
+      
+    # Make the FITS file
+    MakeFITS(self)
+    
 class sPLD(Detrender):
   '''
   The standard PLD model. Nothing fancy.

@@ -133,12 +133,7 @@ def LightcurveHDU(model):
   # we insert the NaNs back in, since there's no actual physical
   # information at those cadences.
   flux = np.array(model.flux); flux[model.nanmask] = np.nan
-  
-  # Apply the CBV correction
-  if model.cadence == 'lc':
-    X, m = model._mission.CBVs(model)
-    fcor = flux - m
-  
+    
   # Create the arrays list
   arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),
             pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
@@ -148,10 +143,10 @@ def LightcurveHDU(model):
             pyfits.Column(name = 'TIME', format = 'D', array = model.time, unit = 'BJD - 2454833')]
   
   # Add the CBVs
-  if model.cadence == 'lc':
-    arrays += [pyfits.Column(name = 'FCOR', format = 'D', array = fcor, unit = 'e-/s')]
-    for n in range(X.shape[1]):
-      arrays += [pyfits.Column(name = 'CBV%02d' % (n + 1), format = 'D', array = X[:,n])]
+  if model.fcor is not None:
+    arrays += [pyfits.Column(name = 'FCOR', format = 'D', array = model.fcor, unit = 'e-/s')]
+    for n in range(model.XCBV.shape[1]):
+      arrays += [pyfits.Column(name = 'CBV%02d' % (n + 1), format = 'D', array = model.XCBV[:,n])]
   
   # Did we subtract a background term?
   if hasattr(model.bkg, '__len__'):
@@ -160,7 +155,7 @@ def LightcurveHDU(model):
   # Create the HDU
   header = pyfits.Header(cards = cards)
   cols = pyfits.ColDefs(arrays)
-  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'LC ARRAYS')
+  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'ARRAYS')
 
   return hdu
 
@@ -194,7 +189,7 @@ def PixelsHDU(model):
     arrays.append(pyfits.Column(name = 'X1N', format = '%dD' % X1N.shape[1], array = X1N))
     
   cols = pyfits.ColDefs(arrays)
-  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'LC PIXELS')
+  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'PIXELS')
 
   return hdu
 

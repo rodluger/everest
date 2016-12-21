@@ -162,3 +162,55 @@ class DVS(object):
     res = self.body_right[self.rcount]()
     self.rcount += 1
     return res
+
+class CBV(object):
+  '''
+  
+  '''
+  
+  def __init__(self):
+    '''
+    
+    '''
+    
+    self.fig = pl.figure(figsize = (8.5, 11))
+    self.fig.subplots_adjust(left = 0.025 * (11/8.5), right = 1 - 0.025 * (11/8.5), top = 0.975, bottom = 0.025)
+    def GetFrame(y, x, dx, dy):
+      return Frame(self.fig, pl.subplot2grid((160, 160), (y, x), colspan = dx, rowspan = dy))
+    self.title_left = GetFrame(0, 6, 44, 10)
+    self.title_center = GetFrame(0, 50, 66, 10)
+    self.title_right = GetFrame(0, 116, 44, 10)
+    self._body = [GetFrame(12, 6, 148, 26),
+                  GetFrame(40, 6, 148, 26),
+                  GetFrame(68, 6, 148, 26)]
+    self.footer_left = GetFrame(nrows - 6, 6, 44, 6)
+    self.footer_center = GetFrame(nrows - 6, 50, 66, 6)
+    self.footer_right = GetFrame(nrows - 6, 116, 44, 6)
+    for ax in self.fig.get_axes():
+      ax.axis('off')
+    self.bcount = 0
+    
+  def title(self):
+    '''
+    Returns the axis instance where the title will be printed
+    
+    '''
+    
+    return self.title_left(on = False), self.title_center(on = False), self.title_right(on = False)
+
+  def footer(self):
+    '''
+    Returns the axis instance where the footer will be printed
+    
+    '''
+    
+    return self.footer_left(on = False), self.footer_center(on = False), self.footer_right(on = False)
+  
+  def body(self):
+    '''
+    
+    '''
+    
+    res = self._body[self.bcount]()
+    self.bcount += 1
+    return res

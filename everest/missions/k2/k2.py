@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
            'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP',
-           'CBVs']
+           'GetCBVs', 'FitCBVs']
 
 def Setup():
   '''
@@ -1216,7 +1216,7 @@ def FITSUrl(ID, season):
   url = MAST_ROOT + 'c%02d/' % season + ('%09d' % ID)[:4] + '00000/' + ('%09d/' % ID)[4:]
   return url
 
-def CBVs(model):
+def GetCBVs(model):
   '''
   
   '''
@@ -1224,9 +1224,18 @@ def CBVs(model):
   # Get the data
   season = model.season
   module = Module(model.ID)
-  X = sysrem.GetCBVs(season, module = module, model = model.name,
-                     nrec = model.cbv_nrec, niter = model.cbv_niter, 
-                     sv_win = model.cbv_win, sv_order = model.cbv_order)
+  model.XCBV = sysrem.GetCBVs(season, module = module, model = model.name,
+                              nrec = model.cbv_nrec, niter = model.cbv_niter, 
+                              sv_win = model.cbv_win, sv_order = model.cbv_order)
+
+def FitCBVs(model):
+  '''
+  
+  '''
+  
+  # Get cbvs?
+  if model.XCBV is None:
+    GetCBVs(model)
   
   # Loop over all the light curve segments
   m = [None for b in range(len(model.breakpoints))]
@@ -1243,20 +1252,20 @@ def CBVs(model):
       gp = george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
       mT = model.time[masked_inds]
       mE = model.fraw_err[masked_inds]
-      mX = X[masked_inds]
+      mX = model.XCBV[masked_inds]
       mY = model.flux[masked_inds]
       gp.compute(mT, mE)
       A = np.dot(mX.T, gp.solver.apply_inverse(mX))
       B = np.dot(mX.T, gp.solver.apply_inverse(mY))
       weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(X[inds], weights[b])
+      m[b] = np.dot(model.XCBV[inds], weights[b])
     else:
       # Ordinary least squares
-      mX = X[masked_inds]
+      mX = model.XCBV[masked_inds]
       A = np.dot(mX.T, mX)
       B = np.dot(mX.T, model.flux[masked_inds])
       weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(X[inds], weights[b])
+      m[b] = np.dot(model.XCBV[inds], weights[b])
     
     # Vertical alignment
     if b == 0:
@@ -1272,4 +1281,4 @@ def CBVs(model):
   m = np.concatenate(m)
   m -= np.nanmedian(m)
   
-  return X, m
+  return m
