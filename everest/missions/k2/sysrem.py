@@ -319,7 +319,7 @@ def Test():
     kernels = [kp[1] ** 2 * Matern32Kernel(kp[2] ** 2) for kp in kpars]
     for j in range(len(errors)):
       errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
-    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 10)
+    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 1, niter = 50)
     
     # Save
     np.savez(outfile, new_fluxes = new_fluxes)
@@ -347,7 +347,7 @@ def Test():
     fsort = f[np.argsort(f)]
     lo = fsort[int(0.05 * len(fsort))]
     hi = fsort[int(0.95 * len(fsort))]
-    pad = (hi - lo) * 0.05
+    pad = (hi - lo) * 0.2
     ax.set_ylim(lo-pad,hi+pad)
     
   fig.savefig(os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.pdf'))
