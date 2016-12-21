@@ -96,10 +96,14 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   else:
     raise Exception("Unable to download the file.")
 
-def ShowDVS(ID, mission = 'k2', model = 'nPLD', clobber = False):
+def DVS(ID, mission = 'k2', model = 'nPLD', clobber = False, cadence = 'lc'):
   '''
   
   '''
+  
+  # Check cadence
+  if cadence == 'sc' and not model.endswith('.sc'):
+    model = '%s.sc' % model
   
   file = DownloadFile(ID, mission = mission, 
                       filename = model + '.pdf', 
@@ -577,7 +581,7 @@ class Everest(Basecamp):
     
     '''
     
-    ShowDVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
+    DVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
   
   def plot_pipeline(self, *args, **kwargs):
     '''

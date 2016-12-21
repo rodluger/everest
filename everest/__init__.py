@@ -26,4 +26,4 @@ else:
   from .inject import *
   from .missions import *
   from .transit import Transit
-  from .user import Everest
+  from .user import Everest, DVS
