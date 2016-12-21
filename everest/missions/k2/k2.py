@@ -1235,7 +1235,7 @@ def CBVs(model):
     
     # Get the indices for this light curve segment
     inds = model.get_chunk(b, pad = False)
-    masked_inds = model.get_chunk(mask = model.mask, pad = False)
+    masked_inds = model.get_masked_chunk(b, pad = False)
     
     if model.cbv_red:
       # Generalized least squares
