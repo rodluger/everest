@@ -290,6 +290,11 @@ class Everest(Basecamp):
       except KeyError:
         self.bkg = 0.
       self.bpad = f[1].header['BPAD']
+      self.cbv_nrec = f[1].header['CBVNREC']
+      self.cbv_niter = f[1].header['CBVNITER']
+      self.cbv_win = f[1].header['CBVWIN']
+      self.cbv_order = f[1].header['CBVORD']
+      self.cbv_red = f[1].header['CBVRED']
       self.cadn = f[1].data['CADN']
       self.cdivs = f[1].header['CDIVS']
       self.cdpp = f[1].header['CDPP']
@@ -372,7 +377,16 @@ class Everest(Basecamp):
     self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
     self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
     self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
-      
+    
+    # CBVs
+    self.XCBV = np.empty(len(self.time), 0)
+    for i in range(99):
+      try:
+        X = np.hstack([X, f[1].data['CBV%02d' % (i + 1)]])
+      except KeyError:
+        break
+    self.fcor = f[1].data['FCOR']
+    
     # These are not stored in the fits file; we don't need them
     self.saturated_aperture_name = None
     self.apertures = None

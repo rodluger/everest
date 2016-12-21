@@ -72,6 +72,11 @@ def LightcurveHDU(model):
   cards.append(('BPAD', model.bpad, 'Chunk overlap in cadences'))
   for c in range(len(model.breakpoints)):
     cards.append(('BRKPT%02d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
+  cards.append(('CBVNREC', model.cbv_nrec, 'Number of CBV components to fit'))
+  cards.append(('CBVNITER', model.cbv_niter, 'Number of CBV SysRem iterations'))
+  cards.append(('CBVWIN', model.cbv_win, 'Window size for smoothing CBVs'))
+  cards.append(('CBVORD', model.cbv_order, 'Order when smoothing CBVs'))
+  cards.append(('CBVRED', model.cbv_red, 'Account for red noise when fitting CBVs?'))
   cards.append(('CDIVS', model.cdivs, 'Cross-validation subdivisions'))
   cards.append(('CDPP', model.cdpp, 'Average de-trended CDPP'))
   cards.append(('CDPPR', model.cdppr, 'Raw CDPP'))
@@ -129,6 +134,11 @@ def LightcurveHDU(model):
   # information at those cadences.
   flux = np.array(model.flux); flux[model.nanmask] = np.nan
   
+  # Apply the CBV correction
+  if model.cadence == 'lc':
+    X, m = model._mission.CBVs(model)
+    fcor = flux - m
+  
   # Create the arrays list
   arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),
             pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
@@ -136,6 +146,12 @@ def LightcurveHDU(model):
             pyfits.Column(name = 'FRAW_ERR', format = 'D', array = model.fraw_err, unit = 'e-/s'),
             pyfits.Column(name = 'QUALITY', format = 'J', array = quality),
             pyfits.Column(name = 'TIME', format = 'D', array = model.time, unit = 'BJD - 2454833')]
+  
+  # Add the CBVs
+  if model.cadence == 'lc':
+    arrays += [pyfits.Column(name = 'FCOR', format = 'D', array = fcor, unit = 'e-/s')]
+    for n in range(X.shape[1]):
+      arrays += [pyfits.Column(name = 'CBV%02d' % (n + 1), format = 'D', array = X[:,n])]
   
   # Did we subtract a background term?
   if hasattr(model.bkg, '__len__'):
@@ -276,7 +292,7 @@ def MakeFITS(model):
     return
   elif os.path.exists(outfile):
     os.remove(outfile)
-      
+        
   # Create the HDUs
   primary = PrimaryHDU(model)
   lightcurve = LightcurveHDU(model)

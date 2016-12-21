@@ -8,7 +8,7 @@
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ... import __version__ as EVEREST_VERSION
-from . import cbv
+from . import sysrem
 from .aux import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
@@ -25,6 +25,7 @@ from matplotlib.ticker import ScalarFormatter, MaxNLocator
 import k2plr as kplr; kplr_client = kplr.API()
 from k2plr.config import KPLR_ROOT
 import numpy as np
+import george
 from tempfile import NamedTemporaryFile
 import random
 import os, sys, shutil
@@ -33,7 +34,8 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
-           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP']
+           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP',
+           'RemoveCBVs']
 
 def Setup():
   '''
@@ -1213,3 +1215,61 @@ def FITSUrl(ID, season):
   assert mast_version == EVEREST_VERSION, "Version %s light curves not available on MAST." % EVEREST_VERSION
   url = MAST_ROOT + 'c%02d/' % season + ('%09d' % ID)[:4] + '00000/' + ('%09d/' % ID)[4:]
   return url
+
+def CBVs(model):
+  '''
+  
+  '''
+  
+  # Get the data
+  season = model.season
+  module = Module(model.ID)
+  X = sysrem.GetCBVs(season, module = module, model = model.name,
+                     nrec = model.cbv_nrec, niter = model.cbv_niter, 
+                     sv_win = model.cbv_win, sv_order = model.cbv_win)
+  
+  # Loop over all the light curve segments
+  m = [None for b in range(len(model.breakpoints))]
+  weights = [None for b in range(len(model.breakpoints))]
+  for b in range(len(model.breakpoints)):
+    
+    # Get the indices for this light curve segment
+    inds = model.get_chunk(b, pad = False)
+    masked_inds = model.get_chunk(mask = mask, pad = False)
+    
+    if model.cbv_red:
+      # Generalized least squares
+      white, amp, tau = model.kernel_params
+      gp = george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
+      mT = model.time[masked_inds]
+      mE = model.fraw_err[masked_inds]
+      mX = X[masked_inds]
+      mY = model.flux[masked_inds]
+      gp.compute(mT, mE)
+      A = np.dot(mX.T, gp.solver.apply_inverse(mX))
+      B = np.dot(mX.T, gp.solver.apply_inverse(mY))
+      weights[b] = np.linalg.solve(A, B)
+      m[b] = np.dot(X[inds], weights[b])
+    else:
+      # Ordinary least squares
+      mX = X[masked_inds]
+      A = np.dot(mX.T, mX)
+      B = np.dot(mX.T, model.flux[masked_inds])
+      weights[b] = np.linalg.solve(A, B)
+      m[b] = np.dot(X[inds], weights[b])
+    
+    # Vertical alignment
+    if b == 0:
+      m[b] -= np.nanmedian(m[b])
+    else:
+      # Match the first finite model point on either side of the break
+      # We could consider something more elaborate in the future
+      i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i]) for i in range(1, len(m[b - 1]) - 1)])
+      i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
+      m[b] += (m[b - 1][i0] - m[b][i1])
+  
+  # Join model and normalize  
+  m = np.concatenate(m)
+  m -= np.nanmedian(m)
+  
+  return X, m
