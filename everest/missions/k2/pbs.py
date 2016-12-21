@@ -252,21 +252,21 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
       path = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)
       for folder in os.listdir(path):
         for subfolder in os.listdir(os.path.join(path, folder)):
-          if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data.npz')):
-            ID = int(folder[:4] + subfolder)
-            if ID in stars:
+          ID = int(folder[:4] + subfolder)
+          if ID in stars:
+            if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data.npz')):
               down += 1
-              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, FITSFile(ID, c, cadence = cadence))):
-                fits += 1
-              if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.npz')):
-                proc += 1
-              elif os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err')):
-                err += 1
-                bad.append(folder[:4] + subfolder)
-                if purge:
-                  os.remove(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err'))
-              else:
-                remain.append(folder[:4] + subfolder)
+            if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, FITSFile(ID, c, cadence = cadence))):
+              fits += 1
+            if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.npz')):
+              proc += 1
+            elif os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err')):
+              err += 1
+              bad.append(folder[:4] + subfolder)
+              if purge:
+                os.remove(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, model + '.err'))
+            else:
+              remain.append(folder[:4] + subfolder)
     if proc == total:
       cc = ct = cd = cp = ce = GREEN
     else:
