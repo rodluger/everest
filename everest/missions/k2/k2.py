@@ -356,7 +356,8 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   # pixel grid size. This is likely because they're defined on the M67
   # superstamp. For now, let's ignore these stars.
   if saturated_aperture.shape != fpix.shape[1:]:
-    raise Exception("Aperture size mismatch. Aborting.")
+    log.error("Aperture size mismatch!")
+    return None
     
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
@@ -405,7 +406,8 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   # pixel grid size. This is likely because they're defined on the M67
   # superstamp. For now, let's ignore these stars.
   if aperture.shape != fpix.shape[1:]:
-    raise Exception("Aperture size mismatch. Aborting.")
+    log.error("Aperture size mismatch!")
+    return None
   
   # Now we check if the aperture is too big. Can lead to memory errors...
   # Treat saturated and unsaturated stars differently.
@@ -431,7 +433,9 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
           ncol += 1
       if np.sum(apcopy) + ncol <= max_pixels:
         break
-    assert np.sum(apcopy) + ncol <= max_pixels, "No apertures available with fewer than %d pixels. Aborting." % max_pixels
+    if np.sum(apcopy) + ncol > max_pixels:
+      log.error("No apertures available with fewer than %d pixels. Aborting." % max_pixels)
+      return None
   
     # Now, finally, we collapse the saturated columns into single pixels
     # and make the pixel array 2D
@@ -502,7 +506,9 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       aperture_name = keys[np.argmax(npix * (npix <= max_pixels))]
       aperture = apertures[aperture_name]
       aperture[np.isnan(fpix[0])] = 0
-      assert np.sum(aperture) <= max_pixels, "No apertures available with fewer than %d pixels. Aborting." % max_pixels
+      if np.sum(aperture) > max_pixels:
+        log.error("No apertures available with fewer than %d pixels. Aborting." % max_pixels)
+        return None
       log.warn("Selected aperture is too big. Proceeding with aperture `%s` instead." % aperture_name)
     
     # Make the pixel flux array 2D
@@ -662,6 +668,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
       contam = False
       data = np.load(os.path.join(TargetDirectory(star, campaign), 'data.npz'))
       aperture = data['apertures'][()][aperture_name]
+      fpix = data['fpix']
       for source in data['nearby'][()]:
         # Ignore self
         if source['ID'] == star:
@@ -691,7 +698,12 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
               pass
       if contam:
         continue
-    
+      
+      # HACK: This happens for K2SFF M67 targets in C05.
+      # Let's skip them
+      if aperture.shape != fpix.shape[1:]:
+        continue
+      
       # Reject if the model is not present
       if model is not None:
         if not os.path.exists(os.path.join(TargetDirectory(star, campaign), model + '.npz')):

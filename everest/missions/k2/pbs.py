@@ -235,6 +235,7 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
       campaign = [campaign]
   else:
     all_stars = [[s for s in GetK2Campaign(c, epics_only = True, cadence = cadence)] for c in campaign]
+
   print("CAMP      TOTAL      DOWNLOADED    PROCESSED      FITS    ERRORS")
   print("----      -----      ----------    ---------      ----    ------")
   for c, stars in zip(campaign, all_stars):

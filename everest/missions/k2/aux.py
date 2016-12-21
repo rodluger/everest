@@ -201,9 +201,21 @@ def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False, 
       return all
     else:
       all_split = list(Chunks(all, len(all) // 10))
+      
+      # HACK: Sometimes we're left with a few targets
+      # dangling at the end. Insert them back evenly
+      # into the first few subcampaigns.
+      if len(all_split) > 10:
+        tmp1 = all_split[:10]
+        tmp2 = all_split[10:]
+        for n in range(len(tmp2)):
+          tmp1[n] = np.append(tmp1[n], tmp2[n])
+        all_split = tmp1
+      
       res = []
       for subcampaign in range(10):
         res.append(all_split[subcampaign])
+
       return res  
   elif type(campaign) is float:
     x, y = divmod(campaign, 1)

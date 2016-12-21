@@ -777,6 +777,8 @@ class Detrender(Basecamp):
                   saturated_aperture_name = self.saturated_aperture_name, 
                   max_pixels = self.max_pixels,
                   saturation_tolerance = self.saturation_tolerance)
+      if data is None:
+        raise Exception("Unable to retrieve target data.")
       self.cadn = data.cadn
       self.time = data.time
       self.model = np.zeros_like(self.time)
@@ -1083,6 +1085,8 @@ class nPLD(Detrender):
                              saturated_aperture_name = self.saturated_aperture_name, 
                              max_pixels = self.max_pixels,
                              saturation_tolerance = self.saturation_tolerance)
+        if data is None:
+          raise Exception("Unable to retrieve data for neighboring target.")
         data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
         data.fraw = np.sum(data.fpix, axis = 1)
       
