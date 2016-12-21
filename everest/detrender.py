@@ -1065,14 +1065,14 @@ class Detrender(Basecamp):
       # Now merge the two PDFs
       assert os.path.exists(os.path.join(self.dir, self.name + '.pdf')), "Unable to locate the DVS PDF."
       output = PdfFileWriter()
-      pdfOne = PdfFileReader(file(os.path.join(self.dir, 'tmp.pdf')), "rb")
-      pdfTwo = PdfFileReader(file(os.path.join(self.dir, self.name + '.pdf')), "rb")
+      pdfOne = PdfFileReader(os.path.join(self.dir, 'tmp.pdf'))
+      pdfTwo = PdfFileReader(os.path.join(self.dir, self.name + '.pdf'))
       # Add the CBV page
       output.addPage(pdfOne.getPage(0))
       # Add the DVS page
       output.addPage(pdfTwo.getPage(pdfTwo.numPages - 1))
       # Save
-      outputStream = file(os.path.join(self.dir, self.name + '.pdf'), "wb")
+      outputStream = open(os.path.join(self.dir, self.name + '.pdf'), "wb")
       output.write(outputStream)
       outputStream.close()
       os.remove(os.path.join(self.dir, 'tmp.pdf'))
