@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import george
 from george.kernels import Matern32Kernel, WhiteKernel
+from scipy.signal import savgol_filter
 import logging
 log = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, **kwargs):
     
   return cbvs
 
-def GetCBVs(campaign, module, model = 'nPLD', clobber = False, **kwargs):
+def GetCBVs(campaign, module, model = 'nPLD', clobber = False, sv_win = 99, sv_order = 2, **kwargs):
   '''
   
   '''
@@ -179,8 +180,11 @@ def GetCBVs(campaign, module, model = 'nPLD', clobber = False, **kwargs):
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
-      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds]).T
-    
+      cbv = SysRem(time[inds], fluxes[:,inds], errors[:,inds]).T
+      
+      # Apply a smoothing filter
+      X[inds,1:] = savgol_filter(cbv, sv_win, sv_order)
+
     # Save
     np.savez(xfile, X = X)
   
