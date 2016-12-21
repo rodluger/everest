@@ -180,9 +180,9 @@ class CBV(object):
     self.title_left = GetFrame(0, 6, 44, 10)
     self.title_center = GetFrame(0, 50, 66, 10)
     self.title_right = GetFrame(0, 116, 44, 10)
-    self._body = [GetFrame(12, 6, 148, 40),
-                  GetFrame(54, 6, 148, 40),
-                  GetFrame(96, 6, 148, 40)]
+    self._body = [GetFrame(12, 6, 148, 44),
+                  GetFrame(58, 6, 148, 44),
+                  GetFrame(104, 6, 148, 44)]
     self.footer_left = GetFrame(154, 6, 44, 6)
     self.footer_center = GetFrame(154, 50, 66, 6)
     self.footer_right = GetFrame(154, 116, 44, 6)

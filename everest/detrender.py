@@ -739,9 +739,9 @@ class Detrender(Basecamp):
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
     if self.cadence == 'lc':
-      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.45)
     else:
-      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.45, zorder = -1)
       ax.set_rasterization_zorder(0)
     # Hack: Plot invisible first and last points to ensure the x axis limits are the
     # same in the other plots, where we also plot outliers!
@@ -763,6 +763,7 @@ class Detrender(Basecamp):
     ylim = (lo - pad, hi + pad)
     ax.set_ylim(ylim)   
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
+    ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 7)
 
   def plot_info(self, dvs):
     '''
