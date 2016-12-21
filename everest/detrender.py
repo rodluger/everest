@@ -750,7 +750,7 @@ class Detrender(Basecamp):
     
     # Show CBV fit?
     if show_cbv:
-      ax.plot(self.time, self._mission.FitCBVs(self), 'r-', alpha = 0.2)
+      ax.plot(self.time, self._mission.FitCBVs(self) + np.nanmedian(flux), 'r-', alpha = 0.2)
           
     # Appearance
     ax.annotate(info, xy = (0.98, 0.025), xycoords = 'axes fraction', 
