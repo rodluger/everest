@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
            'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP',
-           'RemoveCBVs']
+           'CBVs']
 
 def Setup():
   '''
