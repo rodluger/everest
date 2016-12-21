@@ -729,34 +729,33 @@ class Detrender(Basecamp):
     ax.set_ylim(ylim)   
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
 
-  def plot_cbv(self, ax):
+  def plot_cbv(self, ax, flux, info):
     '''
     Plots the final CBV-corrected light curve.
     
     '''
  
     # Plot the light curve
-    fcor = np.array(self.fcor)
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
     if self.cadence == 'lc':
-      ax.plot(M(self.time), M(fcor), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
     else:
-      ax.plot(M(self.time), M(fcor), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
       ax.set_rasterization_zorder(0)
     # Hack: Plot invisible first and last points to ensure the x axis limits are the
     # same in the other plots, where we also plot outliers!
-    ax.plot(self.time[0], np.nanmedian(M(fcor)), marker = '.', alpha = 0)
-    ax.plot(self.time[-1], np.nanmedian(M(fcor)), marker = '.', alpha = 0)
+    ax.plot(self.time[0], np.nanmedian(M(flux)), marker = '.', alpha = 0)
+    ax.plot(self.time[-1], np.nanmedian(M(flux)), marker = '.', alpha = 0)
           
     # Appearance
-    ax.annotate('Corrected', xy = (0.98, 0.025), xycoords = 'axes fraction', 
+    ax.annotate(info, xy = (0.98, 0.025), xycoords = 'axes fraction', 
                 ha = 'right', va = 'bottom', fontsize = 10, alpha = 0.5, 
                 fontweight = 'bold') 
     ax.margins(0.01, 0.1)          
     
     # Get y lims that bound 99% of the flux
-    flux = np.delete(fcor, bnmask)
+    flux = np.delete(flux, bnmask)
     N = int(0.995 * len(flux))
     hi, lo = flux[np.argsort(flux)][[N,-N]]
     fsort = flux[np.argsort(flux)]
@@ -1050,9 +1049,9 @@ class Detrender(Basecamp):
       # Plot the final corrected light curve
       cbv = CBV()
       self.plot_info(cbv)
-      self.plot_cbv(cbv.body())
-      self.plot_final(cbv.body())
-      self.plot_raw(cbv.body())
+      self.plot_cbv(cbv.body(), self.fcor, 'Corrected')
+      self.plot_cbv(cbv.body(), self.flux, 'De-trended')
+      self.plot_cbv(cbv.body(), self.fraw, 'Raw')
     
       # Save the CBV pdf
       pdf = PdfPages(os.path.join(self.dir, 'tmp.pdf'))
