@@ -183,9 +183,9 @@ class CBV(object):
     self._body = [GetFrame(12, 6, 148, 26),
                   GetFrame(40, 6, 148, 26),
                   GetFrame(68, 6, 148, 26)]
-    self.footer_left = GetFrame(nrows - 6, 6, 44, 6)
-    self.footer_center = GetFrame(nrows - 6, 50, 66, 6)
-    self.footer_right = GetFrame(nrows - 6, 116, 44, 6)
+    self.footer_left = GetFrame(154, 6, 44, 6)
+    self.footer_center = GetFrame(154, 50, 66, 6)
+    self.footer_right = GetFrame(154, 116, 44, 6)
     for ax in self.fig.get_axes():
       ax.axis('off')
     self.bcount = 0
