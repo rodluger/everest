@@ -323,7 +323,7 @@ def Test():
     # DEBUG
     kernels = None
     
-    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 2, niter = 50)
+    new_fluxes = SysRem(time[inds], fluxes[:,inds], errors[:,inds], kernels = kernels, nrec = 3, niter = 50)
     
     # Save
     np.savez(outfile, new_fluxes = new_fluxes)
