@@ -729,7 +729,7 @@ class Detrender(Basecamp):
     ax.set_ylim(ylim)   
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
 
-  def plot_cbv(self, ax, flux, info):
+  def plot_cbv(self, ax, flux, info, show_cbv = False):
     '''
     Plots the final CBV-corrected light curve.
     
@@ -747,6 +747,10 @@ class Detrender(Basecamp):
     # same in the other plots, where we also plot outliers!
     ax.plot(self.time[0], np.nanmedian(M(flux)), marker = '.', alpha = 0)
     ax.plot(self.time[-1], np.nanmedian(M(flux)), marker = '.', alpha = 0)
+    
+    # Show CBV fit?
+    if show_cbv:
+      ax.plot(self.time, self._mission.FitCBVs(self), 'r-', alpha = 0.2)
           
     # Appearance
     ax.annotate(info, xy = (0.98, 0.025), xycoords = 'axes fraction', 
@@ -1051,7 +1055,7 @@ class Detrender(Basecamp):
       cbv = CBV()
       self.plot_info(cbv)
       self.plot_cbv(cbv.body(), self.fcor, 'Corrected')
-      self.plot_cbv(cbv.body(), self.flux, 'De-trended')
+      self.plot_cbv(cbv.body(), self.flux, 'De-trended', show_cbv = True)
       self.plot_cbv(cbv.body(), self.fraw, 'Raw')
     
       # Save the CBV pdf
