@@ -1226,7 +1226,7 @@ def CBVs(model):
   module = Module(model.ID)
   X = sysrem.GetCBVs(season, module = module, model = model.name,
                      nrec = model.cbv_nrec, niter = model.cbv_niter, 
-                     sv_win = model.cbv_win, sv_order = model.cbv_win)
+                     sv_win = model.cbv_win, sv_order = model.cbv_order)
   
   # Loop over all the light curve segments
   m = [None for b in range(len(model.breakpoints))]
