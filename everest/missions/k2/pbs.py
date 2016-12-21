@@ -268,7 +268,8 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
             else:
               remain.append(folder[:4] + subfolder)
     if proc == total:
-      cc = ct = cd = cp = ce = GREEN
+      cc = ct = cp = ce = GREEN
+      cd = BLACK if down < total else GREEN
     else:
       cc = BLACK
       ct = BLACK
