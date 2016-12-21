@@ -219,11 +219,11 @@ def Test():
     ax.set_xticklabels([])
     ax.set_yticklabels([])
   
-    f = fluxes[i] - np.nanmedian(fluxes[i])
+    f = new_fluxes[i] - np.nanmedian(new_fluxes[i])
     ax.plot(time, f, 'b-', alpha = 0.5)
-    model = f - new_fluxes[i]
-    model -= np.nanmedian(model)
-    ax.plot(time, model, 'r-')
+    #model = f - new_fluxes[i]
+    #model -= np.nanmedian(model)
+    #ax.plot(time, model, 'r-')
     
     fsort = f[np.argsort(f)]
     lo = fsort[int(0.05 * len(fsort))]
