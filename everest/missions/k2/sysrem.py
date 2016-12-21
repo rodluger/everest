@@ -95,7 +95,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 5, niter = 50, **kwargs):
+def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 99, sv_order = 2, **kwargs):
   '''
   
   '''
@@ -132,12 +132,12 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, **kwargs):
     # Remove this component from all light curves
     y -= np.outer(c, a)
     
-    # Save this regressor
-    cbvs[n] = a - np.nanmedian(a)
+    # Save this regressor after smoothing it a bit
+    cbvs[n] = savgol_filter(a - np.nanmedian(a), sv_win, sv_order)
     
   return cbvs
 
-def GetCBVs(campaign, module, model = 'nPLD', clobber = False, sv_win = 99, sv_order = 2, **kwargs):
+def GetCBVs(campaign, module, model = 'nPLD', clobber = False, **kwargs):
   '''
   
   '''
@@ -180,11 +180,8 @@ def GetCBVs(campaign, module, model = 'nPLD', clobber = False, sv_win = 99, sv_o
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
-      cbv = SysRem(time[inds], fluxes[:,inds], errors[:,inds]).T
+      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds]).T
       
-      # Apply a smoothing filter
-      X[inds,1:] = savgol_filter(cbv, sv_win, sv_order)
-
     # Save
     np.savez(xfile, X = X)
   
