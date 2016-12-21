@@ -198,7 +198,7 @@ def Test():
       
       # Align with previous chunk
       if i > 0:
-        f += new_fluxes[:,inds[0]-1] - f[0]
+        f += new_fluxes[:,inds[0]-1] - f[:,0]
       new_fluxes[:,inds] = f
       
     # Save
