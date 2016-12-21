@@ -184,7 +184,7 @@ def Test():
     
     # Loop over the segments
     new_fluxes = np.zeros_like(fluxes)
-    for b in range(len(breakpoints)):
+    for i, b in enumerate(range(len(breakpoints))):
       
       # Get the current segment's indices
       inds = GetChunk(time, breakpoints, b)
@@ -194,8 +194,13 @@ def Test():
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
-      new_fluxes[:,inds] = SysRem(time[inds], fluxes[:,inds], errors[:,inds])
-    
+      f = SysRem(time[inds], fluxes[:,inds], errors[:,inds])
+      
+      # Align with previous chunk
+      if i > 0:
+        f += new_fluxes[:,inds[0]-1] - f[0]
+      new_fluxes[:,inds] = f
+      
     # Save
     np.savez(outfile, new_fluxes = new_fluxes)
   
