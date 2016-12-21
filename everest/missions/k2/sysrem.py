@@ -198,10 +198,7 @@ def Test():
       
       # Align with previous chunk
       if i > 0:
-        
-        import pdb; pdb.set_trace()
-        
-        f += new_fluxes[:,inds[0]-1] - f[:,0].reshape(-1,1)
+        f += (new_fluxes[:,inds[0]-1] - f[:,0]).reshape(-1, 1)
       new_fluxes[:,inds] = f
       
     # Save
