@@ -8,7 +8,7 @@ sysrem.py
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ...config import EVEREST_DAT
-from .aux import GetK2Campaign, Campaign, Module
+from .aux import GetK2Campaign, Campaign, Channels
 import os
 import numpy as np
 import matplotlib.pyplot as pl
@@ -31,23 +31,6 @@ def GetChunk(time, breakpoints, b, mask = []):
   else:
     res = M[M <= breakpoints[b]]
   return res
-
-def Channels(module):
-  '''
-  Returns the channels contained in the given K2 module.
-  
-  '''
-  
-  nums = {2:1, 3:5, 4:9, 6:13, 7:17, 8:21, 9:25, 
-          10:29, 11:33, 12:37, 13:41, 14:45, 15:49, 
-          16:53, 17:57, 18:61, 19:65, 20:69, 22:73, 
-          23:77, 24:81}
-  
-  if module in nums:
-    return [nums[module], nums[module] + 1, 
-            nums[module] + 2, nums[module] + 3]
-  else:
-    return None
 
 def GetStars(campaign, module, model = 'nPLD', **kwargs):
   '''
@@ -109,9 +92,9 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     errors.append(err)
     kpars.append(data['kernel_params'])
     
-  return time, breakpoints, np.array(fluxes), np.array(errors), kpars
+  return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 3, niter = 50):
+def SysRem(time, flux, err, nrec = 5, niter = 50, **kwargs):
   '''
   
   '''
@@ -125,8 +108,8 @@ def SysRem(time, flux, err, nrec = 3, niter = 50):
   # Compute the inverse of the variances
   invvar = 1. / err ** 2
   
-  # Our linear model for each light curve
-  model = np.zeros((nflx, tlen))
+  # The CBVs for this set of fluxes
+  cbvs = np.zeros((nrec, tlen))
 
   # Recover `nrec` components
   for n in range(nrec):
@@ -134,53 +117,55 @@ def SysRem(time, flux, err, nrec = 3, niter = 50):
     # Initialize the weights and regressors
     c = np.zeros(nflx)
     a = np.ones(tlen)
-    ri = y * invvar
+    f = y * invvar
     
     # Perform `niter` iterations
     for i in range(niter):
     
       # Compute the `c` vector (the weights)
-      c = np.dot(ri, a) / np.dot(invvar, a ** 2)
+      c = np.dot(f, a) / np.dot(invvar, a ** 2)
 
       # Compute the `a` vector (the regressors)
-      a = np.dot(c, ri) / np.dot(c ** 2, invvar)
+      a = np.dot(c, f) / np.dot(c ** 2, invvar)
   
-    # The linear model for this step
-    m = np.outer(c, a)
-  
-    # Add to running model
-    model += m
-  
-    # Remove this component
-    y -= m
-  
-  # Add the median back in
-  y += med
-  
-  return y
+    # Remove this component from all light curves
+    y -= np.outer(c, a)
+    
+    # Save this regressor
+    cbvs[n] = a
+    
+  return cbvs
 
-def Test():
+def GetCBVs(campaign, module, model = 'nPLD', clobber = False, **kwargs):
   '''
   
   '''
   
-  # Input
-  lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test.npz')
-  if not os.path.exists(lcfile):
-    time, breakpoints, fluxes, errors, kpars = GetStars(2, 18, model = 'nPLD')
-    np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, 
-             errors = errors, kpars = kpars)
-  else:
-    data = np.load(lcfile)
-    time = data['time']
-    breakpoints = data['breakpoints']
-    fluxes = data['fluxes']
-    errors = data['errors']
-    kpars = data['kpars']
+  # Output path
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model)
+  if not os.path.exists(path):
+    os.makedirs(path)
   
-  # Output
-  outfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.npz')
-  if not os.path.exists(outfile):
+  # Get the design matrix
+  xfile = os.path.join(path, 'X.npz')
+  if clobber or not os.path.exists(xfile):
+    
+    # Get the light curves
+    log.info('Obtaining light curves...')
+    lcfile = os.path.join(path, 'lcs.npz')
+    if clobber or not os.path.exists(lcfile):
+      time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
+      np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, errors = errors, kpars = kpars)
+    else:
+      lcs = np.load(lcfile)
+      time = lcs['time']
+      breakpoints = lcs['breakpoints']
+      fluxes = lcs['fluxes']
+      errors = lcs['errors']
+      kpars = lcs['kpars']
+    
+    # Compute the design matrix  
+    X = np.ones((len(time), 1 + kwargs.get('nrec', 5)))
     
     # Loop over the segments
     new_fluxes = np.zeros_like(fluxes)
@@ -194,41 +179,107 @@ def Test():
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
-      f = SysRem(time[inds], fluxes[:,inds], errors[:,inds])
-      
-      # Align with previous chunk
-      if i > 0:
-        f += (new_fluxes[:,inds[0]-1] - f[:,0]).reshape(-1, 1)
-      new_fluxes[:,inds] = f
-      
+      X[1:,inds] = SysRem(time[inds], fluxes[:,inds], errors[:,inds])
+    
     # Save
-    np.savez(outfile, new_fluxes = new_fluxes)
+    np.savez(xfile, X = X)
   
   else:
     
-    data = np.load(outfile)
-    new_fluxes = data['new_fluxes']
-    
-  # Set up the plot
-  pl.switch_backend('Agg')
-  fig, axes = pl.subplots(7, 5, figsize = (15, 8))
-  fig.subplots_adjust(left = 0.05, right = 0.95, top = 0.95, bottom = 0.05, wspace = 0.025, hspace = 0.025)
+    # Load from disk
+    X = np.load(xfile)['X']
   
-  for i, ax in enumerate(axes.flatten()):
-    
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
+  return X
+ 
+def GetLightCurve(EPIC, campaign, model = 'nPLD', **kwargs):
+  '''
   
-    f = new_fluxes[i] - np.nanmedian(new_fluxes[i])
-    ax.plot(time, f, 'b-', alpha = 0.5)
-    #model = f - new_fluxes[i]
-    #model -= np.nanmedian(model)
-    #ax.plot(time, model, 'r-')
+  '''
+  
+  # De-trended light curve file name
+  nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
+                    ('%09d' % EPIC)[:4] + '00000', 
+                    ('%09d' % EPIC)[4:], model + '.npz')
+  
+  # Get the data
+  data = np.load(nf)
+  time = data['time']
+  breakpoints = data['breakpoints']
+  flux = data['fraw'] - data['model'] 
+  mask = np.array(list(set(np.concatenate([data['outmask'], data['badmask'], 
+                                          data['nanmask'], data['transitmask']]))), 
+                                          dtype = int)
+  flux[data['nanmask']] = np.nan
+  return time, flux, breakpoints, mask
+  
+def Fit(EPIC, campaign = None, module = None, model = 'nPLD', **kwargs):
+  '''
+  Fit a given K2 target with the CBV design matrix and plot the results.
+  
+  '''
+  
+  # Get the data
+  if campaign is None:
+    campaign = Campaign(EPIC)
+  if module is None:
+    module = Module(EPIC)
+  time, flux, breakpoints, mask = GetLightCurve(EPIC, campaign, **kwargs)
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model)
+  
+  # Get the design matrix  
+  X = GetX(campaign, module, model = model, **kwargs)
+  
+  # Loop over all the light curve segments
+  model = [None for b in range(len(breakpoints))]
+  weights = [None for b in range(len(breakpoints))]
+  for b in range(len(breakpoints)):
     
-    fsort = f[np.argsort(f)]
-    lo = fsort[int(0.05 * len(fsort))]
-    hi = fsort[int(0.95 * len(fsort))]
-    pad = (hi - lo) * 0.2
-    ax.set_ylim(lo-pad, hi+pad)
+    # Get the indices for this light curve segment
+    inds = GetChunk(time, breakpoints, b)
+    masked_inds = GetChunk(time, breakpoints, b, mask = mask)
+
+    # Ordinary least squares
+    mX = X[masked_inds]
+    A = np.dot(mX.T, mX)
+    B = np.dot(mX.T, flux[masked_inds])
+    weights[b] = np.linalg.solve(A, B)
+    model[b] = np.dot(X[inds], weights[b])
     
-  fig.savefig(os.path.join(EVEREST_DAT, 'k2', 'cbv', 'test_out.pdf'))
+    # Vertical alignment
+    if b == 0:
+      model[b] -= np.nanmedian(model[b])
+    else:
+      # Match the first finite model point on either side of the break
+      # We could consider something more elaborate in the future
+      i0 = -1 - np.argmax([np.isfinite(model[b - 1][-i]) for i in range(1, len(model[b - 1]) - 1)])
+      i1 = np.argmax([np.isfinite(model[b][i]) for i in range(len(model[b]))])
+      model[b] += (model[b - 1][i0] - model[b][i1])
+  
+  # Join model and normalize  
+  model = np.concatenate(model)
+  model -= np.nanmedian(model)
+  
+  # Plot the light curve, model, and corrected light curve
+  pl.switch_backed('Agg')
+  fig, ax = pl.subplots(2, figsize = (12, 6), sharex = True)
+  ax[0].plot(np.delete(time, mask), np.delete(flux, mask), 'k.', markersize = 3)
+  ax[0].plot(np.delete(time, mask), np.delete(model, mask) + np.nanmedian(flux), 'r-')
+  ax[1].plot(np.delete(time, mask), np.delete(flux - model, mask), 'k.', markersize = 3)
+  ax[0].set_ylabel('Original Flux', fontsize = 16)
+  ax[1].set_ylabel('Corrected Flux', fontsize = 16)
+  ax[1].set_xlabel('Time (BJD - 2454833)', fontsize = 16)
+  
+  # Force the axis range based on the non-outliers
+  ax[0].margins(0.01, None)
+  ax[0].set_xlim(ax[0].get_xlim())
+  ax[0].set_ylim(ax[0].get_ylim())
+  ax[1].set_xlim(ax[1].get_xlim())
+  ax[1].set_ylim(ax[1].get_ylim())
+  
+  # Now plot the outliers
+  ax[0].plot(time[mask], flux[mask], 'r.', markersize = 3, alpha = 0.5)
+  ax[1].plot(time[mask], flux[mask] - model[mask], 'r.', markersize = 3, alpha = 0.5)
+  
+  pl.suptitle('EPIC %d' % EPIC, fontsize = 20)
+  fig.savefig(os.path.join(path, '%d.pdf' % EPIC))
+  pl.close()
