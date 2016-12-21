@@ -383,10 +383,10 @@ class Everest(Basecamp):
     self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
     
     # CBVs
-    self.XCBV = np.empty(len(self.time), 0)
+    self.XCBV = np.empty((len(self.time), 0))
     for i in range(99):
       try:
-        X = np.hstack([X, f[1].data['CBV%02d' % (i + 1)]])
+        self.XCBV = np.hstack([self.XCBV, f[1].data['CBV%02d' % (i + 1)].reshape(-1, 1)])
       except KeyError:
         break
     self.fcor = f[1].data['FCOR']
