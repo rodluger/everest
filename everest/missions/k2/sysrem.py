@@ -14,8 +14,8 @@ import numpy as np
 import matplotlib.pyplot as pl
 import george
 from george.kernels import Matern32Kernel, WhiteKernel
-from scipy.signal import savgol_filter
-from scipy.optimize import fmin_l_bfgs_b
+import logging
+log = logging.getLogger(__name__)
 
 def GetChunk(time, breakpoints, b, mask = []):
   '''
@@ -132,7 +132,7 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, **kwargs):
     y -= np.outer(c, a)
     
     # Save this regressor
-    cbvs[n] = a
+    cbvs[n] = a - np.nanmedian(a)
     
   return cbvs
 
