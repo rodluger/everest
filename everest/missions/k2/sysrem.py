@@ -221,9 +221,16 @@ def SysRem(time, flux, err, nrec = 3, niter = 10, kernels = None):
     
     # Initialize the weights and regressors
     c = np.zeros(nflx)
-    a = np.ones(tlen)
     ri = y * invvar
-  
+    
+    # Initialize to the white solution
+    if kernels is not None:
+      for i in range(niter):
+        c = np.dot(ri, a) / np.dot(invvar, a ** 2)
+        a = np.dot(c, ri) / np.dot(c ** 2, invvar)
+    else:
+      a = np.ones(tlen)
+    
     # Perform `niter` iterations
     for i in range(niter):
     
