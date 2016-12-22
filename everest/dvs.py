@@ -180,9 +180,9 @@ class CBV(object):
     self.title_left = GetFrame(0, 6, 44, 10)
     self.title_center = GetFrame(0, 50, 66, 10)
     self.title_right = GetFrame(0, 116, 44, 10)
-    self._body = [GetFrame(12, 6, 148, 44),
-                  GetFrame(64, 6, 148, 44),
-                  GetFrame(116, 6, 148, 44)]
+    self._body = [GetFrame(12, 6, 148, 43),
+                  GetFrame(63, 6, 148, 43),
+                  GetFrame(114, 6, 148, 43)]
     for ax in self.fig.get_axes():
       ax.axis('off')
     self.bcount = 0
