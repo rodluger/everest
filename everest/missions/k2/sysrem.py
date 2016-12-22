@@ -172,9 +172,9 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
         time = lcs['time']
         breakpoints = lcs['breakpoints']
         
-        for n in range(1, min(5, X.shape[1]) + 1):
-          for b in range(len(breakpoints)):
-            inds = GetChunk(time, breakpoints, b)
+        for b in range(len(breakpoints)):
+          inds = GetChunk(time, breakpoints, b)
+          for n in range(1, min(6, X.shape[1])):
             ax[n][module].plot(time[inds], X[inds,n])
     
     for n in range(1, kwargs.get('nrec', 5) + 1):
