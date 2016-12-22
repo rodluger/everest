@@ -155,7 +155,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Tru
       nrec = len(kwargs.get('minstars', [100, 400, 600]))
       fig = [None] + [None for n in range(1, 1 + nrec)]
       ax = [None] + [None for n in range(1, 1 + nrec)]
-      for n in range(1, kwargs.get('nrec', 5) + 1):
+      for n in range(1, nrec + 1):
         fig[n], ax[n] = pl.subplots(5, 5, figsize = (9, 9))
         fig[n].subplots_adjust(wspace = 0.025, hspace = 0.025)
         ax[n] = [None] + list(ax[n].flatten())
