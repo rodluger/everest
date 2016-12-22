@@ -145,26 +145,33 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   # All modules?
   if module is None:
   
-    # Plot the CCD
-    fig, ax = pl.subplots(5, 5, figsize = (9, 9))
-    fig.subplots_adjust(wspace = 0.025, hspace = 0.025)
-    ax = [None] + list(ax.flatten())
-    for axis in [ax[1], ax[5], ax[21], ax[25]]:
-      axis.set_visible(False)
-    for i in range(1, 25):
-      ax[i].set_xticks([])
-      ax[i].set_yticks([])
-      ax[i].annotate('%02d' % i, (0.5, 0.5), 
-                    va = 'center', ha = 'center',
-                    color = 'k', fontsize = 60, alpha = 0.05)
-  
+    # We're going to plot the CBVs on the CCD
+    fig = [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+    ax = [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+    for n in range(1, kwargs.get('nrec', 5) + 1):
+      fig[n], ax[n] = pl.subplots(5, 5, figsize = (9, 9))
+      fig[n].subplots_adjust(wspace = 0.025, hspace = 0.025)
+      ax[n] = [None] + list(ax[n].flatten())
+      for axis in [ax[n][1], ax[n][5], ax[n][21], ax[n][25]]:
+        axis.set_visible(False)
+      for i in range(1, 25):
+        ax[n][i].set_xticks([])
+        ax[n][i].set_yticks([])
+        ax[n][i].annotate('%02d' % i, (0.5, 0.5), 
+                      va = 'center', ha = 'center',
+                      color = 'k', fontsize = 60, alpha = 0.05)
+    
+    # Get the CBVs
     for module in range(2, 25):
       X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
       if X is not None:
         for n in range(1, min(5, X.shape[1])):
-          ax[module].plot(X[:,n])
-    figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '.pdf')
-    fig.savefig(figname, bbox_inches = 'tight')
+          ax[n][module].plot(X[:,n])
+    
+    for n in range(1, kwargs.get('nrec', 5) + 1):
+      figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
+      fig[n].savefig(figname)
+      pl.close(fig[n])
     
     return
   
