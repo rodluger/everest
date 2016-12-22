@@ -1246,17 +1246,13 @@ def FitCBVs(model):
     inds = model.get_chunk(b, pad = False)
     masked_inds = model.get_masked_chunk(b, pad = False)
     
-    # Weight the tails
-    mKinv = np.ones(len(masked_inds))
-    if b == 0:
-      mKinv[:100] *= (model.cbv_tail_weight ** 2)
-    elif b == len(model.breakpoints) - 1:
-      mKinv[-100:] *= (model.cbv_tail_weight ** 2)
+    # Debug
+    model.XCBV = np.hstack([model.XCBV, model.XCBV[1:] ** 2])
     
     # Regress
     mX = model.XCBV[masked_inds]
-    A = np.dot(mX.T, mX * mKinv.reshape(-1, 1))
-    B = np.dot(mX.T, model.flux[masked_inds] * mKinv)
+    A = np.dot(mX.T, mX)
+    B = np.dot(mX.T, model.flux[masked_inds])
     weights[b] = np.linalg.solve(A, B)
     m[b] = np.dot(model.XCBV[inds], weights[b])
 
