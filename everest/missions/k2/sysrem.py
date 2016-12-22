@@ -133,7 +133,7 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 99, sv_order = 2, **k
     
   return cbvs
 
-def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
+def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = False, **kwargs):
   '''
   
   '''
@@ -144,48 +144,59 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   
   # All modules?
   if module is None:
-  
-    # We're going to plot the CBVs on the CCD
-    fig = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
-    ax = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
-    for n in range(1, kwargs.get('nrec', 5) + 1):
-      fig[n], ax[n] = pl.subplots(5, 5, figsize = (9, 9))
-      fig[n].subplots_adjust(wspace = 0.025, hspace = 0.025)
-      ax[n] = [None] + list(ax[n].flatten())
-      for axis in [ax[n][1], ax[n][5], ax[n][21], ax[n][25]]:
-        axis.set_visible(False)
-      for i in range(1, 25):
-        ax[n][i].set_xticks([])
-        ax[n][i].set_yticks([])
-        ax[n][i].annotate('%02d' % i, (0.5, 0.5), 
-                          va = 'center', ha = 'center',
-                          xycoords = 'axes fraction',
-                          color = 'k', fontsize = 60, alpha = 0.05)
-        ax[n][i].margins(0.1, 0.1)
-        
-    # Get the CBVs
-    for module in range(2, 25):
-      X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
-      if X is not None:
-        
-        if module == 4:
-          import pdb; pdb.set_trace()
-        
-        lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
-        lcs = np.load(lcfile)
-        time = lcs['time']
-        breakpoints = lcs['breakpoints']
-        
-        for b in range(len(breakpoints)):
-          inds = GetChunk(time, breakpoints, b)
-          for n in range(1, min(6, X.shape[1])):
-            ax[n][module].plot(time[inds], X[inds,n])
     
-    for n in range(1, kwargs.get('nrec', 5) + 1):
-      figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
-      fig[n].suptitle('CBV #%02d' % n, fontsize = 18, y = 0.94)
-      fig[n].savefig(figname, bbox_inches = 'tight')
-      pl.close(fig[n])
+    if not plot:
+      for module in range(2, 25):
+      X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
+    
+    else:
+    
+      # We're going to plot the CBVs on the CCD
+      fig = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+      ax = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+      for n in range(1, kwargs.get('nrec', 5) + 1):
+        fig[n], ax[n] = pl.subplots(5, 5, figsize = (9, 9))
+        fig[n].subplots_adjust(wspace = 0.025, hspace = 0.025)
+        ax[n] = [None] + list(ax[n].flatten())
+        for axis in [ax[n][1], ax[n][5], ax[n][21], ax[n][25]]:
+          axis.set_visible(False)
+        for i in range(1, 25):
+          ax[n][i].set_xticks([])
+          ax[n][i].set_yticks([])
+          ax[n][i].annotate('%02d' % i, (0.5, 0.5), 
+                            va = 'center', ha = 'center',
+                            xycoords = 'axes fraction',
+                            color = 'k', fontsize = 60, alpha = 0.05)
+          ax[n][i].margins(0.1, 0.1)
+        
+      # Get the CBVs
+      for module in range(2, 25):
+        X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
+        if X is not None:
+        
+          # Get the timeseries info
+          lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
+          lcs = np.load(lcfile)
+          time = lcs['time']
+          nstars = len(lcs['fluxes'])
+          breakpoints = lcs['breakpoints']
+          
+          # Plot the CBVs
+          for b in range(len(breakpoints)):
+            inds = GetChunk(time, breakpoints, b)
+            for n in range(1, min(6, X.shape[1])):
+              ax[n][module].plot(time[inds], X[inds,n])
+              if b == 0:
+                ax[n][module].annotate(nstars, (0.01, 0.02), va = 'bottom', ha = 'left',
+                                       xycoords = 'axes fraction', color = 'k', fontsize = 8,
+                                       alpha = 0.5)
+                
+      # Save the figures
+      for n in range(1, kwargs.get('nrec', 5) + 1):
+        figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
+        fig[n].suptitle('CBV #%02d' % n, fontsize = 18, y = 0.94)
+        fig[n].savefig(figname, bbox_inches = 'tight')
+        pl.close(fig[n])
     
     return
   
