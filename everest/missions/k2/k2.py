@@ -1247,6 +1247,7 @@ def FitCBVs(model):
     masked_inds = model.get_masked_chunk(b, pad = False)
     
     # Debug
+    import pdb; pdb.set_trace()
     model.XCBV = np.hstack([model.XCBV, model.XCBV[:,1:] ** 2])
     
     # Regress
