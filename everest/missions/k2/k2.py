@@ -1237,6 +1237,9 @@ def FitCBVs(model):
   if model.XCBV is None:
     GetCBVs(model)
   
+  # DEBUG
+  model.XCBV = np.hstack([model.XCBV, model.XCBV[:,1:] ** 2])
+  
   # Loop over all the light curve segments
   m = [None for b in range(len(model.breakpoints))]
   weights = [None for b in range(len(model.breakpoints))]
@@ -1245,11 +1248,7 @@ def FitCBVs(model):
     # Get the indices for this light curve segment
     inds = model.get_chunk(b, pad = False)
     masked_inds = model.get_masked_chunk(b, pad = False)
-    
-    # Debug
-    import pdb; pdb.set_trace()
-    model.XCBV = np.hstack([model.XCBV, model.XCBV[:,1:] ** 2])
-    
+
     # Regress
     mX = model.XCBV[masked_inds]
     A = np.dot(mX.T, mX)
