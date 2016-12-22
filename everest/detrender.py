@@ -184,7 +184,6 @@ class Detrender(Basecamp):
     self.cbv_niter = kwargs.get('cbv_niter', 50)
     self.cbv_win = kwargs.get('cbv_win', 49)
     self.cbv_order = kwargs.get('cbv_order', 2)
-    self.cbv_tail_weight = kwargs.get('cbv_tail_weight', 5)
 
     # Get the pld order
     pld_order = kwargs.get('pld_order', 3)
@@ -767,7 +766,9 @@ class Detrender(Basecamp):
     ylim = (lo - pad, hi + pad)
     ax.set_ylim(ylim)   
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
-    ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 7)
+    ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 9)
+    for tick in ax.get_xticklabels() + ax.get_yticklabels():
+      tick.set_fontsize(7)
 
   def plot_info(self, dvs):
     '''

@@ -181,11 +181,8 @@ class CBV(object):
     self.title_center = GetFrame(0, 50, 66, 10)
     self.title_right = GetFrame(0, 116, 44, 10)
     self._body = [GetFrame(12, 6, 148, 44),
-                  GetFrame(58, 6, 148, 44),
-                  GetFrame(104, 6, 148, 44)]
-    self.footer_left = GetFrame(154, 6, 44, 6)
-    self.footer_center = GetFrame(154, 50, 66, 6)
-    self.footer_right = GetFrame(154, 116, 44, 6)
+                  GetFrame(64, 6, 148, 44),
+                  GetFrame(116, 6, 148, 44)]
     for ax in self.fig.get_axes():
       ax.axis('off')
     self.bcount = 0
@@ -198,14 +195,6 @@ class CBV(object):
     
     return self.title_left(on = False), self.title_center(on = False), self.title_right(on = False)
 
-  def footer(self):
-    '''
-    Returns the axis instance where the footer will be printed
-    
-    '''
-    
-    return self.footer_left(on = False), self.footer_center(on = False), self.footer_right(on = False)
-  
   def body(self):
     '''
     

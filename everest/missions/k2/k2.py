@@ -1227,10 +1227,7 @@ def GetCBVs(model):
   model.XCBV = sysrem.GetCBVs(season, module = module, model = model.name,
                               nrec = model.cbv_nrec, niter = model.cbv_niter, 
                               sv_win = model.cbv_win, sv_order = model.cbv_order)
-  
-  # DEBUG
-  model.XCBV = np.hstack([model.XCBV, model.XCBV[:,1:] ** 2])
-  
+
 def FitCBVs(model):
   '''
   
