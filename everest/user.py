@@ -294,7 +294,12 @@ class Everest(Basecamp):
       except KeyError:
         self.bkg = 0.
       self.bpad = f[1].header['BPAD']
-      self.cbv_nrec = f[1].header['CBVNREC']
+      self.cbv_minstars = []
+      for n in range(99):
+        try:
+          self.cbv_minstars.append(f[1].header['CBVMIN%02d' % n])
+        except:
+          continue
       self.cbv_niter = f[1].header['CBVNITER']
       self.cbv_win = f[1].header['CBVWIN']
       self.cbv_order = f[1].header['CBVORD']

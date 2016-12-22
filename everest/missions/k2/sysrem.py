@@ -91,7 +91,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 99, sv_order = 2, **kwargs):
+def SysRem(time, flux, err, nrec = 3, niter = 50, sv_win = 99, sv_order = 2, **kwargs):
   '''
   
   '''
@@ -133,7 +133,7 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 99, sv_order = 2, **k
     
   return cbvs
 
-def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = False, **kwargs):
+def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = True, **kwargs):
   '''
   
   '''
@@ -152,8 +152,9 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Fal
     else:
     
       # We're going to plot the CBVs on the CCD
-      fig = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
-      ax = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+      nrec = len(kwargs.get('minstars', [100, 400, 600])))
+      fig = [None] + [None for n in range(1, 1 + nrec)]
+      ax = [None] + [None for n in range(1, 1 + nrec)]
       for n in range(1, kwargs.get('nrec', 5) + 1):
         fig[n], ax[n] = pl.subplots(5, 5, figsize = (9, 9))
         fig[n].subplots_adjust(wspace = 0.025, hspace = 0.025)
@@ -192,7 +193,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Fal
                                        alpha = 0.5)
                 
       # Save the figures
-      for n in range(1, kwargs.get('nrec', 5) + 1):
+      for n in range(1, 1 + nrec):
         figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
         fig[n].suptitle('CBV #%02d' % n, fontsize = 18, y = 0.94)
         fig[n].savefig(figname, bbox_inches = 'tight')
@@ -232,7 +233,11 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Fal
     
     # Compute the design matrix  
     log.info('Running SysRem...')
-    X = np.ones((len(time), 1 + kwargs.get('nrec', 5)))
+    
+    # Figure out how many signals to recover
+    minstars = np.append(np.array(kwargs.get('minstars', [100, 400, 600])), np.inf)
+    nrec = np.argmin(len(fluxes) > minstars)
+    X = np.ones((len(time), 1 + nrec))
     
     # Loop over the segments
     new_fluxes = np.zeros_like(fluxes)
@@ -246,7 +251,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Fal
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
-      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], **kwargs).T
+      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], nrec = nrec, **kwargs).T
       
     # Save
     np.savez(xfile, X = X)
@@ -256,7 +261,4 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Fal
     # Load from disk
     X = np.load(xfile)['X'][()]
   
-  if X is not None:    
-    return X[:,:kwargs.get('nrec', 5) + 1]
-  else:
-    return None
+  return X

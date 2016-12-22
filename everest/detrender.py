@@ -180,9 +180,9 @@ class Detrender(Basecamp):
     nseg = len(self.breakpoints)
     self.cv_min = kwargs.get('cv_min', 'mad').lower()
     assert self.cv_min in ['mad', 'tv'], "Invalid value for `cv_min`."
-    self.cbv_nrec = kwargs.get('cbv_nrec', 3)
+    self.cbv_minstars = kwargs.get('cbv_minstars', [100, 400, 600])
     self.cbv_niter = kwargs.get('cbv_niter', 50)
-    self.cbv_win = kwargs.get('cbv_win', 49)
+    self.cbv_win = kwargs.get('cbv_win', 99)
     self.cbv_order = kwargs.get('cbv_order', 2)
 
     # Get the pld order
@@ -1052,9 +1052,9 @@ class Detrender(Basecamp):
     '''
     
     # Allow user to override CBV kwargs here
-    self.cbv_nrec = kwargs.get('cbv_nrec', 3)
+    self.cbv_minstars = kwargs.get('cbv_minstars', [100, 400, 600])
     self.cbv_niter = kwargs.get('cbv_niter', 50)
-    self.cbv_win = kwargs.get('cbv_win', 49)
+    self.cbv_win = kwargs.get('cbv_win', 99)
     self.cbv_order = kwargs.get('cbv_order', 2)
     
     # Get the CBVs

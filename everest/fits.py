@@ -72,7 +72,8 @@ def LightcurveHDU(model):
   cards.append(('BPAD', model.bpad, 'Chunk overlap in cadences'))
   for c in range(len(model.breakpoints)):
     cards.append(('BRKPT%02d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
-  cards.append(('CBVNREC', model.cbv_nrec, 'Number of CBV components to fit'))
+  for n in range(len(model.cbv_minstars)):
+    cards.append(('CBVMIN%02d', model.cbv_minstars[n], 'Minimum number of stars on module for CBV component #%02d' % (n + 1)))
   cards.append(('CBVNITER', model.cbv_niter, 'Number of CBV SysRem iterations'))
   cards.append(('CBVWIN', model.cbv_win, 'Window size for smoothing CBVs'))
   cards.append(('CBVORD', model.cbv_order, 'Order when smoothing CBVs'))
