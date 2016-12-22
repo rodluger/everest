@@ -160,8 +160,9 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   
     for module in range(2, 25):
       X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
-      for n in range(1, min(5, X.shape[1])):
-        ax[module].plot(X[:,n])
+      if X is not None:
+        for n in range(1, min(5, X.shape[1])):
+          ax[module].plot(X[:,n])
     figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '.pdf')
     fig.savefig(figname, bbox_inches = 'tight')
     
@@ -185,6 +186,8 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
       try:
         time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
       except:
+        np.savez(lcfile, time = None, breakpoints = None, fluxes = None, errors = None, kpars = None)
+        np.savez(xfile, X = None)
         return None
       np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, errors = errors, kpars = kpars)
     else:
@@ -219,6 +222,6 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   else:
     
     # Load from disk
-    X = np.load(xfile)['X']
+    X = np.load(xfile)['X'][()]
       
   return X[:,:kwargs.get('nrec', 5) + 1]
