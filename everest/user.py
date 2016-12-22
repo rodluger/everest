@@ -298,7 +298,6 @@ class Everest(Basecamp):
       self.cbv_niter = f[1].header['CBVNITER']
       self.cbv_win = f[1].header['CBVWIN']
       self.cbv_order = f[1].header['CBVORD']
-      self.cbv_tail_weight = f[1].header['CBVTW']
       self.cadn = f[1].data['CADN']
       self.cdivs = f[1].header['CDIVS']
       self.cdpp = f[1].header['CDPP']

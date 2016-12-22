@@ -76,7 +76,6 @@ def LightcurveHDU(model):
   cards.append(('CBVNITER', model.cbv_niter, 'Number of CBV SysRem iterations'))
   cards.append(('CBVWIN', model.cbv_win, 'Window size for smoothing CBVs'))
   cards.append(('CBVORD', model.cbv_order, 'Order when smoothing CBVs'))
-  cards.append(('CBVTW', model.cbv_tail_weight, 'Tail weights when fitting the CBVs'))
   cards.append(('CDIVS', model.cdivs, 'Cross-validation subdivisions'))
   cards.append(('CDPP', model.cdpp, 'Average de-trended CDPP'))
   cards.append(('CDPPR', model.cdppr, 'Raw CDPP'))

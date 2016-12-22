@@ -223,7 +223,7 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
   
   # Cadence
   if cadence == 'sc':
-    model = '%.sc' % model
+    model = '%s.sc' % model
   
   if not hasattr(campaign, '__len__'):
     if type(campaign) is int:
