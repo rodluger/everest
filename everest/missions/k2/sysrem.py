@@ -8,6 +8,7 @@ sysrem.py
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ...config import EVEREST_DAT
+from ...utils import InitLog
 from .aux import GetK2Campaign, Campaign, Channels
 import os
 import numpy as np
@@ -136,6 +137,10 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   '''
   
   '''
+  
+  # Initialize logging?
+  if len(logging.getLogger().handlers) == 0:
+    InitLog(file_name = None, screen_level = logging.DEBUG)
   
   # All modules?
   if module is None:
