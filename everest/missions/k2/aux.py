@@ -63,8 +63,8 @@ class StatsPicker(object):
     
     '''
     
-    from ...user import ShowDVS
-    self.show = ShowDVS
+    from ...user import DVS
+    self.show = DVS
     if not hasattr(axes, '__len__'):
       axes = [axes]
       x = [x]

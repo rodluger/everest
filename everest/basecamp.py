@@ -291,11 +291,18 @@ class Basecamp(object):
   
       # Center chunks
       for m in model[1:-1]:
-        offset = self.model[-1] - m[self.bpad - 1]
+        # Join the chunks at the first non-outlier cadence
+        i = 1
+        while len(self.model) - i in self.mask:
+          i += 1
+        offset = self.model[-i] - m[self.bpad - i]
         self.model = np.concatenate([self.model, m[self.bpad:-self.bpad] + offset])
   
       # Last chunk
-      offset = self.model[-1] - model[-1][self.bpad - 1]
+      i = 1
+      while len(self.model) - i in self.mask:
+        i += 1
+      offset = self.model[-i] - model[-1][self.bpad - i]
       self.model = np.concatenate([self.model, model[-1][self.bpad:] + offset])      
   
     else:

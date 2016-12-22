@@ -553,7 +553,10 @@ class Detrender(Basecamp):
       ax[1].margins(0.1, 0.1)
       ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
       ax[1].set_xlabel(r'Chunk', fontsize = 5)
-      ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+      if len(self.breakpoints) < 15:
+        ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+      else:
+        ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1, 2))
       
   def finalize(self):
     '''

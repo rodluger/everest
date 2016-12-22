@@ -90,7 +90,10 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   }
   elif cadence == 'sc':
     breakpoints = {
-                  0: np.array(np.linspace(0, 112590, 31)[1:-1], dtype = int),     # OK
+                  0: np.array([  3753,  11259,  15012,  18765,  60048,            # OK
+                                 63801,  67554,  71307, 75060,  78815, 
+                                 82566,  86319,  90072, 93825,  97578, 
+                                 101331, 105084, 108837]),        
                   1: np.array([ 8044,   12066,  16088,  20135,  24132,  28154,    # OK
                                 32176,  36198,  40220,  44242,  48264,  52286,  
                                 56308,  60330,  64352,  68374,  72396,  76418,  
@@ -803,6 +806,7 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
  
     # Plot the equivalent of the Aigrain+16 figure
     fig, ax = pl.subplots(1)
+    fig.canvas.set_window_title('K2 Campaign %s Short Cadence' % (campaign))
     x = kp
     y = (cdpp6b - cdpp6_1) / cdpp6_1
     ax.scatter(x[unsat], y[unsat], color = 'b', marker = '.', alpha = 0.5, zorder = -1, picker = True)
@@ -812,7 +816,8 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
     ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
     ax.axhline(0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
     ax.axhline(-0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
-    ax.set_title(r'Relative CDPP', fontsize = 18)
+    ax.set_title(r'Short Versus Long Cadence', fontsize = 18)
+    ax.set_ylabel(r'Relative CDPP', fontsize = 18)
     ax.set_xlabel('Kepler Magnitude', fontsize = 18)
     
     # Pickable points
