@@ -1252,6 +1252,7 @@ def FitCBVs(model):
       mKinv[:100] /= (model.cbv_tail_weight ** 2)
     elif b == len(model.breakpoints) - 1:
       mKinv[-100:] /= (model.cbv_tail_weight ** 2)
+    mKinv = mKinv.reshape(-1, 1)
     
     # Regress
     mX = model.XCBV[masked_inds]
