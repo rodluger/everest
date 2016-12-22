@@ -212,9 +212,9 @@ def _Run(campaign, subcampaign, epic, strkwargs):
     m(epic)
 
 def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100, 
-        mpn = None, email = None, queue = None, **kwargs):
+            mpn = None, email = None, queue = None, **kwargs):
   '''
-  Submits a cluster job to compute and plot data for all targets in a given campaign.
+  Submits a cluster job to generate the FITS files for publication.
   
   :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
                    all targets in that campaign. If a :py:class:`float` in the form \
@@ -257,21 +257,18 @@ def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
                      '`int`s, `float`s, `string`s, `bool`s, or lists of these.')
   
   # Submit the cluster job      
-  pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
+  pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'publish.pbs')
   if mpn is not None:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore,mem=%dgb' % (nodes, ppn, ppn, mpn * nodes)
   else:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = "EVEREST_DAT=%s,NODES=%d,EPIC=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
-          nodes, 0 if EPIC is None else EPIC, campaign, subcampaign, strkwargs)
-  if EPIC is None:
-    if subcampaign == -1:
-      str_name = 'c%02d' % campaign
-    else:
-      str_name = 'c%02d.%d' % (campaign, subcampaign)
+  str_v = "EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
+          nodes, campaign, subcampaign, strkwargs)
+  if subcampaign == -1:
+    str_name = 'c%02d' % campaign
   else:
-    str_name = 'EPIC%d' % EPIC
+    str_name = 'c%02d.%d' % (campaign, subcampaign)
   str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
   qsub_args = ['qsub', pbsfile, 
                '-v', str_v, 
@@ -288,9 +285,36 @@ def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
+
+def _Publish(campaign, subcampaign, strkwargs):
+  '''
+  The actual function that publishes a given campaign; this must
+  be called from ``missions/k2/publish.pbs``.
   
+  '''
   
-    
+  # Get kwargs from string
+  kwargs = pickle.loads(strkwargs.replace('%%%', '\n').encode('utf-8'))
+  
+  # Check the cadence
+  cadence = kwargs.get('cadence', 'lc')
+  
+  # Model wrapper
+  m = FunctionWrapper(EverestModel, publish = True, **kwargs)
+  
+  # Set up our custom exception handler
+  sys.excepthook = ExceptionHook
+  
+  # Initialize our multiprocessing pool
+  with Pool() as pool:
+    # Are we doing a subcampaign?
+    if subcampaign != -1:
+      campaign = campaign + 0.1 * subcampaign
+    # Get all the stars
+    stars = GetK2Campaign(campaign, epics_only = True, cadence = cadence)
+    # Run
+    pool.map(m, stars)
+
 def Status(campaign = range(18), model = 'nPLD', purge = False, injection = False, cadence = 'lc', **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
@@ -435,7 +459,7 @@ def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
         else:
           print("%s{:>4.1f}{:>8s}{:>14g}{:>10d}{:>10d}%s{:>9d}\033[0m".format(c, mask, depth, total, done[m][d], err[m][d]) % (color, errcolor))
 
-def EverestModel(ID, model = 'nPLD', **kwargs):
+def EverestModel(ID, model = 'nPLD', publish = False, **kwargs):
   '''
   
   '''
@@ -451,7 +475,13 @@ def EverestModel(ID, model = 'nPLD', **kwargs):
         i = np.argmax(EPIC == ID)
         kwargs.update({'planets': (t0[i], period[i], 1.25 * duration[i])})
     
-    getattr(detrender, model)(ID, **kwargs)
+    # Run the model
+    m = getattr(detrender, model)(ID, **kwargs)
+    
+    # Publish?
+    if publish:
+      m.publish()
+    
   else:
     from ...inject import Inject
     Inject(ID, **kwargs)
