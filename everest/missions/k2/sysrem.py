@@ -91,7 +91,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 2, niter = 50, sv_win = 99, sv_order = 2, **kwargs):
+def SysRem(time, flux, err, nrec = 2, niter = 50, sv_win = 499, sv_order = 2, **kwargs):
   '''
   
   '''
