@@ -146,8 +146,8 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   if module is None:
   
     # We're going to plot the CBVs on the CCD
-    fig = [None for n in range(1, kwargs.get('nrec', 5) + 1)]
-    ax = [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+    fig = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
+    ax = [None] + [None for n in range(1, kwargs.get('nrec', 5) + 1)]
     for n in range(1, kwargs.get('nrec', 5) + 1):
       fig[n], ax[n] = pl.subplots(5, 5, figsize = (9, 9))
       fig[n].subplots_adjust(wspace = 0.025, hspace = 0.025)
