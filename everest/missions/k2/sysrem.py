@@ -144,8 +144,27 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
   
   # All modules?
   if module is None:
+  
+    # Plot the CCD
+    fig, ax = pl.subplots(5, 5, figsize = (9, 9))
+    fig.subplots_adjust(wspace = 0.025, hspace = 0.025)
+    ax = [None] + list(ax.flatten())
+    for axis in [ax[1], ax[5], ax[21], ax[25]]:
+      axis.set_visible(False)
+    for i in range(1, 25):
+      ax[i].set_xticks([])
+      ax[i].set_yticks([])
+      ax[i].annotate('%02d' % i, (0.5, 0.5), 
+                    va = 'center', ha = 'center',
+                    color = 'k', fontsize = 60, alpha = 0.05)
+  
     for module in range(2, 25):
-      GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
+      X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
+      for n in range(1, min(5, X.shape[1])):
+        ax[module].plot(X[:,n])
+    figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '.pdf')
+    fig.savefig(figname, bbox_inches = 'tight')
+    
     return
   
   log.info('Computing CBVs for campaign %d, module %d...' % (campaign, module))
@@ -201,5 +220,5 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
     
     # Load from disk
     X = np.load(xfile)['X']
-  
+      
   return X[:,:kwargs.get('nrec', 5) + 1]

@@ -215,6 +215,7 @@ def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
             mpn = None, email = None, queue = None, **kwargs):
   '''
   Submits a cluster job to generate the FITS files for publication.
+  Make sure to run :py:func:`everest.k2.GetCBVs` for this campaign beforehand.
   
   :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
                    all targets in that campaign. If a :py:class:`float` in the form \
