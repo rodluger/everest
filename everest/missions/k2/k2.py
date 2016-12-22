@@ -1237,8 +1237,8 @@ def FitCBVs(model):
   if model.XCBV is None:
     GetCBVs(model)
   
-  # DEBUG
-  model.XCBV = np.hstack([model.XCBV, model.XCBV[:,1:] ** 2])
+    # DEBUG
+    model.XCBV = np.hstack([model.XCBV, model.XCBV[:,1:] ** 2])
   
   # Loop over all the light curve segments
   m = [None for b in range(len(model.breakpoints))]
