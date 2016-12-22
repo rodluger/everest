@@ -1053,7 +1053,7 @@ class Detrender(Basecamp):
     
     # Get the CBVs
     if self.cadence == 'lc':
-      self._mission.GetCBVs(self)
+      self._mission.GetTargetCBVs(self)
     
       # Plot the final corrected light curve
       cbv = CBV()
@@ -1063,7 +1063,7 @@ class Detrender(Basecamp):
       self.plot_cbv(cbv.body(), self.fraw, 'Raw')
     
       # Save the CBV pdf
-      pdf = PdfPages(os.path.join(self.dir, 'dvs.pdf'))
+      pdf = PdfPages(os.path.join(self.dir, 'cbv.pdf'))
       pdf.savefig(cbv.fig)
       pl.close(cbv.fig)
       d = pdf.infodict()
@@ -1074,16 +1074,17 @@ class Detrender(Basecamp):
       # Now merge the two PDFs
       assert os.path.exists(os.path.join(self.dir, self.name + '.pdf')), "Unable to locate %s.pdf." % self.name
       output = PdfFileWriter()
-      pdfOne = PdfFileReader(os.path.join(self.dir, 'dvs.pdf'))
+      pdfOne = PdfFileReader(os.path.join(self.dir, 'cbv.pdf'))
       pdfTwo = PdfFileReader(os.path.join(self.dir, self.name + '.pdf'))
       # Add the CBV page
       output.addPage(pdfOne.getPage(0))
       # Add the original DVS page
-      output.addPage(pdfTwo.getPage(0))
-      # Overwrite `dvs.pdf`
-      outputStream = open(os.path.join(self.dir, 'dvs.pdf'), "wb")
+      output.addPage(pdfTwo.getPage(pdfTwo.numPages - 1))
+      # Overwrite the pdf
+      outputStream = open(os.path.join(self.dir, self.name + '.pdf'), "wb")
       output.write(outputStream)
       outputStream.close()
+      os.remove(os.path.join(self.dir, 'cbv.pdf'))
       
     # Make the FITS file
     MakeFITS(self)

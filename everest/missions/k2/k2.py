@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
            'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP',
-           'GetCBVs', 'FitCBVs']
+           'GetTargetCBVs', 'FitCBVs']
 
 def Setup():
   '''
@@ -1318,7 +1318,7 @@ def FITSUrl(ID, season):
   url = MAST_ROOT + 'c%02d/' % season + ('%09d' % ID)[:4] + '00000/' + ('%09d/' % ID)[4:]
   return url
 
-def GetCBVs(model):
+def GetTargetCBVs(model):
   '''
   
   '''
@@ -1337,7 +1337,7 @@ def FitCBVs(model):
   
   # Get cbvs?
   if model.XCBV is None:
-    GetCBVs(model)
+    GetTargetCBVs(model)
 
   # Loop over all the light curve segments
   m = [None for b in range(len(model.breakpoints))]
