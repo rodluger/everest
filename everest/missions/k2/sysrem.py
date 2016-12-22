@@ -223,5 +223,8 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
     
     # Load from disk
     X = np.load(xfile)['X'][()]
-      
-  return X[:,:kwargs.get('nrec', 5) + 1]
+  
+  if X is not None:    
+    return X[:,:kwargs.get('nrec', 5) + 1]
+  else:
+    return None
