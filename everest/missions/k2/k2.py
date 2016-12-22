@@ -1249,9 +1249,9 @@ def FitCBVs(model):
     # Weight the tails
     mKinv = np.ones(len(masked_inds))
     if b == 0:
-      mKinv[:100] /= (model.cbv_tail_weight ** 2)
+      mKinv[:100] *= (model.cbv_tail_weight ** 2)
     elif b == len(model.breakpoints) - 1:
-      mKinv[-100:] /= (model.cbv_tail_weight ** 2)
+      mKinv[-100:] *= (model.cbv_tail_weight ** 2)
     
     # Regress
     mX = model.XCBV[masked_inds]
