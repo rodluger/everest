@@ -158,19 +158,29 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
         ax[n][i].set_xticks([])
         ax[n][i].set_yticks([])
         ax[n][i].annotate('%02d' % i, (0.5, 0.5), 
-                      va = 'center', ha = 'center',
-                      color = 'k', fontsize = 60, alpha = 0.05)
+                          va = 'center', ha = 'center',
+                          xycoords = 'axes fraction',
+                          color = 'k', fontsize = 60, alpha = 0.05)
     
     # Get the CBVs
     for module in range(2, 25):
       X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
       if X is not None:
-        for n in range(1, min(5, X.shape[1])):
-          ax[n][module].plot(X[:,n])
+        
+        lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
+        lcs = np.load(lcfile)
+        time = lcs['time']
+        breakpoints = lcs['breakpoints']
+        
+        for n in range(1, min(5, X.shape[1]) + 1):
+          for b in range(len(breakpoints)):
+            inds = GetChunk(time, breakpoints, b)
+            ax[n][module].plot(time[inds], X[inds,n])
     
     for n in range(1, kwargs.get('nrec', 5) + 1):
       figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
-      fig[n].savefig(figname)
+      fig[n].suptitle('CBV #%02d' % n, fontsize = 18)
+      fig[n].savefig(figname, bbox_inches = 'tight')
       pl.close(fig[n])
     
     return
