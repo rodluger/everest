@@ -152,7 +152,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Tru
     else:
     
       # We're going to plot the CBVs on the CCD
-      nrec = len(kwargs.get('minstars', [100, 400, 600])))
+      nrec = len(kwargs.get('minstars', [100, 400, 600]))
       fig = [None] + [None for n in range(1, 1 + nrec)]
       ax = [None] + [None for n in range(1, 1 + nrec)]
       for n in range(1, kwargs.get('nrec', 5) + 1):
