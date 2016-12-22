@@ -1246,29 +1246,20 @@ def FitCBVs(model):
     inds = model.get_chunk(b, pad = False)
     masked_inds = model.get_masked_chunk(b, pad = False)
     
-    if model.cbv_red:
-      # Generalized least squares
-      # Doesn't work well, as there's too much power in the GP
-      # and low frequency CBV fits are de-prioritized
-      white, amp, tau = model.kernel_params
-      gp = george.GP(george.kernels.WhiteKernel(white ** 2) + amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-      mT = model.time[masked_inds]
-      mE = model.fraw_err[masked_inds]
-      mX = model.XCBV[masked_inds]
-      mY = model.flux[masked_inds]
-      gp.compute(mT, mE)
-      A = np.dot(mX.T, gp.solver.apply_inverse(mX))
-      B = np.dot(mX.T, gp.solver.apply_inverse(mY))
-      weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(model.XCBV[inds], weights[b])
-    else:
-      # Ordinary least squares
-      mX = model.XCBV[masked_inds]
-      A = np.dot(mX.T, mX)
-      B = np.dot(mX.T, model.flux[masked_inds])
-      weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(model.XCBV[inds], weights[b])
+    # Weight the tails
+    mKinv = np.ones(len(masked_inds))
+    if b == 0:
+      mKinv[:100] /= (model.cbv_tail_weight ** 2)
+    elif b == len(model.breakpoints) - 1:
+      mKinv[-100:] /= (model.cbv_tail_weight ** 2)
     
+    # Regress
+    mX = model.XCBV[masked_inds]
+    A = np.dot(mX.T, mX * mKinv)
+    B = np.dot(mX.T, model.flux[masked_inds] * mKinv)
+    weights[b] = np.linalg.solve(A, B)
+    m[b] = np.dot(model.XCBV[inds], weights[b])
+
     # Vertical alignment
     if b == 0:
       m[b] -= np.nanmedian(m[b])

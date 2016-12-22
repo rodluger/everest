@@ -49,18 +49,15 @@ setup(name = 'everest',
                           'scipy',
                           'matplotlib',
                           'george==0.2.1',
-                          'sklearn',
-                          'astroML',
-                          'astroML_addons',
                           'six',
                           pyfits,
                           'pysyzygy>=0.0.1',
-                          'k2plr==0.2.1',
-                          'statsmodels'
+                          'k2plr==0.2.1',  # TODO: Update
+                          'PyPDF2'
                          ],
       dependency_links = [
                           'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
-                          'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.1'
+                          'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.1' # TODO: Update
                          ],
       scripts=['bin/everest', 'bin/k2download', 'bin/k2stats', 'bin/everest-status'],
       include_package_data = True,

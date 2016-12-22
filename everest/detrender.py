@@ -184,7 +184,7 @@ class Detrender(Basecamp):
     self.cbv_niter = kwargs.get('cbv_niter', 50)
     self.cbv_win = kwargs.get('cbv_win', 49)
     self.cbv_order = kwargs.get('cbv_order', 2)
-    self.cbv_red = kwargs.get('cbv_red', False)
+    self.cbv_tail_weight = kwargs.get('cbv_tail_weight', 5)
 
     # Get the pld order
     pld_order = kwargs.get('pld_order', 3)
