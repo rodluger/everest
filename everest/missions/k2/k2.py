@@ -12,7 +12,7 @@ from . import sysrem
 from .aux import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
-from ...math import SavGol, Interpolate, Scatter
+from ...math import SavGol, Interpolate, Scatter, Downbin
 try:
   import pyfits
 except ImportError:
@@ -728,11 +728,108 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   # If we get to this point, we didn't find enough neighbors... 
   # Return what we have anyway.
   return targets
-    
-def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, **kwargs):
+
+def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = True, **kwargs):
   '''
   
   '''
+  
+  # Update model name
+  model = '%s.sc' % model
+  
+  # Compute the statistics
+  sub = np.array(GetK2Campaign(campaign, cadence = 'sc', epics_only = True), dtype = int)
+  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model, int(campaign)))
+  if clobber or not os.path.exists(outfile):
+    with open(outfile, 'w') as f:
+      print("EPIC               Kp           Raw CDPP     Raw Binned CDPP   Everest CDPP      Everest Binned CDPP     Saturated", file = f)
+      print("---------          ------       ---------    ---------------   ------------      -------------------     -----------", file = f)
+      all = GetK2Campaign(int(campaign), cadence = 'sc')
+      stars = np.array([s[0] for s in all], dtype = int)
+      kpmgs = np.array([s[1] for s in all], dtype = float)
+      for i, _ in enumerate(stars):
+        sys.stdout.write('\rProcessing target %d/%d...' % (i + 1, len(stars)))
+        sys.stdout.flush()
+        nf = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
+                         ('%09d' % stars[i])[:4] + '00000', 
+                         ('%09d' % stars[i])[4:], model + '.npz')
+        try:
+          data = np.load(nf)
+          
+          # Compute binned CDPP
+          newsize = len(data['fraw']) // 30
+          fraw = Downbin(data['fraw'], newsize, operation = 'mean')
+          flux = Downbin(data['fraw'] - data['model'], newsize, operation = 'mean')
+          rbcdpp = CDPP(fraw)
+          ebcdpp = CDPP(flux)
+          
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}      {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], rbcdpp, data['cdpp'][()], ebcdpp, int(data['saturated'])), file = f)
+        except:
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}      {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, np.nan, 0), file = f)
+      print("")
+  
+  if plot:
+  
+    # Load all stars
+    epic, kp, cdpp6r, cdpp6rb, cdpp6, cdpp6b, saturated = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    epic = np.array(epic, dtype = int)
+    saturated = np.array(saturated, dtype = int)
+
+    # Get only stars in this subcampaign
+    inds = np.array([e in sub for e in epic])
+    epic = epic[inds]
+    kp = kp[inds]
+    # HACK: Campaign 0 magnitudes are reported only to the nearest tenth,
+    # so let's add a little noise to spread them out for nicer plotting
+    kp = kp + 0.1 * (0.5 - np.random.random(len(kp)))
+    cdpp6r = cdpp6r[inds]
+    cdpp6rb = cdpp6rb[inds]
+    cdpp6 = cdpp6[inds]
+    cdpp6b = cdpp6b[inds]
+    saturated = saturated[inds]
+    sat = np.where(saturated == 1)
+    unsat = np.where(saturated == 0)
+    if not np.any([not np.isnan(x) for x in cdpp6]):
+      raise Exception("No targets to plot.")
+
+    # Get the long cadence stats
+    compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model[:-3], int(campaign)))
+    epic_1, _, _, cdpp6_1, _, _, _, _, saturated = np.loadtxt(compfile, unpack = True, skiprows = 2)
+    epic_1 = np.array(epic_1, dtype = int)
+    inds = np.array([e in sub for e in epic_1])
+    epic_1 = epic_1[inds]
+    cdpp6_1 = cdpp6_1[inds]
+    cdpp6_1 = sort_like(cdpp6_1, epic, epic_1) 
+ 
+    # Plot the equivalent of the Aigrain+16 figure
+    fig, ax = pl.subplots(1)
+    x = kp
+    y = (cdpp6b - cdpp6_1) / cdpp6_1
+    ax.scatter(x[unsat], y[unsat], color = 'b', marker = '.', alpha = 0.5, zorder = -1, picker = True)
+    ax.scatter(x[sat], y[sat], color = 'r', marker = '.', alpha = 0.5, zorder = -1, picker = True)
+    ax.set_ylim(-1,1)
+    ax.set_xlim(8,18)
+    ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
+    ax.axhline(0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
+    ax.axhline(-0.5, color = 'gray', ls = '--', lw = 2, zorder = -99, alpha = 0.5)
+    ax.set_title(r'Relative CDPP', fontsize = 18)
+    ax.set_xlabel('Kepler Magnitude', fontsize = 18)
+    
+    # Pickable points
+    Picker = StatsPicker([ax], [kp], [y], epic, campaign, model = model, compare_to = model[:-3])
+    fig.canvas.mpl_connect('pick_event', Picker)
+    
+    # Show
+    pl.show()
+    
+def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, cadence = 'lc', **kwargs):
+  '''
+  
+  '''
+  
+  # Is this short cadence?
+  if cadence == 'sc':
+    return ShortCadenceStatistics(campaign = campaign, clobber = clobber, model = model, plot = plot, **kwargs)
   
   # Is this an injection run?
   if injection:

@@ -19,6 +19,7 @@ if __name__ == '__main__':
   parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to')
   parser.add_argument("-i", "--inject", action = 'store_true', help = 'Run injection stats?')
   parser.add_argument("-m", "--mission", type = str, default = 'k2', help = 'Mission to analyze')
+  parser.add_argument("-s", "--short", action = 'store_true', help = 'Short cadence?')
   args = parser.parse_args()
   
   # Get the mission
@@ -26,6 +27,12 @@ if __name__ == '__main__':
   from everest.utils import InitLog
   Statistics = getattr(missions, args.mission).Statistics
   InitLog(None, logging.CRITICAL, logging.DEBUG, False)
+  
+  # Get the cadence
+  if args.short:
+    cadence = 'sc'
+  else:
+    cadence = 'lc'
   
   # Get the campaign number
   if args.campaign is not None:
@@ -56,22 +63,22 @@ if __name__ == '__main__':
   if campaign is not None:
     if args.model is not None:
       if args.compare_to is not None:
-        Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
+        Statistics(campaign = campaign, model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
       else:
-        Statistics(campaign = campaign, model = args.model, injection = injection, clobber = clobber, plot = plot)
+        Statistics(campaign = campaign, model = args.model, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
     else:
       if args.compare_to is not None:
-        Statistics(campaign = campaign, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
+        Statistics(campaign = campaign, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
       else:
-        Statistics(campaign = campaign, injection = injection, clobber = clobber, plot = plot)
+        Statistics(campaign = campaign, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
   else:
     if args.model is not None:
       if args.compare_to is not None:
-        Statistics(model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
+        Statistics(model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
       else:
-        Statistics(model = args.model, injection = injection, clobber = clobber, plot = plot)
+        Statistics(model = args.model, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
     else:
       if args.compare_to is not None:
-        Statistics(compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot)
+        Statistics(compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence)
       else:
-        Statistics(injection = injection, clobber = clobber, plot = plot)
+        Statistics(injection = injection, clobber = clobber, plot = plot, cadence = cadence)
