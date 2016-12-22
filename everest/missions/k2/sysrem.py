@@ -161,7 +161,8 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
                           va = 'center', ha = 'center',
                           xycoords = 'axes fraction',
                           color = 'k', fontsize = 60, alpha = 0.05)
-    
+        ax[n][i].margins(0.1, 0.1)
+        
     # Get the CBVs
     for module in range(2, 25):
       X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
@@ -179,7 +180,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
     
     for n in range(1, kwargs.get('nrec', 5) + 1):
       figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
-      fig[n].suptitle('CBV #%02d' % n, fontsize = 18)
+      fig[n].suptitle('CBV #%02d' % n, fontsize = 18, y = 0.96)
       fig[n].savefig(figname, bbox_inches = 'tight')
       pl.close(fig[n])
     
