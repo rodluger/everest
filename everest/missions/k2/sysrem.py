@@ -147,7 +147,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, plot = Fal
     
     if not plot:
       for module in range(2, 25):
-      X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
+        X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
     
     else:
     
