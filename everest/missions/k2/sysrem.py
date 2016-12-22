@@ -168,6 +168,9 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
       X = GetCBVs(campaign, module = module, model = model, clobber = clobber, **kwargs)
       if X is not None:
         
+        if module == 4:
+          import pdb; pdb.set_trace()
+        
         lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
         lcs = np.load(lcfile)
         time = lcs['time']
@@ -180,7 +183,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', clobber = False, **kwargs):
     
     for n in range(1, kwargs.get('nrec', 5) + 1):
       figname = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, model + '_%02d.pdf' % n)
-      fig[n].suptitle('CBV #%02d' % n, fontsize = 18, y = 0.96)
+      fig[n].suptitle('CBV #%02d' % n, fontsize = 18, y = 0.94)
       fig[n].savefig(figname, bbox_inches = 'tight')
       pl.close(fig[n])
     
