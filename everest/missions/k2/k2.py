@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
            'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP',
-           'GetTargetCBVs', 'FitCBVs']
+           'GetTargetCBVs', 'FitCBVs', 'NumCBVs']
 
 def Setup():
   '''
@@ -55,6 +55,41 @@ def Season(EPIC, **kwargs):
   '''
   
   return Campaign(EPIC, **kwargs)
+
+def NumCBVs(EPIC, **kwargs):
+  '''
+  
+  '''
+  
+  # Get the campaign number
+  campaign = Season(EPIC)
+  
+  # Get the module number
+  module = Module(EPIC)
+  
+  if campaign == 0:
+    return 2
+  elif campaign == 1:
+    return 2
+  elif campaign == 2:
+    if module == 20:
+      return 1
+    else:
+      return 2
+  elif campaign == 3:
+    return 2
+  elif campaign == 4:
+    return 2
+  elif campaign == 5:
+    return 2
+  elif campaign == 6:
+    return 2
+  elif campaign == 7:
+    return 2
+  elif campaign == 8:
+    return 2
+  else:
+    return 2
 
 def Breakpoints(EPIC, cadence = 'lc', **kwargs):  
   '''
@@ -1327,9 +1362,9 @@ def GetTargetCBVs(model):
   season = model.season
   module = Module(model.ID)
   model.XCBV = sysrem.GetCBVs(season, module = module, model = model.name,
-                              minstars = model.cbv_minstars, niter = model.cbv_niter, 
+                              niter = model.cbv_niter, nrec = model.cbv_nrec,
                               sv_win = model.cbv_win, sv_order = model.cbv_order)
-
+  
 def FitCBVs(model):
   '''
   

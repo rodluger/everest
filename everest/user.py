@@ -32,7 +32,11 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   '''
   Download a given :py:mod:`everest` file from MAST.
   
-  :param bool clobber: If `True`, download and overwrite existing files. Default `False`
+  :param str mission: The mission name. Default `k2`
+  :param str cadence: The light curve cadence. Default `lc`
+  :param str filename: The name of the file to download. Default :py:obj:`None`, in which case the default \
+                       FITS file is retrieved.
+  :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
   
   '''
   
@@ -98,6 +102,12 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
 
 def DVS(ID, mission = 'k2', model = 'nPLD', clobber = False, cadence = 'lc'):
   '''
+  Show the data validation summary (DVS) for a given target.
+  
+  :param str mission: The mission name. Default `k2`
+  :param str cadence: The light curve cadence. Default `lc`
+  :param str model: The :py:mod:`everest` model name. Default `nPLD`
+  :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
   
   '''
   
@@ -123,6 +133,16 @@ def DVS(ID, mission = 'k2', model = 'nPLD', clobber = False, cadence = 'lc'):
 
 class Everest(Basecamp):
   '''
+  The main user-accessible :py:mod:`everest` class for interfacing with the light curves
+  stored on MAST. Instantiating this class downloads the current :py:mod:`everest` FITS 
+  file for the requested target and populates the class instance with the light curve
+  data and attributes. Many of the methods are inherited from :py:class:`everest.Basecamp`.
+  
+  :param int ID: The target ID. For `k2`, this is the `EPIC` number of the star.
+  :param str mission: The mission name. Default `k2`
+  :param bool quiet: Suppress :py:obj:`stdout` messages? Default :py:obj:`False`
+  :param str cadence: The light curve cadence. Default `lc`
+  :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
   
   '''
   
@@ -165,6 +185,7 @@ class Everest(Basecamp):
   @property
   def name(self):
     '''
+    Returns the name of the :py:mod:`everest` model used to generate this light curve.
     
     '''
     
@@ -172,6 +193,7 @@ class Everest(Basecamp):
   
   def reset(self):
     '''
+    Re-loads the FITS file from disk.
     
     '''
     
@@ -180,20 +202,28 @@ class Everest(Basecamp):
   
   def compute(self):
     '''
+    Re-compute the :py:mod:`everest` model for the given value of :py:obj:`lambda`.
+    For long cadence `k2` light curves, this should take several seconds. For short
+    cadence `k2` light curves, it may take a few minutes.
+    Note that this is a simple wrapper around :py:func:`everest.Basecamp.compute`.
     
     '''
     
+    # If we're doing recursive PLD, get the normalization
     if self.model_name == 'rPLD':
-      self.get_norm()
+      self._get_norm()
     
-    # Compute as normal
+    # Compute as usual
     super(Everest, self).compute()
     
     # Make NaN cadences NaNs
     self.flux[self.nanmask] = np.nan
     
-  def get_norm(self):
+  def _get_norm(self):
     '''
+    Computes the PLD flux normalization array.
+    
+    ..note :: `rPLD` model **only**.
     
     '''
     
@@ -266,7 +296,7 @@ class Everest(Basecamp):
     
   def download_fits(self):
     '''
-    TODO.
+    ..todo:: This still needs to be implemented!
     
     '''
     
@@ -274,6 +304,7 @@ class Everest(Basecamp):
         
   def load_fits(self):
     '''
+    Load the FITS file from disk and populate the class instance with its data.
     
     '''
     
@@ -403,6 +434,10 @@ class Everest(Basecamp):
   
   def plot_aperture(self, show = True):
     '''
+    Plot sample postage stamps for the target with the aperture outline marked,
+    as well as a high-res target image (if available).
+    
+    :param bool show: Show the plot or return the `(fig, ax)` instance? Default :py:obj:`True`
     
     '''
     
@@ -424,6 +459,14 @@ class Everest(Basecamp):
            plot_bad = True, plot_out = True, plot_cbv = True):
     '''
     Plots the final de-trended light curve.
+    
+    :param bool show: Show the plot or return the `(fig, ax)` instance? Default :py:obj:`True`
+    :param bool plot_raw: Show the raw light curve? Default :py:obj:`True`
+    :param bool plot_gp: Show the GP model prediction? Default :py:obj:`True`
+    :param bool plot_bad: Show and indicate the bad data points? Default :py:obj:`True`
+    :param bool plot_out: Show and indicate the outliers? Default :py:obj:`True`
+    :param bool plot_cbv: Plot the CBV-corrected light curve? Default :py:obj:`True`. If \
+                          :py:obj:`False`, plots the de-trended but uncorrected light curve.
   
     '''
 
@@ -582,6 +625,7 @@ class Everest(Basecamp):
   
   def dvs(self):
     '''
+    Shows the data validation summary (DVS) for the target.
     
     '''
     

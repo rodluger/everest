@@ -91,7 +91,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 2, niter = 50, sv_win = 499, sv_order = 2, **kwargs):
+def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 499, sv_order = 2, **kwargs):
   '''
   
   '''
@@ -133,7 +133,7 @@ def SysRem(time, flux, err, nrec = 2, niter = 50, sv_win = 499, sv_order = 2, **
     
   return cbvs
 
-def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 2, clobber = False, plot = True, **kwargs):
+def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, plot = True, **kwargs):
   '''
   
   '''
@@ -217,7 +217,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 2, clobber = False, 
     if clobber or not os.path.exists(lcfile):
       try:
         time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
-      except:
+      except AssertionError:
         np.savez(lcfile, time = None, breakpoints = None, fluxes = None, errors = None, kpars = None)
         np.savez(xfile, X = None)
         return None
@@ -256,4 +256,8 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 2, clobber = False, 
     # Load from disk
     X = np.load(xfile)['X'][()]
   
-  return X
+  if X is not None: 
+    # Ensure we only return as many as we asked for 
+    return X[:,:nrec + 1]
+  else:
+    return X
