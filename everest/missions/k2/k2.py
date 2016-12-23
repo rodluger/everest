@@ -42,8 +42,6 @@ def Setup():
   
   '''
   
-  if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'stats')):
-    os.makedirs(os.path.join(EVEREST_DAT, 'k2', 'stats'))
   if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'cbv')):
     os.makedirs(os.path.join(EVEREST_DAT, 'k2', 'cbv'))
   GetK2Stars(clobber = False)
@@ -777,7 +775,7 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
   
   # Compute the statistics
   sub = np.array(GetK2Campaign(campaign, cadence = 'sc', epics_only = True), dtype = int)
-  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model, int(campaign)))
+  outfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(campaign), model))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
       print("EPIC               Kp           Raw CDPP     Raw Binned CDPP   Everest CDPP      Everest Binned CDPP     Saturated", file = f)
@@ -831,7 +829,7 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
       raise Exception("No targets to plot.")
 
     # Get the long cadence stats
-    compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model[:-3], int(campaign)))
+    compfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(campaign), model[:-3]))
     epic_1, _, _, cdpp6_1, _, _, _, _, saturated = np.loadtxt(compfile, unpack = True, skiprows = 2)
     epic_1 = np.array(epic_1, dtype = int)
     inds = np.array([e in sub for e in epic_1])
@@ -877,7 +875,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
   
   # Compute the statistics
   sub = np.array([s[0] for s in GetK2Campaign(campaign)], dtype = int)
-  outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (model, int(campaign)))
+  outfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(campaign), model))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
       print("EPIC               Kp           Raw CDPP     Everest CDPP      Validation        Outliers[1]     Outliers[2]     Datapoints     Saturated", file = f)
@@ -977,7 +975,7 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
       kic, kepler_kp, kepler_cdpp6 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                          'tables', 'kepler.cdpp'), unpack = True)
     else:
-      compfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.cdpp' % (compare_to, int(campaign)))
+      compfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(campaign), compare_to))
       
       epic_1, _, _, cdpp6_1, _, _, out_1, tot_1, saturated = np.loadtxt(compfile, unpack = True, skiprows = 2)
       epic_1 = np.array(epic_1, dtype = int)
@@ -1121,9 +1119,9 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
   # Compute the statistics
   stars = GetK2Campaign(campaign, epics_only = True)
   if type(campaign) is int:
-    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%02d.inj' % (model, campaign))
+    outfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.inj' % (campaign, model))
   else:
-    outfile = os.path.join(EVEREST_DAT, 'k2', 'stats', '%s_c%04.1f.inj' % (model, campaign))
+    outfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%04.1f_%s.inj' % (campaign, model))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
       print("EPIC         Depth         UControl      URecovered    MControl      MRecovered", file = f)

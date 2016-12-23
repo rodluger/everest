@@ -66,8 +66,11 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
    
   # Download the data
   r = urllib.request.Request(fitsurl + filename)
-  handler = urllib.request.urlopen(r)
-  code = handler.getcode()
+  try:
+    handler = urllib.request.urlopen(r)
+    code = handler.getcode()
+  except urllib.error.HTTPError:
+    code = 0
   if int(code) == 200:
     
     # Read the data

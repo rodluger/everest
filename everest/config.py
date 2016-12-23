@@ -37,13 +37,15 @@ EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.joi
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 #: The ``user@server:/path`` scp argument for accessing the FITS files (pre-publication only)
 EVEREST_FITS = os.environ.get('EVEREST2_FITS', None)
+#: The directory containing the Kepler PRF files
+KEPPRF_DIR = os.path.expanduser(os.environ.get("KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF"))) 
+
 if EVEREST_DEV:
+  # Development version light curve location
   MAST_ROOT = 'http://staff.washington.edu/rodluger/test/'
 else:
   #: The MAST url where the light curves are published
   MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
-#: The directory containing the Kepler PRF files
-KEPPRF_DIR = os.path.expanduser(os.environ.get("KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF"))) 
 
 def MAST_VERSION(default = EVEREST_VERSION):
   '''
