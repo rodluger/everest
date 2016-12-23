@@ -25,6 +25,10 @@ except ImportError:
   except ImportError:
     raise Exception('Please install the `pyfits` package.')
 import subprocess
+import six
+from six.moves import urllib
+from tempfile import NamedTemporaryFile
+import shutil
 import logging
 log = logging.getLogger(__name__)
 
@@ -56,23 +60,19 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   
   # Get file URL
   log.info('Downloading the file...')
-  try:
-    fitsurl = getattr(missions, mission).FITSUrl(ID, season)
-    if not fitsurl.endswith('/'):
-      fitsurl += '/'
-  except AssertionError:
-    fitsurl = None
+  fitsurl = getattr(missions, mission).FITSUrl(ID, season)
+  if not fitsurl.endswith('/'):
+    fitsurl += '/'
    
-  if (not EVEREST_DEV) and (url is not None):
-  
-    # Download the data
-    r = urllib.request.Request(url + filename)
-    handler = urllib.request.urlopen(r)
-    code = handler.getcode()
-    if int(code) != 200:
-      raise Exception("Error code {0} for URL '{1}'".format(code, url + filename))
-    data = handler.read()
+  # Download the data
+  r = urllib.request.Request(fitsurl + filename)
+  handler = urllib.request.urlopen(r)
+  code = handler.getcode()
+  if int(code) == 200:
     
+    # Read the data
+    data = handler.read()
+  
     # Atomically save to disk
     f = NamedTemporaryFile("wb", delete=False)
     f.write(data)
@@ -83,7 +83,11 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
     
   else:
     
-    # This section is for pre-publication/development use only!
+    # Something went wrong!
+    log.error("Error code {0} for URL '{1}'".format(code, fitsurl + filename))
+    
+    # If the files can be accessed by `ssh`, let's try that
+    # (development version only!)
     if EVEREST_FITS is None:
       raise Exception("Unable to locate the file.")
     
@@ -92,6 +96,7 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
     outpath = os.path.join(path, filename)
 
     # Download the data
+    log.info("Accessing file via `scp`...")
     subprocess.call(['scp', inpath, outpath])
   
   # Success?
@@ -171,7 +176,6 @@ class Everest(Basecamp):
     # Download the FITS file if necessary
     self.fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence)
     self.model_name = pyfits.getheader(self.fitsfile, 1)['MODEL']
-    self.download_fits()
     self.load_fits()
     self._weights = None
 
@@ -293,14 +297,6 @@ class Everest(Basecamp):
 
     # Save the norm
     self._norm = self.fraw - model
-    
-  def download_fits(self):
-    '''
-    ..todo:: This still needs to be implemented!
-    
-    '''
-    
-    pass
         
   def load_fits(self):
     '''
@@ -326,7 +322,7 @@ class Everest(Basecamp):
         self.bkg = 0.
       self.bpad = f[1].header['BPAD']
       self.cbv_minstars = []
-      self.cbv_nrec = f[1].header['NREC']
+      self.cbv_nrec = f[1].header['CBVNREC']
       self.cbv_niter = f[1].header['CBVNITER']
       self.cbv_win = f[1].header['CBVWIN']
       self.cbv_order = f[1].header['CBVORD']

@@ -12,7 +12,8 @@ the data files, and the MAST url.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
 import os
-import urllib
+import six
+from six.moves import urllib
 import logging
 log = logging.getLogger(__name__)
 
@@ -36,8 +37,11 @@ EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.joi
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 #: The ``user@server:/path`` scp argument for accessing the FITS files (pre-publication only)
 EVEREST_FITS = os.environ.get('EVEREST2_FITS', None)
-#: The MAST url where the light curves are published
-MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+if EVEREST_DEV:
+  MAST_ROOT = 'http://staff.washington.edu/rodluger/test/'
+else:
+  #: The MAST url where the light curves are published
+  MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
 #: The directory containing the Kepler PRF files
 KEPPRF_DIR = os.path.expanduser(os.environ.get("KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF"))) 
 
@@ -47,7 +51,7 @@ def MAST_VERSION(default = EVEREST_VERSION):
   
   '''
   
-  url = MAST_ROOT + 'version.txt'
+  url = MAST_ROOT + 'version2.txt'
   r = urllib.request.Request(url)
   try:
     handler = urllib.request.urlopen(r, timeout = 3)

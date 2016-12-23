@@ -1349,7 +1349,7 @@ def FITSUrl(ID, season):
   '''
   
   mast_version = MAST_VERSION()
-  assert mast_version == EVEREST_VERSION, "Version %s light curves not available on MAST." % EVEREST_VERSION
+  assert mast_version == EVEREST_VERSION, "MAST light curves version mismatch. Please upgrade everest!"
   url = MAST_ROOT + 'c%02d/' % season + ('%09d' % ID)[:4] + '00000/' + ('%09d/' % ID)[4:]
   return url
 
