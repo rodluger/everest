@@ -604,8 +604,10 @@ class Detrender(Basecamp):
     # Plot
     if self.cadence == 'lc':
       ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+      ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
     else:
       ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+      ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
       ax.set_rasterization_zorder(0)
     ylim = self.get_ylim()
     
@@ -896,6 +898,15 @@ class Detrender(Basecamp):
     if self.is_parent:
       raise Exception('Unable to load `%s` model for target %d.' % (self.name, self.ID))
     
+    # HACK: Backwards compatibility. Previous version stored the CDPP in the `cdpp6`
+    # and `cdpp6_arr` attributes. Let's move them over.
+    if hasattr(self, 'cdpp6'):
+      self.cdpp = self.cdpp6
+      del self.cdpp6
+    if hasattr(self, 'cdpp6_arr'):
+      self.cdpp_arr = self.cdpp6_arr
+      del self.cdpp6_arr
+      
     return False
 
   def save_model(self):
@@ -1257,8 +1268,8 @@ class pPLD(Detrender):
     # Cross-validate
     self.cross_validate()
     self.compute()
-    self.cdpp6_arr = self.get_cdpp_arr()
-    self.cdpp6 = self.get_cdpp()
+    self.cdpp_arr = self.get_cdpp_arr()
+    self.cdpp = self.get_cdpp()
     
     # Plot new
     self.plot_lc(self.dvs.left(), info_right = 'Powell', color = 'k')
