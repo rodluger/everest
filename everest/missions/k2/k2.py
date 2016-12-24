@@ -1403,9 +1403,6 @@ def FitCBVs(model):
   
   else:
     
-    # Get LC breakpoints
-    breakpoints = Breakpoints(model.ID, cadence = 'lc')
-    
     # Interpolate over outliers so we don't have to worry
     # about masking the arrays below
     flux = Interpolate(model.time, model.mask, model.flux)
@@ -1414,6 +1411,10 @@ def FitCBVs(model):
     newsize = len(model.time) // 30
     time = Downbin(model.time, newsize, operation = 'mean')
     flux = Downbin(flux, newsize, operation = 'mean')
+    
+    # Get LC breakpoints
+    breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
+    breakpoints += [len(time) - 1]
     
     # Loop over all the light curve segments
     m = [None for b in range(len(breakpoints))]
