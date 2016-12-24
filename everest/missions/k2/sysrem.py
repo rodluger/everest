@@ -41,6 +41,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
   
   # Get the channel numbers
   channels = Channels(module)
+  assert channels is not None, "No channels available on this module."
   
   # Get the EPIC numbers
   all = GetK2Campaign(campaign)
