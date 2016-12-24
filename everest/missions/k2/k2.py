@@ -172,12 +172,16 @@ def CDPP(flux, mask = [], cadence = 'lc'):
   
   '''
   
-  if cadence == 'lc':
-    rmswin = 13
-    svgwin = 49
-  else:
-    rmswin = 13 * 30
-    svgwin = 50 * 30 - 1
+  # 13 cadences is 6.5 hours
+  rmswin = 13
+  # Smooth the data on a 2 day timescale
+  svgwin = 49
+  
+  # If short cadence, need to downbin
+  if cadence == 'sc':
+    newsize = len(flux) // 30
+    flux = Downbin(flux, newsize, operation = 'mean')
+
   flux_savgol = SavGol(np.delete(flux, mask), win = svgwin)
   if len(flux_savgol):
     return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
@@ -778,8 +782,8 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
   outfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(campaign), model))
   if clobber or not os.path.exists(outfile):
     with open(outfile, 'w') as f:
-      print("EPIC               Kp           Raw CDPP     Raw Binned CDPP   Everest CDPP      Everest Binned CDPP     Saturated", file = f)
-      print("---------          ------       ---------    ---------------   ------------      -------------------     -----------", file = f)
+      print("EPIC               Kp           Raw CDPP     Everest CDPP      Saturated", file = f)
+      print("---------          ------       ---------    ------------      ---------", file = f)
       all = GetK2Campaign(int(campaign), cadence = 'sc')
       stars = np.array([s[0] for s in all], dtype = int)
       kpmgs = np.array([s[1] for s in all], dtype = float)
@@ -790,18 +794,10 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
                          ('%09d' % stars[i])[:4] + '00000', 
                          ('%09d' % stars[i])[4:], model + '.npz')
         try:
-          data = np.load(nf)
-          
-          # Compute binned CDPP
-          newsize = len(data['fraw']) // 30
-          fraw = Downbin(data['fraw'], newsize, operation = 'mean')
-          flux = Downbin(data['fraw'] - data['model'], newsize, operation = 'mean')
-          rbcdpp = CDPP(fraw)
-          ebcdpp = CDPP(flux)
-          
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}      {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], rbcdpp, data['cdpp'][()], ebcdpp, int(data['saturated'])), file = f)
+          data = np.load(nf)          
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], int(data['saturated'])), file = f)
         except:
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f}      {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, np.nan, 0), file = f)
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, 0), file = f)
       print("")
   
   if plot:
@@ -1371,35 +1367,87 @@ def FitCBVs(model):
   # Get cbvs?
   if model.XCBV is None:
     GetTargetCBVs(model)
-
-  # Loop over all the light curve segments
-  m = [None for b in range(len(model.breakpoints))]
-  weights = [None for b in range(len(model.breakpoints))]
-  for b in range(len(model.breakpoints)):
+  
+  # Need to treat short and long cadences differently
+  if cadence == 'lc':
+  
+    # Loop over all the light curve segments
+    m = [None for b in range(len(model.breakpoints))]
+    weights = [None for b in range(len(model.breakpoints))]
+    for b in range(len(model.breakpoints)):
     
-    # Get the indices for this light curve segment
-    inds = model.get_chunk(b, pad = False)
-    masked_inds = model.get_masked_chunk(b, pad = False)
+      # Get the indices for this light curve segment
+      inds = model.get_chunk(b, pad = False)
+      masked_inds = model.get_masked_chunk(b, pad = False)
 
-    # Regress
-    mX = model.XCBV[masked_inds]
-    A = np.dot(mX.T, mX)
-    B = np.dot(mX.T, model.flux[masked_inds])
-    weights[b] = np.linalg.solve(A, B)
-    m[b] = np.dot(model.XCBV[inds], weights[b])
+      # Regress
+      mX = model.XCBV[masked_inds]
+      A = np.dot(mX.T, mX)
+      B = np.dot(mX.T, model.flux[masked_inds])
+      weights[b] = np.linalg.solve(A, B)
+      m[b] = np.dot(model.XCBV[inds], weights[b])
 
-    # Vertical alignment
-    if b == 0:
-      m[b] -= np.nanmedian(m[b])
-    else:
-      # Match the first finite model point on either side of the break
-      # We could consider something more elaborate in the future
-      i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i]) for i in range(1, len(m[b - 1]) - 1)])
-      i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
-      m[b] += (m[b - 1][i0] - m[b][i1])
+      # Vertical alignment
+      if b == 0:
+        m[b] -= np.nanmedian(m[b])
+      else:
+        # Match the first finite model point on either side of the break
+        # We could consider something more elaborate in the future
+        i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i]) for i in range(1, len(m[b - 1]) - 1)])
+        i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
+        m[b] += (m[b - 1][i0] - m[b][i1])
   
-  # Join model and normalize  
-  m = np.concatenate(m)
-  m -= np.nanmedian(m)
+    # Join model and normalize  
+    m = np.concatenate(m)
+    m -= np.nanmedian(m)
   
+  else:
+    
+    # Get LC breakpoints
+    breakpoints = Breakpoints(model.ID, cadence = 'lc')
+    
+    # Interpolate over outliers so we don't have to worry
+    # about masking the arrays below
+    flux = Interpolate(model.time, model.mask, model.flux)
+    
+    # Get downbinned light curve
+    newsize = len(model.time) // 30
+    time = Downbin(model.time, newsize, operation = 'mean')
+    flux = Downbin(flux, newsize, operation = 'mean')
+    
+    # Loop over all the light curve segments
+    m = [None for b in range(len(breakpoints))]
+    weights = [None for b in range(len(breakpoints))]
+    for b in range(len(breakpoints)):
+    
+      # Get the indices for this light curve segment
+      M = np.arange(len(time))
+      if b > 0:
+        inds = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
+      else:
+        inds = M[M <= breakpoints[b]]
+      
+      # Regress
+      A = np.dot(model.XCBV[inds].T, model.XCBV[inds])
+      B = np.dot(model.XCBV[inds].T, flux[inds])
+      weights[b] = np.linalg.solve(A, B)
+      m[b] = np.dot(model.XCBV[inds], weights[b])
+
+      # Vertical alignment
+      if b == 0:
+        m[b] -= np.nanmedian(m[b])
+      else:
+        # Match the first finite model point on either side of the break
+        # We could consider something more elaborate in the future
+        i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i]) for i in range(1, len(m[b - 1]) - 1)])
+        i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
+        m[b] += (m[b - 1][i0] - m[b][i1])
+  
+    # Join model and normalize  
+    m = np.concatenate(m)
+    m -= np.nanmedian(m)
+    
+    # Finally, interpolate back to short cadence
+    m = np.interp(model.time, time, m)
+    
   return m
