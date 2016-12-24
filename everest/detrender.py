@@ -743,7 +743,7 @@ class Detrender(Basecamp):
     if self.cadence == 'lc':
       ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.45)
     else:
-      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.45, zorder = -1)
+      ax.plot(M(self.time), M(flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
       ax.set_rasterization_zorder(0)
     # Hack: Plot invisible first and last points to ensure the x axis limits are the
     # same in the other plots, where we also plot outliers!

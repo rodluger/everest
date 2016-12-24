@@ -66,7 +66,10 @@ def NumCBVs(EPIC, **kwargs):
   module = Module(EPIC)
   
   if campaign == 0:
-    return 2
+    if module in [2, 9, 12]:
+      return 1
+    else:
+      return 2
   elif campaign == 1:
     return 2
   elif campaign == 2:
@@ -1352,10 +1355,17 @@ def GetTargetCBVs(model):
   
   '''
   
-  # Get the data
+  # Get the info
   season = model.season
   module = Module(model.ID)
-  model.XCBV = sysrem.GetCBVs(season, module = module, model = model.name,
+  name = model.name
+  
+  # We use the LC light curves as CBVs; there aren't
+  # enough SC light curves to get a good set
+  if name.endswith('.sc'):
+    name = name[:-3]
+  
+  model.XCBV = sysrem.GetCBVs(season, module = module, model = name,
                               niter = model.cbv_niter, nrec = model.cbv_nrec,
                               sv_win = model.cbv_win, sv_order = model.cbv_order)
   
@@ -1447,7 +1457,7 @@ def FitCBVs(model):
     # Join model and normalize  
     m = np.concatenate(m)
     m -= np.nanmedian(m)
-    
+
     # Finally, interpolate back to short cadence
     m = np.interp(model.time, time, m)
     
