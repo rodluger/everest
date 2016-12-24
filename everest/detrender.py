@@ -885,7 +885,21 @@ class Detrender(Basecamp):
             setattr(self, key, data[key][()])
           except NotImplementedError:
             pass
+            
+        # HACK: Backwards compatibility. Previous version stored the CDPP in the `cdpp6`
+        # and `cdpp6_arr` attributes. Let's move them over.
+        if hasattr(self, 'cdpp6'):
+          self.cdpp = self.cdpp6
+          del self.cdpp6
+        if hasattr(self, 'cdpp6_arr'):
+          self.cdpp_arr = self.cdpp6_arr
+          del self.cdpp6_arr
+        
+        # HACK: At one point we were saving the figure instances, so loading the .npz
+        # opened a plotting window. I don't think this is the case any more, so this
+        # next line should be removed in the future...
         pl.close()
+        
         return True
       except:
         log.warn("Error loading '%s.npz'." % name)
@@ -897,15 +911,6 @@ class Detrender(Basecamp):
     
     if self.is_parent:
       raise Exception('Unable to load `%s` model for target %d.' % (self.name, self.ID))
-    
-    # HACK: Backwards compatibility. Previous version stored the CDPP in the `cdpp6`
-    # and `cdpp6_arr` attributes. Let's move them over.
-    if hasattr(self, 'cdpp6'):
-      self.cdpp = self.cdpp6
-      del self.cdpp6
-    if hasattr(self, 'cdpp6_arr'):
-      self.cdpp_arr = self.cdpp6_arr
-      del self.cdpp6_arr
       
     return False
 
