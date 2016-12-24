@@ -904,8 +904,14 @@ def Statistics(campaign = 0, clobber = False, model = 'nPLD', injection = False,
             inds = np.append(inds, np.where((ff > med + 5. * MAD) | (ff < med - 5. * MAD))[0])
           nout = len(inds)
           ntot = len(flux)
-
-          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], data['cdppv'][()], len(data['outmask']), nout, ntot, int(data['saturated'])), file = f)
+          
+          # HACK: Backwards compatibility fix
+          try:
+            cdpp = data['cdpp'][()]
+          except KeyError:
+            cdpp = data['cdpp6'][()]
+            
+          print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(stars[i], kpmgs[i], data['cdppr'][()], cdpp, data['cdppv'][()], len(data['outmask']), nout, ntot, int(data['saturated'])), file = f)
         except:
           print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(stars[i], kpmgs[i], np.nan, np.nan, np.nan, 0, 0, 0, 0), file = f)
       print("")
