@@ -1369,7 +1369,7 @@ def FitCBVs(model):
     GetTargetCBVs(model)
   
   # Need to treat short and long cadences differently
-  if cadence == 'lc':
+  if model.cadence == 'lc':
   
     # Loop over all the light curve segments
     m = [None for b in range(len(model.breakpoints))]
