@@ -892,8 +892,11 @@ class Detrender(Basecamp):
           self.cdpp = self.cdpp6
           del self.cdpp6
         if hasattr(self, 'cdpp6_arr'):
-          self.cdpp_arr = self.cdpp6_arr
+          self.cdpp_arr = np.array(self.cdpp6_arr)
           del self.cdpp6_arr
+        if hasattr(self, 'gppp'):
+          self.cdppg = self.gppp
+          del self.gppp
         
         # HACK: At one point we were saving the figure instances, so loading the .npz
         # opened a plotting window. I don't think this is the case any more, so this
