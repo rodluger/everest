@@ -806,7 +806,7 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
   if plot:
   
     # Load all stars
-    epic, kp, cdpp6r, cdpp6rb, cdpp6, cdpp6b, saturated = np.loadtxt(outfile, unpack = True, skiprows = 2)
+    epic, kp, cdpp6r, cdpp6, saturated = np.loadtxt(outfile, unpack = True, skiprows = 2)
     epic = np.array(epic, dtype = int)
     saturated = np.array(saturated, dtype = int)
 
@@ -818,9 +818,7 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
     # so let's add a little noise to spread them out for nicer plotting
     kp = kp + 0.1 * (0.5 - np.random.random(len(kp)))
     cdpp6r = cdpp6r[inds]
-    cdpp6rb = cdpp6rb[inds]
     cdpp6 = cdpp6[inds]
-    cdpp6b = cdpp6b[inds]
     saturated = saturated[inds]
     sat = np.where(saturated == 1)
     unsat = np.where(saturated == 0)
@@ -840,7 +838,7 @@ def ShortCadenceStatistics(campaign = 0, clobber = False, model = 'nPLD', plot =
     fig, ax = pl.subplots(1)
     fig.canvas.set_window_title('K2 Campaign %s Short Cadence' % (campaign))
     x = kp
-    y = (cdpp6b - cdpp6_1) / cdpp6_1
+    y = (cdpp6 - cdpp6_1) / cdpp6_1
     ax.scatter(x[unsat], y[unsat], color = 'b', marker = '.', alpha = 0.5, zorder = -1, picker = True)
     ax.scatter(x[sat], y[sat], color = 'r', marker = '.', alpha = 0.5, zorder = -1, picker = True)
     ax.set_ylim(-1,1)

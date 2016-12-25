@@ -1262,7 +1262,7 @@ class pPLD(Detrender):
     # Powell iterations
     self.piter = kwargs.get('piter', 3)
     self.pmaxf = kwargs.get('pmaxf', 300)
-    self.ppert = kwargs.get('ppert', 0.3)
+    self.ppert = kwargs.get('ppert', 0.1)
     
   def run(self):
     '''
@@ -1316,65 +1316,42 @@ class pPLD(Detrender):
       
       # The pre-computed matrices
       pre_v = [self.cv_precompute(mask, b) for mask in masks]
+      
+      # Initialize with the nPLD solution
+      log_lam_opt = np.log10(self.lam[b])
+      scatter_opt = validation_scatter(log_lam_opt, b, masks, pre_v, gp, flux, time, med)
+      log.info("Iter 0/%d: " % (self.piter) +
+               "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
                 
-      # Lambda and scatter grids
-      log_lam = np.zeros((len(masks), self.piter, len(self.lam[b]))) 
-      scatter = np.zeros((len(masks), len(masks), self.piter))    
-            
-      # Loop over all CV segments
-      for i in range(len(masks)):
+      # Do `piter` iterations
+      for p in range(self.piter):
       
-        # Do `piter` iterations
-        for p in range(self.piter):
+        # Perturb the initial condition a bit
+        log_lam = np.array(np.log10(self.lam[b])) * (1 + self.ppert * np.random.randn(len(self.lam[b])))
+        scatter = validation_scatter(log_lam, b, masks, pre_v, gp, flux, time, med)
+        log.info("Initializing at: " +
+                 "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
         
-          # Perturb the initial condition a bit
-          log_lam[i,p] = np.array(np.log10(self.lam[b])) * (1 + self.ppert * np.random.randn(len(self.lam[b])))
-          
-          # Call the minimizer
-          log_lam[i,p], scatter[i,i,p], _, _, _, _ = \
-            fmin_powell(self.validation_scatter, log_lam[i,p], 
-            args = (b, masks[i], pre_v[i], gp, flux, time, med),
-            maxfun = self.pmaxf, disp = False,
-            full_output = True)
-          
-          # See how this value of lambda does on the other segments
-          for j in [jj for jj in range(len(masks)) if jj != i]:
-            # This is the scatter in segment `j` computed with the value
-            # of lambda that optimized segment `i` during iteration `p`
-            scatter[j,i,p] = self.validation_scatter(log_lam[i,p], b, masks[j], pre_v[j], gp, flux, time, med)
-          
-          # Log it
-          log.info("Seg %d/%d, iter %d/%d: " % (i + 1, len(masks), p + 1, self.piter) +
-                   "logL = (%s), msig = %.3f" % (", ".join(["%.3f" % l for l in log_lam[i,p]]), np.mean(scatter[:,i,p])))
+        # Call the minimizer
+        log_lam, scatter, _, _, _, _ = \
+          fmin_powell(self.validation_scatter, log_lam, 
+          args = (b, masks, pre_v, gp, flux, time, med),
+          maxfun = self.pmaxf, disp = False,
+          full_output = True)
+        
+        if scatter < scatter_opt:
+          scatter_opt = scatter
+          log_lam_opt = log_lam
+        
+        # Log it
+        log.info("Iter %d/%d: " % (p + 1, self.piter) +
+                 "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
                   
-      # The minimum scatter in each of the segments
-      min_scatter = np.min(scatter, axis = (1,2))
-      
-      # We're going to minimize this guy, subject to the constraint
-      # that we are never more than `self.leps` away from the minimum
-      # in each individual segment
-      mean_scatter = np.inf
-      
-      # Find where the scatter in each segment is within the tolerance
-      for j in range(len(masks)):
-      
-        # `idx` has shape (nsegs, piter)
-        idx = np.where((scatter[j,:,:] - min_scatter[j]) / min_scatter[j] <= self.leps)
-        
-        # Keep the solution with the lowest mean scatter across all segments, `mu`
-        mu = np.mean([scatter[jj][idx] for jj in range(len(masks))], axis = 0)
-        k = np.argmin(mu)
-        
-        # If it's the best one so far, save it
-        if mu[k] < mean_scatter:
-          mean_scatter = mu[k]
-          log_lam_opt = log_lam[idx][k]
-
       # The best solution
-      log.info("Found minimum: logL = (%s), msig = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), mean_scatter))
+      log.info("Found minimum: logL = (%s), msig = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
       self.lam[b] = 10 ** log_lam_opt
         
-  def validation_scatter(self, log_lam, b, mask, pre_v, gp, flux, time, med):
+  def validation_scatter(self, log_lam, b, masks, pre_v, gp, flux, time, med):
     '''
     
     '''
@@ -1383,11 +1360,13 @@ class pPLD(Detrender):
     self.lam[b] = 10 ** log_lam 
   
     # Validation set scatter
-    model = self.cv_compute(b, *pre_v)
-    gpm, _ = gp.predict(flux - model - med, time[mask])
-    fdet = (flux - model)[mask] - gpm
-    scatter = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
-                                            np.nanmedian(fdet / med))) /
-                                            np.sqrt(len(mask)))
+    scatter = [None for i in range(len(masks))]
+    for i in range(len(masks)):
+      model = self.cv_compute(b, *pre_v[i])
+      gpm, _ = gp.predict(flux - model - med, time[masks[i]])
+      fdet = (flux - model)[masks[i]] - gpm
+      scatter[i] = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
+                                                 np.nanmedian(fdet / med))) /
+                                                 np.sqrt(len(masks[i])))
                                                  
-    return scatter
+    return np.max(scatter)
