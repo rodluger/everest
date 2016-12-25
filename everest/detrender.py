@@ -1292,6 +1292,9 @@ class pPLD(Detrender):
 
     '''
 
+    # The CDPP to beat
+    cdpp_opt = self.get_cdpp_arr()
+
     # Loop over all chunks
     for b, brkpt in enumerate(self.breakpoints):
     
@@ -1322,7 +1325,7 @@ class pPLD(Detrender):
       scatter_opt = self.validation_scatter(log_lam_opt, b, masks, pre_v, gp, flux, time, med)
       log.info("Iter 0/%d: " % (self.piter) +
                "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
-                
+           
       # Do `piter` iterations
       for p in range(self.piter):
       
@@ -1339,8 +1342,14 @@ class pPLD(Detrender):
           maxfun = self.pmaxf, disp = False,
           full_output = True)
         
-        if scatter < scatter_opt:
-          scatter_opt = scatter
+        # Did it improve the CDPP?
+        tmp = np.array(self.lam[b])
+        self.lam[b] = 10 ** log_lam
+        self.compute()
+        cdpp = self.get_cdpp_arr()[b]
+        self.lam[b] = tmp
+        if cdpp < cdpp_opt[b]:
+          cdpp_opt = cdpp
           log_lam_opt = log_lam
         
         # Log it
