@@ -1319,7 +1319,7 @@ class pPLD(Detrender):
       
       # Initialize with the nPLD solution
       log_lam_opt = np.log10(self.lam[b])
-      scatter_opt = validation_scatter(log_lam_opt, b, masks, pre_v, gp, flux, time, med)
+      scatter_opt = self.validation_scatter(log_lam_opt, b, masks, pre_v, gp, flux, time, med)
       log.info("Iter 0/%d: " % (self.piter) +
                "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
                 
@@ -1328,7 +1328,7 @@ class pPLD(Detrender):
       
         # Perturb the initial condition a bit
         log_lam = np.array(np.log10(self.lam[b])) * (1 + self.ppert * np.random.randn(len(self.lam[b])))
-        scatter = validation_scatter(log_lam, b, masks, pre_v, gp, flux, time, med)
+        scatter = self.validation_scatter(log_lam, b, masks, pre_v, gp, flux, time, med)
         log.info("Initializing at: " +
                  "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
         
