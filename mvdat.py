@@ -5,7 +5,7 @@ import shutil
 
 keep = GetK2Campaign(6.0, epics_only = True)
 
-for campaign in [5, 6]:
+for campaign in [6]:
   all = GetK2Campaign(campaign, epics_only = True)
   sc = GetK2Campaign(campaign, epics_only = True, cadence = 'sc')
   lc = list(set(all) - set(sc) - set(keep))
