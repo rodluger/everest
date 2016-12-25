@@ -3,10 +3,12 @@ from everest.missions.k2 import TargetDirectory
 import os
 import shutil
 
-for campaign in [0,1,2,3,4,7,8]:
+keep = GetK2Campaign(6.0, epics_only = True)
+
+for campaign in [5, 6]:
   all = GetK2Campaign(campaign, epics_only = True)
   sc = GetK2Campaign(campaign, epics_only = True, cadence = 'sc')
-  lc = list(set(all) - set(sc))
+  lc = list(set(all) - set(sc) - set(keep))
   for i, star in enumerate(lc):
     print("C%02d: %d/%d..." % (campaign, i + 1, len(lc)))
     infile = os.path.join(TargetDirectory(star, campaign), 'data.npz')
