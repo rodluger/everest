@@ -12,6 +12,8 @@ for campaign in [5, 6]:
   for i, star in enumerate(lc):
     print("C%02d: %d/%d..." % (campaign, i + 1, len(lc)))
     infile = os.path.join(TargetDirectory(star, campaign), 'data.npz')
+    if not os.path.exists(infile):
+      continue
     outpath = os.path.join('/lolo/archive/hyak/vsm/rodluger/everest2/', 'c%02d' % campaign, 
               ('%09d' % star)[:4] + '00000', 
               ('%09d' % star)[4:])
