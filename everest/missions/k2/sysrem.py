@@ -182,6 +182,10 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, 
           nstars = len(lcs['fluxes'])
           breakpoints = lcs['breakpoints']
           
+          # DEBUG
+          infofile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'info.npz')
+          np.savez(infofile, time = time, breakpoints = breakpoints, nstars = nstars)
+          
           # Plot the CBVs
           for b in range(len(breakpoints)):
             inds = GetChunk(time, breakpoints, b)
@@ -215,14 +219,17 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, 
     # Get the light curves
     log.info('Obtaining light curves...')
     lcfile = os.path.join(path, 'lcs.npz')
+    lcfile = os.path.join(path, 'info.npz')
     if clobber or not os.path.exists(lcfile):
       try:
         time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
       except AssertionError:
         np.savez(lcfile, time = None, breakpoints = None, fluxes = None, errors = None, kpars = None)
+        np.savez(infofile, time = None, breakpoints = None, nstars = None)
         np.savez(xfile, X = None)
         return None
       np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, errors = errors, kpars = kpars)
+      np.savez(infofile, time = time, breakpoints = breakpoints, nstars = len(fluxes))
     else:
       lcs = np.load(lcfile)
       time = lcs['time']
