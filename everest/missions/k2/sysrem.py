@@ -176,15 +176,11 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, 
         if X is not None:
         
           # Get the timeseries info
-          lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
-          lcs = np.load(lcfile)
-          time = lcs['time']
-          nstars = len(lcs['fluxes'])
-          breakpoints = lcs['breakpoints']
-          
-          # DEBUG
           infofile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'info.npz')
-          np.savez(infofile, time = time, breakpoints = breakpoints, nstars = nstars)
+          info = np.load(infofile)
+          time = info['time']
+          nstars = info['nstars']
+          breakpoints = info['breakpoints']
           
           # Plot the CBVs
           for b in range(len(breakpoints)):
