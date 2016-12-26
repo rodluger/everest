@@ -1349,7 +1349,7 @@ class pPLD(Detrender):
         cdpp = self.get_cdpp_arr()[b]
         self.lam[b] = tmp
         if cdpp < cdpp_opt[b]:
-          cdpp_opt = cdpp
+          cdpp_opt[b] = cdpp
           log_lam_opt = log_lam
         
         # Log it
