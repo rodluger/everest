@@ -215,7 +215,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, 
     # Get the light curves
     log.info('Obtaining light curves...')
     lcfile = os.path.join(path, 'lcs.npz')
-    lcfile = os.path.join(path, 'info.npz')
+    infofile = os.path.join(path, 'info.npz')
     if clobber or not os.path.exists(lcfile):
       try:
         time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
