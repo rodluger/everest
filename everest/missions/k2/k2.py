@@ -1259,6 +1259,9 @@ def HDUCards(headers, hdu = 0):
   
   '''
   
+  if headers is None:
+    return []
+  
   if hdu == 0:
     # Get info from the TPF Primary HDU Header
     tpf_header = headers[0]

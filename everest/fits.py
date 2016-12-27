@@ -36,6 +36,8 @@ def PrimaryHDU(model):
   
   # Get mission cards
   cards = model._mission.HDUCards(model.meta, hdu = 0)
+  if 'KEPMAG' not in [c[0] for c in cards]:
+    cards.append(('KEPMAG', model.mag, 'Kepler magnitude'))
   
   # Add EVEREST info
   cards.append(('COMMENT', '************************'))

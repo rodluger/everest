@@ -1256,8 +1256,11 @@ class pPLD(Detrender):
     '''
     
     # Check for saved model
+    clobber = self.clobber
+    self.clobber = False
     if not self.load_model('nPLD'):
       raise Exception("Can't find `nPLD` model for target.")
+    self.clobber = clobber
     
     # Powell iterations
     self.piter = kwargs.get('piter', 3)
@@ -1269,25 +1272,31 @@ class pPLD(Detrender):
     
     '''
     
-    # Plot original
-    self.plot_aperture([self.dvs.top_right() for i in range(4)])  
-    self.plot_lc(self.dvs.left(), info_right = 'nPLD', color = 'k')
+    try:
     
-    # Cross-validate
-    self.cross_validate()
-    self.compute()
-    self.cdpp_arr = self.get_cdpp_arr()
-    self.cdpp = self.get_cdpp()
+      # Plot original
+      self.plot_aperture([self.dvs.top_right() for i in range(4)])  
+      self.plot_lc(self.dvs.left(), info_right = 'nPLD', color = 'k')
     
-    # Plot new
-    self.plot_lc(self.dvs.left(), info_right = 'Powell', color = 'k')
+      # Cross-validate
+      self.cross_validate(self.dvs.right())
+      self.compute()
+      self.cdpp_arr = self.get_cdpp_arr()
+      self.cdpp = self.get_cdpp()
+            
+      # Plot new
+      self.plot_lc(self.dvs.left(), info_right = 'Powell', color = 'k')
     
-    # Save
-    self.plot_final(self.dvs.top_left())
-    self.plot_info(self.dvs)
-    self.save_model()
-   
-  def cross_validate(self):
+      # Save
+      self.plot_final(self.dvs.top_left())
+      self.plot_info(self.dvs)
+      self.save_model()
+    
+    except:
+    
+      self.exception_handler(self.debug)
+     
+  def cross_validate(self, ax):
     '''
 
     '''
@@ -1324,7 +1333,7 @@ class pPLD(Detrender):
       log_lam_opt = np.log10(self.lam[b])
       scatter_opt = self.validation_scatter(log_lam_opt, b, masks, pre_v, gp, flux, time, med)
       log.info("Iter 0/%d: " % (self.piter) +
-               "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
+               "logL = (%s), s = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
            
       # Do `piter` iterations
       for p in range(self.piter):
@@ -1333,7 +1342,7 @@ class pPLD(Detrender):
         log_lam = np.array(np.log10(self.lam[b])) * (1 + self.ppert * np.random.randn(len(self.lam[b])))
         scatter = self.validation_scatter(log_lam, b, masks, pre_v, gp, flux, time, med)
         log.info("Initializing at: " +
-                 "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
+                 "logL = (%s), s = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
         
         # Call the minimizer
         log_lam, scatter, _, _, _, _ = \
@@ -1354,12 +1363,32 @@ class pPLD(Detrender):
         
         # Log it
         log.info("Iter %d/%d: " % (p + 1, self.piter) +
-                 "logL = (%s), scatter = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
+                 "logL = (%s), s = %.3f" % (", ".join(["%.3f" % l for l in log_lam]), scatter))
                   
       # The best solution
-      log.info("Found minimum: logL = (%s), msig = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
+      log.info("Found minimum: logL = (%s), s = %.3f" % (", ".join(["%.3f" % l for l in log_lam_opt]), scatter_opt))
       self.lam[b] = 10 ** log_lam_opt
-        
+    
+    # We're just going to plot lambda as a function of chunk number
+    bs = np.arange(len(self.breakpoints))
+    color = ['k', 'b', 'r', 'g', 'y']
+    for n in range(self.pld_order):
+      ax[0].plot(bs + 1, [np.log10(self.lam[b][n]) for b in bs], '.', color = color[n])
+      ax[0].plot(bs + 1, [np.log10(self.lam[b][n]) for b in bs], '-', color = color[n], alpha = 0.25)
+    ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
+    ax[0].margins(0.1, 0.1)
+    ax[0].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+    ax[0].set_xticklabels([])
+    
+    # Now plot the CDPP
+    cdpp_arr = self.get_cdpp_arr()
+    ax[1].plot(bs + 1, cdpp_arr, 'b.')
+    ax[1].plot(bs + 1, cdpp_arr, 'b-', alpha = 0.25)
+    ax[1].margins(0.1, 0.1)
+    ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
+    ax[1].set_xlabel(r'Chunk', fontsize = 5)
+    ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+    
   def validation_scatter(self, log_lam, b, masks, pre_v, gp, flux, time, med):
     '''
     
@@ -1372,7 +1401,11 @@ class pPLD(Detrender):
     scatter = [None for i in range(len(masks))]
     for i in range(len(masks)):
       model = self.cv_compute(b, *pre_v[i])
-      gpm, _ = gp.predict(flux - model - med, time[masks[i]])
+      try:
+        gpm, _ = gp.predict(flux - model - med, time[masks[i]])
+      except ValueError:
+        # Sometimes the model can have NaNs if `lambda` is a crazy value
+        return 1.e30
       fdet = (flux - model)[masks[i]] - gpm
       scatter[i] = 1.e6 * (1.4826 * np.nanmedian(np.abs(fdet / med - 
                                                  np.nanmedian(fdet / med))) /

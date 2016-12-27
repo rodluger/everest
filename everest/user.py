@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from . import __version__ as EVEREST_VERSION
 from . import missions
 from .basecamp import Basecamp
+from .detrender import pPLD
 from .gp import GetCovariance
 from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, EVEREST_DEV, EVEREST_FITS
 from .utils import InitLog, Formatter
@@ -361,7 +362,7 @@ class Everest(Basecamp):
           mag = f[1].header['NRBY%02dM' % (i + 1)]
           x0 = f[1].header['NRBY%02dX0' % (i + 1)]
           y0 = f[1].header['NRBY%02dY0' % (i + 1)]
-          self.nearby.append({'ID': id, 'x': x, 'y': y, 'mag': mag, 'x0': x0, 'y0': y0})
+          self.nearby.append({'ID': ID, 'x': x, 'y': y, 'mag': mag, 'x0': x0, 'y0': y0})
         except KeyError:
           break
       self.neighbors = []
@@ -946,3 +947,34 @@ class Everest(Basecamp):
       pl.close()
     else:
       return fig, axes
+  
+  def _save_npz(self):
+    '''
+    Saves all of the de-trending information to disk in an `npz` file
+    
+    '''
+    
+    # Save the data
+    d = dict(self.__dict__)
+    d.pop('_weights', None)
+    d.pop('_A', None)
+    d.pop('_B', None)
+    d.pop('_f', None)
+    d.pop('_mK', None)
+    d.pop('K', None)
+    d.pop('dvs', None)
+    d.pop('clobber', None)
+    d.pop('clobber_tpf', None)
+    d.pop('_mission', None)
+    d.pop('debug', None)
+    np.savez(os.path.join(self.dir, self.name + '.npz'), **d)
+  
+  def optimize(self, piter = 3, pmaxf = 300, ppert = 0.1):
+    '''
+    
+    '''
+    
+    self._save_npz()
+    optimized = pPLD(self.ID, piter = piter, pmaxf = pmaxf, ppert = ppert, debug = True, clobber = True)
+    optimized.publish()
+    self.reset()
