@@ -788,7 +788,7 @@ def PlanetStatistics(model = 'nPLD', compare_to = 'everest1', **kwargs):
   
   # Get the stats
   for c in set(campaign):
-    
+
     # Everest model
     f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (int(c), model))
     e0, _, _, c0, _, _, _, _, s0 = np.loadtxt(f, unpack = True, skiprows = 2)
