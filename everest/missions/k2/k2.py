@@ -1257,12 +1257,11 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
     # Set up the plot
     fig, ax = pl.subplots(3,2, figsize = (9,12))
     fig.subplots_adjust(hspace = 0.29)
-    ax = np.fliplr(ax) # To make it consistent with the Everest 1 paper
     ax[0,0].set_title(r'Unmasked', fontsize = 18)
     ax[0,1].set_title(r'Masked', fontsize = 18)
-    ax[0,1].set_ylabel(r'$D_0 = 10^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
-    ax[1,1].set_ylabel(r'$D_0 = 10^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
-    ax[2,1].set_ylabel(r'$D_0 = 10^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[0,0].set_ylabel(r'$D_0 = 10^{-2}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[1,0].set_ylabel(r'$D_0 = 10^{-3}$', rotation = 90, fontsize = 18, labelpad = 10)
+    ax[2,0].set_ylabel(r'$D_0 = 10^{-4}$', rotation = 90, fontsize = 18, labelpad = 10)
     
     # Define some useful stuff for plotting
     depths = [1e-2, 1e-3, 1e-4]

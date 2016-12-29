@@ -12,7 +12,7 @@ from . import missions
 from .basecamp import Basecamp
 from .detrender import pPLD
 from .gp import GetCovariance
-from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, EVEREST_DEV, EVEREST_FITS
+from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, QUALITY_TRN, EVEREST_DEV, EVEREST_FITS
 from .utils import InitLog, Formatter
 import george
 import os, sys, platform
@@ -412,6 +412,7 @@ class Everest(Basecamp):
     self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
     self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
     self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
+    self.transitmask = np.where(self.quality & 2 ** (QUALITY_TRN - 1))[0]
     
     # CBVs
     self.XCBV = np.empty((len(self.time), 0))

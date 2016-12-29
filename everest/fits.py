@@ -12,7 +12,7 @@ These *FITS* files make up the public :py:mod:`everest` catalog.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
-from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC
+from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, QUALITY_TRN
 try:
   import pyfits
 except ImportError:
@@ -129,6 +129,7 @@ def LightcurveHDU(model):
   quality[np.array(model.nanmask, dtype = int)] += 2 ** (QUALITY_NAN - 1)
   quality[np.array(model.outmask, dtype = int)] += 2 ** (QUALITY_OUT - 1)
   quality[np.array(model.recmask, dtype = int)] += 2 ** (QUALITY_REC - 1)
+  quality[np.array(model.transitmask, dtype = int)] += 2 ** (QUALITY_TRN - 1)
   
   # When de-trending, we interpolated to fill in NaN fluxes. Here
   # we insert the NaNs back in, since there's no actual physical

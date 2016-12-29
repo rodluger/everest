@@ -78,3 +78,5 @@ QUALITY_NAN = 24
 QUALITY_OUT = 25
 #: Everest quality bit: masked in the original model (for recursive PLD only)
 QUALITY_REC = 26
+#: Everest quality bit: masked transit cadence
+QUALITY_TRN = 27
