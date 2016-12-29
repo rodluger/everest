@@ -5,3 +5,4 @@ docs/.*
 everest.egg-info
 progress.txt
 output
+tmp
