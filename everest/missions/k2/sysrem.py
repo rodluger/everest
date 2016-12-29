@@ -106,6 +106,10 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 499, sv_order = 2, **
   # Compute the inverse of the variances
   invvar = 1. / err ** 2
   
+  # DEBUG DEBUG DEBUG
+  invvar = np.ones_like(invvar)
+  # DEBUG DEBUG DEBUG
+  
   # The CBVs for this set of fluxes
   cbvs = np.zeros((nrec, tlen))
 

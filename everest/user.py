@@ -413,7 +413,7 @@ class Everest(Basecamp):
     self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
     self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
     self.transitmask = np.where(self.quality & 2 ** (QUALITY_TRN - 1))[0]
-    
+
     # CBVs
     self.XCBV = np.empty((len(self.time), 0))
     for i in range(99):
@@ -431,7 +431,6 @@ class Everest(Basecamp):
     self.parent_model = None
     self.lambda_arr = None
     self.meta = None
-    self.transitmask = np.array([], dtype = int)
   
   def plot_aperture(self, show = True):
     '''
