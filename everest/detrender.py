@@ -304,7 +304,7 @@ class Detrender(Basecamp):
             
     log.info("Clipping outliers...")
     log.info('Iter %d/%d: %d outliers' % (0, self.oiter, len(self.outmask)))
-    M = lambda x: np.delete(x, np.concatenate([self.nanmask, self.badmask]), axis = 0)
+    M = lambda x: np.delete(x, np.concatenate([self.nanmask, self.badmask, self.transitmask]), axis = 0)
     t = M(self.time)
     outmask = [np.array([-1]), np.array(self.outmask)]
     

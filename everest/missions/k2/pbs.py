@@ -477,7 +477,7 @@ def EverestModel(ID, model = 'nPLD', publish = False, **kwargs):
         planets = []
         for i in ii:
           planets.append([t0[i], period[i], 1.25 * duration[i]])
-      kwargs.update({'planets': planets})
+        kwargs.update({'planets': planets})
     
     # Run the model
     m = getattr(detrender, model)(ID, **kwargs)

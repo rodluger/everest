@@ -71,18 +71,28 @@ def NumCBVs(EPIC, **kwargs):
     else:
       return 2
   elif campaign == 1:
-    return 2
+    if module in [4, 8, 10, 12, 16, 17, 18, 23]:
+      return 1
+    else:
+      return 2
   elif campaign == 2:
-    if module == 20:
+    if module in [20]:
       return 1
     else:
       return 2
   elif campaign == 3:
-    return 2
+    if module in [4, 6, 8, 11, 15, 19, 22]:
+      return 1
+    else:
+      return 2
   elif campaign == 4:
+    # OK
     return 2
   elif campaign == 5:
-    return 2
+    if module in [4, 10, 12, 15, 16, 24]:
+      return 1
+    else:
+      return 2
   elif campaign == 6:
     return 2
   elif campaign == 7:

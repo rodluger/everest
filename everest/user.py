@@ -137,7 +137,7 @@ def DVS(ID, mission = 'k2', model = 'nPLD', clobber = False, cadence = 'lc'):
     else:
       raise Exception("")
   except:
-    log.info("Unable to open the pdf. The full path is")
+    log.info("Unable to open the pdf. Try opening it manually:")
     log.info(file)
 
 class Everest(Basecamp):
@@ -978,3 +978,47 @@ class Everest(Basecamp):
     optimized = pPLD(self.ID, piter = piter, pmaxf = pmaxf, ppert = ppert, debug = True, clobber = True)
     optimized.publish()
     self.reset()
+  
+  def plot_folded(self, t0, period, dur = 0.2):
+    '''
+    
+    '''
+    
+    # Mask the planet
+    self.mask_planet(t0, period, dur)
+    
+    # Whiten
+    _, amp, tau = self.kernel_params
+    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+    gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    med = np.nanmedian(self.apply_mask(self.flux))
+    y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
+    fwhite = (self.flux - y)
+    fwhite /= np.nanmedian(fwhite)
+    
+    # Fold
+    tfold = (self.time - t0 - period / 2.) % period - period / 2. 
+    
+    # Crop
+    inds = np.where(np.abs(tfold) < 2 * dur)[0]
+    x = tfold[inds]
+    y = fwhite[inds]
+    
+    # Plot
+    fig, ax = pl.subplots(1, figsize = (9, 5))
+    fig.subplots_adjust(bottom = 0.125)
+    ax.plot(x, y, 'k.', alpha = 0.5)
+    
+    # Get ylims
+    yfin = np.delete(y, np.where(np.isnan(y)))
+    lo, hi = yfin[np.argsort(yfin)][[3,-3]]
+    pad = (hi - lo) * 0.1
+    ylim = (lo - pad, hi + pad)
+    ax.set_ylim(*ylim)
+    
+    # Appearance
+    ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+    ax.set_ylabel(r'Normalized Flux', fontsize = 18)
+    fig.canvas.set_window_title('%s %d' % (self._mission.IDSTRING, self.ID))
+    
+    pl.show()
