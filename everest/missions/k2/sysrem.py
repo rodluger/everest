@@ -130,6 +130,10 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 999, sv_order = 3, **
     y -= np.outer(c, a)
     
     # Save this regressor after smoothing it a bit
+    if sv_win >= a:
+      sv_win = a - 1
+      if sv_win % 2 == 0:
+        sv_win -= 1
     cbvs[n] = savgol_filter(a - np.nanmedian(a), sv_win, sv_order)
     
   return cbvs
