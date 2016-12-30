@@ -293,7 +293,11 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
       lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
       if os.path.exists(lcfile):
         lcs = np.load(lcfile)
-        if len(lcs['fluxes']) > 0:
+        
+        if module == 3:
+          import pdb; pdb.set_trace()
+        else:
+        
           if time is None:
             time = lcs['time']
             breakpoints = lcs['breakpoints']
