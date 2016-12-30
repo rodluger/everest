@@ -293,17 +293,17 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
       lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
       if os.path.exists(lcfile):
         lcs = np.load(lcfile)
-        if time is None:
-          time = lcs['time']
-          breakpoints = lcs['breakpoints']
-          fluxes = lcs['fluxes']
-          errors = lcs['errors']
-          kpars = lcs['kpars']
-        else:
-          import pdb; pdb.set_trace()
-          fluxes = np.vstack([fluxes, lcs['fluxes']])
-          errors = np.vstack([errors, lcs['errors']])
-          kpars = np.vstack([kpars, lcs['kpars']])
+        if len(lcs['fluxes']) > 0:
+          if time is None:
+            time = lcs['time']
+            breakpoints = lcs['breakpoints']
+            fluxes = lcs['fluxes']
+            errors = lcs['errors']
+            kpars = lcs['kpars']
+          else:
+            fluxes = np.vstack([fluxes, lcs['fluxes']])
+            errors = np.vstack([errors, lcs['errors']])
+            kpars = np.vstack([kpars, lcs['kpars']])
     
     # Compute the design matrix  
     log.info('Running SysRem...')
