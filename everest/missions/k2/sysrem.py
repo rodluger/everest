@@ -314,6 +314,9 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
     
       # Update the error arrays with the white GP component
       for j in range(len(errors)):
+        
+        import pdb; pdb.set_trace()
+        
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
