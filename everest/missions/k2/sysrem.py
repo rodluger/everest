@@ -320,7 +320,11 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
       # Update the error arrays with the white GP component
       for j in range(len(errors)):
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
-    
+      
+      # DEBUG
+      errors = np.ones_like(errors)
+      # DEBUG
+      
       # Get de-trended fluxes
       X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], nrec = nrec, **kwargs).T
       
