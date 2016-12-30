@@ -217,8 +217,8 @@ class Everest(Basecamp):
     
     '''
     
-    # If we're doing recursive PLD, get the normalization
-    if self.model_name == 'rPLD':
+    # If we're doing iterative PLD, get the normalization
+    if self.model_name == 'iPLD':
       self._get_norm()
     
     # Compute as usual
@@ -231,7 +231,7 @@ class Everest(Basecamp):
     '''
     Computes the PLD flux normalization array.
     
-    ..note :: `rPLD` model **only**.
+    ..note :: `iPLD` model **only**.
     
     '''
     
@@ -404,7 +404,7 @@ class Everest(Basecamp):
           break
       self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
                    for c in range(len(self.breakpoints))]
-      if self.model_name == 'rPLD':
+      if self.model_name == 'iPLD':
         self.reclam = [[f[1].header['RECL%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
                         for c in range(len(self.breakpoints))]
     # Masks

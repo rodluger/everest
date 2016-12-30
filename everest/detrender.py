@@ -31,7 +31,7 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Detrender', 'sPLD', 'nPLD', 'rPLD', 'pPLD']
+__all__ = ['Detrender', 'rPLD', 'nPLD', 'iPLD', 'pPLD']
 
 class Detrender(Basecamp):
   '''
@@ -1111,9 +1111,9 @@ class Detrender(Basecamp):
     # Make the FITS file
     MakeFITS(self)
     
-class sPLD(Detrender):
+class rPLD(Detrender):
   '''
-  The standard PLD model. Nothing fancy.
+  The regular PLD model. Nothing fancy.
   
   '''
         
@@ -1211,9 +1211,9 @@ class nPLD(Detrender):
       del X1
       del data
 
-class rPLD(Detrender):
+class iPLD(Detrender):
   '''
-  The recursive PLD model.
+  The iterative PLD model.
   
   '''
   

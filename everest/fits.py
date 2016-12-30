@@ -99,7 +99,7 @@ def LightcurveHDU(model):
   for c in range(len(model.breakpoints)):
     for o in range(model.pld_order):
       cards.append(('LAMB%02d%02d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
-      if model.name == 'rPLD':
+      if model.name == 'iPLD':
         cards.append(('RECL%02d%02d' % (c + 1, o + 1), model.reclam[c][o], 'Cross-validation parameter'))
   cards.append(('LEPS', model.leps, 'Cross-validation tolerance'))
   cards.append(('MAXPIX', model.max_pixels, 'Maximum size of TPF aperture'))
