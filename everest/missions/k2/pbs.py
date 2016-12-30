@@ -313,12 +313,7 @@ def _Publish(campaign, subcampaign, strkwargs):
       campaign = campaign + 0.1 * subcampaign
     # Get all the stars
     stars = GetK2Campaign(campaign, epics_only = True, cadence = cadence)
-    
-    # DEBUG
-    if 201488365 in stars:
-      stars.remove(201488365)
-    # DEBUG
-    
+        
     # Run
     pool.map(m, stars)
 
