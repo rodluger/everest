@@ -105,11 +105,7 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 499, sv_order = 2, **
   
   # Compute the inverse of the variances
   invvar = 1. / err ** 2
-  
-  # DEBUG DEBUG DEBUG
-  invvar = np.ones_like(invvar)
-  # DEBUG DEBUG DEBUG
-  
+    
   # The CBVs for this set of fluxes
   cbvs = np.zeros((nrec, tlen))
 
@@ -237,6 +233,73 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, 
       fluxes = lcs['fluxes']
       errors = lcs['errors']
       kpars = lcs['kpars']
+    
+    # Compute the design matrix  
+    log.info('Running SysRem...')
+    X = np.ones((len(time), 1 + nrec))
+    
+    # Loop over the segments
+    new_fluxes = np.zeros_like(fluxes)
+    for b in range(len(breakpoints)):
+      
+      # Get the current segment's indices
+      inds = GetChunk(time, breakpoints, b)
+    
+      # Update the error arrays with the white GP component
+      for j in range(len(errors)):
+        errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
+    
+      # Get de-trended fluxes
+      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], nrec = nrec, **kwargs).T
+      
+    # Save
+    np.savez(xfile, X = X)
+  
+  else:
+    
+    # Load from disk
+    X = np.load(xfile)['X'][()]
+  
+  if X is not None: 
+    # Ensure we only return as many as we asked for 
+    return X[:,:nrec + 1]
+  else:
+    return X
+
+def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
+  '''
+  
+  '''
+  
+  # Initialize logging?
+  if len(logging.getLogger().handlers) == 0:
+    InitLog(file_name = None, screen_level = logging.DEBUG)
+  
+  log.info('Computing CBVs for campaign %d...' % (campaign))
+    
+  # Output path
+  path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, 'all', model)
+  if not os.path.exists(path):
+    os.makedirs(path)
+  
+  # Get the design matrix
+  xfile = os.path.join(path, 'X.npz')
+  if clobber or not os.path.exists(xfile):
+    
+    # Get the light curves
+    log.info('Obtaining light curves...')
+    fluxes = np.array([], dtype = float)
+    errors = np.array([], dtype = float)
+    kpars = np.array([], dtype = float)
+    for module in range(25):
+      lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
+      if os.path.exists(lcfile):
+        lcs = np.load(lcfile)
+        time = lcs['time']
+        breakpoints = lcs['breakpoints']
+        fluxes = np.extend(fluxes, lcs['fluxes'])
+        errors = np.extend(errors, lcs['errors'])
+        kpars = np.extend(kpars, lcs['kpars'])
     
     # Compute the design matrix  
     log.info('Running SysRem...')
