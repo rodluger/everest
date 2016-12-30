@@ -297,9 +297,9 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
         lcs = np.load(lcfile)
         time = lcs['time']
         breakpoints = lcs['breakpoints']
-        fluxes = np.extend(fluxes, lcs['fluxes'])
-        errors = np.extend(errors, lcs['errors'])
-        kpars = np.extend(kpars, lcs['kpars'])
+        fluxes = np.append(fluxes, lcs['fluxes'])
+        errors = np.append(errors, lcs['errors'])
+        kpars = np.append(kpars, lcs['kpars'])
     
     # Compute the design matrix  
     log.info('Running SysRem...')
