@@ -92,7 +92,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 499, sv_order = 2, **kwargs):
+def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 999, sv_order = 3, **kwargs):
   '''
   
   '''
@@ -134,8 +134,9 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 499, sv_order = 2, **
     
   return cbvs
 
-def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, plot = True, **kwargs):
+def _OldGetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, plot = True, **kwargs):
   '''
+  DEPRECATED!
   
   '''
   
@@ -266,7 +267,7 @@ def GetCBVs(campaign, module = None, model = 'nPLD', nrec = 5, clobber = False, 
   else:
     return X
 
-def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
+def GetCBVs(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
   '''
   
   '''
@@ -274,7 +275,6 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
   # Initialize logging?
   if len(logging.getLogger().handlers) == 0:
     InitLog(file_name = None, screen_level = logging.DEBUG)
-  
   log.info('Computing CBVs for campaign %d...' % (campaign))
     
   # Output path
@@ -290,8 +290,19 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
     log.info('Obtaining light curves...')
     time = None
     for module in range(25):
+      
       lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
-      if os.path.exists(lcfile):
+      if clobber or not os.path.exists(lcfile):
+      
+        try:
+          time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
+        except AssertionError:
+          np.savez(lcfile, time = None, breakpoints = None, fluxes = None, errors = None, kpars = None)
+          return None
+        np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, errors = errors, kpars = kpars)
+      
+      else:
+      
         lcs = np.load(lcfile)
         if lcs['fluxes'][()] is None:
           continue
@@ -325,13 +336,30 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
       X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], nrec = nrec, **kwargs).T
       
     # Save
-    np.savez(xfile, X = X)
+    np.savez(xfile, X = X, time = time, breakpoints = breakpoints)
   
   else:
     
     # Load from disk
-    X = np.load(xfile)['X'][()]
+    data = np.load(xfile)
+    X = data['X'][()]
+    time = data['time'][()]
+    breakpoints = data['breakpoints'][()]
   
+  # Plot
+  plotfile = os.path.join(path, 'X.pdf')
+  if clobber or not os.path.exists(plotfile):
+    fig, ax = pl.subplots(3, 2, figsize = (12, 8))
+    ax = ax.flatten()
+    for axis in ax:
+      axis.set_xticks([])
+      axis.set_yticks([])
+    for b in range(len(breakpoints)):
+      inds = GetChunk(time, breakpoints, b)
+      for n in range(1, min(6, X.shape[1])):
+        ax[n].plot(time[inds], X[inds,n])
+    fig.savefig(plotfile, bbox_inches = 'tight')
+    
   if X is not None: 
     # Ensure we only return as many as we asked for 
     return X[:,:nrec + 1]

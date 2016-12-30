@@ -182,8 +182,8 @@ class Detrender(Basecamp):
     assert self.cv_min in ['mad', 'tv'], "Invalid value for `cv_min`."
     self.cbv_nrec = kwargs.get('cbv_nrec', self._mission.NumCBVs(self.ID))
     self.cbv_niter = kwargs.get('cbv_niter', 50)
-    self.cbv_win = kwargs.get('cbv_win', 499)
-    self.cbv_order = kwargs.get('cbv_order', 2)
+    self.cbv_win = kwargs.get('cbv_win', 999)
+    self.cbv_order = kwargs.get('cbv_order', 3)
 
     # Get the pld order
     pld_order = kwargs.get('pld_order', 3)
@@ -1069,6 +1069,10 @@ class Detrender(Basecamp):
     '''
     
     '''
+    
+    # HACK: Force these params for publication
+    self.cbv_win = 999
+    self.cbv_order = 3
         
     # Get the CBVs
     self._mission.GetTargetCBVs(self)
