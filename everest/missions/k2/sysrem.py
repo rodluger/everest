@@ -300,6 +300,7 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
           errors = lcs['errors']
           kpars = lcs['kpars']
         else:
+          import pdb; pdb.set_trace()
           fluxes = np.vstack([fluxes, lcs['fluxes']])
           errors = np.vstack([errors, lcs['errors']])
           kpars = np.vstack([kpars, lcs['kpars']])
