@@ -315,7 +315,8 @@ def _Publish(campaign, subcampaign, strkwargs):
     stars = GetK2Campaign(campaign, epics_only = True, cadence = cadence)
     
     # DEBUG
-    stars.remove(201488365)
+    if 201488365 in stars:
+      stars.remove(201488365)
     # DEBUG
     
     # Run
