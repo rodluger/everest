@@ -288,18 +288,21 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
     
     # Get the light curves
     log.info('Obtaining light curves...')
-    fluxes = np.array([], dtype = float)
-    errors = np.array([], dtype = float)
-    kpars = np.array([], dtype = float)
+    time = None
     for module in range(25):
       lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
       if os.path.exists(lcfile):
         lcs = np.load(lcfile)
-        time = lcs['time']
-        breakpoints = lcs['breakpoints']
-        fluxes = np.append(fluxes, lcs['fluxes'])
-        errors = np.append(errors, lcs['errors'])
-        kpars = np.append(kpars, lcs['kpars'])
+        if time is None:
+          time = lcs['time']
+          breakpoints = lcs['breakpoints']
+          fluxes = lcs['fluxes']
+          errors = lcs['errors']
+          kpars = lcs['kpars']
+        else:
+          fluxes = np.vstack([fluxes, lcs['fluxes']])
+          errors = np.vstack([errors, lcs['errors']])
+          kpars = np.vstack([kpars, lcs['kpars']])
     
     # Compute the design matrix  
     log.info('Running SysRem...')
@@ -314,9 +317,6 @@ def Test(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
     
       # Update the error arrays with the white GP component
       for j in range(len(errors)):
-        
-        import pdb; pdb.set_trace()
-        
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
     
       # Get de-trended fluxes
