@@ -289,7 +289,7 @@ def GetCBVs(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
     # Get the light curves
     log.info('Obtaining light curves...')
     time = None
-    for module in range(25):
+    for module in range(2,25):
       
       lcfile = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign, str(module), model, 'lcs.npz')
       if clobber or not os.path.exists(lcfile):
