@@ -1443,7 +1443,6 @@ def GetTargetCBVs(model):
   
   # Get the info
   season = model.season
-  module = Module(model.ID)
   name = model.name
   
   # We use the LC light curves as CBVs; there aren't
@@ -1451,7 +1450,7 @@ def GetTargetCBVs(model):
   if name.endswith('.sc'):
     name = name[:-3]
   
-  model.XCBV = sysrem.GetCBVs(season, module = module, model = name,
+  model.XCBV = sysrem.GetCBVs(season, model = name,
                               niter = model.cbv_niter, nrec = model.cbv_nrec,
                               sv_win = model.cbv_win, sv_order = model.cbv_order)
   
