@@ -6,5 +6,55 @@ everest
 
 '''
 
-# Nothing for now
-pass
+import argparse
+import everest
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(prog = 'everest', add_help = True)
+  parser.add_argument("ID", type = int, help = 'The target ID')
+  parser.add_argument("-m", "--mission", type = str, default = 'k2', help = 'The mission name')
+  parser.add_argument("-2", "--everest2", action = 'store_true', help = 'Plot the everest 2.0 de-trended light curve')
+  parser.add_argument("-n", "--nocbv", action = 'store_true', help = 'Do not apply the CBV correction')
+  parser.add_argument("-r", "--raw", action = 'store_true', help = 'Plot the raw light curve')
+  parser.add_argument("-a", "--aperture", action = 'store_true', help = 'Plot the target postage stamp')
+  parser.add_argument("-d", "--dvs", action = 'store_true', help = 'Show the everest 2.0 data validation summary')
+  parser.add_argument("-c", "--cadence", type = str, default = 'lc', help = 'Cadence type (lc | sc)')
+  parser.add_argument("-1", "--everest1", action = 'store_true', help = 'Plot the everest 1.0 light curve for the target (K2 only)')
+  parser.add_argument("-f", "--k2sff", action = 'store_true', help = 'Plot the k2sff light curve for the target (K2 only)')
+  parser.add_argument("-s", "--k2sc", action = 'store_true', help = 'Plot the k2sc light curve for the target (K2 only)')
+  args = parser.parse_args()
+  show = False
+  
+  # Everest2 plot is default
+  if not any([getattr(args, a) for a in ['raw', 'dvs', 'k2sff', 'k2sc', 'everest1', 'aperture']]):
+    args.everest2 = True
+  
+  # Plot the data
+  if args.everest2 or args.raw or args.aperture:
+    star = everest.Everest(args.ID, mission = args.mission, cadence = args.cadence)
+    if args.everest2:
+      star.plot_pipeline('everest2', show = False, plot_cbv = not args.nocbv)
+    if args.raw:
+      star.plot_pipeline('everest2', show = False, plot_raw = True)
+    if args.aperture:
+      star.plot_aperture(show = False)
+    show = True
+  
+  # Show the DVS
+  if args.dvs:
+    everest.DVS(args.ID, cadence = args.cadence)
+  
+  # Plot other pipelines
+  if args.everest1:
+    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'everest1', show = False)
+    show = True
+  if args.k2sff:
+    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'k2sff', show = False)
+    show = True
+  if args.k2sc:
+    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'k2sc', show = False)
+    show = True
+  
+  if show:
+    import matplotlib.pyplot as pl
+    pl.show()
