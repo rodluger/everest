@@ -19,7 +19,7 @@ import warnings
 import logging
 log = logging.getLogger(__name__)
 
-Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc']
+Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc', 'raw']
 
 def get(ID, pipeline = 'everest1'):
   '''
@@ -39,10 +39,17 @@ def get(ID, pipeline = 'everest1'):
     s = k2plr.K2SFF(ID)
     time = s.time
     flux = s.fcor
+    # Normalize to the median flux
+    s = k2plr.EVEREST(ID, version = 1)
+    flux *= np.nanmedian(s.flux)
   elif pipeline.lower() == 'k2sc':
     s = k2plr.K2SC(ID)
     time = s.time
     flux = s.pdcflux
+  elif pipeline.lower() == 'raw':
+    s = k2plr.EVEREST(ID, version = 1, raw = True)
+    time = s.time
+    flux = s.flux
   else:
     raise ValueError('Invalid pipeline: `%s`.' % pipeline)
     
