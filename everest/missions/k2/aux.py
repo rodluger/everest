@@ -58,7 +58,7 @@ class StatsPicker(object):
   
   '''
   
-  def __init__(self, axes, x, y, epic, campaign, model = 'PLD', compare_to = 'everest1'):
+  def __init__(self, axes, x, y, epic, model = 'PLD', compare_to = 'everest1'):
     '''
     
     '''
@@ -75,7 +75,6 @@ class StatsPicker(object):
     self.xr = [_range10_90(x) for x in self.x]
     self.yr = [_range10_90(y) for y in self.y]
     self.epic = epic
-    self.campaign = campaign
     self.model = model
     self.compare_to = compare_to
     self.last = None
