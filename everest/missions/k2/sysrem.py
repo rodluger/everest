@@ -92,7 +92,7 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
   return time, breakpoints, np.array(fluxes), np.array(errors), np.array(kpars)
 
-def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 999, sv_order = 3, **kwargs):
+def SysRem(time, flux, err, ncbv = 5, niter = 50, sv_win = 999, sv_order = 3, **kwargs):
   '''
   
   '''
@@ -107,10 +107,10 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 999, sv_order = 3, **
   invvar = 1. / err ** 2
     
   # The CBVs for this set of fluxes
-  cbvs = np.zeros((nrec, tlen))
+  cbvs = np.zeros((ncbv, tlen))
 
-  # Recover `nrec` components
-  for n in range(nrec):
+  # Recover `ncbv` components
+  for n in range(ncbv):
     
     # Initialize the weights and regressors
     c = np.zeros(nflx)
@@ -138,7 +138,7 @@ def SysRem(time, flux, err, nrec = 5, niter = 50, sv_win = 999, sv_order = 3, **
     
   return cbvs
 
-def GetCBVs(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
+def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
   '''
   
   '''
@@ -185,7 +185,7 @@ def GetCBVs(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
     
     # Compute the design matrix  
     log.info('Running SysRem...')
-    X = np.ones((len(time), 1 + nrec))
+    X = np.ones((len(time), 1 + ncbv))
     
     # Loop over the segments
     new_fluxes = np.zeros_like(fluxes)
@@ -199,7 +199,7 @@ def GetCBVs(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
         errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
       
       # Get de-trended fluxes
-      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], nrec = nrec, **kwargs).T
+      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], **kwargs).T
       
     # Save
     np.savez(xfile, X = X, time = time, breakpoints = breakpoints)
@@ -228,8 +228,4 @@ def GetCBVs(campaign, model = 'nPLD', nrec = 5, clobber = False, **kwargs):
         ax[n].set_title(n, fontsize = 14)
     fig.savefig(plotfile, bbox_inches = 'tight')
     
-  if X is not None: 
-    # Ensure we only return as many as we asked for 
-    return X[:,:nrec + 1]
-  else:
-    return X
+  return X

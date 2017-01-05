@@ -4,13 +4,15 @@
 :py:mod:`k2.py` - Main mission routines
 ---------------------------------------
 
+Implements several routines specific to the `K2` mission.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ... import __version__ as EVEREST_VERSION
 from . import sysrem
 from .aux import *
-from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, MAST_VERSION
+from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
 from ...math import SavGol, Interpolate, Scatter, Downbin
 try:
@@ -39,6 +41,8 @@ __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors',
 
 def Setup():
   '''
+  Called when the code is installed. Sets up directories and downloads
+  the K2 catalog.
   
   '''
   
@@ -54,40 +58,14 @@ def Season(EPIC, **kwargs):
   
   return Campaign(EPIC, **kwargs)
 
-def NumCBVs(EPIC, **kwargs):
-  '''
-  
-  '''
-  
-  # Get the campaign number
-  campaign = Season(EPIC)
-  
-  # Get the module number
-  module = Module(EPIC)
-  
-  if campaign == 0:
-    return 2
-  elif campaign == 1:
-    return 2
-  elif campaign == 2:
-    return 2
-  elif campaign == 3:
-    return 2
-  elif campaign == 4:
-    return 2
-  elif campaign == 5:
-    return 2
-  elif campaign == 6:
-    return 2
-  elif campaign == 7:
-    return 2
-  elif campaign == 8:
-    return 2
-  else:
-    return 2
-
 def Breakpoints(EPIC, cadence = 'lc', **kwargs):  
   '''
+  
+  Returns the location of the breakpoints for a given target.
+  
+  :param int EPIC: The EPIC ID number
+  :param str cadence: The light curve cadence. Default `lc`
+  
   ..note :: The number corresponding to a given breakpoint is the number \
             of cadences *since the beginning of the campaign*.
   
@@ -167,6 +145,10 @@ def CDPP(flux, mask = [], cadence = 'lc'):
   '''
   Compute the proxy 6-hr CDPP metric.
   
+  :param array_like flux: The flux array to compute the CDPP for
+  :param array_like mask: The indices to be masked
+  :param str cadence: The light curve cadence. Default `lc`
+  
   '''
   
   # 13 cadences is 6.5 hours
@@ -190,7 +172,24 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
             max_pixels = 75, download_only = False, saturation_tolerance = -0.1, 
             bad_bits = [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17], **kwargs):
   '''
-
+  Returns a :py:obj:`DataContainer` instance with the raw data for the target.
+  
+  :param int EPIC: The EPIC ID number
+  :param int season: The observing season (campaign). Default :py:obj:`None`
+  :param str cadence: The light curve cadence. Default `lc`
+  :param bool clobber: Overwrite existing files? Default :py:obj:`False`
+  :param bool delete_raw: Delete the FITS TPF after processing it? Default :py:obj:`False`
+  :param str aperture_name: The name of the aperture to use. Select `custom` to call \
+         :py:func:`GetCustomAperture`. Default `k2sff_15 
+  :param str saturated_aperture_name: The name of the aperture to use if the target is \
+         saturated. Default `k2sff_19`
+  :param int max_pixels: Maximum number of pixels in the TPF. Default 75
+  :param bool download_only: Download raw TPF and return? Default :py:obj:`False`
+  :param float saturation_tolerance: Target is considered saturated if flux is within \
+         this fraction of the pixel well depth. Default -0.1
+  :param array_like bad_bits: Flagged :py:obj`QUALITY` bits to consider outliers when \
+         computing the model. Default `[1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]`
+  
   '''
   
   # Campaign no.
@@ -639,6 +638,15 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   '''
   Return `neighbors` random bright stars on the same module as `EPIC`.
   
+  :param int EPIC: The EPIC ID number
+  :param str model: The :py:obj:`everest` model name. Only used when imposing CDPP bounds. Default :py:obj:`None`
+  :param int neighbors: Number of neighbors to return. Default 10
+  :param str aperture_name: The name of the aperture to use. Select `custom` to call \
+         :py:func:`GetCustomAperture`. Default `k2sff_15 
+  :param str cadence: The light curve cadence. Default `lc`
+  :param tuple mag_range: (`low`, `high`) values for the Kepler magnitude. Default (11, 13)
+  :param tuple cdpp_range: (`low`, `high`) values for the de-trended CDPP. Default :py:obj:`None`
+  
   '''
   
   # Zero neighbors?
@@ -768,6 +776,11 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
 
 def PlanetStatistics(model = 'nPLD', compare_to = 'everest1', **kwargs):
   '''
+  Computes and plots the CDPP statistics comparison between `model` and
+  `compare_to` for all known K2 planets.
+  
+  :param str model: The :py:obj:`everest` model name
+  :param str compare_to: The :py:obj:`everest` model name or other K2 pipeline name
   
   '''
     
@@ -833,6 +846,13 @@ def PlanetStatistics(model = 'nPLD', compare_to = 'everest1', **kwargs):
 
 def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plot = True, **kwargs):
   '''
+  Computes and plots the CDPP statistics comparison between short cadence
+  and long cadence de-trended light curves
+  
+  :param campaign: The campaign number or list of campaign numbers. Default is to plot all campaigns
+  :param bool clobber: Overwrite existing files? Default :py:obj:`False`
+  :param str model: The :py:obj:`everest` model name
+  :param bool plot: Default :py:obj:`True`
   
   '''
   
@@ -962,6 +982,16 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
     
 def Statistics(campaign = None, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, cadence = 'lc', planets = False, **kwargs):
   '''
+  Computes and plots the CDPP statistics comparison between `model` and `compare_to` 
+  for all long cadence light curves in a given campaign
+  
+  :param campaign: The campaign number or list of campaign numbers. Default is to plot all campaigns
+  :param bool clobber: Overwrite existing files? Default :py:obj:`False`
+  :param str model: The :py:obj:`everest` model name
+  :param str compare_to: The :py:obj:`everest` model name or other K2 pipeline name
+  :param bool plot: Default :py:obj:`True`
+  :param bool injection: Statistics for injection tests? Default :py:obj:`False`
+  :param bool planets: Statistics for known K2 planets? Default :py:obj:`False`
   
   '''
   
@@ -1212,6 +1242,9 @@ def HasShortCadence(EPIC, season = None):
   '''
   Returns `True` if short cadence data is available for this target.
   
+  :param int EPIC: The EPIC ID number
+  :param int season: The campaign number. Default :py:obj:`None`
+  
   '''
   
   if season is None:
@@ -1227,6 +1260,14 @@ def HasShortCadence(EPIC, season = None):
 
 def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = True, show = True, **kwargs):
   '''
+  Computes and plots the CDPP statistics comparison between `model` and
+  `compare_to` for all known K2 planets.
+  
+  :param int campaign: The campaign number. Default 0
+  :param str model: The :py:obj:`everest` model name
+  :param bool plot: Default :py:obj:`True`
+  :param bool show: Show the plot? Default :py:obj:`True`. If :py:obj:`False`, returns the `fig, ax` instances.
+  :param bool clobber: Overwrite existing files? Default :py:obj:`False`
   
   '''
   
@@ -1366,6 +1407,8 @@ def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = Tr
 
 def HDUCards(headers, hdu = 0):
   '''
+  Generates HDU cards for inclusion in the de-trended light curve FITS file.
+  Used internally.
   
   '''
   
@@ -1437,6 +1480,12 @@ def HDUCards(headers, hdu = 0):
 
 def TargetDirectory(ID, season, relative = False, **kwargs):
   '''
+  Returns the location of the :py:mod:`everest` data on disk
+  for a given target.
+  
+  :param ID: The target ID
+  :param int season: The target season number
+  :param bool relative: Relative path? Default :py:obj:`False`
   
   '''
   
@@ -1450,26 +1499,33 @@ def TargetDirectory(ID, season, relative = False, **kwargs):
 
 def FITSFile(ID, season, cadence = 'lc'):
   '''
+  Returns the name of the FITS file for a given target.
+  
+  :param ID: The target ID
+  :param int season: The target season number
+  :param str cadence: The cadence type. Default `lc`
   
   '''
   
-  if cadence == 'lc':
-    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_lc.fits' % (ID, season, EVEREST_VERSION)
-  else:
-    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_sclc.fits' % (ID, season, EVEREST_VERSION)
+  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s.fits' % (ID, season, EVEREST_VERSION, cadence)
     
 def FITSUrl(ID, season):
   '''
+  Returns the online path to the FITS file for a given target.
+  
+  :param ID: The target ID
+  :param int season: The target season number
   
   '''
   
-  mast_version = MAST_VERSION()
-  assert mast_version == EVEREST_VERSION, "MAST light curves version mismatch. Please upgrade everest!"
   url = MAST_ROOT + 'c%02d/' % season + ('%09d' % ID)[:4] + '00000/' + ('%09d/' % ID)[4:]
   return url
 
 def GetTargetCBVs(model):
   '''
+  Returns the design matrix of CBVs for the given target.
+  
+  :param model: An instance of the :py:model:`everest` model for the target
   
   '''
   
@@ -1483,17 +1539,26 @@ def GetTargetCBVs(model):
     name = name[:-3]
   
   model.XCBV = sysrem.GetCBVs(season, model = name,
-                              niter = model.cbv_niter, nrec = model.cbv_nrec,
-                              sv_win = model.cbv_win, sv_order = model.cbv_order)
+                              niter = model.cbv_niter,
+                              sv_win = model.cbv_win, 
+                              sv_order = model.cbv_order)
   
 def FitCBVs(model):
   '''
+  Fits the CBV design matrix to the de-trended flux of a given target. This
+  is called internally whenever the user accesses the :py:attr:`fcor`
+  attribute.
+  
+  :param model: An instance of the :py:model:`everest` model for the target
   
   '''
   
   # Get cbvs?
   if model.XCBV is None:
     GetTargetCBVs(model)
+  
+  # The number of CBVs to use
+  ncbv = model.cbv_num
   
   # Need to treat short and long cadences differently
   if model.cadence == 'lc':
@@ -1508,11 +1573,11 @@ def FitCBVs(model):
       masked_inds = model.get_masked_chunk(b, pad = False)
 
       # Regress
-      mX = model.XCBV[masked_inds]
+      mX = model.XCBV[masked_inds,:ncbv + 1]
       A = np.dot(mX.T, mX)
       B = np.dot(mX.T, model.flux[masked_inds])
       weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(model.XCBV[inds], weights[b])
+      m[b] = np.dot(model.XCBV[inds,:ncbv + 1], weights[b])
 
       # Vertical alignment
       if b == 0:
@@ -1556,10 +1621,10 @@ def FitCBVs(model):
         inds = M[M <= breakpoints[b]]
       
       # Regress
-      A = np.dot(model.XCBV[inds].T, model.XCBV[inds])
-      B = np.dot(model.XCBV[inds].T, flux[inds])
+      A = np.dot(model.XCBV[inds,:ncbv + 1].T, model.XCBV[inds,:ncbv + 1])
+      B = np.dot(model.XCBV[inds,:ncbv + 1].T, flux[inds])
       weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(model.XCBV[inds], weights[b])
+      m[b] = np.dot(model.XCBV[inds,:ncbv + 1], weights[b])
 
       # Vertical alignment
       if b == 0:

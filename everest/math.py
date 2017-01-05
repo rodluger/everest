@@ -16,6 +16,13 @@ log = logging.getLogger(__name__)
 
 def Interpolate(time, mask, y):
   '''
+  Masks certain elements in the array `y` and linearly
+  interpolates over them, returning an array `y'` of the
+  same length.
+  
+  :param array_like time: The time array
+  :param array_like mask: The indices to be interpolated over
+  :param array_like y: The dependent array
   
   '''
   
@@ -116,6 +123,8 @@ def Scatter(y, win = 13, remove_outliers = False):
     
 def SavGol(y, win = 49):
   '''
+  Subtracts a second order Savitsky-Golay filter with window size `win`
+  and returns the result. This acts as a high pass filter.
   
   '''
   
@@ -126,6 +135,9 @@ def SavGol(y, win = 49):
   
 def NumRegressors(npix, pld_order, cross_terms = True):
   '''
+  Return the number of regressors for `npix` pixels and PLD order `pld_order`.
+  
+  :param bool cross_terms: Include pixel cross-terms? Default :py:obj:`True`
   
   '''
   
@@ -139,7 +151,12 @@ def NumRegressors(npix, pld_order, cross_terms = True):
 
 def Downbin(x, newsize, axis = 0, operation = 'mean'):
   '''
+  Downbins an array to a smaller size.
   
+  :param array_like x: The array to down-bin
+  :param int newsize: The new size of the axis along which to down-bin
+  :param int axis: The axis to operate on. Default 0
+  :param str operation: The operation to perform when down-binning. Default `mean`
   '''
   
   assert newsize < x.shape[axis], "The new size of the array must be smaller than the current size."

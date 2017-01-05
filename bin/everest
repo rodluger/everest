@@ -4,6 +4,8 @@
 everest
 -------
 
+The main way of interfacing with the :py:mod:`everest` catalog via the command line.
+
 '''
 
 import argparse

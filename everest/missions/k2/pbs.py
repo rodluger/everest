@@ -463,6 +463,7 @@ def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
 
 def EverestModel(ID, model = 'nPLD', publish = False, **kwargs):
   '''
+  A wrapper around an :py:obj:`everest` model for PBS runs.
   
   '''
   

@@ -4,6 +4,8 @@
 :py:mod:`gp.py` - Gaussian Processes
 ------------------------------------
 
+Routines for optimizing the GP hyperparameters for a given light curve.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -41,6 +43,15 @@ def GetCovariance(kernel_params, time, errors):
 
 def GetKernelParams(time, flux, errors, mask = [], giter = 3, guess = None):
   '''
+  Optimizes the GP by training it on the current de-trended light curve.
+  Returns the white noise amplitude, red noise amplitude, and red noise timescale.
+  
+  :param array_like time: The time array
+  :param array_like flux: The flux array
+  :param array_like errors: The flux errors array
+  :param array_like mask: The indices to be masked when training the GP. Default `[]`
+  :param int giter: The number of iterations. Default 3
+  :param tuple guess: The guess to initialize the minimization with. Default :py:obj:`None`
   
   '''
 
@@ -111,7 +122,7 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, guess = None):
 
 def NegLnLike(x, time, flux, errors):
   '''
-  The negative log-likelihood function and its gradient.
+  Returns the negative log-likelihood function and its gradient.
   
   '''
   

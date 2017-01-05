@@ -47,29 +47,6 @@ else:
   #: The MAST url where the light curves are published
   MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
 
-def MAST_VERSION(default = EVEREST_VERSION):
-  '''
-  Returns the current :py:mod:`everest` version on MAST.
-  
-  '''
-  
-  url = MAST_ROOT + 'version2.txt'
-  r = urllib.request.Request(url)
-  try:
-    handler = urllib.request.urlopen(r, timeout = 3)
-  except:
-    log.error("Cannot access MAST: operation timed out.")
-    return default
-  code = handler.getcode()
-  if int(code) != 200:
-    log.error("Error code {0} for URL '{1}'".format(code, url))
-    return default
-  data = handler.read().decode('utf-8')
-  if data.endswith('\n'):
-    data = data[:-1]
-
-  return data
-
 #: Everest quality bit: masked because a Kepler flag was raised
 QUALITY_BAD = 23
 #: Everest quality bit: masked because data was NaN

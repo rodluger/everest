@@ -31,7 +31,7 @@ if __name__ == '__main__':
     if cadence == 'lc':
       cmd = 'find ./%d -name "nPLD.pdf" -o -name "*_lc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
     else:
-      cmd = 'find ./%d -name "nPLD.sc.pdf" -o -name "*_sclc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
+      cmd = 'find ./%d -name "nPLD.sc.pdf" -o -name "*_sc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
     
     # Tar it up
     if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, '%d.tar.gz' % subcampaign)):
@@ -43,4 +43,4 @@ if __name__ == '__main__':
                         '%d' % subcampaign, '*', '*', '*_lc.fits'), shell = True)
       else:
         subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
-                        '%d' % subcampaign, '*', '*', '*_sclc.fits'), shell = True)
+                        '%d' % subcampaign, '*', '*', '*_sc.fits'), shell = True)
