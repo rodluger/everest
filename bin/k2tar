@@ -19,6 +19,7 @@ if __name__ == '__main__':
   parser.add_argument("-c", "--cadence", type = str, default = 'lc', help = 'Cadence type (lc | sc)')
   args = parser.parse_args()
   cadence = args.cadence
+  cadext = ".sc" if cadence == 'sc' else ""
   campaign = args.campaign
   
   # Get all subcampaigns
@@ -26,21 +27,17 @@ if __name__ == '__main__':
   
   # Loop over them
   for subcampaign in subcampaigns:
-    
-    # Select cadence
-    if cadence == 'lc':
-      cmd = 'find ./%d -name "nPLD.pdf" -o -name "*_lc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
-    else:
-      cmd = 'find ./%d -name "nPLD.sc.pdf" -o -name "*_sc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
-    
-    # Tar it up
+
+    # Tar up the pdfs + fits files
+    cmd = 'find ./%d -name "nPLD%s.pdf" -o -name "*_%s.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, cadext, cadence, subcampaign)
     if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, '%d.tar.gz' % subcampaign)):
       subprocess.call(cmd, shell = True, cwd = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign))
     
       # Delete the fits files
-      if cadence == 'lc':
-        subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
-                        '%d' % subcampaign, '*', '*', '*_lc.fits'), shell = True)
-      else:
-        subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
-                        '%d' % subcampaign, '*', '*', '*_sc.fits'), shell = True)
+      subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
+                      '%d' % subcampaign, '*', '*', '*_%s.fits' % cadence), shell = True)
+    
+    # Tar up the pdfs + npz + log files
+    cmd = 'find ./%d -name "nPLD%s.pdf" -o -name "nPLD%s.npz" -o -name "nPLD%s.log" | tar -czvf %d.tar.gz -T -' % (subcampaign, cadext, cadext, cadext, subcampaign)
+    if not os.path.exists(os.path.join('/lolo/archive/hyak/vsm/rodluger/everest2/k2', 'c%02d' % campaign, '%d.tar.gz' % subcampaign)):
+      subprocess.call(cmd, shell = True, cwd = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign))
