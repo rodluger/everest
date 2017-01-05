@@ -357,6 +357,9 @@ def Status(campaign = range(18), model = 'nPLD', purge = False, injection = Fals
     if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)):
       path = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c)
       for folder in os.listdir(path):
+      
+        import pdb; pdb.set_trace()
+      
         for subfolder in [s for s in os.listdir(os.path.join(path, folder)) if s.endswith('00000')]:
           ID = int(folder[:4] + subfolder)
           if ID in stars:
