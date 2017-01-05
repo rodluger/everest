@@ -20,25 +20,25 @@ if __name__ == '__main__':
   campaign = args.campaign
   
   # Get all subcampaigns
-  subcampaigns = [s for s in os.listdir(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign)) if s.endswith('00000')]
+  subcampaigns = [int(s) for s in os.listdir(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign)) if s.endswith('00000')]
   
   # Loop over them
   for subcampaign in subcampaigns:
     
     # Select cadence
     if cadence == 'lc':
-      cmd = 'find ./%4d00000 -name "nPLD.pdf" -o -name "*_lc.fits" | tar -czvf %4d00000.tar.gz -T -' % (subcampaign, subcampaign)
+      cmd = 'find ./%d -name "nPLD.pdf" -o -name "*_lc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
     else:
-      cmd = 'find ./%4d00000 -name "nPLD.sc.pdf" -o -name "*_sclc.fits" | tar -czvf %4d00000.tar.gz -T -' % (subcampaign, subcampaign)
+      cmd = 'find ./%d -name "nPLD.sc.pdf" -o -name "*_sclc.fits" | tar -czvf %d.tar.gz -T -' % (subcampaign, subcampaign)
     
     # Tar it up
-    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, '%4d00000.tar.gz' % subcampaign)):
+    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, '%d.tar.gz' % subcampaign)):
       subprocess.call(cmd, shell = True, cwd = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign))
     
       # Delete the fits files
       if cadence == 'lc':
         subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
-                        '%4d00000' % subcampaign, '*', '*', '*_lc.fits'), shell = True)
+                        '%d' % subcampaign, '*', '*', '*_lc.fits'), shell = True)
       else:
         subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
-                        '%4d00000' % subcampaign, '*', '*', '*_sclc.fits'), shell = True)
+                        '%d' % subcampaign, '*', '*', '*_sclc.fits'), shell = True)
