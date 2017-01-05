@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-:py:mod:`user.py` - User-facing routines
+:py:mod:`user.py` - User Python routines
 ----------------------------------------
 
 This is the gateway to the :py:obj:`everest` catalog, containing
@@ -637,6 +637,14 @@ class Everest(Basecamp):
   
   def plot_pipeline(self, pipeline, *args, **kwargs):
     '''
+    Plots the light curve for the target de-trended with a given pipeline.
+    
+    :param str pipeline: The name of the pipeline (lowercase). Options are \
+           'everest2', 'everest1', and other mission-specific pipelines. For \
+           `K2`, the available pipelines are 'k2sff' and 'k2sc'.
+    
+    Additional :py:obj:`args` and :py:obj:`kwargs` are passed directly to
+    the :py:func:`pipelines.plot` function of the mission.
     
     '''
     
@@ -701,6 +709,11 @@ class Everest(Basecamp):
     
   def get_pipeline(self, *args, **kwargs):
     '''
+    Returns the `time` and `flux` arrays for the target obtained by a given
+    pipeline.
+    
+    Options :py:obj:`args` and :py:obj:`kwargs` are passed directly to
+    the :py:func:`pipelines.get` function of the mission.
     
     '''
     
@@ -708,6 +721,13 @@ class Everest(Basecamp):
   
   def mask_planet(self, t0, period, dur = 0.2):
     '''
+    Mask all of the transits/eclipses of a given planet/EB. After calling
+    this method, you must re-compute the model by calling :py:meth:`compute`
+    in order for the mask to take effect.
+    
+    :param float t0: The time of first transit (same units as light curve)
+    :param float period: The period of the planet in days
+    :param foat dur: The transit duration in days. Default 0.2
     
     '''
     
@@ -1032,6 +1052,8 @@ class Everest(Basecamp):
   
   def optimize(self, piter = 3, pmaxf = 300, ppert = 0.1):
     '''
+    Runs :py:obj:`pPLD` on the target in an attempt to further optimize the
+    values of the PLD priors. See :py:class:`everest.detrender.pPLD`.
     
     '''
     
@@ -1042,6 +1064,13 @@ class Everest(Basecamp):
   
   def plot_folded(self, t0, period, dur = 0.2):
     '''
+    Plot the light curve folded on a given `period` and centered at `t0`. 
+    When plotting folded transits, please mask them using :py:meth:`mask_planet`
+    and re-compute the model using :py:meth:`compute`.
+    
+    :param float t0: The time at which to center the plot (same units as light curve)
+    :param float period: The period of the folding operation
+    :param float dur: The transit duration in days. Default 0.2
     
     '''
     

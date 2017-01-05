@@ -2,12 +2,13 @@ Documentation
 =============
 
 .. toctree::
-   :maxdepth: 3 
+   :maxdepth: 1 
    
-   engine
-   ui
-   missions
-
+   gettingstarted
+   catalog
+   code
+   papers
+   
 Indices and tables
 ==================
 

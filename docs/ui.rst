@@ -5,3 +5,4 @@ User Interface
    :maxdepth: 3 
    
    user
+   everest
