@@ -930,8 +930,8 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
   fig, ax = pl.subplots(1)
   fig.canvas.set_window_title('K2 camp %s Short Cadence' % (camp))
   
-  ax.scatter(xunsat, yunsat, color = 'b', marker = '.', alpha = 0.5, zorder = -1, picker = True)
-  ax.scatter(xsat, ysat, color = 'r', marker = '.', alpha = 0.5, zorder = -1, picker = True)
+  ax.scatter(xunsat, yunsat, color = 'b', marker = '.', alpha = 0.35, zorder = -1, picker = True)
+  ax.scatter(xsat, ysat, color = 'r', marker = '.', alpha = 0.35, zorder = -1, picker = True)
   ax.set_ylim(-1,1)
   ax.set_xlim(8,18)
   ax.axhline(0, color = 'gray', lw = 2, zorder = -99, alpha = 0.5)
@@ -940,7 +940,19 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
   ax.set_title(r'Short Versus Long Cadence', fontsize = 18)
   ax.set_ylabel(r'Relative CDPP', fontsize = 18)
   ax.set_xlabel('Kepler Magnitude', fontsize = 18)
-
+  
+  # Bin the CDPP
+  yall = np.array(yall)
+  xall = np.array(xall)
+  bins = np.arange(7.5,18.5,0.5)
+  by = np.zeros_like(bins) * np.nan
+  for b, bin in enumerate(bins):
+    i = np.where((yall > -np.inf) & (yall < np.inf) & (xall >= bin - 0.5) & (xall < bin + 0.5))[0]
+    if len(i) > 10:
+      by[b] = np.median(yall[i])
+  ax.plot(bins[:9], by[:9], 'r--', lw = 2)
+  ax.plot(bins[8:], by[8:], 'k-', lw = 2)
+  
   # Pickable points
   Picker = StatsPicker([ax], [xall], [yall], epics, model = model, compare_to = model[:-3])
   fig.canvas.mpl_connect('pick_event', Picker)
