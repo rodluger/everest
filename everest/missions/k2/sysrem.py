@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-sysrem.py
----------
+:py:mod:`sysrem.py` - CBV routines
+----------------------------------
 
 Routines for computing the co-trending basis vectors (CBVs)
 for each `K2` campaign using the :py:obj:`SysRem` algorithm.
@@ -204,7 +204,7 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
     
     # Compute the design matrix  
     log.info('Running SysRem...')
-    X = np.ones((len(time), 1 + ncbv))
+    X = np.ones((len(time), 1 + kwargs.get('ncbv', 5)))
     
     # Loop over the segments
     new_fluxes = np.zeros_like(fluxes)

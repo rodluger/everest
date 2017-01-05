@@ -197,6 +197,7 @@ class CBV(object):
 
   def body(self):
     '''
+    Returns the axis instance where the light curves will be shown
     
     '''
     

@@ -147,6 +147,8 @@ class Basecamp(object):
   @property
   def norm(self):
     '''
+    The PLD normalization. Typically, this is just the simple aperture
+    photometry flux (i.e., the sum of all the pixels in the aperture).
     
     '''
     
@@ -220,6 +222,8 @@ class Basecamp(object):
   
   def get_norm(self):
     '''
+    Computes the PLD normalization. In the base class, this is just
+    the sum of all the pixel fluxes.
     
     '''
     
