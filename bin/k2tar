@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+k2tar
+-----
+
+'''
+
+from everest.config import EVEREST_DAT
+import os, shutil
+import subprocess
+import argparse
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser()
+  parser.add_argument("campaign", type = int, help = 'The campaign to tar')
+  parser.add_argument("-c", "--cadence", type = str, default = 'lc', help = 'Cadence type (lc | sc)')
+  args = parser.parse_args()
+  cadence = args.cadence
+  campaign = args.campaign
+  
+  # Get all subcampaigns
+  subcampaigns = [s for s in os.listdir(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign)) if s.endswith('00000')]
+  
+  # Loop over them
+  for subcampaign in subcampaigns:
+    
+    # Select cadence
+    if cadence == 'lc':
+      cmd = 'find ./%4d00000 -name "nPLD.pdf" -o -name "*_lc.fits" | tar -czvf %4d00000.tar.gz -T -' % (subcampaign, subcampaign)
+    else:
+      cmd = 'find ./%4d00000 -name "nPLD.sc.pdf" -o -name "*_sclc.fits" | tar -czvf %4d00000.tar.gz -T -' % (subcampaign, subcampaign)
+    
+    # Tar it up
+    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, '%4d00000.tar.gz' % subcampaign)):
+      subprocess.call(cmd, shell = True, cwd = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign))
+    
+      # Delete the fits files
+      if cadence == 'lc':
+        subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
+                        '%4d00000' % subcampaign, '*', '*', '*_lc.fits'), shell = True)
+      else:
+        subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
+                        '%4d00000' % subcampaign, '*', '*', '*_sclc.fits'), shell = True)
