@@ -4,6 +4,9 @@
 :py:mod:`inject.py` - Transit injection
 ---------------------------------------
 
+The :py:class:`Inject` class is the model that handles transit injection
+and recovery.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

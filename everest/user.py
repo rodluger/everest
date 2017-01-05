@@ -3,7 +3,10 @@
 '''
 :py:mod:`user.py` - User-facing routines
 ----------------------------------------
-   
+
+This is the gateway to the :py:obj:`everest` catalog, containing
+all of the user-facing code.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

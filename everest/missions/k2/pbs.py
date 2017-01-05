@@ -4,6 +4,8 @@
 :py:mod:`pbs.py` - PBS cluster routines
 ---------------------------------------
 
+Routines for submitting batch jobs to a cluster.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

@@ -4,6 +4,9 @@
 :py:mod:`aux.py` - Mission auxiliary routines
 ---------------------------------------------
 
+`K2`-specific auxiliary routines. These are not
+generally called from the top level of the code.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

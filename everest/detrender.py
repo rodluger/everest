@@ -66,6 +66,10 @@ class Detrender(Basecamp):
                       at which breakpoints are inserted are specified in the :py:func:`Breakpoints` function \
                       of each mission. Alternatively, the user may specify a list of cadences at which to \
                       break up the light curve. Default :py:obj:`True`
+  :param int cbv_num: The number of CBVs to regress on during post-processing. Default 1
+  :param int cbv_niter: The number of :py:obj:`SysRem` iterations to perform when computing CBVs. Default 50
+  :param int cbv_win: The filter window size (in cadences) for smoothing the CBVs. Default 999
+  :param int cbv_order: The filter order for smoothing CBVs. Default 3
   :param int cdivs: The number of light curve subdivisions when cross-validating. During each iteration, \
                     one of these subdivisions will be masked and used as the validation set. Default 3
   :param str cv_min: The quantity to be minimized during cross-validation. Default `MAD` (median absolute 
@@ -1220,6 +1224,10 @@ class iPLD(Detrender):
   
   def setup(self, **kwargs):
     '''
+    This is called during production de-trending, prior to
+    calling the :py:pbj:`Detrender.run()` method.
+    
+    :param str parent_model: The name of the model to operate on. Default `nPLD`
     
     '''
     
@@ -1257,6 +1265,12 @@ class pPLD(Detrender):
   
   def setup(self, **kwargs):
     '''
+    This is called during production de-trending, prior to
+    calling the :py:pbj:`Detrender.run()` method.
+    
+    :param inter piter: The number of iterations in the minimizer. Default 3
+    :param int pmaxf: The maximum number of function evaluations per iteration. Default 300
+    :param float ppert: The fractional amplitude of the perturbation on the initial guess. Default 0.1
     
     '''
     
@@ -1274,6 +1288,7 @@ class pPLD(Detrender):
     
   def run(self):
     '''
+    Runs the de-trending.
     
     '''
     
@@ -1303,7 +1318,8 @@ class pPLD(Detrender):
      
   def cross_validate(self, ax):
     '''
-
+    Performs the cross-validation step.
+    
     '''
 
     # The CDPP to beat
@@ -1396,6 +1412,7 @@ class pPLD(Detrender):
     
   def validation_scatter(self, log_lam, b, masks, pre_v, gp, flux, time, med):
     '''
+    Computes the scatter in the validation set.
     
     '''
     

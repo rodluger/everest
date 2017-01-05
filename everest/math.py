@@ -4,6 +4,8 @@
 :py:mod:`math.py` - Math utils
 ------------------------------
 
+Miscellaneous math utilities used throughout the code.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals

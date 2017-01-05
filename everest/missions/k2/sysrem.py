@@ -4,6 +4,9 @@
 sysrem.py
 ---------
 
+Routines for computing the co-trending basis vectors (CBVs)
+for each `K2` campaign using the :py:obj:`SysRem` algorithm.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -36,6 +39,8 @@ def GetChunk(time, breakpoints, b, mask = []):
 
 def GetStars(campaign, module, model = 'nPLD', **kwargs):
   '''
+  Returns de-trended light curves for all stars on a given module in
+  a given campaign.
   
   '''
   
@@ -94,7 +99,16 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
 
 def SysRem(time, flux, err, ncbv = 5, niter = 50, sv_win = 999, sv_order = 3, **kwargs):
   '''
+  Applies :py:obj:`SysRem` to a given set of light curves.
   
+  :param array_like time: The time array for all of the light curves
+  :param array_like flux: A 2D array of the fluxes for each of the light curves, shape `(nfluxes, ntime)`
+  :param array_like err: A 2D array of the flux errors for each of the light curves, shape `(nfluxes, ntime)`
+  :param int ncbv: The number of signals to recover. Default 5
+  :param int niter: The number of :py:obj:`SysRem` iterations to perform. Default 50
+  :param int sv_win: The Savitsky-Golay filter window size. Default 999
+  :param int sv_order: The Savitsky-Golay filter order. Default 3
+   
   '''
   
   nflx, tlen = flux.shape
@@ -140,6 +154,11 @@ def SysRem(time, flux, err, ncbv = 5, niter = 50, sv_win = 999, sv_order = 3, **
 
 def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
   '''
+  Computes the CBVs for a given campaign.
+  
+  :param int campaign: The campaign number
+  :param str model: The name of the :py:obj:`everest` model. Default `nPLD`
+  :param bool clobber: Overwrite existing files? Default `False`
   
   '''
   

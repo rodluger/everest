@@ -4,6 +4,9 @@
 :py:mod:`basecamp.py` - The Everest base class
 ----------------------------------------------
 
+The :py:obj:`everest` engine. All :py:obj:`everest` models
+inherit from :py:class:`Basecamp`.
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
