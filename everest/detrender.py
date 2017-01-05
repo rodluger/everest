@@ -183,7 +183,7 @@ class Detrender(Basecamp):
     self.cbv_nrec = kwargs.get('cbv_nrec', self._mission.NumCBVs(self.ID))
     self.cbv_niter = kwargs.get('cbv_niter', 50)
     self.cbv_win = kwargs.get('cbv_win', 999)
-    self.cbv_order = kwargs.get('cbv_order', 3)
+    self.cbv_order = kwargs.get('cbv_order', 2)
 
     # Get the pld order
     pld_order = kwargs.get('pld_order', 3)
@@ -1072,7 +1072,7 @@ class Detrender(Basecamp):
     
     # HACK: Force these params for publication
     self.cbv_win = 999
-    self.cbv_order = 3
+    self.cbv_order = 2
         
     # Get the CBVs
     self._mission.GetTargetCBVs(self)

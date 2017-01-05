@@ -4,6 +4,8 @@
 k2tar
 -----
 
+Creates tarballs of the .fits and .pdf files for uploading to MAST.
+
 '''
 
 from everest.config import EVEREST_DAT
