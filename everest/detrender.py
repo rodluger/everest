@@ -180,7 +180,7 @@ class Detrender(Basecamp):
     nseg = len(self.breakpoints)
     self.cv_min = kwargs.get('cv_min', 'mad').lower()
     assert self.cv_min in ['mad', 'tv'], "Invalid value for `cv_min`."
-    self.cbv_num = 1
+    self.cbv_num = kwargs.get('cbv_num', 1)
     self.cbv_niter = kwargs.get('cbv_niter', 50)
     self.cbv_win = kwargs.get('cbv_win', 999)
     self.cbv_order = kwargs.get('cbv_order', 3)
@@ -1073,6 +1073,7 @@ class Detrender(Basecamp):
     # HACK: Force these params for publication
     self.cbv_win = 999
     self.cbv_order = 3
+    self.cbv_num = 1
         
     # Get the CBVs
     self._mission.GetTargetCBVs(self)
