@@ -7,7 +7,7 @@ it has three different parts: a :doc:`user-facing <ui>` module, a main
 You can check out each of these below.
 
 .. toctree::
-   :maxdepth: 3 
+   :maxdepth: 2
    
    ui
    engine

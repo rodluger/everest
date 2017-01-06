@@ -13,5 +13,5 @@ To install :py:mod:`everest`, all you need to do is run
 .. role:: python(code)
    :language: python
 
-This should allow you to run the :doc:`everest <everest>` command line utility as well
+This should allow you to run the :doc:`command line utilities <ui>` as well
 as to :python:`import everest` in Python.

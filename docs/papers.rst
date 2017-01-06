@@ -1,6 +1,8 @@
 The Papers
 ==========
 
+If you make use of :py:obj:`everest`, please cite the following papers:
+
 .. raw:: html
     
    <span style = "font-weight:bold;">
@@ -17,3 +19,18 @@ The Papers
     Luger, R., Agol, E., Kruse, E., Barnes, R., Becker, A., Foreman-Mackey, D., & Deming, D. 2016, AJ, 152, 100
    </span>
    <br/><br/>
+   
+   <span style = "font-weight:bold;">
+    An update to the EVEREST K2 pipeline
+   </span>
+   <span style = "font-size: 90%;">
+    &nbsp;
+    [<a href="#">AJ</a>]
+    [<a href="#">ADS</a>]
+    [<a href="#">arXiv</a>]
+   </span>
+   <br/>
+   <span style = "font-size:85%; font-family:serif;">
+    Luger, R., Kruse, E., Foreman-Mackey, D., Agol, E., Saunders, N. 2017
+   </span>
+   <br/><br/><br/>

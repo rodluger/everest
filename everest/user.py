@@ -10,6 +10,14 @@ all of the user-facing code.
 - :py:class:`Everest` is the main user-facing class for interfacing with the catalog
 - :py:func:`DVS` downloads and plots the data validation summary for a given target
 
+Instantiating an :py:class:`Everest` class automatically downloads the light curve
+from the online MAST catalog. So, to get started, all you need to do is run
+
+.. code-block :: python
+
+   import everest
+   star = everest.Everest(201367065)
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -1110,7 +1118,7 @@ class Everest(Basecamp):
     ax.set_ylim(*ylim)
     
     # Appearance
-    ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+    ax.set_xlabel(r'Time (days)', fontsize = 18)
     ax.set_ylabel(r'Normalized Flux', fontsize = 18)
     fig.canvas.set_window_title('%s %d' % (self._mission.IDSTRING, self.ID))
     

@@ -1072,6 +1072,8 @@ class Detrender(Basecamp):
 
   def publish(self, **kwargs):
     '''
+    Correct the light curve with the CBVs, generate a cover page for the DVS figure,
+    and produce a FITS file for publication.
     
     '''
     
