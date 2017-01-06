@@ -8,7 +8,7 @@ light curves, including options to mask transits and refine the PLD model,
 follow the link below to the Python code.
 
 .. toctree::
-   :maxdepth: 3 
+   :maxdepth: 1
    
    user
    everest

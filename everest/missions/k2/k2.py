@@ -980,12 +980,12 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
   # Show
   pl.show()
     
-def Statistics(campaign = None, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, cadence = 'lc', planets = False, **kwargs):
+def Statistics(season = None, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, cadence = 'lc', planets = False, **kwargs):
   '''
   Computes and plots the CDPP statistics comparison between `model` and `compare_to` 
   for all long cadence light curves in a given campaign
   
-  :param campaign: The campaign number or list of campaign numbers. Default is to plot all campaigns
+  :param season: The campaign number or list of campaign numbers. Default is to plot all campaigns
   :param bool clobber: Overwrite existing files? Default :py:obj:`False`
   :param str model: The :py:obj:`everest` model name
   :param str compare_to: The :py:obj:`everest` model name or other K2 pipeline name
@@ -994,6 +994,9 @@ def Statistics(campaign = None, clobber = False, model = 'nPLD', injection = Fal
   :param bool planets: Statistics for known K2 planets? Default :py:obj:`False`
   
   '''
+  
+  # Multi-mission compatibility
+  campaign = season
   
   # Is this short cadence?
   if cadence == 'sc':
