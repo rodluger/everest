@@ -4,6 +4,8 @@
 k2stats
 -------
 
+Plots various statistics for the :py:mod:`everest` :py:mod:`K2` light curves.
+
 '''
 
 import argparse
@@ -34,6 +36,25 @@ if __name__ == '__main__':
     cadence = 'sc'
   else:
     cadence = 'lc'
+  
+  # HACK: Planet hosts are plotted for all campaigns
+  if args.planets and args.campaign is not None:
+    try:
+      float(args.campaign)
+      raise Exception("Argument `campaign` not allowed with `-p` option.")
+    except ValueError:
+      try:
+        int(args.campaign)
+        raise Exception("Argument `campaign` not allowed with `-p` option.")
+      except ValueError:
+        args.compare_to = args.model
+        args.model = args.campaign
+        args.campaign = None
+  
+  # HACK: Short cadence comparison to long cadence only
+  if args.short:
+    if args.compare_to:
+      raise Exception("Argument `compare_to` not allowed with `-s` option.")
   
   # Get the campaign number
   if args.campaign is not None:

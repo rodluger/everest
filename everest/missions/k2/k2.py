@@ -948,7 +948,7 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
 
   # Plot the equivalent of the Aigrain+16 figure
   fig, ax = pl.subplots(1)
-  fig.canvas.set_window_title('K2 camp %s Short Cadence' % (camp))
+  fig.canvas.set_window_title('K2 Short Cadence')
   
   ax.scatter(xunsat, yunsat, color = 'b', marker = '.', alpha = 0.35, zorder = -1, picker = True)
   ax.scatter(xsat, ysat, color = 'r', marker = '.', alpha = 0.35, zorder = -1, picker = True)

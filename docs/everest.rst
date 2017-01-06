@@ -1,5 +1,5 @@
-:py:mod:`everest` - Command line tools
---------------------------------------
+:py:mod:`everest` - Command line access
+---------------------------------------
 
 The :py:mod:`everest` command accepts several options, which we list below.
 
