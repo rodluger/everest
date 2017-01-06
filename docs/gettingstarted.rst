@@ -1,5 +1,5 @@
-Getting Started
-===============
+Using Everest
+=============
 
 .. toctree::
    :maxdepth: 3 

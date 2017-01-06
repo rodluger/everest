@@ -152,7 +152,7 @@ def LightcurveHDU(model):
   
   # Did we subtract a background term?
   if hasattr(model.bkg, '__len__'):
-    arrays.append(pyfits.Column(name = 'BKG', format = 'D', array = model.bkg, unit = 'BJD - 2454833'))     
+    arrays.append(pyfits.Column(name = 'BKG', format = 'D', array = model.bkg, unit = 'e-/s'))     
   
   # Create the HDU
   header = pyfits.Header(cards = cards)

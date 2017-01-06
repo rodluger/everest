@@ -180,7 +180,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   :param bool clobber: Overwrite existing files? Default :py:obj:`False`
   :param bool delete_raw: Delete the FITS TPF after processing it? Default :py:obj:`False`
   :param str aperture_name: The name of the aperture to use. Select `custom` to call \
-         :py:func:`GetCustomAperture`. Default `k2sff_15 
+         :py:func:`GetCustomAperture`. Default `k2sff_15`
   :param str saturated_aperture_name: The name of the aperture to use if the target is \
          saturated. Default `k2sff_19`
   :param int max_pixels: Maximum number of pixels in the TPF. Default 75
@@ -642,7 +642,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   :param str model: The :py:obj:`everest` model name. Only used when imposing CDPP bounds. Default :py:obj:`None`
   :param int neighbors: Number of neighbors to return. Default 10
   :param str aperture_name: The name of the aperture to use. Select `custom` to call \
-         :py:func:`GetCustomAperture`. Default `k2sff_15 
+         :py:func:`GetCustomAperture`. Default `k2sff_15`
   :param str cadence: The light curve cadence. Default `lc`
   :param tuple mag_range: (`low`, `high`) values for the Kepler magnitude. Default (11, 13)
   :param tuple cdpp_range: (`low`, `high`) values for the de-trended CDPP. Default :py:obj:`None`
@@ -1525,7 +1525,7 @@ def GetTargetCBVs(model):
   '''
   Returns the design matrix of CBVs for the given target.
   
-  :param model: An instance of the :py:model:`everest` model for the target
+  :param model: An instance of the :py:obj:`everest` model for the target
   
   '''
   
@@ -1549,7 +1549,7 @@ def FitCBVs(model):
   is called internally whenever the user accesses the :py:attr:`fcor`
   attribute.
   
-  :param model: An instance of the :py:model:`everest` model for the target
+  :param model: An instance of the :py:obj:`everest` model for the target
   
   '''
   

@@ -6,7 +6,8 @@
 
 This module contains the generic models used to de-trend light curves for the various
 supported missions. Most of the functionality is implemented in :py:class:`Detrender`, and
-specific de-trending methods are implemented as subclasses.
+specific de-trending methods are implemented as subclasses. The default :py:obj:`everest`
+model is :py:class:`nPLD`.
 
 '''
 
@@ -1136,7 +1137,7 @@ class nPLD(Detrender):
   def setup(self, **kwargs):
     '''
     This is called during production de-trending, prior to
-    calling the :py:pbj:`Detrender.run()` method.
+    calling the :py:obj:`Detrender.run()` method.
     
     :param tuple cdpp_range:  If :py:obj:`parent_model` is set, neighbors are selected only if \
                               their de-trended CDPPs fall within this range. Default `None`
@@ -1225,7 +1226,7 @@ class iPLD(Detrender):
   def setup(self, **kwargs):
     '''
     This is called during production de-trending, prior to
-    calling the :py:pbj:`Detrender.run()` method.
+    calling the :py:obj:`Detrender.run()` method.
     
     :param str parent_model: The name of the model to operate on. Default `nPLD`
     
@@ -1266,7 +1267,7 @@ class pPLD(Detrender):
   def setup(self, **kwargs):
     '''
     This is called during production de-trending, prior to
-    calling the :py:pbj:`Detrender.run()` method.
+    calling the :py:obj:`Detrender.run()` method.
     
     :param inter piter: The number of iterations in the minimizer. Default 3
     :param int pmaxf: The maximum number of function evaluations per iteration. Default 300

@@ -7,6 +7,9 @@
 This is the gateway to the :py:obj:`everest` catalog, containing
 all of the user-facing code.
 
+- :py:class:`Everest` is the main user-facing class for interfacing with the catalog
+- :py:func:`DVS` downloads and plots the data validation summary for a given target
+
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
