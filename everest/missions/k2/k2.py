@@ -66,7 +66,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   :param int EPIC: The EPIC ID number
   :param str cadence: The light curve cadence. Default `lc`
   
-  ..note :: The number corresponding to a given breakpoint is the number \
+  .. note :: The number corresponding to a given breakpoint is the number \
             of cadences *since the beginning of the campaign*.
   
   '''
@@ -1260,8 +1260,7 @@ def HasShortCadence(EPIC, season = None):
 
 def InjectionStatistics(campaign = 0, clobber = False, model = 'nPLD', plot = True, show = True, **kwargs):
   '''
-  Computes and plots the CDPP statistics comparison between `model` and
-  `compare_to` for all known K2 planets.
+  Computes and plots the statistics for injection/recovery tests.
   
   :param int campaign: The campaign number. Default 0
   :param str model: The :py:obj:`everest` model name
