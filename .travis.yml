@@ -19,7 +19,6 @@ cache: pip
 addons:
   apt:
     packages:
-    - python-pip
     - libeigen3-dev
 
 before_install:
@@ -32,8 +31,8 @@ before_install:
 install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - source activate test
-  - conda install --yes numpy scipy nose pip
-  - pip install coveralls
+  - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels 
+  - pip install coveralls astroML astroML_addons george==0.2.1
   - python setup.py install
 
 script: 
