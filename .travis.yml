@@ -31,7 +31,7 @@ before_install:
 install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - source activate test
-  - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels 
+  - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels scikit-learn 
   - pip install coveralls astroML astroML_addons george==0.2.1
   - python setup.py install
 
