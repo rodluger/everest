@@ -1,0 +1,9 @@
+numpy
+scipy
+matplotlib
+george
+six
+pyfits
+pysyzygy
+k2plr
+PyPDF2
