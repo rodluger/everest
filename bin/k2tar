@@ -38,9 +38,9 @@ if __name__ == '__main__':
                       '%d' % subcampaign, '*', '*_%s.fits' % cadence), shell = True)
     
     # Tar up the pdfs + npz + log files
-    cmd = 'find ./%d -name "nPLD%s.pdf" -o -name "nPLD%s.npz" -o -name "nPLD%s.log" | tar -czvf /lolo/archive/hyak/vsm/rodluger/everest2/k2/c%02d/%d%s.tar.gz -T -' % (subcampaign, cadext, cadext, cadext, campaign, subcampaign, cadext)
+    cmd = 'find ./%d -name "nPLD%s.pdf" -o -name "nPLD%s.npz" -o -name "nPLD%s.log" | tar -czvf /lolo/archive/hyak/vsm/rodluger/everest2/k2/c%02d/nPLD/%d%s.tar.gz -T -' % (subcampaign, cadext, cadext, cadext, campaign, subcampaign, cadext)
     if not os.path.exists(os.path.join('/lolo/archive/hyak/vsm/rodluger/everest2/k2', 'c%02d' % campaign, 'nPLD', '%d%s.tar.gz' % (subcampaign, cadext))):
-      subprocess.call(cmd, shell = True, cwd = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 'nPLD'))
+      subprocess.call(cmd, shell = True, cwd = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign))
     
       # Delete them
       #subprocess.call('rm %s' % os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
