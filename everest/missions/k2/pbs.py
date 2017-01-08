@@ -319,11 +319,14 @@ def _Publish(campaign, subcampaign, strkwargs):
     # Run
     pool.map(m, stars)
 
-def Status(campaign = range(18), model = 'nPLD', purge = False, injection = False, cadence = 'lc', **kwargs):
+def Status(season = range(18), model = 'nPLD', purge = False, injection = False, cadence = 'lc', **kwargs):
   '''
   Shows the progress of the de-trending runs for the specified campaign(s).
 
   '''
+  
+  # Mission compatibility
+  campaign = season
   
   # Injection?
   if injection:

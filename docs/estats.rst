@@ -1,7 +1,7 @@
-:py:mod:`estats` - De-trending Statistics
------------------------------------------
+:py:mod:`everest-stats` - De-trending Statistics
+------------------------------------------------
 
-The :py:mod:`estats` command accepts several options, which we list below.
+The :py:mod:`everest-stats` command accepts several options, which we list below.
 
 +--------------------------+---------------------------------------------------------------------------------+
 | :py:obj:`season`         | | The season number. For :py:obj:`K2`, this is the campaign number. Note that   |
@@ -12,6 +12,9 @@ The :py:mod:`estats` command accepts several options, which we list below.
 | :py:obj:`compare_to`     | | The :py:obj:`everest` model or pipeline to compare against.                   |
 |                          | | Default :py:obj:`everest1`                                                    |
 +--------------------------+---------------------------------------------------------------------------------+
+| :py:obj:`-m` `mission`   | | The mission name (:py:obj:`k2` | :py:obj:`kepler` | :py:obj:`tess`).          |
+|                          | | Default :py:obj:`k2`                                                          |
++--------------------------+---------------------------------------------------------------------------------+
 | :py:obj:`-s`             | | Plot the short cadence versus long cadence CDPP statistics.                   |
 |                          | | If no campaign is specified, shows all campaigns                              |
 +--------------------------+---------------------------------------------------------------------------------+
@@ -20,12 +23,12 @@ The :py:mod:`estats` command accepts several options, which we list below.
 | :py:obj:`-i`             | | Plot the transit injection/recovery results.                                  |
 +--------------------------+---------------------------------------------------------------------------------+
 
-If no flags are specified, :py:mod:`estats` shows several plots for a given season, comparing :py:obj:`everest`
+If no flags are specified, :py:mod:`everest-stats` shows several plots for a given season, comparing :py:obj:`everest`
 to a different PLD model or a different mission pipeline. For :py:obj:`K2`, running
 
 .. code-block :: bash
    
-   estats 6 nPLD k2sff
+   everest-stats 6 nPLD k2sff
 
 produces the following plot:
 

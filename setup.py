@@ -22,16 +22,20 @@ try:
 except:
   pyfits = 'pyfits'
 
-# Get the long description from the README
-def readme():
-  with open('README.md') as f:
-    return f.read()
+long_description = \
+"""
+EPIC Variability Extraction and Removal for Exoplanet Science Targets: 
+A pipeline for de-trending `K2` light curves with pixel level decorrelation 
+and Gaussian processes. Here you'll find the Python code used to generate 
+the `everest` catalog, as well as tools for accessing and interacting 
+with the de-trended light curves.
+"""
 
 # Setup!
-setup(name = 'everest',
+setup(name = 'everest-pipeline',
       version = everest.__version__,
       description = 'EPIC Variability Extraction and Removal for Exoplanet Science Targets',
-      long_description = readme(),
+      long_description = long_description,
       classifiers = [
                       'Development Status :: 3 - Alpha',
                       'License :: OSI Approved :: MIT License',
@@ -52,14 +56,14 @@ setup(name = 'everest',
                           'six',
                           pyfits,
                           'pysyzygy>=0.0.1',
-                          'k2plr==0.2.2',
+                          'k2plr>=0.2.2',
                           'PyPDF2'
                          ],
-      dependency_links = [
-                          'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
-                          'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.2'
-                         ],
-      scripts=['bin/everest', 'bin/estats'],
+      #dependency_links = [
+      #                    'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
+      #                    'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.2'
+      #                   ],
+      scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
       include_package_data = True,
       zip_safe = False,
       #test_suite='nose.collector',

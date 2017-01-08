@@ -13,3 +13,4 @@ follow the link below to the Python code.
    user
    everest
    estats
+   estatus
