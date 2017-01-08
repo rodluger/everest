@@ -1580,7 +1580,7 @@ def FitCBVs(model):
       B = np.dot(mX.T, model.flux[masked_inds])
       try:
         weights[b] = np.linalg.solve(A, B)
-      except numpy.linalg.linalg.LinAlgError:
+      except np.linalg.linalg.LinAlgError:
         # Singular matrix
         log.warn('Singular matrix!')
         weights[b] = np.zeros(X.shape[1])
