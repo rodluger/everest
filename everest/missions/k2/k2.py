@@ -1578,7 +1578,13 @@ def FitCBVs(model):
       mX = model.XCBV[masked_inds,:ncbv + 1]
       A = np.dot(mX.T, mX)
       B = np.dot(mX.T, model.flux[masked_inds])
-      weights[b] = np.linalg.solve(A, B)
+      try:
+        weights[b] = np.linalg.solve(A, B)
+      except numpy.linalg.linalg.LinAlgError:
+        # Singular matrix
+        log.warn('Singular matrix!')
+        weights[b] = np.zeros(X.shape[1])
+        
       m[b] = np.dot(model.XCBV[inds,:ncbv + 1], weights[b])
 
       # Vertical alignment
