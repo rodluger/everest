@@ -1,8 +1,9 @@
 <p align="center">
-  <img width = "400" src="http://staff.washington.edu/rodluger/everest_docs/_images/everest.png"/>
+  <img width = "300" src="http://staff.washington.edu/rodluger/everest_docs/_images/everest.png"/>
 </p>
 <p align="center">
   <a href="https://raw.githubusercontent.com/rodluger/everest2/master/LICENSE?token=AI5FK6tm_NBedWArijY_G4xny-qe9jZyks5YLIj2wA%3D%3D"><img src="https://img.shields.io/badge/license-MIT-blue.svg"/></a>
+  <a href="http://staff.washington.edu/rodluger/everest/index.html"><img src="https://img.shields.io/badge/read-the_docs-brightgreen.svg?style=flat"/></a>
 </p>
 
 <div align="justify">
