@@ -1583,7 +1583,7 @@ def FitCBVs(model):
       except np.linalg.linalg.LinAlgError:
         # Singular matrix
         log.warn('Singular matrix!')
-        weights[b] = np.zeros(X.shape[1])
+        weights[b] = np.zeros(mX.shape[1])
         
       m[b] = np.dot(model.XCBV[inds,:ncbv + 1], weights[b])
 
