@@ -29,8 +29,10 @@ else:
   from . import fits
   from . import dvs
   from . import gp
-  from .missions import *
-  from . import missions
+  try:
+    from . import missions
+  except ImportError:
+    from everest import missions
   from . import basecamp
   from . import detrender
   from . import inject
