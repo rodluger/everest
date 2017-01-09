@@ -20,14 +20,11 @@ addons:
     packages:
     - libeigen3-dev
 
-# Handle git submodules yourself: http://stackoverflow.com/a/24600210
+# We will pip install pysyzygy and k2plr
 git:
     submodules: false
 
 before_install:
-  # Use sed to replace the SSH URL with the public URL, then initialize submodules: http://stackoverflow.com/a/24600210
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  - git submodule update --init --recursive
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
@@ -38,7 +35,7 @@ install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - source activate test
   - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels scikit-learn 
-  - pip install coveralls astroML astroML_addons george==0.2.1
+  - pip install coveralls astroML astroML_addons george==0.2.1 pysyzygy k2plr
   - python setup.py install
 
 script: 
