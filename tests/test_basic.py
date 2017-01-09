@@ -7,3 +7,6 @@ test_basic.py
 '''
 
 import everest
+
+def test_basic():
+  pass
