@@ -7,3 +7,4 @@ progress.txt
 output
 tmp
 scripts/*
+*.pyc

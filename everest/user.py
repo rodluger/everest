@@ -84,7 +84,7 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   try:
     handler = urllib.request.urlopen(r)
     code = handler.getcode()
-  except urllib.error.HTTPError:
+  except (urllib.error.HTTPError, urllib.error.URLError):
     code = 0
   if int(code) == 200:
     

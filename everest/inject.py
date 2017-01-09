@@ -65,13 +65,13 @@ def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.0
     
     '''
     
-    def __init__(self, *args, inject = None, parent_class = None, **kwargs):
+    def __init__(self, *args, **kwargs):
       '''
       
       '''
       
-      self.inject = inject
-      self.parent_class = parent_class
+      self.inject = kwargs.pop('inject', None)
+      self.parent_class = kwargs.pop('parent_class', None)
       self.kwargs = kwargs
       super(Injection, self).__init__(*args, **kwargs)
 
