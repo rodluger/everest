@@ -14,14 +14,6 @@ else:
 builtins.__EVEREST_SETUP__ = True
 import everest
 
-# Check if the user has `pyfits` as part
-# of the `astropy` distribution...
-try:
-  import astropy.io.fits
-  pyfits = 'astropy'
-except:
-  pyfits = 'pyfits'
-
 long_description = \
 """
 EPIC Variability Extraction and Removal for Exoplanet Science Targets: 
@@ -54,18 +46,14 @@ setup(name = 'everest-pipeline',
                           'matplotlib',
                           'george==0.2.1',
                           'six',
-                          pyfits,
+                          'astropy',
                           'pysyzygy>=0.0.1',
                           'k2plr>=0.2.2',
                           'PyPDF2'
                          ],
-      #dependency_links = [
-      #                    'https://github.com/rodluger/pysyzygy/tarball/master#egg=pysyzygy-0.0.1',
-      #                    'https://github.com/rodluger/k2plr/tarball/master#egg=k2plr-0.2.2'
-      #                   ],
       scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
       include_package_data = True,
       zip_safe = False,
-      #test_suite='nose.collector',
-      #tests_require=['nose']
+      test_suite='nose.collector',
+      tests_require=['nose']
       )

@@ -15,7 +15,7 @@ from ...math import SavGol
 import os, sys, shutil
 import k2plr
 from k2plr.config import KPLR_ROOT
-from urllib.error import HTTPError
+from six.moves import urllib
 import matplotlib.pyplot as pl
 import numpy as np
 import warnings
@@ -156,7 +156,7 @@ def get_cdpp(campaign, pipeline = 'everest1'):
         mask = np.where(np.isnan(flux))[0]
         flux = np.delete(flux, mask)
         cdpp = CDPP(flux)
-      except (HTTPError, TypeError, ValueError):
+      except (urllib.error.HTTPError, TypeError, ValueError):
         print("{:>09d} {:>15.3f}".format(EPIC, 0), file = outfile)
         continue
 
@@ -253,7 +253,7 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
         nout = len(inds)
         ntot = len(flux)
 
-      except (HTTPError, TypeError, ValueError):
+      except (urllib.error.HTTPError, TypeError, ValueError):
         print("{:>09d} {:>5d} {:>5d}".format(EPIC, -1, -1), file = outfile)
         continue
 
