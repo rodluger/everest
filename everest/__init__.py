@@ -29,7 +29,7 @@ else:
   from . import fits
   from . import dvs
   from . import gp
-  from . import user
+  from .missions import *
   from . import missions
   from . import basecamp
   from . import detrender
