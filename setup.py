@@ -39,7 +39,7 @@ setup(name = 'everest-pipeline',
       author = 'Rodrigo Luger',
       author_email = 'rodluger@uw.edu',
       license = 'MIT',
-      packages = ['everest'],
+      packages = ['everest', 'everest.missions'],
       install_requires = [
                           'numpy>=1.8',
                           'scipy',
