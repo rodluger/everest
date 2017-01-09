@@ -5,7 +5,6 @@ language: python
 # blocklist
 branches:
   except:
-  - dev
   - nick
 
 matrix:
