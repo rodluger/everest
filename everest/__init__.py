@@ -19,9 +19,23 @@ if __EVEREST_SETUP__:
     getattr(missions, mission).Setup()
 else:
   # This is a regular everest run
-  from .import config
-  from . import basecamp, detrender, dvs, fits, gp, inject, math, \
-                missions, pool, transit, user, utils
+  
+  # Import all modules
+  from . import config
+  from . import utils
+  from . import math
+  from . import transit
+  from . import pool
+  from . import fits
+  from . import dvs
+  from . import gp
+  from . import missions
+  from . import basecamp
+  from . import detrender
+  from . import inject
+  from . import user
+  
+  # Import the good stuff
   from .detrender import *
   from .inject import *
   from .missions import *
