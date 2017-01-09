@@ -20,7 +20,14 @@ addons:
     packages:
     - libeigen3-dev
 
+# Handle git submodules yourself: http://stackoverflow.com/a/24600210
+git:
+    submodules: false
+
 before_install:
+  # Use sed to replace the SSH URL with the public URL, then initialize submodules: http://stackoverflow.com/a/24600210
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
   - ./miniconda.sh -b
