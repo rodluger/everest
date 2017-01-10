@@ -1,13 +1,6 @@
-EPIC Search
------------
+.. rubric: Search
 
 .. raw:: html
-   
-   <form action="">
-   <input type="text" name="epic" value="201367065">
-   <input type="submit" value="Go!">
-   </form>
-   <br><br>
    
    <h1><span id="EPIC"></span></h1><br>
    
