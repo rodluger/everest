@@ -9,7 +9,7 @@ The Catalog
   <div class="last"><div role="search">
   <form id="target-search-form" class="wy-form" action="target_search.html" method="get">
       <div style="margin-bottom:1em;">
-      Target ID: &nbsp;<input type="text" name="epic" placeholder="e.g., 201367065" style = "height: 1.75em;">
+      Target ID: &nbsp;<input type="text" name="id" placeholder="e.g., 201367065" style = "height: 1.75em;">
       </div>
       Mission:  &nbsp;<input type="radio" name="mission" value="k2" checked>K2
                 &nbsp;<input type="radio" name="mission" value="kepler" disabled><span style="color: #cccccc;">Kepler</span>

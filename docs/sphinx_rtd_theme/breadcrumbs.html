@@ -8,11 +8,15 @@
 
 <div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="{{ pathto(master_doc) }}">Everest</a> &raquo;</li>
+    <li><a href="{{ pathto(master_doc) }}">everest</a> &raquo;</li>
       {% for doc in parents %}
-          <li><a href="{{ doc.link|e }}">{{ doc.title }}</a> &raquo;</li>
+        <li><a href="{{ doc.link|e }}">{{ doc.title }}</a>&raquo;</li>
       {% endfor %}
-    <li>{{ title }}</li>
+    {% if (title == "&lt;no title&gt;") %}  
+      <li></li>
+    {% else %}
+      <li>{{ title }}</li>
+    {% endif %}
       <li class="wy-breadcrumbs-aside">
         {% if pagename != "search" %}
           {% if display_github %}
