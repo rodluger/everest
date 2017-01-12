@@ -96,7 +96,7 @@
         if ((id.length == 9) && isInt(id)) {
           
           // Check if short cadence exists
-          $.get("sc.tsv")
+          $.get("sc.csv")
             .done(function( data ) {
               if (data.indexOf(id) != -1) {
                 // Short cadence is available
@@ -109,7 +109,7 @@
           var campaigns = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08"];
           var done = 0;
           for (var i = 0; i < campaigns.length; i++) {
-            $.get(campaigns[i] + ".tsv")
+            $.get(campaigns[i] + ".csv")
               .done(function( data ) {
                 var start = data.indexOf(id);
                 if (start != -1) {
@@ -121,11 +121,11 @@
                   else
                     var campaign_int = campaign.substr(1,2)
                   var stop = data.indexOf("\n", start);
-                  var info = data.slice(start, stop).split(/\s+/);
+                  var info = data.slice(start, stop).split(',');
                   var mag = info[1];
                   var cdppr = info[2];
                   var cdpp = info[3];
-                  if (info[8] == "1")
+                  if (info[4] == "1")
                     var saturated = "Yes";
                   else
                     var saturated = "No";
