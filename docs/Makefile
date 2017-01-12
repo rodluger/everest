@@ -53,7 +53,8 @@ clean:
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
-	cp everest.png .build/html/_images/
+	@cp everest.png .build/html/_images/
+	@cp *.tsv .build/html/
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 

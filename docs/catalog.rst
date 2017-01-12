@@ -11,9 +11,11 @@ The Catalog
       <div style="margin-bottom:1em;">
       Target ID: &nbsp;<input type="text" name="id" placeholder="e.g., 201367065" style = "height: 1.75em;">
       </div>
+      <div>
       Mission:  &nbsp;<input type="radio" name="mission" value="k2" checked>K2
                 &nbsp;<input type="radio" name="mission" value="kepler" disabled><span style="color: #cccccc;">Kepler</span>
                 &nbsp;<input type="radio" name="mission" value="tess" disabled><span style="color: #cccccc;">TESS</span>
+      </div>
   </form><br>
   </div></div></div>
 
