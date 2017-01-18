@@ -22,7 +22,7 @@ def test_user():
   if not os.path.exists(path):
     os.makedirs(path)
   dest = os.path.join(path, everest.missions.k2.FITSFile(201367065, 1))
-  orig = os.path.join(os.path.dirname(everest.config.EVEREST_SRC), 'tests', 'hlsp_everest_k2_llc_201367065-c01_kepler_v2.0_lc.fits')
+  orig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hlsp_everest_k2_llc_201367065-c01_kepler_v2.0_lc.fits')
   shutil.copy(orig, dest)
 
   # Load the FITS file

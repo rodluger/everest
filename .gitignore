@@ -7,3 +7,5 @@ progress.txt
 output
 misc/*
 *.pyc
+build/*
+dist/*
