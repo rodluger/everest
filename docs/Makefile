@@ -57,6 +57,11 @@ html:
 	@cp *.csv .build/html/
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+ifdef EVEREST_DOCS	
+  # Export to server
+	@rsync -aP --times --delete .build/html/ $(EVEREST_DOCS)
+	@echo "Export finished."
+endif
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
