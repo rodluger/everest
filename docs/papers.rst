@@ -25,13 +25,13 @@ If you make use of :py:obj:`everest`, please cite the following papers:
    </span>
    <span style = "font-size: 90%;">
     &nbsp;
-    [<a href="#">AJ</a>]
+    [AJ]
     [<a href="#">ADS</a>]
     [<a href="#">arXiv</a>]
    </span>
    <br/>
    <span style = "font-size:85%; font-family:serif;">
-    Luger, R., Kruse, E., Foreman-Mackey, D., Agol, E., Saunders, N. 2017
+    Luger, R., Kruse, E., Foreman-Mackey, D., Agol, E., Saunders, N. 2017, AJ (submitted)
    </span>
    <br/><br/><br/>
 
