@@ -423,20 +423,21 @@ class Everest(Basecamp):
       if self.model_name == 'iPLD':
         self.reclam = [[f[1].header['RECL%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
                         for c in range(len(self.breakpoints))]
-    # Masks
-    self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
-    self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
-    self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
-    self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
-    self.transitmask = np.where(self.quality & 2 ** (QUALITY_TRN - 1))[0]
+      
+      # Masks
+      self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
+      self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
+      self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
+      self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
+      self.transitmask = np.where(self.quality & 2 ** (QUALITY_TRN - 1))[0]
 
-    # CBVs
-    self.XCBV = np.empty((len(self.time), 0))
-    for i in range(99):
-      try:
-        self.XCBV = np.hstack([self.XCBV, f[1].data['CBV%02d' % (i + 1)].reshape(-1, 1)])
-      except KeyError:
-        break
+      # CBVs
+      self.XCBV = np.empty((len(self.time), 0))
+      for i in range(99):
+        try:
+          self.XCBV = np.hstack([self.XCBV, f[1].data['CBV%02d' % (i + 1)].reshape(-1, 1)])
+        except KeyError:
+          break
     
     # These are not stored in the fits file; we don't need them
     self.saturated_aperture_name = None
