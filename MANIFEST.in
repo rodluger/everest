@@ -2,3 +2,4 @@ include README.md
 include everest/missions/*/*.pbs
 include everest/missions/*/tables/*.csv
 include everest/missions/*/tables/*.tsv
+include tests/hlsp_everest_k2_llc_201367065-c01_kepler_v2.0_lc.fits
