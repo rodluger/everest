@@ -1491,6 +1491,8 @@ def TargetDirectory(ID, season, relative = False, **kwargs):
   
   '''
   
+  if season is None:
+    return None
   if relative:
     path = ''
   else:

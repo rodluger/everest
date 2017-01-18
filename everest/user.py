@@ -61,6 +61,8 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   
   # Grab some info
   season = getattr(missions, mission).Season(ID)
+  if season is None:
+    raise ValueError('Target not found.')
   path = getattr(missions, mission).TargetDirectory(ID, season)
   relpath = getattr(missions, mission).TargetDirectory(ID, season, relative = True)
   if filename is None:

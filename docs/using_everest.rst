@@ -201,10 +201,13 @@ Folded Transits
 If there are transits/eclipses in a light curve, :py:mod:`everest` can use the GP
 prediction to whiten the timeseries and fold it on the period of the planet.
 If the time of first transit and period of an exoplanet/EB are known, plotting the
-folded transit/eclipse is easy:
+folded transit/eclipse is easy. Just remember to mask the transit and re-compute
+the model beforehand:
 
 .. code-block :: python
-  
+   
+   star.mask_planet(1980.42, 10.054)
+   star.compute()
    star.plot_folded(1980.42, 10.054)
 
 .. figure:: everest_folded.jpeg

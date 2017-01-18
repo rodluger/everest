@@ -89,11 +89,21 @@ FLUX            The :py:mod:`everest` de-trended flux, same units as original SA
 FCOR            The CBV-corrected de-trended flux (e-/s)
 FRAW            The original (raw) SAP flux
 FRAW_ERR        The observing errors on the raw flux
-QUALITY         An :py:obj:`int64` array of quality flags for each cadence
+QUALITY         An :py:obj:`int64` array of quality flags for each cadence (see note below)
 BKG             If present, the background flux subtracted from each cadence
 ==============  =================================================================================
 
-    
+.. note:: The :py:obj:`QUALITY` array uses the same bit flags as `K2`, with the addition of \
+          four :py:mod:`everest` flags that indicate a data point was masked when computing the model:
+            
+            ====== =================================================
+            **23** Data point is flagged in the raw `K2` TPF
+            **24** Data point is a :py:obj:`NaN`
+            **25** Data point was determined to be an outlier
+            **26** *Not used*
+            **27** Data point is during a transit/eclipse
+            ====== =================================================
+            
 ``[2]`` Pixels HDU
 ~~~~~~~~~~~~~~~~~~
 
