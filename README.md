@@ -20,6 +20,8 @@ Or, to install the current development version from source:
 <pre><code>git clone --recursive https://github.com/rodluger/everest
 cd everest
 python setup.py install --user</code></pre>
+For more information on how to install and use <b>EVEREST</b>, please refer to the <a href="http://staff.washington.edu/rodluger/everest">documentation</a>.
+<br/><br/>
 <b>NOTE:</b> For the previous version of <b>EVEREST</b>, check out the <a href="https://github.com/rodluger/everest/tree/v1">v1</a> branch.
 </div>
 <br>
