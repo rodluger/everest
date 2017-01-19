@@ -36,9 +36,10 @@ install:
   - source activate test
   - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels scikit-learn 
   - pip install coveralls astroML astroML_addons george==0.2.1 pysyzygy k2plr
+  - python setup.py develop
 
 script: 
-  - nosetests --with-coverage --cover-package=everest -v
+  - nosetests --with-coverage --cover-package=everest -v -w tests
 
 after_success:
   - coveralls
