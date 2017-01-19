@@ -14,6 +14,6 @@ IDSTRING = 'TIC'
 #: The character abbreviation of the name given to an observing "season" for this mission
 SEASONCHAR = 'S'
 #: The string representing the filter/band used in the mission 
-MAGSTRING = r'T$_\mathrm{p}$'
+MAGSTRING = r'T'
 #: The time units for the mission
 TIMEUNITS = 'BJD'
