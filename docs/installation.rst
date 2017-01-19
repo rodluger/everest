@@ -1,8 +1,24 @@
 Installation
 ============
 
-The :py:mod:`everest` code is maintained on `github <https://github.com/rodluger/everest>`_.
-To install :py:mod:`everest`, all you need to do is run
+As of version 2.0, :py:mod:`everest` is `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ 
+installable:
+
+.. code-block:: bash
+
+   pip install everest-pipeline
+
+This should allow you to run the :doc:`command line utilities <ui>` as well
+as to :py:obj:`import everest` in Python.
+
+.. warning:: If you have the previous version of :py:obj:`everest` and/or \
+             previous versions of :py:obj:`k2plr` and :py:obj:`pysyzygy` \
+             installed, it might be a good idea to remove them before \
+             attempting to install :py:obj:`everest 2.0`.
+
+Alternatively, the development version of :py:mod:`everest` is maintained on 
+`github <https://github.com/rodluger/everest>`_.
+You can install it by cloning the repository and running the setup script:
 
 .. code-block:: bash
 
@@ -12,9 +28,6 @@ To install :py:mod:`everest`, all you need to do is run
 
 .. role:: python(code)
    :language: python
-
-This should allow you to run the :doc:`command line utilities <ui>` as well
-as to :python:`import everest` in Python.
 
 .. raw:: html
 

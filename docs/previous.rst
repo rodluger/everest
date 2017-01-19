@@ -1,18 +1,11 @@
-The Code
-========
+Old Versions
+============
 
-The :py:obj:`everest` code is written entirely in Python. Broadly speaking, 
-it has three different parts: a :doc:`user-facing <ui>` module, a main
-:doc:`de-trending engine <engine>`, and :doc:`mission-specific routines <missions>`.
-You can check out each of these below.
-
-.. toctree::
-   :maxdepth: 2
-   
-   Github Project Page<https://github.com/rodluger/everest>
-   ui
-   engine
-   missions
+The documentation for the previous version of :py:obj:`everest` is available
+`here <http://staff.washington.edu/rodluger/everest_docs>`_. The code itself
+is hosted on the `v1 branch <https://github.com/rodluger/everest/tree/v1>`_ of 
+the project github repository, and the light curves will be available on
+`MAST <http://archive.stsci.edu/prepds/everest/>`_ until mid 2017.
 
 .. raw:: html
 

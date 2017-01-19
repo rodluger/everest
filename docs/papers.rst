@@ -25,9 +25,9 @@ If you make use of :py:obj:`everest`, please cite the following papers:
    </span>
    <span style = "font-size: 90%;">
     &nbsp;
-    [AJ]
-    [<a href="#">ADS</a>]
-    [<a href="#">arXiv</a>]
+    [<span style="color:#999999;">AJ</span>]
+    [<span style="color:#999999;">ADS</span>]
+    [<span style="color:#999999;">arXiv</span>]
    </span>
    <br/>
    <span style = "font-size:85%; font-family:serif;">
