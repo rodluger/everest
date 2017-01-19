@@ -17,10 +17,11 @@ import everest
 long_description = \
 """
 EPIC Variability Extraction and Removal for Exoplanet Science Targets: 
-A pipeline for de-trending `K2` light curves with pixel level decorrelation 
-and Gaussian processes. Here you'll find the Python code used to generate 
-the `everest` catalog, as well as tools for accessing and interacting 
-with the de-trended light curves.
+A pipeline for de-trending `K2`, `Kepler`, and `TESS` light curves with 
+pixel level decorrelation and Gaussian processes. The Python interface
+allows easy access to the online EVEREST de-trended light curve catalog;
+alternatively, users can de-trend their own light curves with customized
+settings.
 """
 
 # Setup!
