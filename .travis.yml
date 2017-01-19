@@ -5,8 +5,8 @@ language: python
 # blocklist
 branches:
   except:
-  - dev
   - nick
+  - nick_dev
 
 matrix:
   include:
@@ -21,6 +21,10 @@ addons:
     packages:
     - libeigen3-dev
 
+# We will pip install pysyzygy and k2plr
+git:
+    submodules: false
+
 before_install:
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
@@ -31,13 +35,12 @@ before_install:
 install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - source activate test
-  - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels 
-  - pip install coveralls astroML astroML_addons george==0.2.1
-  - python setup.py install
+  - conda install --yes numpy scipy matplotlib nose pip astropy six statsmodels scikit-learn 
+  - pip install coveralls astroML astroML_addons george==0.2.1 pysyzygy k2plr
+  - python setup.py develop
 
 script: 
-  - nosetests -w tests
-  - coverage run --source=everest setup.py test
+  - nosetests --with-coverage --cover-package=everest -v -w tests
 
 after_success:
   - coveralls

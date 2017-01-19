@@ -22,8 +22,6 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath('../paper/scripts'))
-sys.path.insert(0, os.path.abspath('../paper/tex/images'))
 sys.path.insert(0, os.path.abspath('../pysyzygy'))
 sys.path.insert(0, os.path.abspath('../k2plr'))
 sys.path.insert(0, os.path.abspath('../pysyzygy/examples'))
@@ -59,7 +57,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'everest'
-copyright = u'2016, Rodrigo Luger'
+copyright = u'2017, Rodrigo Luger'
 author = u'Rodrigo Luger'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -220,7 +218,7 @@ htmlhelp_basename = 'everestdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_preamble = '\\usepackage{amsmath}\n\\usepackage{amssymb}'
+latex_preamble = '\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage{amstools}'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
@@ -285,7 +283,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   (master_doc, 'everest', u'everest Documentation',
-   author, 'everest', 'PLD Decorrelation of K2 Light curves.',
+   author, 'everest', 'Photometric detrending package',
    'Miscellaneous'),
 ]
 

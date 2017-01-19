@@ -1,5 +1,7 @@
 include README.md
-include everest/tables/*.csv
-include everest/tables/*.tsv
-include everest/tables/*.info
-include everest/pbs/*.pbs
+include everest/missions/*/*.pbs
+include everest/missions/*/tables/*.stars
+include everest/missions/*/tables/*.cdpp
+include everest/missions/*/tables/*.out
+include everest/missions/*/tables/*.tsv
+include tests/hlsp_everest_k2_llc_201367065-c01_kepler_v2.0_lc.fits

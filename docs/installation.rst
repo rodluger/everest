@@ -1,11 +1,24 @@
 Installation
 ============
 
-Using :py:mod:`everest` is easy once you get it set up. The trickiest step
-will likely be getting the :py:mod:`george` package installed, as it requires
-the **Eigen3** distribution. If you don't have :py:mod:`george`, follow the
-instructions on `Dan Foreman-Mackey's page <http://dan.iel.fm/george/current/user/quickstart/>`_.
-Then, to install :py:mod:`everest`, all you need to do is run
+As of version 2.0, :py:mod:`everest` is `pip <https://en.wikipedia.org/wiki/Pip_(package_manager)>`_ 
+installable:
+
+.. code-block:: bash
+
+   pip install everest-pipeline
+
+This should allow you to run the :doc:`command line utilities <ui>` as well
+as to :py:obj:`import everest` in Python.
+
+.. warning:: If you have the previous version of :py:obj:`everest` and/or \
+             previous versions of :py:obj:`k2plr` and :py:obj:`pysyzygy` \
+             installed, it might be a good idea to remove them before \
+             attempting to install :py:obj:`everest 2.0`.
+
+Alternatively, the development version of :py:mod:`everest` is maintained on 
+`github <https://github.com/rodluger/everest>`_.
+You can install it by cloning the repository and running the setup script:
 
 .. code-block:: bash
 
@@ -13,10 +26,8 @@ Then, to install :py:mod:`everest`, all you need to do is run
    cd everest
    python setup.py install --user
 
-.. note:: :py:mod:`everest` was coded using :py:mod:`george 0.2.1`. If you have the development \
-          version of :py:mod:`george` installed, you'll get tons of errors. Consider installing \
-          :py:mod:`george 0.2.1` in a separate directory and adding it to your :py:obj:`$PATH` \
-          before calling :py:mod:`everest`.
+.. role:: python(code)
+   :language: python
 
 .. raw:: html
 
@@ -26,6 +37,7 @@ Then, to install :py:mod:`everest`, all you need to do is run
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-    ga('create', 'UA-47070068-2', 'auto');
+    ga('create', 'UA-47070068-3', 'auto');
     ga('send', 'pageview');
+
   </script>

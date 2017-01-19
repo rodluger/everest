@@ -9,55 +9,43 @@ General utility functions called from various parts of the code.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from scipy.signal import medfilt
-from scipy.special import erf
 import numpy as np
-import sys, traceback, pdb
-import george
+import os, sys, traceback, pdb
 import logging
+from matplotlib.ticker import FuncFormatter
 log = logging.getLogger(__name__)
 
-class Mask(object):
-  '''
-  A simple masking object to remove transits, outliers, etc.
-  
-  :param list mask: The indices to mask
-  :param int axis: The axis to mask. Default `0`
-  
-  :returns: The array `x` with the indices `mask` masked
-  
-  '''
-  
-  def __init__(self, mask = [], axis = 0):
-    self.mask = mask
-    self.axis = axis
-    
-  def __call__(self, x):
-    if x is not None:
-      return np.delete(x, self.mask, axis = self.axis)
-    else:
-      return None
+#: Marks a pixel into which a row was collapsed. Note that ``AP_COLLAPSED_PIXEL & 1 = 1``
+AP_COLLAPSED_PIXEL = 9
+#: Marks a saturated pixel that was masked out.  Note that ``AP_SATURATED_PIXEL & 1 = 0``
+AP_SATURATED_PIXEL = 8
 
 class FunctionWrapper(object):
   '''
-  A simple function wrapper class. Stores `args` and `kwargs` and
-  allows an arbitrary function to be called with a single parameter `x`
+  A simple function wrapper class. Stores :py:obj:`args` and :py:obj:`kwargs` and
+  allows an arbitrary function to be called with a single parameter :py:obj:`x`
   
   '''
   
   def __init__(self, f, *args, **kwargs):
-  
+    '''
+    
+    '''
+    
     self.f = f
     self.args = args
     self.kwargs = kwargs
   
   def __call__(self, x):
-  
+    '''
+    
+    '''
+    
     return self.f(x, *self.args, **self.kwargs)
 
 class NoPILFilter(logging.Filter):
   '''
-  The PIL image module has a nasty habit of sending all sorts of 
+  The :py:obj:`PIL` image module has a nasty habit of sending all sorts of 
   unintelligible information to the logger. We filter that out here.
   
   '''
@@ -65,13 +53,14 @@ class NoPILFilter(logging.Filter):
   def filter(self, record):
     return not record.name == 'PIL.PngImagePlugin'
 
-def InitLog(file_name = None, log_level = logging.DEBUG, screen_level = logging.CRITICAL):
+def InitLog(file_name = None, log_level = logging.DEBUG, 
+            screen_level = logging.CRITICAL, pdb = False):
   '''
   A little routine to initialize the logging functionality.
   
-  :param str file_name: The name of the file to log to. Default `None` (set internally by :py:mod:`everest`)
-  :param int log_level: The file logging level (`0-50`). Default `10` (debug)
-  :param int log_level: The screen logging level (`0-50`). Default `50` (critical)
+  :param str file_name: The name of the file to log to. Default :py:obj:`None` (set internally by :py:mod:`everest`)
+  :param int log_level: The file logging level (0-50). Default 10 (debug)
+  :param int screen_level: The screen logging level (0-50). Default 50 (critical)
   
   '''
   
@@ -82,230 +71,32 @@ def InitLog(file_name = None, log_level = logging.DEBUG, screen_level = logging.
 
   # File handler
   if file_name is not None:
+    if not os.path.exists(os.path.dirname(file_name)):
+      os.makedirs(os.path.dirname(file_name))
     fh = logging.FileHandler(file_name)
     fh.setLevel(log_level)
-    fh_formatter = logging.Formatter('%(asctime)s %(levelname)s [%(name)s]: %(message)s', datefmt="%m/%d/%y %H:%M:%S")
+    fh_formatter = logging.Formatter("%(asctime)s %(levelname)-5s [%(name)s.%(funcName)s()]: %(message)s", datefmt="%m/%d/%y %H:%M:%S")
     fh.setFormatter(fh_formatter)
     fh.addFilter(NoPILFilter())    
     root.addHandler(fh)
 
   # Screen handler
   sh = logging.StreamHandler(sys.stdout)
-  sh.setLevel(screen_level)
-  sh_formatter = logging.Formatter('%(levelname)s [%(name)s]: %(message)s')
+  if pdb:
+    sh.setLevel(logging.DEBUG)
+  else:
+    sh.setLevel(screen_level)
+  sh_formatter = logging.Formatter("%(levelname)-5s [%(name)s.%(funcName)s()]: %(message)s")
   sh.setFormatter(sh_formatter)
   sh.addFilter(NoPILFilter()) 
   root.addHandler(sh)
-
-def PadWithZeros(vector, pad_width, iaxis, kwargs):
-  '''
-  Pads an array with zeros. This is used primarily for plotting aperture contours.
   
-  '''
-  
-  vector[:pad_width[0]] = 0
-  vector[-pad_width[1]:] = 0
-  return vector
-
-def Breakpoints(campaign, time, mask = []):
-  '''
-  Return the timestamp of the breakpoint for a given campaign, if any.
-  
-  :param int campaign: The `K2` campaign number
-  :param ndarray time: The array of timestamps
-  :param list mask: The light curve indices we're going to mask. You can provide this \
-                    to ensure that the breakpoint does not occur in a masked region \
-                    of the data. Useful if these regions contain transits!
-  
-  '''
-  
-  # We don't want to break during a transit!
-  M = Mask(mask)
-  mtime = M(time)
-
-  # K2 Campaign 1: force lightcurve split at t ~ 2017.5,
-  # which is a mid-campaign data gap
-  if campaign == 1:
-    return [mtime[np.argmin(np.abs(mtime - 2017.5))]]
+  # Set exception hook
+  if pdb:
+    sys.excepthook = ExceptionHookPDB
   else:
-    return []
-
-def RMS(y, win = 13, remove_outliers = False):
-  '''
-  Return the CDPP (the 6-hr rms) in ppm based on the median running standard deviation for
-  a window size of 13 cadences (~6 hours) as in VJ14.
-  
-  :param ndarray y: The array whose CDPP is to be computed
-  :param int win: The window size in cadences. Default `13` (6.5 hours)
-  :param bool remove_outliers: Clip outliers at 5 sigma before computing the CDPP? Default `False`
-  
-  '''
-
-  if remove_outliers:
-    # Remove 5-sigma outliers from data 
-    # smoothed on a 1 day timescale
-    ys = y - Smooth(y, 50)
-    M = np.nanmedian(ys)
-    MAD = 1.4826 * np.nanmedian(np.abs(ys - M))
-    out = []                                                                 
-    for i, _ in enumerate(y):
-      if (ys[i] > M + 5 * MAD) or (ys[i] < M - 5 * MAD):
-        out.append(i)    
-    out = np.array(out, dtype = int)
-    y = np.delete(y, out)
-    
-  return 1.e6 * np.nanmedian([np.std(yi)/np.sqrt(win) for yi in Chunks(y, win, all = True)])
-
-def MADOutliers(t, f, sigma = 5, kernel_size = 5):
-  '''
-  Performs a `median absolute deviation <https://en.wikipedia.org/wiki/Median_absolute_deviation>`_
-  cut to identify outliers. A median filter is first applied to the data to remove
-  trends.
-  
-  :param ndarray t: The independent variable array (time)
-  :param ndarray t: The dependent variable array (flux)
-  :param int sigma: The tolerance in standard deviations. Default `5`
-  :param int kernel_size: The size of the kernel used in the median filter. Default `5`
-  
-  :returns: The indices of the outliers in `f`
-  
-  '''
-  
-  tout = []
-  fs = f - MedianFilter(f, kernel_size)
-  M = np.median(fs)
-  MAD = 1.4826 * np.median(np.abs(fs - M))
-  for ti, fi in zip(t, fs):
-    if (fi > M + sigma * MAD) or (fi < M - sigma * MAD):
-      tout.append(ti)
-  outliers = np.array(sorted([np.argmax(t == ti) for ti in tout]))
-  
-  return outliers
+    sys.excepthook = ExceptionHook
       
-def Chunks(l, n, all = False):
-  '''
-  Returns a generator of consecutive `n`-sized chunks of list `l`.
-  If `all` is `True`, returns **all** `n`-sized chunks in `l`
-  by iterating over the starting point.
-  
-  '''
-  
-  if all:
-    jarr = range(0, n - 1)
-  else:
-    jarr = [0]
-  
-  for j in jarr:
-    for i in range(j, len(l), n):
-      if i + 2 * n <= len(l):
-        yield l[i:i+n]
-      else:
-        if not all:
-          yield l[i:]
-        break
-
-def Smooth(x, window_len = 100, window = 'hanning'):
-  '''
-  Smooth data by convolving on a given timescale.
-  
-  :param ndarray x: The data array
-  :param int window_len: The size of the smoothing window. Default `100`
-  :param str window: The window type. Default `hanning`
-  
-  
-  '''
-  
-  if window_len == 0:
-    return np.zeros_like(x)
-  s = np.r_[2 * x[0] - x[window_len - 1::-1], x, 2 * x[-1] - x[-1:-window_len:-1]]
-  if window == 'flat':
-    w = np.ones(window_len, 'd')
-  else:  
-    w = eval('np.' + window + '(window_len)')
-  y = np.convolve(w / w.sum(), s, mode = 'same')
-  return y[window_len:-window_len + 1]
-
-def MedianFilter(x, kernel_size = 5):
-  '''
-  A silly wrapper around :py:func:`scipy.signal.medfilt`.
-  
-  '''
-  
-  if kernel_size % 2 == 0:
-    kernel_size += 1
-  return medfilt(x, kernel_size = kernel_size)
-
-def LatexExp(f, minexp = 3):
-  '''
-  Returns the TeX version of a number `f` in scientific notation.
-  
-  :param float f: The number
-  :param int minexp: The minimum absolute value of the log of `f` above which \
-                     scientific notation is used. Default `3`
-  
-  '''
-  
-  if np.abs(np.log10(f)) >= minexp:
-    float_str = "{0:.1e}".format(f)
-    base, exponent = float_str.split("e")
-    return r"${0} \times 10^{{{1}}}$".format(base, int(exponent))
-  else:
-    if f >= 1:
-      return r"$%.1f$" % f
-    elif f >= 0.1:
-      return r"$%.2f$" % f
-    else:
-      return r"$%.3f$" % f
-      
-def LatexExpSq(f, minexp = 3):
-  '''
-  Same as :py:func:`LatexExp`, but specifically for printing a kernel
-  amplitude or timescale, where the squaring is made explicit.
-  
-  :param float f: The number
-  :param int minexp: The minimum absolute value of the log of `f` above which \
-                     scientific notation is used. Default `3`
-  
-  '''
-  
-  if np.abs(np.log10(f)) >= minexp:
-    float_str = "{0:.1e}".format(f)
-    base, exponent = float_str.split("e")
-    return r"$\left({0} \times 10^{{{1}}}\right)^2$".format(base, int(exponent))
-  else:
-    return LatexExp(f, minexp)[:-1] + '^2$'
-
-def PlotBounds(y, sigma = 3, pad = 0.1, symmetrical = True):
-  '''
-  Returns the optimal lower and upper bounds for a plot.
-  
-  :param array_like y: The dependent (`y`-axis) array
-  :param float sigma: The number of standard deviations to clip outliers at. Default `3`
-  :param float buffer: Additional padding (as a fraction) to add at top and bottom. Default `0.1`
-  :param bool symmetrical: Symmetrical bounds about the median? Default `True`
-  
-  '''
-  
-  mf = y - MedianFilter(y, 3)
-  mf[np.where(mf == 0)] = np.nan
-  sigma = 3
-  MAD = 1.4826 * np.nanmedian(np.abs(mf))
-  crop = np.where(np.abs(mf) > sigma * MAD)[0]
-  yc = np.delete(y, crop)
-  mn, mx = np.nanmin(yc), np.nanmax(yc)
-  
-  if symmetrical:
-    m = np.nanmedian(yc)
-    r = max(mx - m, m - mn)
-    mn, mx = m - r, m + r
-  
-  if pad:
-    m = np.nanmedian(yc)
-    mx += pad * (mx - m)
-    mn += pad * (mn - m)
-  
-  return mn, mx
-  
 def ExceptionHook(exctype, value, tb):
   '''
   A custom exception handler that logs errors to file.
@@ -320,7 +111,7 @@ def ExceptionHook(exctype, value, tb):
 
 def ExceptionHookPDB(exctype, value, tb):
   '''
-  A custom exception handler, with PDB post-mortem for debugging.
+  A custom exception handler, with :py:obj:`pdb` post-mortem for debugging.
   
   '''
   
@@ -330,3 +121,89 @@ def ExceptionHookPDB(exctype, value, tb):
     log.error(line.replace('\n', ''))
   sys.__excepthook__(exctype, value, tb)
   pdb.pm()
+
+def _float(s):
+  '''
+  A silly but useful wrapper around :py:obj:`float()` that returns :py:obj:`NaN` on error
+  
+  :param s: The object to be converted to a float
+  
+  '''
+  
+  try:
+    res = float(s)
+  except:
+    res = np.nan
+  return res
+
+def sort_like(l, col1, col2):
+  '''
+  Sorts the list :py:obj:`l` by comparing :py:obj:`col2` to :py:obj:`col1`. Specifically,
+  finds the indices :py:obj:`i` such that ``col2[i] = col1`` and returns ``l[i]``. This is
+  useful when comparing the CDPP values of catalogs generated by different pipelines. The
+  target IDs are all the same, but won't necessarily be in the same order. This allows
+  :py:obj:`everest` to sort the CDPP arrays so that the targets match.
+  
+  :param array_like l: The list or array to sort
+  :param array_like col1: A list or array (same length as :py:obj:`l`)
+  :param array_like col2: A second list or array containing the same elements as :py:obj:`col1` but in a different order
+  
+  '''
+  
+  s = np.zeros_like(col1) * np.nan
+  for i, c in enumerate(col1):
+    j = np.argmax(col2 == c)
+    if j == 0:
+      if col2[0] != c:
+        continue
+    s[i] = l[j]
+  return s
+
+class DataContainer(object):
+  '''
+  A generic data container. Nothing fancy here.
+  
+  '''
+  
+  def __init__(self):
+    '''
+    
+    '''
+    
+    self.ID = None
+    self.campaign = None
+    self.cadn = None
+    self.time = None
+    self.fpix = None
+    self.fpix_err = None
+    self.nanmask = None
+    self.badmask = None
+    self.aperture = None
+    self.aperture_name = None
+    self.apertures = None
+    self.quality = None
+    self.Xpos = None
+    self.Ypos = None
+    self.mag = None
+    self.pixel_images = None
+    self.nearby = None
+    self.hires = None
+    self.saturated = None
+    self.meta = None
+
+class Formatter(object):
+  '''
+  Custom function formatters for displaying ticks on plots.
+  
+  '''
+  
+  #: Integer formatter for a flux axis
+  Flux = FuncFormatter(lambda x, p : '%6d' % x)
+  #: Integer formatter for a CDPP axis
+  CDPP = FuncFormatter(lambda x, p : '%3d' % x)
+  #: Floating point formatter for a CDPP axis (1 digit after decimal)
+  CDPP1F = FuncFormatter(lambda x, p : '%.1f' % x)
+  #: Floating point formatter for a CDPP axis (2 digits after decimal)
+  CDPP2F = FuncFormatter(lambda x, p : '%.2f' % x)
+  #: Integer formatter for chunk number
+  Chunk = FuncFormatter(lambda x, p : '%2d' % x)

@@ -1,109 +1,56 @@
 Known Issues
 ============
 
-As we discuss in the paper, **EVEREST** has certain limitations, particularly when
-it comes to saturated stars, stars in crowded apertures, and very variable stars. 
-Below we outline these limitations with some examples.
+Below we list some issues known to crop up here and there in the :py:obj:`everest`
+light curves. This list is not comprehensive, so if you think you've found an issue
+with the de-trending, please let us know by sending an email to **rodluger** at
+**gmail** dot **edu**.
 
 .. contents::
    :local:
 
+Missing eclipses
+~~~~~~~~~~~~~~~~
+Some very deep transits and eclipses may be missing from the plots in the
+:doc:`data validation summaries <dvsfigs>`. This is almost always a plotting
+issue, and not an issue with the pipeline. We recommend plotting the light curve interactively
+using the :doc:`user interface <user>` and zooming out -- the eclipses are likely
+just below the plot limits!
+
 Stars in crowded apertures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+Everest 2.0 light curves are far more robust to crowding than the previous ones,
+but stars in crowded fields remain an issue for the algorithm. PLD implicitly
+assumes that the target star is the only source in the aperture and may overfit
+astrophysical signals if bright contaminants are present. It is important to
+inspect the apertures and high resolution images provided in the
+:doc:`data validation summaries <dvsfigs>` to ensure that crowding is not affecting
+the light curves. In general, crowding is only a problem when the contaminant source
+is of a similar magnitude (or brighter) than the target and is inside the optimal
+aperture. Future versions of the pipeline will improve aperture selection and
+adapt PLD to work for these stars.
 
-.. figure:: 205728486.jpeg
- :width: 600px
- :align: center
- :height: 100px
- :figclass: align-center
+RR Lyrae
+~~~~~~~~
+Everest 2.0 again improves the performance of PLD on extremely variable stars
+relative to Everest 1.0. Nonetheless, about 40% of long cadence RR Lyrae seem to be 
+overfitted by the algorithm. We recommend inspecting the raw and de-trended light
+curves in the :doc:`data validation summaries <dvsfigs>` to check whether PLD
+has dampened the astrophysical signal.
 
-Pixel level decorrelation does not work well when there are contaminating sources
-in the aperture. This is because PLD uses the *normalized* pixel intensities, which
-are computed by dividing the pixel fluxes by the total flux in the aperture. When
-the target is the only source in the aperture, this removes all astrophysical signals
-from the PLD basis vectors (since they are present with the same fractional
-intensity across all pixels). However, when there are contaminating sources in the
-aperture, this normalization step does not succeed in removing all astrophysical
-information (i.e., transits, eclipses, and stellar variability) from the basis vectors.
-PLD can therefore easily fit out these features during de-trending (which actually
-results in an apparently better fit). EPIC 205728486 is an eclipsing binary in an
-aperture with significant contamination -- note how the eclipses, which are visible
-in the raw data, are washed out in the de-trended data. If you see changing eclipse/transit
-depths and inverted transits as in this example, the star is likely in a crowded
-aperture (it could also be saturated -- see below). The ``Crowding`` flag at the top
-left of the bottom panel is a rough measure of the contamination. For any sources
-with ``Crowding`` greater than 2 or 3, we recommend comparing the :py:mod:`everest`
-light curves to light curves from other pipelines such as **K2SFF** and **K2SC**, which
-are less sensitive to this issue.
+Aperture losses
+~~~~~~~~~~~~~~~
+Extremely saturated stars whose flux bleeds out of the target pixel file postage
+stamp are not properly de-trended, since a large portion of the astrophysical signal
+is missing from the light curve. We recommend inspection of the target aperture to
+ensure all of the stellar flux is enclosed by the chosen aperture.
 
-Highly saturated stars
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. figure:: 201270464.jpeg
- :width: 600px
- :align: center
- :height: 100px
- :figclass: align-center
-
-Stars brighter than about magnitude 11 in the `Kepler` band are likely to be saturated,
-meaning that one or more pixels max out, leading to charge overflow into adjacent
-pixels. While astrophysical signals are mostly preserved in the total (SAP) flux,
-the same is not true across the individual pixels. Transit depths will be much
-shallower in the saturated pixels and deeper in the "overflow" pixels at the top
-and bottom of the charge bleed trails. PLD performs quite poorly in these cases; much
-like the case with crowded apertures, the PLD basis vectors end up containing astrophysical
-information, which can then be easily removed during de-trending. EPIC 201270464 is
-a saturated *Kp = 9.4* eclipsing binary. The eclipses are somewhat visible in the 
-raw flux (particularly in the second half of the campaign), but they are completely
-gone from the de-trended light curve. The amplitude of the stellar variability is also
-greatly reduced (note the zoomed-in y-axis range of the bottom panel). As before, we
-recommend careful inspection of the light curves of stars with ``Saturation`` flags
-greater than 2 or 3. Other pipelines are likely to perform better for these targets.
-
-.. note:: The reported CDPP of the de-trended light curves of saturated stars is in \
-          general quite small; note that it is 6.2 ppm for this target. This is, of \
-          course, spurious, since the saturated pixels lead to severe overfitting. \
-          Note that saturated and crowded stars were **not** included \
-          when computing the overall performance of **EVEREST** relative to \
-          other pipelines (such as in `Figures 10-15 <precision.html>`_ in our paper).
-
-RR Lyrae and very variable stars
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. figure:: 211069540_everest.jpeg
- :width: 600px
- :align: center
- :height: 100px
- :figclass: align-center
-
-The :py:mod:`everest` pipeline is also likely to fail for very short period
-variable stars, such as RR Lyrae stars. When the stellar variability signal is
-stronger and at a higher frequency than the instrumental signal,
-nearly all the de-trending power comes from the GP, and the resulting CDPP is rather 
-insensitive to the value of the PLD coefficients, leading to poor de-trending. Imperfect
-optimization of the GP can also lead to damping of the stellar variability signal,
-which is evident in the light curve shown above. Consider using the 
-`K2VARCAT catalog <https://archive.stsci.edu/prepds/k2varcat/>`_ for these stars.
-          
-Ultrashort-period EBs
-~~~~~~~~~~~~~~~~~~~~~
-
-.. figure:: 202073207.jpeg
- :width: 600px
- :align: center
- :height: 100px
- :figclass: align-center
-
-A less common case in which :py:mod:`everest` fails is for some very short period
-eclipsing binaries. If the eclipses take up a significant fraction of the orbit, there's
-not much continuum flux to train the model on. It's also likely that the eclipses 
-(particularly the secondaries) may not be properly identified as outliers, in which case
-the GP optimization step will favor a kernel that captures the short timescale, high amplitude
-variability introduced by these eclipses. As in the variable star case, all the de-trending power
-comes from the GP, and the resulting CDPP is insensitive to the value of the PLD coefficients,
-which as a result end up taking on effectively random values. This results in light curves
-like the one above, where the eclipses get washed out and the white noise gets inflated
-(despite a lower reported CDPP).
+Faint short cadence targets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Extremely faint stars observed in short cadence mode are not properly de-trended by
+PLD. This is because they are dominated by photon noise (instead of instrumental
+noise) and the algorithm has trouble mending the light curve segments at the breakpoints,
+resulting in discontinuous jumps for short cadence targets fainter than about 16th magnitude.
 
 
 .. raw:: html
@@ -114,6 +61,7 @@ like the one above, where the eclipses get washed out and the white noise gets i
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-    ga('create', 'UA-47070068-2', 'auto');
+    ga('create', 'UA-47070068-3', 'auto');
     ga('send', 'pageview');
+
   </script>

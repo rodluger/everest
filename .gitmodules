@@ -1,6 +1,6 @@
-[submodule "kplr"]
+[submodule "k2plr"]
 	path = k2plr
-	url = https://github.com/rodluger/kplr
+	url = git@github.com:rodluger/k2plr.git
 [submodule "pysyzygy"]
 	path = pysyzygy
-	url = https://github.com/rodluger/pysyzygy
+	url = git@github.com:rodluger/pysyzygy.git

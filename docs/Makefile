@@ -6,8 +6,6 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = .build
-WEBDIR        = rodluger@ovid.u.washington.edu:~/public_html/everest_docs/
-RSYNC         = rsync
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -55,13 +53,16 @@ clean:
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@cp everest.png .build/html/_images/
+	@cp *.csv .build/html/
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
-	@echo
-	@echo "Publishing changes..."
-	$(RSYNC) -rv --times $(BUILDDIR)/html/ $(WEBDIR)
-	@echo "Publishing finished!"
-	
+ifdef EVEREST_DOCS	
+  # Export to server
+	@rsync -aP --times --delete .build/html/ $(EVEREST_DOCS)
+	@echo "Export finished."
+endif
+
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
 	@echo

@@ -2,16 +2,16 @@ FITS Files
 ==========
 
 The FITS files available in the :py:mod:`everest` catalog contain the de-trended
-light curves, as well as information used by :py:mod:`everest.usertools` to do
-customized post-processing. Each FITS file is composed of 5 extensions:
+light curves, as well as information used by :py:mod:`everest` to do
+customized post-processing. Each FITS file is composed of six extensions:
 
 .. contents::
    :local:
 
 .. note:: It is **highly recommended** that users access the catalog through the \
-          :py:mod:`everest.usertools` module, as this allows for post-processing of \
-          the light curves with custom masks. For more information, check out the \
-          `Running Everest <running_everest.html>`_ section.
+          :py:mod:`everest` interface, as this allows for post-processing of \
+          the light curves with custom masks.
+
 
 ``[0]`` Primary HDU
 ~~~~~~~~~~~~~~~~~~~
@@ -29,97 +29,121 @@ were taken from the equivalent extension in the original *K2* target pixel files
 following :py:mod:`everest` keywords were added:
   
 ==============  =================================================================================
-   Keyword        Description 
+ **Keyword**      **Description**
 --------------  ---------------------------------------------------------------------------------
+MISSION         The photometry mission name
 VERSION         The EVEREST pipeline version
 DATE            FITS file creation date (YYYY-MM-DD)
-PLDORDER        Order of PLD used (3 for all *K2* targets)
-NPC             Number of principal components used in de-trending
-NSMAT           Number of sub-matrices (chunks) used. 2 for campaign 1; 1 for all other campaigns
-APNUM           Number of the *K2SFF* aperture used (15 for all *K2* targets)
-CDPP6RAW        6-hr CDPP estimate for the raw SAP flux (ppm)
-CDPP6           6-hr CDPP estimate for the de-trended flux (ppm)
-SATFLAG         Saturation flag (0-5). Beware of stars with ``SATFLAG > 2`` 
-CRWDFLAG        Saturation flag (0-5). Beware of stars with ``CRWDFLAG > 2`` 
-CONTAM          Median contamination metric used to compute ``CRWDFLAG``
-ACRCHSQ         Autocorrelation fit chi squared. Beware of stars with ``ACRCHSQ > 30``
-GPITER          Number of GP fitting iterations (default is 2)
-GITHASH         :py:mod:`everest` git repository commit hash when file was generated
-BRKPT0          Time at which light curve was split
+MODEL           The name of the :py:obj:`everest` model used to de-trend
+APNAME          The name of the aperture used
+BPAD            Light curve segment overlap in cadences for mending at breakpoints
+BRKPTXX         Index/indices of light curve breakpoint(s)
+CBVNUM          Number of CBV signals to regress on
+CBVNITER        Number of CBV SysRem iterations
+CBVWIN          Window size for smoothing CBVs
+CBVORD          Filter order when smoothing CBVs
+CDIVS           Number of cross-validation subdivisions
+CDPP            Average de-trended CDPP
+CDPPR           Raw light curve CDPP
+CDPPV           Estimated average validation CDPP
+CDPPG           Average GP-de-trended CDPP
+CDPPXX          De-trended CDPP in light curve segment :py:obj:`XX`
+CDPPRXX         Raw CDPP in light curve segment :py:obj:`XX`
+CDPPVXX         Estimated validation CDPP in light curve segment :py:obj:`XX`
+CVMIN           Cross-validation objective function
+GITER           Number of GP optimiziation iterations
+GPFACTOR        GP amplitude initialization factor
+GPWHITE         GP white noise amplitude (e-/s)
+GPRED           GP red noise amplitude (e-/s)
+GPTAU           GP red noise timescale (days)
+LAMXXYY         Cross-validation parameter for segment XX and PLD order YY
+RECLXXYY        Cross-validation parameter for segment XX and PLD order YY (:py:class:`iPLD` only)
+LEPS            Cross-validation minimum-finding CDPP tolerance
+MAXPIX          Maximum size of TPF aperture in pixels
+NRBYXXID        Nearby source XX ID number
+NRBYXXX         Nearby source XX X position (pixels)
+NRBYXXY         Nearby source XX Y position (pixels)
+NRBYXXM         Nearby source XX magnitude
+NRBYXXX0        Nearby source reference X (pixels)
+NRBYXXY0        Nearby source reference Y (pixels)
+NEIGHXX         Neighboring star ID used to de-trend (:py:class:`nPLD` only)
+OITER           Number of outlier clipping iterations
+OPTGP           GP optimization performed?
+OSIGMA          Outlier tolerance (standard deviations)
+PXXT0           Masked planet transit time (days)
+PXXPER          Masked planet period (days)
+PXXDUR          Masked planet transit duration (days)
+PLDORDER        PLD de-trending order
+SATUR           Is target saturated?
+SATTOL          Fractional saturation tolerance
 ==============  =================================================================================
 
 The ``data`` container of this extension contains the following arrays:
 
 ==============  =================================================================================
-   Keyword        Description 
+  **Keyword**     **Description**
 --------------  ---------------------------------------------------------------------------------
-TIME            The original `K2` timestamp (BJD - 2454833)
+TIME            The original timestamp. For :py:obj:`K2`, this is :py:obj:`(BJD - 2454833)`
+CADN            The original cadence number
 FLUX            The :py:mod:`everest` de-trended flux, same units as original SAP flux (e-/s)
-OUTLIER         An integer array of outlier masks. 1 = outlier (not used in fit); 0 = used in fit
-BKG_FLUX        The background flux subtracted from the SAP data
-RAW_FLUX        The original SAP flux from the `K2` TPF
-RAW_FERR        The error bars on the original SAP flux
+FCOR            The CBV-corrected de-trended flux (e-/s)
+FRAW            The original (raw) SAP flux
+FRAW_ERR        The observing errors on the raw flux
+QUALITY         An :py:obj:`int64` array of quality flags for each cadence (see note below)
+BKG             If present, the background flux subtracted from each cadence
 ==============  =================================================================================
 
-``[2]`` PLD weights HDU
-~~~~~~~~~~~~~~~~~~~~~~~
+.. note:: The :py:obj:`QUALITY` array uses the same bit flags as `K2`, with the addition of \
+          four :py:mod:`everest` flags that indicate a data point was masked when computing the model:
+            
+            ====== =================================================
+            **23** Data point is flagged in the raw `K2` TPF
+            **24** Data point is a :py:obj:`NaN`
+            **25** Data point was determined to be an outlier
+            **26** *Not used*
+            **27** Data point is during a transit/eclipse
+            ====== =================================================
+            
+``[2]`` Pixels HDU
+~~~~~~~~~~~~~~~~~~
 
-An extension containing the values of the PLD weights computed by regression. Recall that the PLD
-model is given by
-
-  :math:`m = \mathbf{X\cdot w}`
-
-where :math:`w` is the vector of weights and :math:`X` is the design matrix (see below).
-
-The ``data`` container stores a single array:
+An extension containing the pixel-level light curve.
+The ``data`` container stores two arrays:
 
 ==============  =================================================================================
-   Keyword        Description 
+ **Keyword**      **Description**
 --------------  ---------------------------------------------------------------------------------
-C               The PLD coefficients (weights) array
+FPIX            The flux in each of the pixels in the aperture
+X1N             The first order PLD vectors for the neighbors (:py:class:`nPLD` only)
 ==============  =================================================================================
 
-``[3]`` Design Matrix HDU
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-An extension containing the design matrix :math:`X` and some GP information. The ``header``
-contains the following:
-
-+------------+---------------------------------------------------------------------------------+
-| Keyword    | Description                                                                     |
-+============+=================================================================================+
-| KNUM       | | The number of the kernel used; this is the number of the element in the       |
-|            | | :py:obj:`everest.kernels.KernelModels` list. See `kernels.py <kernels.html>`_.|
-+------------+---------------------------------------------------------------------------------+
-| KPARXX     | | The value of the XXth element of the kernel, obtained during the              |
-|            | | optimization step.                                                            |
-+------------+---------------------------------------------------------------------------------+
-
-If the FITS file handle is ``hdulist``, the :py:mod:`george` kernel used during de-trending may
-be re-constructed by typing
-
-.. code-block:: python
-
-  knum = hdulist[3].header['KNUM']
-  kpars = [hdulist[3].header['KPAR%02d' % n] for n in range(10)]
-  kpars = [k for k in kpars if k != '']
-  kernel = everest.kernels.KernelModels[knum]
-  kernel[:] = kpars
-  george_kernel = kernel.george_kernel()  
-
-The ``data`` container stores a single array:
-
-==============  =================================================================================
-   Keyword        Description 
---------------  ---------------------------------------------------------------------------------
-X               The PLD design matrix
-==============  =================================================================================
-
-``[4]`` Aperture HDU
+``[3]`` Aperture HDU
 ~~~~~~~~~~~~~~~~~~~~
 
 An extension containing the aperture mask used for PLD de-trending. Ones correspond to pixels
 that were included in the de-trending; zeros correspond to pixels that were ignored.
+
+
+``[4]`` Images HDU
+~~~~~~~~~~~~~~~~~~
+
+Stores images of the full target postage stamp at three points in the light curve, for
+plotting purposes only.
+
+==============  =================================================================================
+ **Keyword**      **Description**
+--------------  ---------------------------------------------------------------------------------
+STAMP1          The postage stamp at the first cadence
+STAMP2          The postage stamp at the midpoint
+STAMP3          The postage stamp at the last cadence
+==============  =================================================================================
+
+
+``[5]`` HiRes HDU
+~~~~~~~~~~~~~~~~~
+
+An image HDU containing a higher resolution image of the target. For :py:obj:`K2`, this is
+obtained from the Palomar Observatory Sky Survey.
 
 .. raw:: html
 
@@ -129,6 +153,7 @@ that were included in the de-trending; zeros correspond to pixels that were igno
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
-    ga('create', 'UA-47070068-2', 'auto');
+    ga('create', 'UA-47070068-3', 'auto');
     ga('send', 'pageview');
+
   </script>

@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+everest-stats
+-------------
+
+Plots various statistics for the :py:mod:`everest` light curves.
+
+'''
+
+import argparse
+from everest.config import EVEREST_DEV
+import logging
+log = logging.getLogger(__name__)
+
+if __name__ == '__main__':
+
+  parser = argparse.ArgumentParser(prog = 'everest-stats', add_help = True)
+  parser.add_argument("season", nargs = '?', type = str, default = None, help = 'The season to analyze')
+  parser.add_argument("model", nargs = '?', type = str, default = None, help = 'The everest model to analyze')
+  parser.add_argument("compare_to", nargs = '?', type = str, default = None, help = 'The model to compare to')
+  parser.add_argument("-i", "--inject", action = 'store_true', help = 'Run injection stats?')
+  parser.add_argument("-m", "--mission", type = str, default = 'k2', help = 'Mission to analyze')
+  parser.add_argument("-s", "--short", action = 'store_true', help = 'Short cadence?')
+  parser.add_argument("-p", "--planets", action = 'store_true', help = 'Planet hosts only?')
+  args = parser.parse_args()
+  
+  # Get the mission
+  from everest import missions
+  from everest.utils import InitLog
+  Statistics = getattr(missions, args.mission).Statistics
+  InitLog(None, logging.CRITICAL, logging.DEBUG, False)
+  
+  # Get the cadence
+  if args.short:
+    cadence = 'sc'
+  else:
+    cadence = 'lc'
+  
+  # HACK: Planet hosts are plotted for all seasons
+  if args.planets and args.season is not None:
+    try:
+      float(args.season)
+      raise Exception("Argument `season` not allowed with `-p` option.")
+    except ValueError:
+      try:
+        int(args.season)
+        raise Exception("Argument `season` not allowed with `-p` option.")
+      except ValueError:
+        args.compare_to = args.model
+        args.model = args.season
+        args.season = None
+  
+  # HACK: Short cadence comparison to long cadence only
+  if args.short:
+    if args.compare_to:
+      raise Exception("Argument `compare_to` not allowed with `-s` option.")
+  
+  # Get the season number
+  if args.season is not None:
+    if '.' in args.season:
+      season = float(args.season)
+    else:
+      season = int(args.season)
+  else:
+    season = None
+  
+  # Injection run?
+  if args.inject:
+    args.compare_to = None
+    injection = True
+  else:
+    injection = False
+    
+  # Dev version hack
+  clobber = False
+  plot = True
+  if EVEREST_DEV:
+    import platform
+    if platform.system() == "Linux":
+      clobber = True
+      plot = False
+  
+  # Call the stats function
+  if season is not None:
+    if args.model is not None:
+      if args.compare_to is not None:
+        Statistics(season = season, model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+      else:
+        Statistics(season = season, model = args.model, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+    else:
+      if args.compare_to is not None:
+        Statistics(season = season, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+      else:
+        Statistics(season = season, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+  else:
+    if args.model is not None:
+      if args.compare_to is not None:
+        Statistics(model = args.model, compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+      else:
+        Statistics(model = args.model, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+    else:
+      if args.compare_to is not None:
+        Statistics(compare_to = args.compare_to, injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
+      else:
+        Statistics(injection = injection, clobber = clobber, plot = plot, cadence = cadence, planets = args.planets)
