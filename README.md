@@ -15,7 +15,9 @@
 To install the latest <b>EVEREST</b> release:
 <br/><br/>
 <pre><code>pip install everest-pipeline</code></pre>
-Or, to install the current development version from source:
+Note that <b>EVEREST</b> depends on <b>george</b>, which requires the <b>Eigen3</b> package. If you don't have <b>Eigen3</b>, follow the instructions <a href="http://dan.iel.fm/george/current/user/quickstart/">here</a> to get <b>george</b> set up.
+<br/><br/>
+You can also install the current development version of <b>EVEREST</b> from source:
 <br/><br/>
 <pre><code>git clone --recursive https://github.com/rodluger/everest
 cd everest
