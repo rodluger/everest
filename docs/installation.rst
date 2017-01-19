@@ -13,8 +13,13 @@ as to :py:obj:`import everest` in Python.
 
 .. warning:: If you have the previous version of :py:obj:`everest` and/or \
              previous versions of :py:obj:`k2plr` and :py:obj:`pysyzygy` \
-             installed, it might be a good idea to remove them before \
+             installed, it might be a good idea to **completely** remove them before \
              attempting to install :py:obj:`everest 2.0`.
+
+.. warning:: :py:obj:`everest` requires :py:obj:`george`, which in turn needs access \
+             to the :py:obj:`Eigen3` linear algebra package. If you don't have that \
+             installed, follow the instructions `here <http://dan.iel.fm/george/current/user/quickstart/>`_ 
+             to get :py:obj:`george` set up.
 
 Alternatively, the development version of :py:mod:`everest` is maintained on 
 `github <https://github.com/rodluger/everest>`_.

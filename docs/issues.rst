@@ -3,8 +3,8 @@ Known Issues
 
 Below we list some issues known to crop up here and there in the :py:obj:`everest`
 light curves. This list is not comprehensive, so if you think you've found an issue
-with the de-trending, please let us know by sending an email to **rodluger** at
-**gmail** dot **edu**.
+with the de-trending, please let us know by `opening an issue <https://github.com/rodluger/everest/issues>`_
+on the github page.
 
 .. contents::
    :local:
