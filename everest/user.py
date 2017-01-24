@@ -588,7 +588,6 @@ class Everest(Basecamp):
       f = np.concatenate([np.delete(f, bnmask) for f in fluxes])
       N = int(0.995 * len(f))
       hi, lo = f[np.argsort(f)][[N,-N]]
-      fsort = f[np.argsort(f)]
       pad = (hi - lo) * 0.1
       ylim = (lo - pad, hi + pad)
       ax.set_ylim(ylim)   
@@ -696,7 +695,6 @@ class Everest(Basecamp):
       # Axis limits
       N = int(0.995 * len(flux))
       hi, lo = flux[np.argsort(flux)][[N,-N]]
-      fsort = flux[np.argsort(flux)]
       pad = (hi - lo) * 0.1
       ylim = (lo - pad, hi + pad)
       ax.set_ylim(ylim)
@@ -1001,7 +999,6 @@ class Everest(Basecamp):
       f = np.concatenate([np.delete(f, bnmask) for f in fluxes])
       N = int(0.995 * len(f))
       hi, lo = f[np.argsort(f)][[N,-N]]
-      fsort = f[np.argsort(f)]
       pad = (hi - lo) * 0.1
       ylim = (lo - pad, hi + pad)
       ax[i].set_ylim(ylim)   

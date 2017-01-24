@@ -84,7 +84,6 @@ def plot(ID, pipeline = 'everest1', show = True):
   # Axis limits
   N = int(0.995 * len(flux))
   hi, lo = flux[np.argsort(flux)][[N,-N]]
-  fsort = flux[np.argsort(flux)]
   pad = (hi - lo) * 0.1
   ylim = (lo - pad, hi + pad)
   ax.set_ylim(ylim)

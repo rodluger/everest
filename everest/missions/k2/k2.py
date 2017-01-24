@@ -31,12 +31,13 @@ import george
 from tempfile import NamedTemporaryFile
 import random
 import os, sys, shutil
+import time
 import logging
 log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
            'Statistics', 'TargetDirectory', 'HasShortCadence', 
-           'InjectionStatistics', 'HDUCards', 'FITSFile', 'FITSUrl', 'CDPP',
+           'InjectionStatistics', 'HDUCards', 'CSVFile', 'FITSFile', 'FITSUrl', 'CDPP',
            'GetTargetCBVs', 'FitCBVs', 'PlanetStatistics']
 
 def Setup():
@@ -1500,6 +1501,18 @@ def TargetDirectory(ID, season, relative = False, **kwargs):
   return os.path.join(path, 'k2', 'c%02d' % season, 
                      ('%09d' % ID)[:4] + '00000', 
                      ('%09d' % ID)[4:])
+
+def CSVFile(ID, user = 'rl'):
+  '''
+  Returns the name of the CSV file for a given target.
+  
+  :param ID: The target ID
+  :param int season: The target season number
+  :param str cadence: The cadence type. Default `lc`
+  
+  '''
+  
+  return '%09dP-%s%s.csv' % (ID, user, time.strftime('%Y%m%d'))
 
 def FITSFile(ID, season, cadence = 'lc'):
   '''

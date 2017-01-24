@@ -1124,6 +1124,41 @@ class Detrender(Basecamp):
     except:
     
       self.exception_handler(self.debug)
+
+  def publish_txt(self, **kwargs):
+    '''
+    
+    
+    '''
+    
+    try:
+        
+      # HACK: Force these params for publication
+      self.cbv_win = 999
+      self.cbv_order = 3
+      self.cbv_num = 1
+        
+      # Get the CBVs
+      self._mission.GetTargetCBVs(self)
+      
+      # Write to file!
+      outfile = os.path.join(self.dir, self._mission.CSVFile(self.ID))
+      header = self._mission.CSVHEADER % self.ID
+      mask = np.zeros_like(self.cadn)
+      for i in range(len(mask)):
+        if i in self.nanmask:
+          mask[i] = 1
+        elif i in self.badmask:
+          mask[i] = 2
+        elif i in self.outmask:
+          mask[i] = 3
+      data = np.vstack([self.time, self.cadn, self.fcor, self.flux, self.fraw, mask]).T
+      np.savetxt(outfile, data, fmt='%.6f,%d,%.6f,%.6f,%.6f,%d', header = header)
+      
+    except:
+    
+      self.exception_handler(self.debug)
+
     
 class rPLD(Detrender):
   '''

@@ -18,7 +18,7 @@ import logging
 log = logging.getLogger(__name__)
 
 #: Is this the development (pre-publication) version?
-EVEREST_DEV = os.environ.get('EVEREST2_DEV', 0)
+EVEREST_DEV = int(os.environ.get('EVEREST2_DEV', 0))
 if EVEREST_DEV:
   
   # Dev version hack: enforce a non-ui backend

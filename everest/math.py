@@ -28,16 +28,18 @@ def Interpolate(time, mask, y):
   
   '''
   
+  # Ensure `y` doesn't get modified in place
+  yy = np.array(y)
   t_ = np.delete(time, mask)
   y_ = np.delete(y, mask, axis = 0)
-  if len(y.shape) == 1:
-    y[mask] = np.interp(time[mask], t_, y_)
-  elif len(y.shape) == 2:
-    for n in range(y.shape[1]):  
-      y[mask, n] = np.interp(time[mask], t_, y_[:, n])
+  if len(yy.shape) == 1:
+    yy[mask] = np.interp(time[mask], t_, y_)
+  elif len(yy.shape) == 2:
+    for n in range(yy.shape[1]):  
+      yy[mask, n] = np.interp(time[mask], t_, y_[:, n])
   else:
     raise Exception("Array ``y`` must be either 1- or 2-d.")
-  return y
+  return yy
 
 def MedianFilter(x, kernel_size = 5):
   '''
