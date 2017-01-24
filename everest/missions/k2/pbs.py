@@ -302,11 +302,8 @@ def _Publish(campaign, subcampaign, strkwargs):
   # Check the cadence
   cadence = kwargs.get('cadence', 'lc')
   
-  # FITS or CSV?
-  csv = kwargs.get('csv', False)
-  
   # Model wrapper
-  m = FunctionWrapper(EverestModel, publish = True, csv = csv, **kwargs)
+  m = FunctionWrapper(EverestModel, publish = True, **kwargs)
   
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
