@@ -469,7 +469,7 @@ def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
         else:
           print("%s{:>4.1f}{:>8s}{:>14g}{:>10d}{:>10d}%s{:>9d}\033[0m".format(c, mask, depth, total, done[m][d], err[m][d]) % (color, errcolor))
 
-def EverestModel(ID, model = 'nPLD', publish = False, csv, = False, **kwargs):
+def EverestModel(ID, model = 'nPLD', publish = False, csv = False, **kwargs):
   '''
   A wrapper around an :py:obj:`everest` model for PBS runs.
   
