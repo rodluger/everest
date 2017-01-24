@@ -302,8 +302,11 @@ def _Publish(campaign, subcampaign, strkwargs):
   # Check the cadence
   cadence = kwargs.get('cadence', 'lc')
   
+  # FITS or CSV?
+  csv = kwargs.get('csv', False)
+  
   # Model wrapper
-  m = FunctionWrapper(EverestModel, publish = True, **kwargs)
+  m = FunctionWrapper(EverestModel, publish = True, csv = csv, **kwargs)
   
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
@@ -466,7 +469,7 @@ def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
         else:
           print("%s{:>4.1f}{:>8s}{:>14g}{:>10d}{:>10d}%s{:>9d}\033[0m".format(c, mask, depth, total, done[m][d], err[m][d]) % (color, errcolor))
 
-def EverestModel(ID, model = 'nPLD', publish = False, **kwargs):
+def EverestModel(ID, model = 'nPLD', publish = False, csv, = False, **kwargs):
   '''
   A wrapper around an :py:obj:`everest` model for PBS runs.
   
@@ -491,7 +494,10 @@ def EverestModel(ID, model = 'nPLD', publish = False, **kwargs):
     
     # Publish?
     if publish:
-      m.publish()
+      if csv:
+        m.publish_csv()
+      else:
+        m.publish()
     
   else:
     from ...inject import Inject

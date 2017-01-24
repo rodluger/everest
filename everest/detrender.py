@@ -1125,7 +1125,7 @@ class Detrender(Basecamp):
     
       self.exception_handler(self.debug)
 
-  def publish_txt(self, **kwargs):
+  def publish_csv(self, **kwargs):
     '''
     
     
