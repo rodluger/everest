@@ -36,7 +36,7 @@ import logging
 log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors', 
-           'Statistics', 'TargetDirectory', 'HasShortCadence', 
+           'Statistics', 'TargetDirectory', 'HasShortCadence', 'DVSFile',
            'InjectionStatistics', 'HDUCards', 'CSVFile', 'FITSFile', 'FITSUrl', 'CDPP',
            'GetTargetCBVs', 'FitCBVs', 'PlanetStatistics']
 
@@ -975,7 +975,7 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
   ax.plot(bins[8:], by[8:], 'k-', lw = 2)
   
   # Pickable points
-  Picker = StatsPicker([ax], [xall], [yall], epics, model = model, compare_to = model[:-3])
+  Picker = StatsPicker([ax], [xall], [yall], epics, model = model[:-3], compare_to = model[:-3], cadence = 'sc')
   fig.canvas.mpl_connect('pick_event', Picker)
 
   # Show
@@ -1513,6 +1513,22 @@ def CSVFile(ID, user = 'rl'):
   '''
   
   return '%09dP-%s%s.csv' % (ID, user, time.strftime('%Y%m%d'))
+
+def DVSFile(ID, season, cadence = 'lc'):
+  '''
+  Returns the name of the DVS PDF for a given target.
+  
+  :param ID: The target ID
+  :param int season: The target season number
+  :param str cadence: The cadence type. Default `lc`
+  
+  '''
+  
+  if cadence == 'sc':
+    strcadence = '_sc'
+  else:
+    strcadence = ''
+  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_dvs%s.pdf' % (ID, season, EVEREST_VERSION, strcadence)  
 
 def FITSFile(ID, season, cadence = 'lc'):
   '''

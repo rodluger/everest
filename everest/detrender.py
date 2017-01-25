@@ -1112,8 +1112,8 @@ class Detrender(Basecamp):
       output.addPage(pdfOne.getPage(0))
       # Add the original DVS page
       output.addPage(pdfTwo.getPage(pdfTwo.numPages - 1))
-      # Overwrite the pdf
-      outputStream = open(os.path.join(self.dir, self.name + '.pdf'), "wb")
+      # Write the final PDF
+      outputStream = open(os.path.join(self.dir, self._mission.DVSFile(self.ID, self.season, self.cadence)), "wb")
       output.write(outputStream)
       outputStream.close()
       os.remove(os.path.join(self.dir, 'cbv.pdf'))

@@ -125,24 +125,32 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   else:
     raise Exception("Unable to download the file.")
 
-def DVS(ID, mission = 'k2', model = 'nPLD', clobber = False, cadence = 'lc'):
+def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
   '''
   Show the data validation summary (DVS) for a given target.
   
   :param str mission: The mission name. Default `k2`
   :param str cadence: The light curve cadence. Default `lc`
-  :param str model: The :py:mod:`everest` model name. Default `nPLD`
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
   
   '''
   
-  # Check cadence
-  if cadence == 'sc' and not model.endswith('.sc'):
-    model = '%s.sc' % model
+  # Get season
+  season = getattr(missions, mission).Season(ID)
   
+  # Get file name
+  if model == 'nPLD':
+    filename = getattr(missions, mission).DVSFile(ID, season, cadence)
+  else:
+    if cadence == 'sc':
+      filename = model + '.sc.pdf'
+    else:
+      filename = model + '.pdf'
+    
   file = DownloadFile(ID, mission = mission, 
-                      filename = model + '.pdf', 
+                      filename = filename, 
                       clobber = clobber)  
+  
   try:
     if platform.system().lower().startswith('darwin'):
       subprocess.call(['open', file])
