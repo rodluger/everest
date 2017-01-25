@@ -140,8 +140,8 @@
                   // Path to files
                   var fits = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_lc.fits";
                   var fits_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_sc.fits";
-                  var dvs = path + "nPLD.pdf";
-                  var dvs_sc = path + "nPLD.sc.pdf";
+                  var dvs = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs.pdf";
+                  var dvs_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs_sc.fits";
           
                   // Set the info
                   document.getElementById("target-mission").innerHTML = ("K2");
