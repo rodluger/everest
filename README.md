@@ -14,7 +14,7 @@
 <br/><br/>
 
 <b>NOTE: Version 2.0 light curves are currently on their way to MAST, and should be available by 02/01/2017. Until then,
-users should interface with the catalog using the <a href="https://github.com/rodluger/everest/tree/1.0.3">v1</a> release.</b>
+users should interface with the catalog using the <a href="https://github.com/rodluger/everest/tree/1.0.4">v1</a> release.</b>
 <br/><br/>
 
 To install the latest <b>EVEREST</b> release (2.0):
@@ -27,6 +27,6 @@ You can also install the current development version of <b>EVEREST</b> from sour
 <pre><code>git clone --recursive https://github.com/rodluger/everest
 cd everest
 python setup.py install --user</code></pre>
-For more information on how to install and use <b>EVEREST</b>, please refer to the <a href="http://staff.washington.edu/rodluger/everest">documentation</a>. And if you're looking for the previous version of <b>EVEREST</b>, check out the latest <a href="https://github.com/rodluger/everest/tree/1.0.3">v1</a> release.
+For more information on how to install and use <b>EVEREST</b>, please refer to the <a href="http://staff.washington.edu/rodluger/everest">documentation</a>. And if you're looking for the previous version of <b>EVEREST</b>, check out the latest <a href="https://github.com/rodluger/everest/tree/1.0.4">v1</a> release.
 </div>
 <br>
