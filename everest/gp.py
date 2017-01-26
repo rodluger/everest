@@ -201,7 +201,7 @@ def GetGP(EPIC, time, fpix, ferr, mask = [], niter = 2):
     # Get the autocorrelation function of the de-trended data up to ``maxt`` days
     tfull = np.arange(time_nogaps[0], time_nogaps[-1], dt)
     pfull = interp1d(time_nogaps, fpld_nogaps)(tfull)
-    acor = acf(pfull, nlags = maxt / dt)
+    acor = acf(pfull, nlags = int(maxt / dt))
     lags = np.arange(len(acor)) * dt
     sigma = fsigma(len(lags))
     
