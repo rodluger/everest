@@ -92,6 +92,7 @@ def LightcurveHDU(model):
       break
   cards.append(('CVMIN', model.cv_min, 'Cross-validation objective function'))
   cards.append(('GITER', model.giter, 'Number of GP optimiziation iterations'))
+  cards.append(('GMAXF', model.giter, 'Max number of GP function evaluations'))
   cards.append(('GPFACTOR', model.gp_factor, 'GP amplitude initialization factor'))
   cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))
   cards.append(('GPRED', model.kernel_params[1], 'GP red noise amplitude (e-/s)'))

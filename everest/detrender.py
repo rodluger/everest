@@ -78,12 +78,15 @@ class Detrender(Basecamp):
   :param int giter: The number of iterations when optimizing the GP. During each iteration, the minimizer \
                     is initialized with a perturbed guess; after :py:obj:`giter` iterations, the step with \
                     the highest likelihood is kept. Default 3
+  :param int gmaxf: The maximum number of function evaluations when optimizing the GP. Default 200
   :param float gp_factor: When computing the initial kernel parameters, the red noise amplitude is set to \
                           the standard deviation of the data times this factor. Larger values generally \
                           help with convergence, particularly for very variable stars. Default 100
   :param array_like kernel_params: The initial value of the :py:obj:`Matern-3/2` kernel parameters \
                                    (white noise amplitude in flux units, red noise amplitude in flux units, \
                                    and timescale in days). Default :py:obj:`None` (determined from the data)
+  :param bool get_hires: Download a high resolution image of the target? Default :py:obj:`True`
+  :param bool get_nearby: Retrieve the location of nearby sources? Default :py:obj:`True`
   :param array_like lambda_arr: The array of :math:`\Lambda` values to iterate over during the \
                                 cross-validation step. :math:`\Lambda` is the regularization parameter,
                                 or the standard deviation of \
@@ -159,6 +162,7 @@ class Detrender(Basecamp):
     self.oiter = kwargs.get('oiter', 10)
     self.cdivs = kwargs.get('cdivs', 3)
     self.giter = kwargs.get('giter', 3)
+    self.gmaxf = kwargs.get('gmaxf', 200)
     self.optimize_gp = kwargs.get('optimize_gp', True)
     self.kernel_params = kwargs.get('kernel_params', None)    
     self.clobber_tpf = kwargs.get('clobber_tpf', False)
@@ -168,6 +172,8 @@ class Detrender(Basecamp):
     self.max_pixels = kwargs.get('max_pixels', 75)
     self.saturation_tolerance = kwargs.get('saturation_tolerance', -0.1)
     self.gp_factor = kwargs.get('gp_factor', 100.)
+    self.get_hires = kwargs.get('get_hires', True)
+    self.get_nearby = kwargs.get('get_nearby', True)
     self.planets = kwargs.get('planets', [])
     if type(self.planets) is tuple and len(self.planets) == 3 and not hasattr(self.planets[0], '__len__'):
       self.planets = [self.planets]
@@ -832,7 +838,8 @@ class Detrender(Basecamp):
                   aperture_name = self.aperture_name, 
                   saturated_aperture_name = self.saturated_aperture_name, 
                   max_pixels = self.max_pixels,
-                  saturation_tolerance = self.saturation_tolerance)
+                  saturation_tolerance = self.saturation_tolerance,
+                  get_hires = self.get_hires, get_nearby = self.get_nearby)
       if data is None:
         raise Exception("Unable to retrieve target data.")
       self.cadn = data.cadn
@@ -990,7 +997,7 @@ class Detrender(Basecamp):
     
     self.kernel_params = GetKernelParams(self.time, self.flux, self.fraw_err, 
                                          mask = self.mask, guess = self.kernel_params, 
-                                         giter = self.giter)
+                                         giter = self.giter, gmaxf = self.gmaxf)
   
   def init_kernel(self):
     '''
@@ -1244,7 +1251,8 @@ class nPLD(Detrender):
                              aperture_name = self.aperture_name, 
                              saturated_aperture_name = self.saturated_aperture_name, 
                              max_pixels = self.max_pixels,
-                             saturation_tolerance = self.saturation_tolerance)
+                             saturation_tolerance = self.saturation_tolerance,
+                             get_hires = False, get_nearby = False)
         if data is None:
           raise Exception("Unable to retrieve data for neighboring target.")
         data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
