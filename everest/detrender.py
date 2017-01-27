@@ -628,11 +628,21 @@ class Detrender(Basecamp):
 
     # Plot
     if self.cadence == 'lc':
-      ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
-      ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+      if self.nsub > 1:
+        for k in range(self.nsub):
+          ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+          ax.plot(self.time[k][self.transitmask[k]], self.flux[k][self.transitmask[k]], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+      else:
+        ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+        ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
     else:
-      ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
-      ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+      if self.nsub > 1:
+        for k in range(self.nsub):
+          ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+          ax.plot(self.time[k][self.transitmask[k]], self.flux[k][self.transitmask[k]], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+      else:
+        ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+        ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
       ax.set_rasterization_zorder(0)
     ylim = self.get_ylim()
     
@@ -1059,7 +1069,6 @@ class Detrender(Basecamp):
       self.mask_planets()
       self.plot_aperture([self.dvs.top_right() for i in range(4)])
       self.init_kernel()
-      M = self.apply_mask(np.arange(len(self.time)))
       self.cdppr_arr = self.get_cdpp_arr()
       self.cdpp_arr = np.array(self.cdppr_arr)
       self.cdppv_arr = np.array(self.cdppr_arr)
@@ -1182,8 +1191,7 @@ class Detrender(Basecamp):
     except:
     
       self.exception_handler(self.debug)
-
-    
+  
 class rPLD(Detrender):
   '''
   The regular PLD model. Nothing fancy.
