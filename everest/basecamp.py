@@ -374,7 +374,11 @@ class Basecamp(object):
     # Now the case with multiple sub-seasons
     else:
       
-      raise NotImplementedError("TODO! Check this section!")
+      # XXXXX
+      #
+      # DEBUG, TODO: CHECK THIS SECTION!
+      #
+      # XXXXX
       
       # Loop over all sub-seasons
       self.model = [None for i in range(self.nsub)]

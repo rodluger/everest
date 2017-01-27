@@ -323,46 +323,59 @@ class Detrender(Basecamp):
   def get_outliers(self):
     '''
     Performs iterative sigma clipping to get outliers.
-    
+
     '''
             
     log.info("Clipping outliers...")
-    log.info('Iter %d/%d: %d outliers' % (0, self.oiter, len(self.outmask)))
-    M = lambda x: np.delete(x, np.concatenate([self.nanmask, self.badmask, self.transitmask]), axis = 0)
-    t = M(self.time)
-    outmask = [np.array([-1]), np.array(self.outmask)]
     
-    # Loop as long as the last two outlier arrays aren't equal
-    while not np.array_equal(outmask[-2], outmask[-1]):
+    # Loop over all sub-seasons
+    for k in range(self.nsub):
+      
+      # No sub-seasons?
+      if self.nsub == 1:
+        k = slice(None, None, None)
+        log.info('Iter %d/%d: %d outliers' % (0, self.oiter, len(self.outmask[k])))
+      else:
+        log.info('Subseason %d/%d, iter %d/%d: %d outliers' % (k + 1, self.nsub, 0, self.oiter, len(self.outmask[k])))
+      
+      M = lambda x: np.delete(x, np.concatenate([self.nanmask[k], self.badmask[k], self.transitmask[k]]), axis = 0)
+      t = M(self.time[k])
+      outmask = [np.array([-1]), np.array(self.outmask[k])]
+    
+      # Loop as long as the last two outlier arrays aren't equal
+      while not np.array_equal(outmask[-2], outmask[-1]):
 
-      # Check if we've done this too many times
-      if len(outmask) - 1 > self.oiter:
-        log.error('Maximum number of iterations in ``get_outliers()`` exceeded. Skipping...')
-        break
+        # Check if we've done this too many times
+        if len(outmask) - 1 > self.oiter:
+          log.error('Maximum number of iterations in ``get_outliers()`` exceeded. Skipping...')
+          break
     
-      # Check if we're going in circles
-      if np.any([np.array_equal(outmask[-1], i) for i in outmask[:-1]]):
-        log.error('Function ``get_outliers()`` is going in circles. Skipping...')
-        break
+        # Check if we're going in circles
+        if np.any([np.array_equal(outmask[-1], i) for i in outmask[:-1]]):
+          log.error('Function ``get_outliers()`` is going in circles. Skipping...')
+          break
       
-      # Compute the model to get the flux
-      self.compute()
+        # Compute the model to get the flux
+        # TODO: This is inefficient for light curves with sub-seasons,
+        # since it computes the model for the entire light curve. Fix
+        # this in the future
+        self.compute()
     
-      # Get the outliers
-      f = SavGol(M(self.flux))
-      med = np.nanmedian(f)
-      MAD = 1.4826 * np.nanmedian(np.abs(f - med))
-      inds = np.where((f > med + self.osigma * MAD) | (f < med - self.osigma * MAD))[0]
+        # Get the outliers
+        f = SavGol(M(self.flux[k]))
+        med = np.nanmedian(f)
+        MAD = 1.4826 * np.nanmedian(np.abs(f - med))
+        inds = np.where((f > med + self.osigma * MAD) | (f < med - self.osigma * MAD))[0]
       
-      # Project onto unmasked time array
-      inds = np.array([np.argmax(self.time == t[i]) for i in inds])
-      self.outmask = np.array(inds, dtype = int)
+        # Project onto unmasked time array
+        inds = np.array([np.argmax(self.time[k] == t[i]) for i in inds])
+        self.outmask[k] = np.array(inds, dtype = int)
       
-      # Add them to the running list
-      outmask.append(np.array(inds))
+        # Add them to the running list
+        outmask.append(np.array(inds))
       
-      # Log
-      log.info('Iter %d/%d: %d outliers' % (len(outmask) - 2, self.oiter, len(self.outmask)))
+        # Log
+        log.info('Iter %d/%d: %d outliers' % (len(outmask) - 2, self.oiter, len(self.outmask[k])))
 
   def optimize_lambda(self, validation):
     '''
@@ -601,10 +614,21 @@ class Detrender(Basecamp):
     
     '''
     
-    bn = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    fraw = np.delete(self.fraw, bn)
-    lo, hi = fraw[np.argsort(fraw)][[3,-3]]
-    flux = np.delete(self.flux, bn)
+    if self.nsub == 1:
+      bn = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
+      fraw = np.delete(self.fraw, bn)
+      lo, hi = fraw[np.argsort(fraw)][[3,-3]]
+      flux = np.delete(self.flux, bn)
+    else:
+      for k in range(self.nsub):
+        fraw = np.concatenate([np.delete(self.fraw[k], 
+                               np.array(list(set(np.concatenate([self.badmask[k], 
+                               self.nanmask[k]]))), dtype = int)) for k in range(self.nsub)])
+        lo, hi = fraw[np.argsort(fraw)][[3,-3]]
+        flux = np.delete(self.flux, bn)
+        flux = np.concatenate([np.delete(self.flux[k], 
+                               np.array(list(set(np.concatenate([self.badmask[k], 
+                               self.nanmask[k]]))), dtype = int)) for k in range(self.nsub)])
     fsort = flux[np.argsort(flux)]
     if fsort[int(0.01 * len(fsort))] < lo:
       lo = fsort[int(0.01 * len(fsort))]
@@ -625,68 +649,67 @@ class Detrender(Basecamp):
     :param str color: The color of the data points. Default `'b'`
     
     '''
-
-    # Plot
-    if self.cadence == 'lc':
-      if self.nsub > 1:
-        for k in range(self.nsub):
-          ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
-          ax.plot(self.time[k][self.transitmask[k]], self.flux[k][self.transitmask[k]], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
-      else:
-        ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
-        ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
-    else:
-      if self.nsub > 1:
-        for k in range(self.nsub):
-          ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
-          ax.plot(self.time[k][self.transitmask[k]], self.flux[k][self.transitmask[k]], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
-      else:
-        ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
-        ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
-      ax.set_rasterization_zorder(0)
+    
+    # Plot limits
     ylim = self.get_ylim()
     
-    # Plot the outliers, but not the NaNs
-    badmask = [i for i in self.badmask if i not in self.nanmask]
-    O1 = lambda x: x[self.outmask]
-    O2 = lambda x: x[badmask]
-    if self.cadence == 'lc':
-      ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
-      ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.25)
-    else:
-      ax.plot(O1(self.time), O1(self.flux), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.25, zorder = -1)
-      ax.plot(O2(self.time), O2(self.flux), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
-    for i in np.where(self.flux < ylim[0])[0]:
-      if i in badmask:
-        color = "#ffcccc"
-      elif i in self.outmask:
-        color = "#cccccc"
-      elif i in self.nanmask:
-        continue
+    # Loop over all sub-seasons
+    for k in range(self.nsub):
+      
+      # No sub-seasons?
+      if self.nsub == 1:
+        k = slice(None, None, None)
+      
+      # Plot
+      if self.cadence == 'lc':
+        ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
+        ax.plot(self.time[k][self.transitmask[k]], self.flux[k][self.transitmask[k]], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
       else:
-        color = "#ccccff"
-      ax.annotate('', xy=(self.time[i], ylim[0]), xycoords = 'data',
-                  xytext = (0, 15), textcoords = 'offset points',
-                  arrowprops=dict(arrowstyle = "-|>", color = color))
-    for i in np.where(self.flux > ylim[1])[0]:
-      if i in badmask:
-        color = "#ffcccc"
-      elif i in self.outmask:
-        color = "#cccccc"
-      elif i in self.nanmask:
-        continue
+        ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+        ax.plot(self.time[k][self.transitmask[k]], self.flux[k][self.transitmask[k]], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.03, zorder = -1)
+        ax.set_rasterization_zorder(0)
+      
+      # Plot the outliers, but not the NaNs
+      badmask = [i for i in self.badmask[k] if i not in self.nanmask[k]]
+      O1 = lambda x: x[self.outmask[k]]
+      O2 = lambda x: x[badmask]
+      if self.cadence == 'lc':
+        ax.plot(O1(self.time[k]), O1(self.flux[k]), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.5)
+        ax.plot(O2(self.time[k]), O2(self.flux[k]), 'r.', markersize = 2, alpha = 0.25)
       else:
-        color = "#ccccff"
-      ax.annotate('', xy=(self.time[i], ylim[1]), xycoords = 'data',
-                  xytext = (0, -15), textcoords = 'offset points',
-                  arrowprops=dict(arrowstyle = "-|>", color = color))
+        ax.plot(O1(self.time[k]), O1(self.flux[k]), ls = 'none', color = "#777777", marker = '.', markersize = 2, alpha = 0.25, zorder = -1)
+        ax.plot(O2(self.time[k]), O2(self.flux[k]), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
+      for i in np.where(self.flux[k] < ylim[0])[0]:
+        if i in badmask:
+          color = "#ffcccc"
+        elif i in self.outmask[k]:
+          color = "#cccccc"
+        elif i in self.nanmask[k]:
+          continue
+        else:
+          color = "#ccccff"
+        ax.annotate('', xy=(self.time[k][i], ylim[0]), xycoords = 'data',
+                    xytext = (0, 15), textcoords = 'offset points',
+                    arrowprops=dict(arrowstyle = "-|>", color = color))
+      for i in np.where(self.flux[k] > ylim[1])[0]:
+        if i in badmask:
+          color = "#ffcccc"
+        elif i in self.outmask[k]:
+          color = "#cccccc"
+        elif i in self.nanmask[k]:
+          continue
+        else:
+          color = "#ccccff"
+        ax.annotate('', xy=(self.time[k][i], ylim[1]), xycoords = 'data',
+                    xytext = (0, -15), textcoords = 'offset points',
+                    arrowprops=dict(arrowstyle = "-|>", color = color))
     
-    # Plot the breakpoints
-    for brkpt in self._breakpoints[:-1]:
-      if self.nseg <= 5:
-        ax.axvline(self.time[brkpt], color = 'r', ls = '--', alpha = 0.5)
-      else:
-        ax.axvline(self.time[brkpt], color = 'r', ls = '-', alpha = 0.025)
+      # Plot the breakpoints
+      for brkpt in self.breakpoints[k][:-1]:
+        if self.nseg <= 5:
+          ax.axvline(self.time[k][brkpt], color = 'r', ls = '--', alpha = 0.5)
+        else:
+          ax.axvline(self.time[k][brkpt], color = 'r', ls = '-', alpha = 0.025)
         
     # Appearance
     if len(self.cdpp_arr) == 2:
@@ -697,7 +720,8 @@ class Detrender(Basecamp):
     elif len(self.cdpp_arr) < 6:
       for n in range(len(self.cdpp_arr)):
         if n > 0:
-          x = (self.time[self._breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+          k = self.subseason(n)
+          x = (self.time[k][self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
         else:
           x = 0.02
         ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
@@ -720,37 +744,43 @@ class Detrender(Basecamp):
     Plots the final de-trended light curve.
     
     '''
- 
-    # Plot the light curve
-    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
-    M = lambda x: np.delete(x, bnmask)
-    if self.cadence == 'lc':
-      ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
-    else:
-      ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
-      ax.set_rasterization_zorder(0)
-    # Hack: Plot invisible first and last points to ensure the x axis limits are the
-    # same in the other plots, where we also plot outliers!
-    ax.plot(self.time[0], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
-    ax.plot(self.time[-1], np.nanmedian(M(self.flux)), marker = '.', alpha = 0)
-    
-    # Plot the GP (long cadence only)
-    if self.cadence == 'lc':
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-      gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
-      med = np.nanmedian(self.apply_mask(self.flux))
-      y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
-      y += med
-      ax.plot(M(self.time), M(y), 'r-', lw = 0.5, alpha = 0.5)
+  
+    for k in range(self.nsub):
       
-      # Compute the CDPP of the GP-detrended flux
-      self.cdppg = self._mission.CDPP(self.apply_mask(self.flux - y + med), cadence = self.cadence)
-    
-    else:
+      # No sub-seasons?
+      if self.nsub == 1:
+        k = slice(None, None, None)
       
-      # We're not going to calculate this
-      self.cdppg = 0.
+      # Plot the light curve
+      bnmask = np.array(list(set(np.concatenate([self.badmask[k], self.nanmask[k]]))), dtype = int)
+      M = lambda x: np.delete(x, bnmask)
+      if self.cadence == 'lc':
+        ax.plot(M(self.time[k]), M(self.flux[k]), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+      else:
+        ax.plot(M(self.time[k]), M(self.flux[k]), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+        ax.set_rasterization_zorder(0)
+      # Hack: Plot invisible first and last points to ensure the x axis limits are the
+      # same in the other plots, where we also plot outliers!
+      ax.plot(self.time[k][0], np.nanmedian(M(self.flux[k])), marker = '.', alpha = 0)
+      ax.plot(self.time[k][-1], np.nanmedian(M(self.flux[k])), marker = '.', alpha = 0)
+    
+      # Plot the GP (long cadence only)
+      if self.cadence == 'lc':
+        _, amp, tau = self.kernel_params
+        gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+        gp.compute(self.apply_mask(self.time[k], k = k), self.apply_mask(self.fraw_err[k], k = k))
+        med = np.nanmedian(self.apply_mask(self.flux[k], k = k))
+        y, _ = gp.predict(self.apply_mask(self.flux[k], k = k) - med, self.time[k])
+        y += med
+        ax.plot(M(self.time[k]), M(y), 'r-', lw = 0.5, alpha = 0.5)
+      
+        # Compute the CDPP of the GP-detrended flux
+        self.cdppg = self._mission.CDPP(self.apply_mask(self.flux[k] - y + med, k = k), cadence = self.cadence)
+    
+      else:
+      
+        # We're not going to calculate this
+        self.cdppg = 0.
       
     # Appearance
     ax.annotate('Final', xy = (0.98, 0.025), xycoords = 'axes fraction', 
@@ -759,7 +789,12 @@ class Detrender(Basecamp):
     ax.margins(0.01, 0.1)          
     
     # Get y lims that bound 99% of the flux
-    flux = np.delete(self.flux, bnmask)
+    if self.nsub > 1:
+      flux = np.concatenate([np.delete(self.flux[k], 
+                             np.array(list(set(np.concatenate([self.badmask[k], 
+                             self.nanmask[k]]))), dtype = int)) for k in range(self.nsub)])
+    else:
+      flux = np.delete(self.flux, bnmask)
     N = int(0.995 * len(flux))
     hi, lo = flux[np.argsort(flux)][[N,-N]]
     fsort = flux[np.argsort(flux)]
@@ -773,7 +808,11 @@ class Detrender(Basecamp):
     Plots the final CBV-corrected light curve.
     
     '''
- 
+    
+    # DEBUG
+    if self.nsub > 1:
+      raise NotImplementedError("TODO!")
+    
     # Plot the light curve
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
@@ -868,15 +907,22 @@ class Detrender(Basecamp):
         raise Exception("Unable to retrieve target data.")
       self.cadn = data.cadn
       self.time = data.time
-      self.model = np.zeros_like(self.time)
       self.fpix = data.fpix
-      self.fraw = np.sum(self.fpix, axis = 1)
       self.fpix_err = data.fpix_err
-      self.fraw_err = np.sqrt(np.sum(self.fpix_err ** 2, axis = 1))
       self.nanmask = data.nanmask
       self.badmask = data.badmask
-      self.transitmask = np.array([], dtype = int)
-      self.outmask = np.array([], dtype = int)
+      if self.nsub > 1:
+        self.model = [np.zeros_like(self.time[k]) for k in range(self.nsub)]
+        self.fraw = [np.sum(self.fpix[k], axis = 1) for k in range(self.nsub)]
+        self.fraw_err = [np.sqrt(np.sum(self.fpix_err[k] ** 2, axis = 1)) for k in range(self.nsub)]
+        self.transitmask = [np.array([], dtype = int) for k in range(self.nsub)]
+        self.outmask = [np.array([], dtype = int) for k in range(self.nsub)]
+      else:
+        self.model = np.zeros_like(self.time)
+        self.fraw = np.sum(self.fpix, axis = 1)
+        self.fraw_err = np.sqrt(np.sum(self.fpix_err ** 2, axis = 1))
+        self.transitmask = np.array([], dtype = int)
+        self.outmask = np.array([], dtype = int)
       self.aperture = data.aperture
       self.aperture_name = data.aperture_name
       self.apertures = data.apertures
@@ -891,12 +937,13 @@ class Detrender(Basecamp):
       self.meta = data.meta
       self.bkg = data.bkg
       
-      # Update the last breakpoint to the correct value
+      # Update the last breakpoint(s) to the correct value
       if self.nsub > 1:
         for i, t in enumerate(self.time):
           self.breakpoints[i][-1] = len(t) - 1
       else:
         self.breakpoints[-1] = len(self.time) - 1
+      
       # Get PLD normalization
       self.get_norm()
       
@@ -1022,9 +1069,20 @@ class Detrender(Basecamp):
     
     '''
     
-    self.kernel_params = GetKernelParams(self.time, self.flux, self.fraw_err, 
-                                         mask = self.mask, guess = self.kernel_params, 
-                                         giter = self.giter, gmaxf = self.gmaxf)
+    
+    if self.nsub > 1:
+      mask = []
+      offset = 0
+      for k in range(self.nsub):
+        mask.append(self.mask[k] + offset)
+        offset += len(self.time[k])
+      self.kernel_params = GetKernelParams(np.concatenate(self.time), np.concatenate(self.flux), np.concatenate(self.fraw_err), 
+                                           mask = mask, guess = self.kernel_params, 
+                                           giter = self.giter, gmaxf = self.gmaxf)
+    else:
+      self.kernel_params = GetKernelParams(self.time, self.flux, self.fraw_err, 
+                                           mask = self.mask, guess = self.kernel_params, 
+                                           giter = self.giter, gmaxf = self.gmaxf)
   
   def init_kernel(self):
     '''
@@ -1033,8 +1091,15 @@ class Detrender(Basecamp):
     '''
     
     if self.kernel_params is None:
-      X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
-      y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))      
+      if self.nsub > 1:
+        y = []
+        for k in range(self.nsub):
+          X = self.apply_mask(self.fpix[k] / self.flux[k].reshape(-1, 1), k = k)
+          y = np.append(y, self.apply_mask(self.flux[k]) - np.dot(X, np.linalg.solve(np.dot(X.T, X), 
+                        np.dot(X.T, self.apply_mask(self.flux[k]), k = k)))) 
+      else:
+        X = self.apply_mask(self.fpix[k] / self.flux[k].reshape(-1, 1), k = k)
+        y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))   
       white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
       amp = self.gp_factor * np.nanstd(y)
       tau = 30.0
@@ -1045,15 +1110,17 @@ class Detrender(Basecamp):
     
     '''
     
-    
     for i, planet in enumerate(self.planets):
       log.info('Masking planet #%d...' % (i + 1))
       t0, period, dur = planet
-      mask = []
-      t0 += np.ceil((self.time[0] - dur - t0) / period) * period
-      for t in np.arange(t0, self.time[-1] + dur, period):
-        mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
-      self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
+      for k in range(self.nsub):      
+        if self.nsub == 1:
+          k = slice(None, None, None)
+        mask = []
+        t0 += np.ceil((self.time[k][0] - dur - t0) / period) * period
+        for t in np.arange(t0, self.time[k][-1] + dur, period):
+          mask.extend(np.where(np.abs(self.time[k] - t) < dur / 2.)[0])
+        self.transitmask[k] = np.array(list(set(np.concatenate([self.transitmask[k], mask]))))
   
   def run(self):
     '''
@@ -1091,7 +1158,11 @@ class Detrender(Basecamp):
         self.cdpp = self.get_cdpp()
         self.cdppv = np.nanmean(self.cdppv_arr)
         log.info("%s (%d/%d): CDPP = %s" % (self.name, n + 1, self.pld_order, self.cdpps))
-        self.plot_lc(self.dvs.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % len(self.outmask))
+        if self.nsub > 1:
+          outliers = np.sum([len(self.outmask[k]) for k in range(self.nsub)])
+        else:
+          outliers = len(self.outmask)
+        self.plot_lc(self.dvs.left(), info_right= 'LC%d' % (n + 1), info_left = '%d outliers' % outliers)
         
       # Save
       self.finalize()
@@ -1177,15 +1248,32 @@ class Detrender(Basecamp):
       # Write to file!
       outfile = os.path.join(self.dir, self._mission.CSVFile(self.ID))
       header = self._mission.CSVHEADER % self.ID
-      mask = np.zeros_like(self.cadn)
-      for i in range(len(mask)):
-        if i in self.nanmask:
-          mask[i] = 1
-        elif i in self.badmask:
-          mask[i] = 2
-        elif i in self.outmask:
-          mask[i] = 3
-      data = np.vstack([self.time, self.cadn, self.fcor, self.flux, self.fraw, mask]).T
+      if self.nsub > 1:
+        for k in range(self.nsub):
+          mask = np.zeros_like(self.cadn[k])
+          for i in range(len(mask)):
+            if i in self.nanmask[k]:
+              mask[i] = 1
+            elif i in self.badmask[k]:
+              mask[i] = 2
+            elif i in self.outmask[k]:
+              mask[i] = 3
+          if k == 0:
+            data = np.vstack([self.time[k], self.cadn[k], self.fcor[k], self.flux[k], self.fraw[k], mask]).T
+          else:
+            data_new = np.vstack([self.time[k], self.cadn[k], self.fcor[k], self.flux[k], self.fraw[k], mask]).T
+            data = np.vstack([data, data_new])
+      else:
+        mask = np.zeros_like(self.cadn)
+        for i in range(len(mask)):
+          if i in self.nanmask:
+            mask[i] = 1
+          elif i in self.badmask:
+            mask[i] = 2
+          elif i in self.outmask:
+            mask[i] = 3
+        data = np.vstack([self.time, self.cadn, self.fcor, self.flux, self.fraw, mask]).T
+      
       np.savetxt(outfile, data, fmt='%.6f,%d,%.6f,%.6f,%.6f,%d', header = header)
       
     except:
