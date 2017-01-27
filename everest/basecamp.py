@@ -114,7 +114,10 @@ class Basecamp(object):
     
     '''
     
-    return self.fraw - self.model
+    if self.nsub == 1:
+      return self.fraw - self.model
+    else:
+      return [f - m for f, m in zip(self.fraw, self.model)]
   
   @flux.setter
   def flux(self, value):
@@ -134,7 +137,10 @@ class Basecamp(object):
     if self.XCBV is None:
       return None
     else:
-      return self.flux - self._mission.FitCBVs(self)
+      if self.nsub == 1:
+        return self.flux - self._mission.FitCBVs(self)
+      else:
+        return [f - m for f, m in zip(self.flux, self._mission.FitCBVs(self))]
   
   @fcor.setter
   def fcor(self, value):
@@ -161,7 +167,27 @@ class Basecamp(object):
     '''
     
     raise NotImplementedError("Can't set this property.") 
+
+  @property
+  def _breakpoints(self):
+    '''
+    A flat version of the breakpoints list.
     
+    '''
+    
+    if self.nsub > 1:
+      return [item for sublist in self.breakpoints for item in sublist]
+    else:
+      return list(self.breakpoints)
+  
+  @_breakpoints.setter
+  def _breakpoints(self, value):
+    '''
+    
+    '''
+    
+    raise NotImplementedError("Can't set this property.")
+
   @property
   def cdpps(self):
     '''
@@ -187,6 +213,8 @@ class Basecamp(object):
     cadences, transit cadences, and :py:obj:`NaN` cadences.
     
     '''
+    
+    # TODO: Make sub-season friendly
     
     return np.array(list(set(np.concatenate([self.outmask, self.badmask, self.transitmask, self.nanmask]))), dtype = int)
   
@@ -252,6 +280,17 @@ class Basecamp(object):
     else:
       return X
   
+  def subseason(self, b):
+    '''
+    
+    '''
+    
+    if self.nsub > 1:
+      ksz = np.cumsum([len(k) for k in self.breakpoints])
+      return np.argmax(b < ksz)
+    else:
+      return slice(None, None, None)
+  
   def compute(self):
     '''
     Compute the model for the current value of lambda.
@@ -259,23 +298,26 @@ class Basecamp(object):
     '''
 
     log.info('Computing the model...')
-
+        
     # Loop over all chunks
-    model = [None for b in self.breakpoints]
-    for b, brkpt in enumerate(self.breakpoints):
-    
+    model = [None for b in self._breakpoints]
+    for b, brkpt in enumerate(self._breakpoints):
+      
+      # Get the sub-season
+      k = self.subseason(b)
+      
       # Masks for current chunk
       m = self.get_masked_chunk(b)
       c = self.get_chunk(b)
       
       # This block of the masked covariance matrix
-      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      mK = GetCovariance(self.kernel_params, self.time[k][m], self.fraw_err[k][m])
       
       # Get median
-      med = np.nanmedian(self.fraw[m])
+      med = np.nanmedian(self.fraw[k][m])
       
       # Normalize the flux
-      f = self.fraw[m] - med
+      f = self.fraw[k][m] - med
       
       # The X^2 matrices
       A = np.zeros((len(m), len(m)))
@@ -286,8 +328,8 @@ class Basecamp(object):
 
         # Only compute up to the current PLD order
         if (self.lam_idx >= n) and (self.lam[b][n] is not None):
-          XM = self.X(n,m)
-          XC = self.X(n,c)
+          XM = self.X(n,m,k)
+          XC = self.X(n,c,k)
           A += self.lam[b][n] * np.dot(XM, XM.T)
           B += self.lam[b][n] * np.dot(XC, XM.T)
           del XM, XC
@@ -296,35 +338,79 @@ class Basecamp(object):
       model[b] = np.dot(B, W)
       del A, B, W
 
-    # Join the chunks after applying the correct offset
-    if len(model) > 1:
+    # The standard case first
+    if self.nsub == 1:
 
-      # First chunk
-      self.model = model[0][:-self.bpad]
+      # Join the chunks after applying the correct offset
+      if len(model) > 1:
+
+        # First chunk
+        self.model = model[0][:-self.bpad]
   
-      # Center chunks
-      for m in model[1:-1]:
-        # Join the chunks at the first non-outlier cadence
+        # Center chunks
+        for m in model[1:-1]:
+          # Join the chunks at the first non-outlier cadence
+          i = 1
+          while len(self.model) - i in self.mask:
+            i += 1
+          offset = self.model[-i] - m[self.bpad - i]
+          self.model = np.concatenate([self.model, m[self.bpad:-self.bpad] + offset])
+  
+        # Last chunk
         i = 1
         while len(self.model) - i in self.mask:
           i += 1
-        offset = self.model[-i] - m[self.bpad - i]
-        self.model = np.concatenate([self.model, m[self.bpad:-self.bpad] + offset])
+        offset = self.model[-i] - model[-1][self.bpad - i]
+        self.model = np.concatenate([self.model, model[-1][self.bpad:] + offset])      
   
-      # Last chunk
-      i = 1
-      while len(self.model) - i in self.mask:
-        i += 1
-      offset = self.model[-i] - model[-1][self.bpad - i]
-      self.model = np.concatenate([self.model, model[-1][self.bpad:] + offset])      
+      else:
+        
+        # Cake!
+        self.model = model[0]
   
-    else:
-
-      self.model = model[0]
-  
-    # Subtract the global median
-    self.model -= np.nanmedian(self.model)
+      # Subtract the global median
+      self.model -= np.nanmedian(self.model)
     
+    # Now the case with multiple sub-seasons
+    else:
+      
+      raise NotImplementedError("TODO! Check this section!")
+      
+      # Loop over all sub-seasons
+      self.model = [None for i in range(self.nsub)]
+      j = 0
+      for k in range(self.nsub):
+        
+        # Mend the breakpoints
+        if len(self.breakpoints[k]) > 1:
+          
+          # First chunk
+          self.model[k] = model[k][0][:-self.bpad]
+          
+          # Center chunks
+          for m in model[k][1:-1]:
+            # Join the chunks at the first non-outlier cadence
+            i = 1
+            while len(self.model[k]) - i in self.mask[k]:
+              i += 1
+            offset = self.model[k][-i] - m[self.bpad - i]
+            self.model[k] = np.concatenate([self.model[k], m[self.bpad:-self.bpad] + offset])
+  
+          # Last chunk
+          i = 1
+          while len(self.model[k]) - i in self.mask[k]:
+            i += 1
+          offset = self.model[k][-i] - model[k][-1][self.bpad - i]
+          self.model[k] = np.concatenate([self.model[k], model[k][-1][self.bpad:] + offset])
+          
+        else:
+        
+          # Cake!
+          self.model[k] = model[j]
+        
+        # Subtract the global median
+        self.model[k] -= np.nanmedian(self.model[k])
+        
     # Get the CDPP and reset the weights
     self.cdpp_arr = self.get_cdpp_arr()
     self.cdpp = self.get_cdpp()
@@ -345,13 +431,17 @@ class Basecamp(object):
     
     '''
 
+    # This could be implemented eventually...
+    if self.nsub > 1:
+      raise NotImplementedError("Joint model evaluation not implemented when sub-seasons are present.")
+  
     log.info('Computing the model...')
-    A = [None for b in self.breakpoints]
-    B = [None for b in self.breakpoints]
+    A = [None for b in self._breakpoints]
+    B = [None for b in self._breakpoints]
     
     # Loop over all chunks
-    for b, brkpt in enumerate(self.breakpoints):
-    
+    for b, brkpt in enumerate(self._breakpoints):
+
       # Masks for current chunk
       m = self.get_masked_chunk(b, pad = False)
       c = self.get_chunk(b, pad = False)
@@ -395,7 +485,7 @@ class Basecamp(object):
     self.cdpp = self.get_cdpp()
     self._weights = None
 
-  def apply_mask(self, x = None):
+  def apply_mask(self, x = None, k = slice(None, None, None)):
     '''
     Returns the outlier mask, an array of indices corresponding to the non-outliers.
     
@@ -404,9 +494,9 @@ class Basecamp(object):
     '''
     
     if x is None:
-      return np.delete(np.arange(len(self.time)), self.mask)
+      return np.delete(np.arange(len(self.time[k])), self.mask[k])
     else:
-      return np.delete(x, self.mask, axis = 0)
+      return np.delete(x, self.mask[k], axis = 0)
 
   def get_chunk(self, b, x = None, pad = True):
     '''
@@ -416,12 +506,14 @@ class Basecamp(object):
     :param numpy.ndarray x: If specified, applies the mask to array :py:obj:`x`. Default :py:obj:`None`
 
     '''
-
-    M = np.arange(len(self.time))
-    if b > 0:
-      res = M[(M > self.breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self.breakpoints[b] + int(pad) * self.bpad)]
+    
+    # Get the subseason
+    k = self.subseason(b)
+    M = np.arange(len(self.time[k]))
+    if b > 0 and self.subseason(b - 1) == k:
+      res = M[(M > self._breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self._breakpoints[b] + int(pad) * self.bpad)]
     else:
-      res = M[M <= self.breakpoints[b] + int(pad) * self.bpad]
+      res = M[M <= self._breakpoints[b] + int(pad) * self.bpad]
     if x is None:
       return res
     else:
@@ -435,11 +527,13 @@ class Basecamp(object):
     
     '''
     
-    M = self.apply_mask(np.arange(len(self.time)))
-    if b > 0:
-      res = M[(M > self.breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self.breakpoints[b] + int(pad) * self.bpad)]
+    # Get the subseason
+    k = self.subseason(b)
+    M = self.apply_mask(np.arange(len(self.time[k])), k = k)
+    if b > 0 and self.subseason(b - 1) == k:
+      res = M[(M > self._breakpoints[b - 1] - int(pad) * self.bpad) & (M <= self._breakpoints[b] + int(pad) * self.bpad)]
     else:
-      res = M[M <= self.breakpoints[b] + int(pad) * self.bpad]
+      res = M[M <= self._breakpoints[b] + int(pad) * self.bpad]
     if x is None:
       return res
     else:
@@ -451,6 +545,10 @@ class Basecamp(object):
     Not currently used in the code.
     
     '''
+    
+    # This could be implemented eventually...
+    if self.nsub > 1:
+      raise NotImplementedError("This function is not implemented for light curves with sub-seasons.")
     
     log.info("Computing PLD weights...")
     
@@ -491,7 +589,7 @@ class Basecamp(object):
     
     if flux is None:
       flux = self.flux
-    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b, _ in enumerate(self.breakpoints)])
+    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b, k = k)], cadence = self.cadence) for b, k in enumerate(self.subseason)])
   
   def get_cdpp(self, flux = None):
     '''
@@ -501,7 +599,12 @@ class Basecamp(object):
     
     if flux is None:
       flux = self.flux
-    return self._mission.CDPP(self.apply_mask(flux), cadence = self.cadence)
+      if self.nsub > 1:
+        for k in range(self.nsub):
+          flux[k] = self.apply_mask(flux[k])
+      else:
+        flux = self.apply_mask(flux)
+    return self._mission.CDPP(flux, cadence = self.cadence)
   
   def plot_aperture(self, axes, labelsize = 8):
     '''

@@ -176,13 +176,25 @@ class Detrender(Basecamp):
     # Handle breakpointing. The breakpoint is the *last* index of each 
     # light curve chunk.
     bkpts = kwargs.get('breakpoints', True)
-    if bkpts is True:
-      self.breakpoints = np.append(self._mission.Breakpoints(self.ID, cadence = self.cadence), [999999])
-    elif hasattr(bkpts, '__len__'):
-      self.breakpoints = np.append(bkpts, [999999])
-    else:
+    if not ((bkpts is True) or hasattr(bkpts, '__len__')):
       self.breakpoints = np.array([999999])
-    nseg = len(self.breakpoints)
+      self.nseg = 1
+      self.nsub = 1
+    else:
+      # Get the breakpoints from the mission module?
+      if bkpts is True:
+        bkpts = self._mission.Breakpoints(self.ID, cadence = self.cadence)
+      # Check if this light curve has sub-seasons
+      if hasattr(bkpts[0], '__len__'):
+        for subseason in range(len(bkpts)):
+          inds[subseason] = np.append(bkpts[subseason], [999999])
+        self.breakpoints = bkpts
+        self.nseg = len([item for sublist in bkpts for item in sublist])
+        self.nsub = len(bkpts)
+      else:
+        self.breakpoints = np.append(bkpts, [999999])
+        self.nseg = len(self.breakpoints)
+        self.nsub = 1
     self.cv_min = kwargs.get('cv_min', 'mad').lower()
     assert self.cv_min in ['mad', 'tv'], "Invalid value for `cv_min`."
     self.cbv_num = kwargs.get('cbv_num', 1)
@@ -197,14 +209,14 @@ class Detrender(Basecamp):
 
     # Initialize model params 
     self.lam_idx = -1
-    self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
+    self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(self.nseg)]
     self.reclam = None
     self.recmask = []
     self.X1N = None
     self.XCBV = None
-    self.cdpp_arr = np.array([np.nan for b in range(nseg)])
-    self.cdppr_arr = np.array([np.nan for b in range(nseg)])
-    self.cdppv_arr = np.array([np.nan for b in range(nseg)])
+    self.cdpp_arr = np.array([np.nan for b in range(self.nseg)])
+    self.cdppr_arr = np.array([np.nan for b in range(self.nseg)])
+    self.cdppv_arr = np.array([np.nan for b in range(self.nseg)])
     self.cdpp = np.nan
     self.cdppr = np.nan
     self.cdppv = np.nan
@@ -214,7 +226,7 @@ class Detrender(Basecamp):
     self._weights = None
     
     # Initialize plotting
-    self.dvs = DVS(len(self.breakpoints), pld_order = self.pld_order)
+    self.dvs = DVS(self.nseg, pld_order = self.pld_order)
     
     # Check for saved model
     if self.load_model():
@@ -245,7 +257,7 @@ class Detrender(Basecamp):
     '''
     
     raise NotImplementedError("Can't set this property.") 
-  
+    
   def setup(self, **kwargs):
     '''
     A subclass-specific routine.
@@ -262,9 +274,10 @@ class Detrender(Basecamp):
     '''
     
     # Get current chunk and mask outliers
+    k = self.subseason(b)
     m1 = self.get_masked_chunk(b)
-    flux = self.fraw[m1]
-    K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
+    flux = self.fraw[k][m1]
+    K = GetCovariance(self.kernel_params, self.time[k][m1], self.fraw_err[k][m1])
     med = np.nanmedian(flux)
     
     # Now mask the validation set
@@ -279,8 +292,8 @@ class Detrender(Basecamp):
     for n in range(self.pld_order):
       # Only compute up to the current PLD order
       if self.lam_idx >= n:
-        X2 = self.X(n,m2)
-        X1 = self.X(n,m1)
+        X2 = self.X(n,m2,k)
+        X1 = self.X(n,m1,k)
         A[n] = np.dot(X2, X2.T)
         B[n] = np.dot(X1, X2.T)
         del X1, X2
@@ -401,13 +414,14 @@ class Detrender(Basecamp):
     
     # Loop over all chunks
     ax = np.atleast_1d(ax)
-    for b, brkpt in enumerate(self.breakpoints):
+    for b, brkpt in enumerate(self._breakpoints):
     
-      log.info("Cross-validating chunk %d/%d..." % (b + 1, len(self.breakpoints)))      
+      log.info("Cross-validating chunk %d/%d..." % (b + 1, self.nseg))     
       med_training = np.zeros_like(self.lambda_arr)
       med_validation = np.zeros_like(self.lambda_arr)
         
       # Mask for current chunk 
+      k = self.subseason(b)
       m = self.get_masked_chunk(b)
       
       # Check that we have enough data
@@ -418,16 +432,16 @@ class Detrender(Basecamp):
         continue
         
       # Mask transits and outliers
-      time = self.time[m]
-      flux = self.fraw[m]
-      ferr = self.fraw_err[m]
+      time = self.time[k][m]
+      flux = self.fraw[k][m]
+      ferr = self.fraw_err[k][m]
       med = np.nanmedian(flux)
         
       # The precision in the validation set
-      validation = [[] for k, _ in enumerate(self.lambda_arr)]
+      validation = [[] for l, _ in enumerate(self.lambda_arr)]
     
       # The precision in the training set
-      training = [[] for k, _ in enumerate(self.lambda_arr)]
+      training = [[] for l, _ in enumerate(self.lambda_arr)]
     
       # Setup the GP
       _, amp, tau = self.kernel_params
@@ -449,27 +463,27 @@ class Detrender(Basecamp):
         pre_v = self.cv_precompute(mask, b)
     
         # Iterate over lambda
-        for k, lam in enumerate(self.lambda_arr):
+        for l, lam in enumerate(self.lambda_arr):
       
           # Update the lambda matrix
           self.lam[b][self.lam_idx] = lam
 
           # Training set
           model = self.cv_compute(b, *pre_t)
-          training[k].append(self.fobj(flux - model, med, time, gp, mask))
+          training[l].append(self.fobj(flux - model, med, time, gp, mask))
           
           # Validation set
           model = self.cv_compute(b, *pre_v)
-          validation[k].append(self.fobj(flux - model, med, time, gp, mask))
+          validation[l].append(self.fobj(flux - model, med, time, gp, mask))
       
       # Finalize
       training = np.array(training)
       validation = np.array(validation)
-      for k, _ in enumerate(self.lambda_arr):
+      for l, _ in enumerate(self.lambda_arr):
 
         # Take the mean
-        med_validation[k] = np.nanmean(validation[k])
-        med_training[k] = np.nanmean(training[k])
+        med_validation[l] = np.nanmean(validation[l])
+        med_training[l] = np.nanmean(training[l])
             
       # Compute best model
       i = self.optimize_lambda(validation)
@@ -481,7 +495,7 @@ class Detrender(Basecamp):
       
       # Plotting: There's not enough space in the DVS to show the cross-val results
       # for more than three light curve segments.
-      if len(self.breakpoints) <= 3:
+      if self.nseg <= 3:
       
         # Plotting hack: first x tick will be -infty
         lambda_arr = np.array(self.lambda_arr)
@@ -529,7 +543,7 @@ class Detrender(Basecamp):
       axis.spines['top'].set_visible(False)
       axis.xaxis.set_ticks_position('bottom')
     
-    if len(self.breakpoints) <= 3:
+    if self.nseg <= 3:
 
       # A hack to mark the first xtick as -infty
       labels = ['%.1f' % x for x in xticks]
@@ -540,12 +554,12 @@ class Detrender(Basecamp):
     else:
         
       # We're just going to plot lambda as a function of chunk number
-      bs = np.arange(len(self.breakpoints))
+      bs = np.arange(self.nseg)
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r.')
       ax[0].plot(bs + 1, [np.log10(self.lam[b][self.lam_idx]) for b in bs], 'r-', alpha = 0.25)
       ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
       ax[0].margins(0.1, 0.1)
-      ax[0].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+      ax[0].set_xticks(np.arange(1, self.nseg + 1))
       ax[0].set_xticklabels([])
       
       # Now plot the CDPP and approximate validation CDPP
@@ -558,10 +572,10 @@ class Detrender(Basecamp):
       ax[1].margins(0.1, 0.1)
       ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
       ax[1].set_xlabel(r'Chunk', fontsize = 5)
-      if len(self.breakpoints) < 15:
-        ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+      if self.nseg < 15:
+        ax[1].set_xticks(np.arange(1, self.nseg + 1))
       else:
-        ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1, 2))
+        ax[1].set_xticks(np.arange(1, self.nseg + 1, 2))
       
   def finalize(self):
     '''
@@ -652,8 +666,8 @@ class Detrender(Basecamp):
                   arrowprops=dict(arrowstyle = "-|>", color = color))
     
     # Plot the breakpoints
-    for brkpt in self.breakpoints[:-1]:
-      if len(self.breakpoints) <= 5:
+    for brkpt in self._breakpoints[:-1]:
+      if self.nseg <= 5:
         ax.axvline(self.time[brkpt], color = 'r', ls = '--', alpha = 0.5)
       else:
         ax.axvline(self.time[brkpt], color = 'r', ls = '-', alpha = 0.025)
@@ -667,7 +681,7 @@ class Detrender(Basecamp):
     elif len(self.cdpp_arr) < 6:
       for n in range(len(self.cdpp_arr)):
         if n > 0:
-          x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+          x = (self.time[self._breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
         else:
           x = 0.02
         ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
@@ -861,8 +875,11 @@ class Detrender(Basecamp):
       self.bkg = data.bkg
       
       # Update the last breakpoint to the correct value
-      self.breakpoints[-1] = len(self.time) - 1
-      
+      if self.nsub > 1:
+        for i, t in enumerate(self.time):
+        self.breakpoints[i][-1] = len(t) - 1
+      else:
+        self.breakpoints[-1] = len(self.time) - 1
       # Get PLD normalization
       self.get_norm()
       
@@ -1287,12 +1304,11 @@ class iPLD(Detrender):
     
     # Now reset the model params
     self.optimize_gp = False
-    nseg = len(self.breakpoints)
     self.lam_idx = -1
-    self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
-    self.cdpp_arr = np.array([np.nan for b in range(nseg)])
-    self.cdppr_arr = np.array([np.nan for b in range(nseg)])
-    self.cdppv_arr = np.array([np.nan for b in range(nseg)])
+    self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(self.nseg)]
+    self.cdpp_arr = np.array([np.nan for b in range(self.nseg)])
+    self.cdppr_arr = np.array([np.nan for b in range(self.nseg)])
+    self.cdppv_arr = np.array([np.nan for b in range(self.nseg)])
     self.cdpp = np.nan
     self.cdppr = np.nan
     self.cdppv = np.nan
@@ -1370,9 +1386,9 @@ class pPLD(Detrender):
     cdpp_opt = self.get_cdpp_arr()
 
     # Loop over all chunks
-    for b, brkpt in enumerate(self.breakpoints):
+    for b, brkpt in enumerate(self._breakpoints):
     
-      log.info("Cross-validating chunk %d/%d..." % (b + 1, len(self.breakpoints))) 
+      log.info("Cross-validating chunk %d/%d..." % (b + 1, self.nseg)) 
         
       # Mask for current chunk 
       m = self.get_masked_chunk(b)
@@ -1435,14 +1451,14 @@ class pPLD(Detrender):
       self.lam[b] = 10 ** log_lam_opt
     
     # We're just going to plot lambda as a function of chunk number
-    bs = np.arange(len(self.breakpoints))
+    bs = np.arange(self.nseg)
     color = ['k', 'b', 'r', 'g', 'y']
     for n in range(self.pld_order):
       ax[0].plot(bs + 1, [np.log10(self.lam[b][n]) for b in bs], '.', color = color[n])
       ax[0].plot(bs + 1, [np.log10(self.lam[b][n]) for b in bs], '-', color = color[n], alpha = 0.25)
     ax[0].set_ylabel(r'$\log\Lambda$', fontsize = 5)
     ax[0].margins(0.1, 0.1)
-    ax[0].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+    ax[0].set_xticks(np.arange(1, self.nseg + 1))
     ax[0].set_xticklabels([])
     
     # Now plot the CDPP
@@ -1452,7 +1468,7 @@ class pPLD(Detrender):
     ax[1].margins(0.1, 0.1)
     ax[1].set_ylabel(r'Scatter (ppm)', fontsize = 5)
     ax[1].set_xlabel(r'Chunk', fontsize = 5)
-    ax[1].set_xticks(np.arange(1, len(self.breakpoints) + 1))
+    ax[1].set_xticks(np.arange(1, self.nseg + 1))
     
   def validation_scatter(self, log_lam, b, masks, pre_v, gp, flux, time, med):
     '''
