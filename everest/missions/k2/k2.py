@@ -171,7 +171,8 @@ def CDPP(flux, mask = [], cadence = 'lc'):
 def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
             aperture_name = 'k2sff_15', saturated_aperture_name = 'k2sff_19',
             max_pixels = 75, download_only = False, saturation_tolerance = -0.1, 
-            bad_bits = [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17], **kwargs):
+            bad_bits = [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17], get_hires = True, 
+            get_nearby = True, **kwargs):
   '''
   Returns a :py:obj:`DataContainer` instance with the raw data for the target.
   
@@ -190,6 +191,8 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
          this fraction of the pixel well depth. Default -0.1
   :param array_like bad_bits: Flagged :py:obj`QUALITY` bits to consider outliers when \
          computing the model. Default `[1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]`
+  :param bool get_hires: Download a high resolution image of the target? Default :py:obj:`True`
+  :param bool get_nearby: Retrieve location of nearby sources? Default :py:obj:`True`
   
   '''
   
@@ -269,10 +272,16 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
       sc_fitsheader = None
       
     # Get a hi res image of the target
-    hires = GetHiResImage(EPIC)
+    if get_hires:
+      hires = GetHiResImage(EPIC)
+    else:
+      hires = None
     
     # Get nearby sources
-    nearby = GetSources(EPIC)
+    if get_nearby:
+      nearby = GetSources(EPIC)
+    else:
+      nearby = []
     
     # Delete?
     if delete_raw:
@@ -355,7 +364,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   apertures = data['apertures'][()]
   pixel_images = data['pixel_images']
   nearby = data['nearby']
-  hires = data['hires']
+  hires = data['hires'][()]
   
   if cadence == 'lc':
     fitsheader = data['fitsheader']

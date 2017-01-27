@@ -13,6 +13,7 @@ from .math import Chunks
 from scipy.optimize import fmin_l_bfgs_b
 from scipy.signal import savgol_filter
 import numpy as np
+np.random.seed(48151623)
 import george
 from george.kernels import WhiteKernel, Matern32Kernel
 import logging
@@ -41,7 +42,7 @@ def GetCovariance(kernel_params, time, errors):
   
   return K
 
-def GetKernelParams(time, flux, errors, mask = [], giter = 3, guess = None):
+def GetKernelParams(time, flux, errors, mask = [], giter = 3, gmaxf = 200, guess = None):
   '''
   Optimizes the GP by training it on the current de-trended light curve.
   Returns the white noise amplitude, red noise amplitude, and red noise timescale.
@@ -51,6 +52,7 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, guess = None):
   :param array_like errors: The flux errors array
   :param array_like mask: The indices to be masked when training the GP. Default `[]`
   :param int giter: The number of iterations. Default 3
+  :param int gmaxf: The maximum number of function evaluations. Default 200
   :param tuple guess: The guess to initialize the minimization with. Default :py:obj:`None`
   
   '''
@@ -106,7 +108,7 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, guess = None):
     # Optimize
     x = fmin_l_bfgs_b(NegLnLike, iguess, approx_grad = False, 
                       bounds = bounds, args = (time, flux, errors),
-                      maxfun = 200)
+                      maxfun = gmaxf)
     log.info('Iteration #%d/%d:' % (i + 1, giter))
     log.info('   ' + x[2]['task'].decode('utf-8'))
     log.info('   ' + 'Function calls: %d' % x[2]['funcalls'])

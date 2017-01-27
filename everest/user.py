@@ -366,6 +366,7 @@ class Everest(Basecamp):
       self.fraw = f[1].data['FRAW']
       self.fraw_err = f[1].data['FRAW_ERR']
       self.giter = f[1].header['GITER']
+      self.gmaxf = f[1].header.get('GMAXF', 200)
       self.gp_factor = f[1].header['GPFACTOR']
       self.hires = f[5].data
       self.kernel_params = np.array([f[1].header['GPWHITE'], 

@@ -5,3 +5,5 @@ include everest/missions/*/tables/*.cdpp
 include everest/missions/*/tables/*.out
 include everest/missions/*/tables/*.tsv
 include tests/hlsp_everest_k2_llc_201367065-c01_kepler_v2.0_lc.fits
+include tests/ktwo201367065-c01_lpd-targ.fits.gz
+include tests/hlsp_k2sff_k2_lightcurve_201367065-c01_kepler_v1_llc.fits
