@@ -33,7 +33,7 @@ def test_detrend():
   shutil.copy(orig, dest)
 
   # Run the de-trending
-  star = everest.rPLD(201367065, clobber = True, debug = True, mission = 'k2',
+  star = everest.rPLD(201367065, clobber = True, mission = 'k2',
                       giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
                       pld_order = 2, get_hires = False, get_nearby = False)
   
