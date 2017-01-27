@@ -589,7 +589,7 @@ class Basecamp(object):
     
     if flux is None:
       flux = self.flux
-    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b, k = k)], cadence = self.cadence) for b, k in enumerate(self.subseason)])
+    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b in range(self.nseg)])
   
   def get_cdpp(self, flux = None):
     '''

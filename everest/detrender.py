@@ -884,7 +884,7 @@ class Detrender(Basecamp):
       # Update the last breakpoint to the correct value
       if self.nsub > 1:
         for i, t in enumerate(self.time):
-        self.breakpoints[i][-1] = len(t) - 1
+          self.breakpoints[i][-1] = len(t) - 1
       else:
         self.breakpoints[-1] = len(self.time) - 1
       # Get PLD normalization
