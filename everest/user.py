@@ -419,19 +419,29 @@ class Everest(Basecamp):
       self.cdpp_arr = []
       self.cdppv_arr = []
       self.cdppr_arr = []
+      subseason = []
       for c in range(99):
         try:
           self.breakpoints.append(f[1].header['BRKPT%02d' % (c + 1)])
           self.cdpp_arr.append(f[1].header['CDPP%02d' % (c + 1)])
           self.cdppr_arr.append(f[1].header['CDPPR%02d' % (c + 1)])
           self.cdppv_arr.append(f[1].header['CDPPV%02d' % (c + 1)])
+          if f[1].header.get('SUBSN%02d' % (c + 1), None) is not None:
+            subseason.append(f[1].header['SUBSN%02d' % (c + 1)])
         except KeyError:
           break
+      if len(subseason) == 0:
+        self.nsub = 1
+        self.nseg = len(self.breakpoints)
+      else:
+        self.breakpoints = np.split(self.breakpoints, np.where(np.diff(subseason) != 0)[0] + 1)
+        self.nsub = len(self.breakpoints)
+        self.nseg = len([item for sublist in self.breakpoints for item in sublist])
       self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
-                   for c in range(len(self.breakpoints))]
+                   for c in range(len(self._breakpoints))]
       if self.model_name == 'iPLD':
         self.reclam = [[f[1].header['RECL%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
-                        for c in range(len(self.breakpoints))]
+                        for c in range(len(self._breakpoints))]
       
       # Masks
       self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]

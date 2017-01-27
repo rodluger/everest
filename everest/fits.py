@@ -72,8 +72,9 @@ def LightcurveHDU(model):
   cards.append(('MODEL', model.name, 'Name of EVEREST model used'))
   cards.append(('APNAME', model.aperture_name, 'Name of aperture used'))
   cards.append(('BPAD', model.bpad, 'Chunk overlap in cadences'))
-  for c in range(len(model.breakpoints)):
-    cards.append(('BRKPT%02d' % (c + 1), model.breakpoints[c], 'Light curve breakpoint'))
+  for c in range(len(model._breakpoints)):
+    cards.append(('BRKPT%02d' % (c + 1), model._breakpoints[c], 'Light curve breakpoint'))
+    cards.append(('SUBSN%02d' % (c + 1), model.subseason(c), 'Light curve sub-season'))
   cards.append(('CBVNUM', model.cbv_num, 'Number of CBV signals to recover'))
   cards.append(('CBVNITER', model.cbv_niter, 'Number of CBV SysRem iterations'))
   cards.append(('CBVWIN', model.cbv_win, 'Window size for smoothing CBVs'))
@@ -97,7 +98,7 @@ def LightcurveHDU(model):
   cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))
   cards.append(('GPRED', model.kernel_params[1], 'GP red noise amplitude (e-/s)'))
   cards.append(('GPTAU', model.kernel_params[2], 'GP red noise timescale (days)'))
-  for c in range(len(model.breakpoints)):
+  for c in range(len(model._breakpoints)):
     for o in range(model.pld_order):
       cards.append(('LAMB%02d%02d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))
       if model.name == 'iPLD':
