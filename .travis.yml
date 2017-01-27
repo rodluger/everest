@@ -39,6 +39,14 @@ install:
   - pip install coveralls astroML astroML_addons george==0.2.1 pysyzygy k2plr
   - python setup.py develop
 
+# Configure a headless display to test plot generation
+# http://stackoverflow.com/a/35403128
+before_script: 
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  # Give xvfb some time to start
+  - sleep 3 
+
 script: 
   - nosetests --with-coverage --cover-package=everest -v -w tests
 
