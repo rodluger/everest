@@ -369,7 +369,10 @@ class Detrender(Basecamp):
       
         # Project onto unmasked time array
         inds = np.array([np.argmax(self.time[k] == t[i]) for i in inds])
-        self.outmask[k] = np.array(inds, dtype = int)
+        if self.nsub == 1:
+          self.outmask = np.array(inds, dtype = int)
+        else:
+          self.outmask[k] = np.array(inds, dtype = int)
       
         # Add them to the running list
         outmask.append(np.array(inds))
@@ -1098,7 +1101,7 @@ class Detrender(Basecamp):
           y = np.append(y, self.apply_mask(self.flux[k]) - np.dot(X, np.linalg.solve(np.dot(X.T, X), 
                         np.dot(X.T, self.apply_mask(self.flux[k]), k = k)))) 
       else:
-        X = self.apply_mask(self.fpix[k] / self.flux[k].reshape(-1, 1), k = k)
+        X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
         y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))   
       white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
       amp = self.gp_factor * np.nanstd(y)
@@ -1368,8 +1371,15 @@ class nPLD(Detrender):
                              get_hires = False, get_nearby = False)
         if data is None:
           raise Exception("Unable to retrieve data for neighboring target.")
-        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
-        data.fraw = np.sum(data.fpix, axis = 1)
+        
+        if self.nsub > 1:
+          data.mask = [np.array(list(set(np.concatenate([data.badmask[k], data.nanmask[k]]))), dtype = int) for k in range(self.nsub)]
+          data.fraw = [np.sum(data.fpix[k], axis = 1) for k in range(self.nsub)]
+        else:
+          data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+          data.fraw = np.sum(data.fpix, axis = 1)
+      
+      # TODO TODO TODO: Make sub-season friendly
       
       # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
       X1 = data.fpix / data.fraw.reshape(-1, 1)

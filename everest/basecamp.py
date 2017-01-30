@@ -213,10 +213,12 @@ class Basecamp(object):
     cadences, transit cadences, and :py:obj:`NaN` cadences.
     
     '''
-    
-    # TODO: Make sub-season friendly
-    
-    return np.array(list(set(np.concatenate([self.outmask, self.badmask, self.transitmask, self.nanmask]))), dtype = int)
+
+    if self.nsub > 1:
+      return [np.array(list(set(np.concatenate([self.outmask[k], self.badmask[k], 
+              self.transitmask[k], self.nanmask[k]]))), dtype = int) for k in range(self.nsub)]
+    else:
+      return np.array(list(set(np.concatenate([self.outmask, self.badmask, self.transitmask, self.nanmask]))), dtype = int)
   
   @mask.setter
   def mask(self, value):
