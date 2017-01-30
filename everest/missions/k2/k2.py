@@ -167,12 +167,75 @@ def CDPP(flux, mask = [], cadence = 'lc'):
     return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers = True, win = rmswin) 
   else:
     return np.nan
+
+def GetData(EPIC, **kwargs):
+  '''
+  Returns a :py:obj:`DataContainer` instance with the raw data for the target.
+  
+  :param int EPIC: The EPIC ID number
+  :param int season: The observing season (campaign). Default :py:obj:`None`
+  :param str cadence: The light curve cadence. Default `lc`
+  :param bool clobber: Overwrite existing files? Default :py:obj:`False`
+  :param bool delete_raw: Delete the FITS TPF after processing it? Default :py:obj:`False`
+  :param str aperture_name: The name of the aperture to use. Select `custom` to call \
+         :py:func:`GetCustomAperture`. Default `k2sff_15`
+  :param str saturated_aperture_name: The name of the aperture to use if the target is \
+         saturated. Default `k2sff_19`
+  :param int max_pixels: Maximum number of pixels in the TPF. Default 75
+  :param bool download_only: Download raw TPF and return? Default :py:obj:`False`
+  :param float saturation_tolerance: Target is considered saturated if flux is within \
+         this fraction of the pixel well depth. Default -0.1
+  :param array_like bad_bits: Flagged :py:obj`QUALITY` bits to consider outliers when \
+         computing the model. Default `[1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]`
+  :param bool get_hires: Download a high resolution image of the target? Default :py:obj:`True`
+  :param bool get_nearby: Retrieve location of nearby sources? Default :py:obj:`True`
     
-def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
+  '''
+  
+  # Determine the number of sub-seasons
+  breakpoints = Breakpoints(EPIC)
+  if hasattr(breakpoints[0], '__len__'):
+    nsub = len(Breakpoints(EPIC))
+  else:
+    nsub = 1
+    return _GetData(EPIC, **kwargs)
+  
+  # Get the season number
+  season = Season(EPIC)
+  
+  # Get the data for each sub-season
+  for k in range(nsub):
+    kwargs.update({'npzname': 'data%02d.npz' % (k + 1),
+                   'season': '%02d%d' % (season, k + 1),
+                   'get_hires': k == 0,
+                   'get_nearby': k == 0})
+    if k == 0:
+      data = _GetData(EPIC, **kwargs)
+      # Turn these attributes into lists
+      for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
+                   'badmask', 'aperture', 'aperture_name',
+                   'qual', 'pc1', 'pc2', 'bkg', 'meta', 'pixel_images']:
+        setattr(data, attr, [getattr(data, attr)])
+    else:
+      _data = _GetData(EPIC, **kwargs)
+      # Append to running lists
+      for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
+                   'badmask', 'aperture', 'aperture_name',
+                   'qual', 'pc1', 'pc2', 'bkg', 'meta', 'pixel_images']:
+        getattr(data, attr).append(getattr(_data, attr))
+    
+    # Select the first, middle and last pixel images
+    data.pixel_images = [data.pixel_images[0][0], 
+                         data.pixel_images[(nsub - 1) // 2][((nsub + 1) % 2) + 1], 
+                         data.pixel_images[-1][-1]]
+  
+  return data
+  
+def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = False, 
             aperture_name = 'k2sff_15', saturated_aperture_name = 'k2sff_19',
             max_pixels = 75, download_only = False, saturation_tolerance = -0.1, 
             bad_bits = [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17], get_hires = True, 
-            get_nearby = True, **kwargs):
+            get_nearby = True, npzname = 'data.npz', **kwargs):
   '''
   Returns a :py:obj:`DataContainer` instance with the raw data for the target.
   
@@ -210,7 +273,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   # Local file name
   filename = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign, 
                          ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
-                         'data.npz')
+                         npzname)
   
   # Download?
   if clobber or not os.path.exists(filename):

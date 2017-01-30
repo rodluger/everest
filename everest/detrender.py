@@ -1378,12 +1378,17 @@ class nPLD(Detrender):
         else:
           data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
           data.fraw = np.sum(data.fpix, axis = 1)
-      
-      # TODO TODO TODO: Make sub-season friendly
-      
+
       # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
-      X1 = data.fpix / data.fraw.reshape(-1, 1)
-      X1 = Interpolate(data.time, data.mask, X1)
+      if self.nsub > 1:
+        X1 = [None for k in range(self.nsub)]
+        for k in range(self.nsub):
+          X1[k] = data.fpix[k] / data.fraw[k].reshape(-1, 1)
+          X1[k] = Interpolate(data.time[k], data.mask[k], X1[k])
+        X1 = np.vstack(X1)
+      else:
+        X1 = data.fpix / data.fraw.reshape(-1, 1)
+        X1 = Interpolate(data.time, data.mask, X1)
       if self.X1N is None:
         self.X1N = np.array(X1)
       else:
@@ -1412,8 +1417,14 @@ class iPLD(Detrender):
       raise Exception('Unable to load parent model.')
     
     # Save static copies of the de-trended flux, the outlier mask and the lambda array
-    self._norm = np.array(self.flux)
-    self.recmask = np.array(self.mask)
+    if self.nsub > 1:
+      self._norm = [np.array(self.flux[k]) for k in range(self.nsub)]
+      self.recmask = [np.array(self.mask[k]) for k in range(self.nsub)]
+      self.model = [np.zeros_like(self.time[k]) for k in range(self.nsub)]
+    else:
+      self._norm = np.array(self.flux)
+      self.recmask = np.array(self.mask)
+      self.model = np.zeros_like(self.time)
     self.reclam = np.array(self.lam)
     
     # Now reset the model params
@@ -1427,7 +1438,7 @@ class iPLD(Detrender):
     self.cdppr = np.nan
     self.cdppv = np.nan
     self.cdppg = np.nan
-    self.model = np.zeros_like(self.time)
+    
     self.loaded = True
     
 class pPLD(Detrender):
@@ -1447,6 +1458,10 @@ class pPLD(Detrender):
     :param float ppert: The fractional amplitude of the perturbation on the initial guess. Default 0.1
     
     '''
+    
+    # For now, this is only implemented for light curves with no sub-seasons
+    if self.nsub > 1:
+      raise NotImplementedError("This model is not implemented for light curves with sub-seasons.") 
     
     # Check for saved model
     clobber = self.clobber
