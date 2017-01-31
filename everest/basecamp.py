@@ -375,45 +375,44 @@ class Basecamp(object):
     
     # Now the case with multiple sub-seasons
     else:
-      
-      # XXXXX
-      #
-      # DEBUG, TODO: CHECK THIS SECTION!
-      #
-      # XXXXX
-      
+
       # Loop over all sub-seasons
       self.model = [None for i in range(self.nsub)]
-      j = 0
+      n = 0
       for k in range(self.nsub):
         
-        # Mend the breakpoints
-        if len(self.breakpoints[k]) > 1:
+        # Loop over all the segments and assign
+        # them to the correct sub-season
+        nseg = len(self.breakpoints[k])
+        for j, m in enumerate(model[n:n+nseg]):
           
-          # First chunk
-          self.model[k] = model[k][0][:-self.bpad]
+          # Only chunk?
+          if nseg == 1:
+            self.model[k] = m
+            
+          # First chunk?
+          elif j == 0:
+            self.model[k] = m[:-self.bpad]
+                  
+          # Last chunk?
+          elif j == nseg - 1:
+            i = 1
+            while len(self.model[k]) - i in self.mask[k]:
+              i += 1
+            offset = self.model[k][-i] - m[self.bpad - i]
+            self.model[k] = np.concatenate([self.model[k], m[self.bpad:] + offset])
           
-          # Center chunks
-          for m in model[k][1:-1]:
+          # Center chunks?
+          else:
             # Join the chunks at the first non-outlier cadence
             i = 1
             while len(self.model[k]) - i in self.mask[k]:
               i += 1
             offset = self.model[k][-i] - m[self.bpad - i]
             self.model[k] = np.concatenate([self.model[k], m[self.bpad:-self.bpad] + offset])
-  
-          # Last chunk
-          i = 1
-          while len(self.model[k]) - i in self.mask[k]:
-            i += 1
-          offset = self.model[k][-i] - model[k][-1][self.bpad - i]
-          self.model[k] = np.concatenate([self.model[k], model[k][-1][self.bpad:] + offset])
+        
+        n += nseg
           
-        else:
-        
-          # Cake!
-          self.model[k] = model[j]
-        
         # Subtract the global median
         self.model[k] -= np.nanmedian(self.model[k])
         
@@ -595,7 +594,7 @@ class Basecamp(object):
     
     if flux is None:
       flux = self.flux
-    return np.array([self._mission.CDPP(flux[self.get_masked_chunk(b)], cadence = self.cadence) for b in range(self.nseg)])
+    return np.array([self._mission.CDPP(flux[self.subseason(b)][self.get_masked_chunk(b)], cadence = self.cadence) for b in range(self.nseg)])
   
   def get_cdpp(self, flux = None):
     '''
@@ -607,7 +606,8 @@ class Basecamp(object):
       flux = self.flux
       if self.nsub > 1:
         for k in range(self.nsub):
-          flux[k] = self.apply_mask(flux[k])
+          flux[k] = self.apply_mask(flux[k], k = k)
+        flux = np.concatenate(flux)
       else:
         flux = self.apply_mask(flux)
     return self._mission.CDPP(flux, cadence = self.cadence)
@@ -624,30 +624,48 @@ class Basecamp(object):
     # Get colormap
     plasma = pl.get_cmap('plasma')
     plasma.set_bad(alpha = 0)
-    
+
     # Get aperture contour
     def PadWithZeros(vector, pad_width, iaxis, kwargs):
       vector[:pad_width[0]] = 0
       vector[-pad_width[1]:] = 0
       return vector
-    ny, nx = self.pixel_images[0].shape
-    contour = np.zeros((ny,nx))
-    contour[np.where(self.aperture)] = 1
-    contour = np.lib.pad(contour, 1, PadWithZeros)
-    highres = zoom(contour, 100, order = 0, mode='nearest') 
-    extent = np.array([-1, nx, -1, ny])
     
     # Plot first, mid, and last TPF image
     title = ['start', 'mid', 'end']
     for i, image in enumerate(self.pixel_images):
+      
+      # Sub-seasons?
+      if self.nsub > 1:
+        if i == 0:
+          # First sub-season
+          k = 0
+        elif i == 2:
+          # Last sub-season
+          k = self.nsub - 1
+        else:
+          # Middle sub-season, round down
+          k = (self.nsub - 1) // 2
+      else:
+        k = slice(None, None, None)
+      
+      # Grab the image
+      ny, nx = image.shape
+      contour = np.zeros((ny,nx))
+      contour[np.where(self.aperture[k])] = 1
+      contour = np.lib.pad(contour, 1, PadWithZeros)
+      highres = zoom(contour, 100, order = 0, mode='nearest') 
+      extent = np.array([-1, nx, -1, ny])
+      
+      # Plot it
       ax = axes[i]
       ax.imshow(image, aspect = 'auto', interpolation = 'nearest', cmap = plasma)
       ax.contour(highres, levels=[0.5], extent=extent, origin='lower', colors='r', linewidths=1)
       
       # Check for saturated columns
-      for x in range(self.aperture.shape[0]):
-        for y in range(self.aperture.shape[1]):
-          if self.aperture[x][y] == AP_SATURATED_PIXEL:
+      for x in range(self.aperture[k].shape[0]):
+        for y in range(self.aperture[k].shape[1]):
+          if self.aperture[k][x][y] == AP_SATURATED_PIXEL:
             ax.fill([y - 0.5, y + 0.5, y + 0.5, y - 0.5], 
                     [x - 0.5, x - 0.5, x + 0.5, x + 0.5], fill = False, hatch='xxxxx', color = 'r', lw = 0)      
       

@@ -130,12 +130,13 @@ def Campaign(EPIC, **kwargs):
       return campaign
   return None
 
-def GetK2Stars(clobber = False):
+def GetK2Stars(clobber = False, update = False):
   '''
   Download and return a :py:obj:`dict` of all *K2* stars organized by campaign. Saves each
   campaign to a `.stars` file in the `everest/missions/k2/tables` directory.
   
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
+  :param bool update: If :py:obj:`True`, download and update missing campaign files. Default :py:obj:`False`
   
   .. note:: The keys of the dictionary returned by this function are the (integer) numbers of each \
             campaign. Each item in the :py:obj:`dict` is a list of the targets in the corresponding \
@@ -145,14 +146,31 @@ def GetK2Stars(clobber = False):
   '''
   
   # Download
-  if clobber:
+  if clobber or update:
     print("Downloading K2 star list...")
     stars = kplr_client.k2_star_info()
     print("Writing star list to disk...")
     for campaign in stars.keys():
+      
+      # If this is a campaign with sub-campaigns, fix the campaign number
+      if campaign in [91, 92]:
+        cnum = 9
+      elif campaign in [101, 102]:
+        cnum = 10
+      else:
+        cnum = campaign
+        
+      # Check if file exists
+      if update and not clobber:
+        if os.path.exists(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % cnum)):
+          continue
+          
+      # Create directory if necessary
       if not os.path.exists(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables')):
         os.makedirs(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables'))
-      with open(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % campaign), 'w') as f:
+      
+      # Write to file
+      with open(os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % cnum), 'w') as f:
         for star in stars[campaign]:
           print(",".join([str(s) for s in star]), file = f)
   

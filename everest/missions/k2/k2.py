@@ -87,8 +87,8 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                    6: [2143],         
                    7: [1192, 2319],   
                    8: [1950],         
-                   9: [[], []],   # TODO
-                  10: [[], []],   # TODO
+                   9: [[], []],
+                  10: [[], []],
                   11: [],
                   12: [],
                   13: [],
@@ -123,8 +123,8 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   6: np.array(np.linspace(0, 115890, 31)[1:-1], dtype = int),     
                   7: np.array(np.linspace(0, 121290, 31)[1:-1], dtype = int),     
                   8: np.array(np.linspace(0, 115590, 31)[1:-1], dtype = int),     
-                  9: [],
-                 10: [],
+                  9: [[], []], # TODO
+                 10: [[], []], # TODO
                  11: [],
                  12: [],
                  13: [],
@@ -206,7 +206,7 @@ def GetData(EPIC, **kwargs):
   # Get the data for each sub-season
   for k in range(nsub):
     kwargs.update({'npzname': 'data%02d.npz' % (k + 1),
-                   'season': '%02d%d' % (season, k + 1),
+                   'subseason': int('%d%d' % (season, k + 1)),
                    'get_hires': k == 0,
                    'get_nearby': k == 0})
     if k == 0:
@@ -214,20 +214,20 @@ def GetData(EPIC, **kwargs):
       # Turn these attributes into lists
       for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
                    'badmask', 'aperture', 'aperture_name',
-                   'qual', 'pc1', 'pc2', 'bkg', 'meta', 'pixel_images']:
+                   'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
         setattr(data, attr, [getattr(data, attr)])
     else:
       _data = _GetData(EPIC, **kwargs)
       # Append to running lists
       for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
                    'badmask', 'aperture', 'aperture_name',
-                   'qual', 'pc1', 'pc2', 'bkg', 'meta', 'pixel_images']:
+                   'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
         getattr(data, attr).append(getattr(_data, attr))
     
-    # Select the first, middle and last pixel images
-    data.pixel_images = [data.pixel_images[0][0], 
-                         data.pixel_images[(nsub - 1) // 2][((nsub + 1) % 2) + 1], 
-                         data.pixel_images[-1][-1]]
+  # Select the first, middle and last pixel images
+  data.pixel_images = [data.pixel_images[0][0], 
+                       data.pixel_images[(nsub - 1) // 2][((nsub + 1) % 2) + 1], 
+                       data.pixel_images[-1][-1]]
   
   return data
   
@@ -280,10 +280,10 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
 
     # Get the TPF
     tpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', 
-                       str(EPIC), 'ktwo%09d-c%02d_lpd-targ.fits.gz' % (EPIC, campaign))
+                       str(EPIC), 'ktwo%09d-c%02d_lpd-targ.fits.gz' % (EPIC, kwargs.get('subseason', campaign)))
     sc_tpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files', 
-                          str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz' % (EPIC, campaign))
-    if clobber or not os.path.exists(tpf):                 
+                          str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz' % (EPIC, kwargs.get('subseason', campaign)))
+    if clobber or not os.path.exists(tpf):
       kplr_client.k2_star(EPIC).get_target_pixel_files(fetch = True)
 
     with pyfits.open(tpf) as f:
@@ -428,7 +428,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
   pixel_images = data['pixel_images']
   nearby = data['nearby']
   hires = data['hires'][()]
-  
+
   if cadence == 'lc':
     fitsheader = data['fitsheader']
     cadn = data['cadn']

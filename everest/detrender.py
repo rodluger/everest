@@ -54,8 +54,8 @@ class Detrender(Basecamp):
   
   **Detrender:**
   
-  :param str aperture_name: The name of the aperture to use. These are defined in the datasets and are \
-                            mission specific. Defaults to the mission default
+  :param str aperture: The name of the aperture to use. These are defined in the datasets and are \
+                       mission specific. Defaults to the mission default
   :param int bpad: When light curve breakpoints are set, the light curve chunks must be stitched together \
                    at the end. To prevent kinks and/or discontinuities, the chunks are made to overlap by \
                    :py:obj:`bpad` cadences on either end. The chunks are then mended and the overlap is \
@@ -110,8 +110,8 @@ class Detrender(Basecamp):
                   This parameter should be a tuple or a list of tuples in the form (`t0`, `period`, `duration`) \
                   for each of the planets to be masked (all values in days).
   :param int pld_order: The pixel level decorrelation order. Default `3`. Higher orders may cause memory errors
-  :param str saturated_aperture_name: If the target is found to be saturated, de-trending is performed \
-                                      on this aperture instead. Defaults to the mission default
+  :param str saturated_aperture: If the target is found to be saturated, de-trending is performed \
+                                 on this aperture instead. Defaults to the mission default
   :param float saturation_tolerance: The tolerance when determining whether or not to collapse a column \
                                      in the aperture. The column collapsing is implemented in the individual \
                                      mission modules. Default -0.1, i.e., if a target is 10% shy of the \
@@ -193,7 +193,7 @@ class Detrender(Basecamp):
       # Check if this light curve has sub-seasons
       if hasattr(bkpts[0], '__len__'):
         for subseason in range(len(bkpts)):
-          inds[subseason] = np.append(bkpts[subseason], [999999])
+          bkpts[subseason] = np.append(bkpts[subseason], [999999])
         self.breakpoints = bkpts
         self.nseg = len([item for sublist in bkpts for item in sublist])
         self.nsub = len(bkpts)
@@ -628,6 +628,7 @@ class Detrender(Basecamp):
                                np.array(list(set(np.concatenate([self.badmask[k], 
                                self.nanmask[k]]))), dtype = int)) for k in range(self.nsub)])
         lo, hi = fraw[np.argsort(fraw)][[3,-3]]
+        bn = np.array(list(set(np.concatenate([self.badmask[k], self.nanmask[k]]))), dtype = int)
         flux = np.delete(self.flux, bn)
         flux = np.concatenate([np.delete(self.flux[k], 
                                np.array(list(set(np.concatenate([self.badmask[k], 
@@ -662,7 +663,7 @@ class Detrender(Basecamp):
       # No sub-seasons?
       if self.nsub == 1:
         k = slice(None, None, None)
-      
+
       # Plot
       if self.cadence == 'lc':
         ax.plot(self.apply_mask(self.time[k], k = k), self.apply_mask(self.flux[k], k = k), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
@@ -684,28 +685,28 @@ class Detrender(Basecamp):
         ax.plot(O2(self.time[k]), O2(self.flux[k]), 'r.', markersize = 2, alpha = 0.125, zorder = -1)
       for i in np.where(self.flux[k] < ylim[0])[0]:
         if i in badmask:
-          color = "#ffcccc"
+          c = "#ffcccc"
         elif i in self.outmask[k]:
-          color = "#cccccc"
+          c = "#cccccc"
         elif i in self.nanmask[k]:
           continue
         else:
-          color = "#ccccff"
+          c = "#ccccff"
         ax.annotate('', xy=(self.time[k][i], ylim[0]), xycoords = 'data',
                     xytext = (0, 15), textcoords = 'offset points',
-                    arrowprops=dict(arrowstyle = "-|>", color = color))
+                    arrowprops=dict(arrowstyle = "-|>", color = c))
       for i in np.where(self.flux[k] > ylim[1])[0]:
         if i in badmask:
-          color = "#ffcccc"
+          c = "#ffcccc"
         elif i in self.outmask[k]:
-          color = "#cccccc"
+          c = "#cccccc"
         elif i in self.nanmask[k]:
           continue
         else:
-          color = "#ccccff"
+          c = "#ccccff"
         ax.annotate('', xy=(self.time[k][i], ylim[1]), xycoords = 'data',
                     xytext = (0, -15), textcoords = 'offset points',
-                    arrowprops=dict(arrowstyle = "-|>", color = color))
+                    arrowprops=dict(arrowstyle = "-|>", color = c))
     
       # Plot the breakpoints
       for brkpt in self.breakpoints[k][:-1]:
@@ -713,7 +714,11 @@ class Detrender(Basecamp):
           ax.axvline(self.time[k][brkpt], color = 'r', ls = '--', alpha = 0.5)
         else:
           ax.axvline(self.time[k][brkpt], color = 'r', ls = '-', alpha = 0.025)
-        
+      
+      # Plot the sub-season divisions
+      if (self.nsub > 1) and (k < self.nsub - 1):
+        ax.axvline(0.5 * (self.time[k][-1] + self.time[k + 1][0]), color = 'b', ls = '--', alpha = 0.5)
+      
     # Appearance
     if len(self.cdpp_arr) == 2:
       ax.annotate('%.2f ppm' % self.cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
@@ -876,7 +881,11 @@ class Detrender(Basecamp):
                  ha = 'center', va = 'center', fontsize = 12,
                  color = 'k')
     
-    axl.annotate(self.aperture_name if len(self.neighbors) == 0 else "%s, %d neighbors" % (self.aperture_name, len(self.neighbors)),
+    if self.nsub > 1:
+      apname = " / ".join(self.aperture_name)
+    else:
+      apname = self.aperture_name
+    axl.annotate(apname if len(self.neighbors) == 0 else "%s, %d neighbors" % (apname, len(self.neighbors)),
                  xy = (0.5, 0.2), xycoords = 'axes fraction',
                  ha = 'center', va = 'center', fontsize = 8, color = 'k',
                  fontstyle = 'italic')
@@ -1077,7 +1086,7 @@ class Detrender(Basecamp):
       mask = []
       offset = 0
       for k in range(self.nsub):
-        mask.append(self.mask[k] + offset)
+        mask.extend(self.mask[k] + offset)
         offset += len(self.time[k])
       self.kernel_params = GetKernelParams(np.concatenate(self.time), np.concatenate(self.flux), np.concatenate(self.fraw_err), 
                                            mask = mask, guess = self.kernel_params, 
@@ -1098,8 +1107,8 @@ class Detrender(Basecamp):
         y = []
         for k in range(self.nsub):
           X = self.apply_mask(self.fpix[k] / self.flux[k].reshape(-1, 1), k = k)
-          y = np.append(y, self.apply_mask(self.flux[k]) - np.dot(X, np.linalg.solve(np.dot(X.T, X), 
-                        np.dot(X.T, self.apply_mask(self.flux[k]), k = k)))) 
+          y = np.append(y, self.apply_mask(self.flux[k], k = k) - np.dot(X, np.linalg.solve(np.dot(X.T, X), 
+                        np.dot(X.T, self.apply_mask(self.flux[k], k = k)))))
       else:
         X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
         y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))   

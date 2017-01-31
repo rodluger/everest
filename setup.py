@@ -50,7 +50,7 @@ setup(name = 'everest-pipeline',
                           'six',
                           'astropy',
                           'pysyzygy>=0.0.1',
-                          'k2plr>=0.2.2',
+                          'k2plr>=0.2.3',
                           'PyPDF2'
                          ],
       scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
