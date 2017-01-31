@@ -26,7 +26,8 @@ from scipy.interpolate import griddata
 import k2plr as kplr; kplr_client = kplr.API()
 import numpy as np
 from tempfile import NamedTemporaryFile
-import urllib
+import six
+from six.moves import urllib
 import re
 import os, subprocess
 import logging
