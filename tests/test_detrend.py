@@ -71,4 +71,4 @@ def test_c9():
   
   # Check!
   print("De-trended CDPP: %.3f ppm" % star.cdpp)
-  #assert (star.cdpp > 15.) and (star.cdpp < 19.), "De-trended CDPP is different from benchmark value (17.302 ppm)."
+  assert (star.cdpp > 350.) and (star.cdpp < 354.), "De-trended CDPP is different from benchmark value (352.3 ppm)."
