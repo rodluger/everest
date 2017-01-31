@@ -622,7 +622,10 @@ class Basecamp(object):
     log.info('Plotting the aperture...')
         
     # Get colormap
-    plasma = pl.get_cmap('plasma')
+    try:
+      plasma = pl.get_cmap('plasma')
+    except ValueError:
+      plasma = pl.get_cmap('Greys')
     plasma.set_bad(alpha = 0)
 
     # Get aperture contour
