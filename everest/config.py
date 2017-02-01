@@ -45,7 +45,7 @@ if EVEREST_DEV:
   MAST_ROOT = 'http://staff.washington.edu/rodluger/test/'
 else:
   #: The MAST url where the light curves are published
-  MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+  MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/v2/'
 
 #: Everest quality bit: masked because a Kepler flag was raised
 QUALITY_BAD = 23

@@ -83,7 +83,7 @@
     var mission = getParameterByName("mission");
     
     // Constants
-    var mast_root = "http://archive.stsci.edu/missions/hlsp/everest/";
+    var mast_root = "http://archive.stsci.edu/missions/hlsp/everest/v2/";
     var version = "2.0";
     
     // Initialize
