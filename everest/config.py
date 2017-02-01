@@ -20,7 +20,7 @@ EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
 
 # MAST url
 EVEREST_FITS = os.environ.get('EVEREST_FITS', None)
-MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/'
+MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/v1/'
 
 # Default kwargs file
 KWARGS_PY = \
