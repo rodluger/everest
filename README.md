@@ -13,10 +13,6 @@
 <b>E</b>PIC <b>V</b>ariability <b>E</b>xtraction and <b>R</b>emoval for <b>E</b>xoplanet <b>S</b>cience <b>T</b>argets: A pipeline for de-trending <b>K2</b> light curves with pixel level decorrelation and Gaussian processes. Here you'll find the Python code used to generate the <b>EVEREST</b> catalog, as well as tools for accessing and interacting with the de-trended light curves.
 <br/><br/>
 
-<b>NOTE: Version 2.0 light curves are currently on their way to MAST, and should be available by 02/01/2017. Until then,
-users should interface with the catalog using the <a href="https://github.com/rodluger/everest/tree/1.0.5">v1</a> release.</b>
-<br/><br/>
-
 To install the latest <b>EVEREST</b> release (2.0):
 <br/><br/>
 <pre><code>pip install everest-pipeline</code></pre>
