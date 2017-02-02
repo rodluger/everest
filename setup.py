@@ -4,6 +4,16 @@
 from __future__ import division, print_function, absolute_import
 from setuptools import setup, find_packages
 
+# Hackishly inject a constant into builtins to enable importing of the
+# module in "setup" mode. Stolen from `kplr`
+import sys
+if sys.version_info[0] < 3:
+  import __builtin__ as builtins
+else:
+  import builtins
+builtins.__EVEREST_SETUP__ = True
+import everest
+
 long_description = \
 """
 EPIC Variability Extraction and Removal for Exoplanet Science Targets: 
@@ -16,7 +26,7 @@ settings. Read the documentation at https://github.com/rodluger/everest
 
 # Setup!
 setup(name = 'everest-pipeline',
-      version = "2.0.2",
+      version = everest.__subversion__,
       description = 'EPIC Variability Extraction and Removal for Exoplanet Science Targets',
       long_description = long_description,
       classifiers = [
@@ -50,12 +60,7 @@ setup(name = 'everest-pipeline',
       tests_require=['nose']
       )
 
-# Hackishly inject a constant into builtins to enable importing of the
-# module in "setup" mode. Stolen from `kplr`
-import sys
-if sys.version_info[0] < 3:
-  import __builtin__ as builtins
-else:
-  import builtins
-builtins.__EVEREST_SETUP__ = True
-import everest
+# Set up the individual missions
+from everest import missions
+for mission in missions.Missions:
+  getattr(missions, mission).Setup()
