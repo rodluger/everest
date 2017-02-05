@@ -1728,8 +1728,7 @@ def FitCBVs(model):
       breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
       breakpoints += [len(time) - 1]
     else:
-      flux = [Interpolate(model.time[k], model.mask[k], model.flux[k]
-              for k in range(model.nsub))]
+      flux = [Interpolate(model.time[k], model.mask[k], model.flux[k]) for k in range(model.nsub)]
       time = [Downbin(model.time[k], len(model.time[k]) // 30, operation = 'mean') for k in range(model.nsub)]
       flux = [Downbin(flux[k], len(model.time[k]) // 30, operation = 'mean') for k in range(model.nsub)]
       breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
