@@ -3,7 +3,7 @@ Old Versions
 
 The documentation for the previous version of :py:obj:`everest` is available
 `here <http://staff.washington.edu/rodluger/everest_docs>`_. The code itself
-is available as the `v1 release <https://github.com/rodluger/everest/tree/1.0.4>`_ on 
+is available as the `v1 release <https://github.com/rodluger/everest/tree/1.0.5>`_ on 
 the project github repository, and the light curves will be available on
 `MAST <http://archive.stsci.edu/prepds/everest/>`_ until mid 2017.
 

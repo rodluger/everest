@@ -5,6 +5,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 # Version number
 __version__ = "2.0"
+__subversion__ = "2.0.2"
 
 # Was everest imported from setup.py?
 try:
@@ -12,14 +13,9 @@ try:
 except NameError:
   __EVEREST_SETUP__ = False
 
-if __EVEREST_SETUP__:
-  # Set up the individual missions
-  from . import missions
-  for mission in missions.Missions:
-    getattr(missions, mission).Setup()
-else:
+if not __EVEREST_SETUP__:
   # This is a regular everest run
-  
+
   # Import all modules
   from . import config
   from . import utils
