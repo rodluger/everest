@@ -1669,18 +1669,21 @@ def FitCBVs(model):
   if model.cadence == 'lc':
   
     # Loop over all the light curve segments
-    m = [None for b in range(len(model.breakpoints))]
-    weights = [None for b in range(len(model.breakpoints))]
-    for b in range(len(model.breakpoints)):
-    
+    m = [None for b in range(model.nseg)]
+    weights = [None for b in range(model.nseg)]
+    for b, brkpt in enumerate(self._breakpoints):
+      
+      # Get the sub-season
+      k = model.subseason(b)
+      
       # Get the indices for this light curve segment
       inds = model.get_chunk(b, pad = False)
       masked_inds = model.get_masked_chunk(b, pad = False)
 
       # Regress
-      mX = model.XCBV[masked_inds,:ncbv + 1]
+      mX = model.XCBV[k][masked_inds,:ncbv + 1]
       A = np.dot(mX.T, mX)
-      B = np.dot(mX.T, model.flux[masked_inds])
+      B = np.dot(mX.T, model.flux[k][masked_inds])
       try:
         weights[b] = np.linalg.solve(A, B)
       except np.linalg.linalg.LinAlgError:
@@ -1688,7 +1691,7 @@ def FitCBVs(model):
         log.warn('Singular matrix!')
         weights[b] = np.zeros(mX.shape[1])
         
-      m[b] = np.dot(model.XCBV[inds,:ncbv + 1], weights[b])
+      m[b] = np.dot(model.XCBV[k][inds,:ncbv + 1], weights[b])
 
       # Vertical alignment
       if b == 0:
@@ -1701,41 +1704,59 @@ def FitCBVs(model):
         m[b] += (m[b - 1][i0] - m[b][i1])
   
     # Join model and normalize  
-    m = np.concatenate(m)
-    m -= np.nanmedian(m)
+    if model.nsub == 1:
+      mfin = np.concatenate(m)
+      mfin -= np.nanmedian(mfin)
+    else:
+      mfin = [None for i in range(model.nsub)]
+      n = 0
+      for k in range(model.nsub):
+        nseg = len(model.breakpoints[k])
+        mfin[k] = np.concatenate(model[n:n+nseg])
+        mfin[k] -= np.nanmedian(mfin[k])
+        n += nseg
   
   else:
     
     # Interpolate over outliers so we don't have to worry
-    # about masking the arrays below
-    flux = Interpolate(model.time, model.mask, model.flux)
-    
-    # Get downbinned light curve
-    newsize = len(model.time) // 30
-    time = Downbin(model.time, newsize, operation = 'mean')
-    flux = Downbin(flux, newsize, operation = 'mean')
-    
-    # Get LC breakpoints
-    breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
-    breakpoints += [len(time) - 1]
-    
+    # about masking the arrays below; downbin to LC;
+    # get LC breakpoints
+    if model.nsub == 1:
+      flux = Interpolate(model.time, model.mask, model.flux)
+      time = Downbin(model.time, len(model.time) // 30, operation = 'mean')
+      flux = Downbin(flux, len(model.time) // 30, operation = 'mean')
+      breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
+      breakpoints += [len(time) - 1]
+    else:
+      flux = [Interpolate(model.time[k], model.mask[k], model.flux[k]
+              for k in range(model.nsub))]
+      time = [Downbin(model.time[k], len(model.time[k]) // 30, operation = 'mean') for k in range(model.nsub)]
+      flux = [Downbin(flux[k], len(model.time[k]) // 30, operation = 'mean') for k in range(model.nsub)]
+      breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
+      for subseason in range(len(breakpoints)):
+        breakpoints[subseason] = np.append(breakpoints[subseason], [len(time[subseason]) - 1])
+      breakpoints = [item for sublist in breakpoints for item in sublist]
+      
     # Loop over all the light curve segments
-    m = [None for b in range(len(breakpoints))]
-    weights = [None for b in range(len(breakpoints))]
-    for b in range(len(breakpoints)):
+    m = [None for b in range(model.nseg)]
+    weights = [None for b in range(model.nseg)]
+    for b, brkpt in enumerate(breakpoints):
+      
+      # Get the sub-season
+      k = model.subseason(b)
     
       # Get the indices for this light curve segment
-      M = np.arange(len(time))
+      M = np.arange(len(time[k]))
       if b > 0:
         inds = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
       else:
         inds = M[M <= breakpoints[b]]
       
       # Regress
-      A = np.dot(model.XCBV[inds,:ncbv + 1].T, model.XCBV[inds,:ncbv + 1])
-      B = np.dot(model.XCBV[inds,:ncbv + 1].T, flux[inds])
+      A = np.dot(model.XCBV[k][inds,:ncbv + 1].T, model.XCBV[k][inds,:ncbv + 1])
+      B = np.dot(model.XCBV[k][inds,:ncbv + 1].T, flux[k][inds])
       weights[b] = np.linalg.solve(A, B)
-      m[b] = np.dot(model.XCBV[inds,:ncbv + 1], weights[b])
+      m[b] = np.dot(model.XCBV[k][inds,:ncbv + 1], weights[b])
 
       # Vertical alignment
       if b == 0:
@@ -1747,11 +1768,19 @@ def FitCBVs(model):
         i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
         m[b] += (m[b - 1][i0] - m[b][i1])
   
-    # Join model and normalize  
-    m = np.concatenate(m)
-    m -= np.nanmedian(m)
-
-    # Finally, interpolate back to short cadence
-    m = np.interp(model.time, time, m)
-    
-  return m
+    # Join model and normalize, then interpolate back to short cadence
+    if model.nsub == 1:
+      mfin = np.concatenate(m)
+      mfin -= np.nanmedian(mfin)
+      mfin = np.interp(model.time, time, m)
+    else:
+      mfin = [None for i in range(model.nsub)]
+      n = 0
+      for k in range(model.nsub):
+        nseg = len(model.breakpoints[k])
+        mfin[k] = np.concatenate(model[n:n+nseg])
+        mfin[k] -= np.nanmedian(mfin[k])
+        mfin[k] = np.interp(model.time[k], time[k], mfin[k])
+        n += nseg
+        
+  return mfin
