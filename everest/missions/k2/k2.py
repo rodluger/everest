@@ -1490,7 +1490,7 @@ def HDUCards(headers, hdu = 0):
   # Check if there are multiple headers (in the case of
   # a campaign with sub-seasons). If so, select only the
   # first one.
-  if type(headers[0][0][0][0]) is tuple:
+  if type(headers[0][0][0]) is pyfits.card.Card:
     k = 0
   else:
     k = slice(None, None, None)
