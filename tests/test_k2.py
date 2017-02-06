@@ -17,7 +17,7 @@ import shutil
 
 def test_c1():
   '''
-  Testing the de-trending for campaign 1, a regular campaign with 2 breakpoints
+  Testing the de-trending for K2 campaign 1, a regular campaign with 2 breakpoints
   
   '''
   
@@ -78,7 +78,7 @@ def test_c1():
   
 def test_c9():
   '''
-  Testing the de-trending for campaign 9, a split campaign (91, 92) with no other breakpoints
+  Testing the de-trending for K2 campaign 9, a split campaign (91, 92) with no other breakpoints
   
   '''
   
@@ -107,7 +107,7 @@ def test_c9():
   
   # Check!
   print("De-trended CDPP: %.3f ppm" % star1.cdpp)
-  assert (star1.cdpp > 300.) and (star1.cdpp < 400.), "De-trended CDPP is different from benchmark value (352.3 ppm)."
+  assert (star1.cdpp > 200.) and (star1.cdpp < 400.), "De-trended CDPP is different from benchmark value (352.3 ppm)."
 
   # Publish
   star1.publish()
