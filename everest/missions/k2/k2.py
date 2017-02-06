@@ -1487,18 +1487,26 @@ def HDUCards(headers, hdu = 0):
   
   '''
   
+  # Check if there are multiple headers (in the case of
+  # a campaign with sub-seasons). If so, select only the
+  # first one.
+  if type(headers[0][0][0][0]) is tuple:
+    k = 0
+  else:
+    k = slice(None, None, None)
+  
   if headers is None:
     return []
   
   if hdu == 0:
     # Get info from the TPF Primary HDU Header
-    tpf_header = headers[0]
+    tpf_header = headers[k][0]
     entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'CHANNEL', 'MODULE', 
                'OUTPUT', 'CAMPAIGN', 'DATA_REL', 'OBSMODE', 'TTABLEID',
                'RADESYS', 'RA_OBJ', 'DEC_OBJ',  'EQUINOX', 'KEPMAG']
   elif (hdu == 1) or (hdu == 6):
     # Get info from the TPF BinTable HDU Header
-    tpf_header = headers[1]
+    tpf_header = headers[k][1]
     entries = ['WCSN4P', 'WCAX4P', '1CTY4P', '2CTY4P', '1CUN4P', '2CUN4P', '1CRV4P', 
                '2CRV4P', '1CDL4P', '2CDL4P', '1CRP4P', '2CRP4P', 'WCAX4', '1CTYP4', 
                '2CTYP4', '1CRPX4', '2CRPX4', '1CRVL4', '2CRVL4', '1CUNI4', '2CUNI4', 
@@ -1532,7 +1540,7 @@ def HDUCards(headers, hdu = 0):
                'MEANBLCK', 'LCFXDOFF', 'SCFXDOFF']
   elif (hdu == 3) or (hdu == 4) or (hdu == 5):
     # Get info from the TPF BinTable HDU Header
-    tpf_header = headers[2]
+    tpf_header = headers[k][2]
     entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'RADESYS', 'RA_OBJ', 
                'DEC_OBJ', 'EQUINOX', 'WCSAXES', 'CTYPE1', 'CTYPE2', 'CRPIX1', 
                'CRPIX2', 'CRVAL1', 'CRVAL2', 'CUNIT1', 'CUNIT2', 'CDELT1', 
@@ -1671,7 +1679,7 @@ def FitCBVs(model):
     # Loop over all the light curve segments
     m = [None for b in range(model.nseg)]
     weights = [None for b in range(model.nseg)]
-    for b, brkpt in enumerate(self._breakpoints):
+    for b, brkpt in enumerate(model._breakpoints):
       
       # Get the sub-season
       k = model.subseason(b)
@@ -1712,7 +1720,7 @@ def FitCBVs(model):
       n = 0
       for k in range(model.nsub):
         nseg = len(model.breakpoints[k])
-        mfin[k] = np.concatenate(model[n:n+nseg])
+        mfin[k] = np.concatenate(m[n:n+nseg])
         mfin[k] -= np.nanmedian(mfin[k])
         n += nseg
   
@@ -1777,7 +1785,7 @@ def FitCBVs(model):
       n = 0
       for k in range(model.nsub):
         nseg = len(model.breakpoints[k])
-        mfin[k] = np.concatenate(model[n:n+nseg])
+        mfin[k] = np.concatenate(m[n:n+nseg])
         mfin[k] -= np.nanmedian(mfin[k])
         mfin[k] = np.interp(model.time[k], time[k], mfin[k])
         n += nseg

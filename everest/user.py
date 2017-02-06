@@ -249,7 +249,11 @@ class Everest(Basecamp):
     super(Everest, self).compute()
     
     # Make NaN cadences NaNs
-    self.flux[self.nanmask] = np.nan
+    if self.nsub == 1:
+      self.flux[self.nanmask] = np.nan
+    else:
+      for k in range(self.nsub):
+        self.flux[k][self.nanmask[k]] = np.nan
     
   def _get_norm(self):
     '''
@@ -338,83 +342,59 @@ class Everest(Basecamp):
       # Params and long cadence data
       self.loaded = True
       self.is_parent = False
-      try:
-        self.X1N = f[2].data['X1N']
-      except KeyError:
-        self.X1N = None
-      self.aperture = f[3].data
-      self.aperture_name = f[1].header['APNAME']
-      try:
-        self.bkg = f[1].data['BKG']
-      except KeyError:
-        self.bkg = 0.
-      self.bpad = f[1].header['BPAD']
-      self.cbv_minstars = []
-      self.cbv_num = f[1].header['CBVNUM']
-      self.cbv_niter = f[1].header['CBVNITER']
-      self.cbv_win = f[1].header['CBVWIN']
-      self.cbv_order = f[1].header['CBVORD']
-      self.cadn = f[1].data['CADN']
-      self.cdivs = f[1].header['CDIVS']
-      self.cdpp = f[1].header['CDPP']
-      self.cdppr = f[1].header['CDPPR']
-      self.cdppv = f[1].header['CDPPV']
-      self.cdppg = f[1].header['CDPPG']
-      self.cv_min = f[1].header['CVMIN']
-      self.fpix = f[2].data['FPIX']
-      self.pixel_images = [f[4].data['STAMP1'], f[4].data['STAMP2'], f[4].data['STAMP3']]
-      self.fraw = f[1].data['FRAW']
-      self.fraw_err = f[1].data['FRAW_ERR']
-      self.giter = f[1].header['GITER']
-      self.gmaxf = f[1].header.get('GMAXF', 200)
-      self.gp_factor = f[1].header['GPFACTOR']
-      self.hires = f[5].data
-      self.kernel_params = np.array([f[1].header['GPWHITE'], 
-                                     f[1].header['GPRED'], 
-                                     f[1].header['GPTAU']])
-      self.pld_order = f[1].header['PLDORDER']
-      self.lam_idx = self.pld_order
-      self.leps = f[1].header['LEPS']
-      self.mag = f[0].header['KEPMAG']
-      self.max_pixels = f[1].header['MAXPIX']
-      self.model = self.fraw - f[1].data['FLUX']
-      self.nearby = []
-      for i in range(99):
-        try:
-          ID = f[1].header['NRBY%02dID' % (i + 1)]
-          x = f[1].header['NRBY%02dX' % (i + 1)]
-          y = f[1].header['NRBY%02dY' % (i + 1)]
-          mag = f[1].header['NRBY%02dM' % (i + 1)]
-          x0 = f[1].header['NRBY%02dX0' % (i + 1)]
-          y0 = f[1].header['NRBY%02dY0' % (i + 1)]
-          self.nearby.append({'ID': ID, 'x': x, 'y': y, 'mag': mag, 'x0': x0, 'y0': y0})
-        except KeyError:
-          break
-      self.neighbors = []
-      for c in range(99):
-        try:
-          self.neighbors.append(f[1].header['NEIGH%02d' % (c + 1)])
-        except KeyError:
-          break
-      self.oiter = f[1].header['OITER']
-      self.optimize_gp = f[1].header['OPTGP']
-      self.osigma = f[1].header['OSIGMA']
-      self.planets = []
-      for i in range(99):
-        try:
-          t0 = f[1].header['P%02dT0' % (i + 1)]
-          per = f[1].header['P%02dPER' % (i + 1)]
-          dur = f[1].header['P%02dDUR' % (i + 1)]
-          self.planets.append((t0, per, dur))
-        except KeyError:
-          break
-      self.quality = f[1].data['QUALITY']
-      self.saturated = f[1].header['SATUR']
-      self.saturation_tolerance = f[1].header['SATTOL']
-      self.time = f[1].data['TIME']
-      self._norm = np.array(self.fraw)
       
-      # Chunk arrays
+      # Get the number of subseasons
+      n = 0
+      for c in range(99):
+        n = f[1].header.get('SUBSN%02d' % (c + 1), n)
+      self.nsub = n + 1
+      
+      # Get the HDU numbers
+      PRIMARY = 0
+      LIGHTCURVE = 1
+      if self.nsub == 1:
+        PIXELS = 2
+        APERTURE = 3
+        IMAGES = 4
+        HIRES = 5
+      else:
+        PIXELS = list(range(2, 2 + self.nsub))
+        APERTURE = list(range(2 + self.nsub, 2 + 2 * self.nsub))
+        IMAGES = 2 + 2 * self.nsub
+        HIRES = 2 + 2 * self.nsub + 1
+
+      # Get the model params
+      self.bpad = f[LIGHTCURVE].header['BPAD']
+      self.cbv_minstars = []
+      self.cbv_num = f[LIGHTCURVE].header['CBVNUM']
+      self.cbv_niter = f[LIGHTCURVE].header['CBVNITER']
+      self.cbv_win = f[LIGHTCURVE].header['CBVWIN']
+      self.cbv_order = f[LIGHTCURVE].header['CBVORD']
+      self.cdivs = f[LIGHTCURVE].header['CDIVS']
+      self.cdpp = f[LIGHTCURVE].header['CDPP']
+      self.cdppr = f[LIGHTCURVE].header['CDPPR']
+      self.cdppv = f[LIGHTCURVE].header['CDPPV']
+      self.cdppg = f[LIGHTCURVE].header['CDPPG']
+      self.cv_min = f[LIGHTCURVE].header['CVMIN']
+      self.giter = f[LIGHTCURVE].header['GITER']
+      self.gmaxf = f[LIGHTCURVE].header.get('GMAXF', 200)
+      self.gp_factor = f[LIGHTCURVE].header['GPFACTOR']
+      self.hires = f[5].data
+      self.kernel_params = np.array([f[LIGHTCURVE].header['GPWHITE'], 
+                                     f[LIGHTCURVE].header['GPRED'], 
+                                     f[LIGHTCURVE].header['GPTAU']])
+      self.pld_order = f[LIGHTCURVE].header['PLDORDER']
+      self.lam_idx = self.pld_order
+      self.leps = f[LIGHTCURVE].header['LEPS']
+      self.mag = f[PRIMARY].header['KEPMAG']
+      self.max_pixels = f[LIGHTCURVE].header['MAXPIX']
+      self.oiter = f[LIGHTCURVE].header['OITER']
+      self.optimize_gp = f[LIGHTCURVE].header['OPTGP']
+      self.osigma = f[LIGHTCURVE].header['OSIGMA']
+      self.saturated = f[LIGHTCURVE].header['SATUR']
+      self.saturation_tolerance = f[LIGHTCURVE].header['SATTOL']
+      
+      # Get the sub-season/segment-specific stuff
       self.breakpoints = []
       self.cdpp_arr = []
       self.cdppv_arr = []
@@ -422,42 +402,133 @@ class Everest(Basecamp):
       subseason = []
       for c in range(99):
         try:
-          self.breakpoints.append(f[1].header['BRKPT%02d' % (c + 1)])
-          self.cdpp_arr.append(f[1].header['CDPP%02d' % (c + 1)])
-          self.cdppr_arr.append(f[1].header['CDPPR%02d' % (c + 1)])
-          self.cdppv_arr.append(f[1].header['CDPPV%02d' % (c + 1)])
-          if f[1].header.get('SUBSN%02d' % (c + 1), None) is not None:
-            subseason.append(f[1].header['SUBSN%02d' % (c + 1)])
+          self.breakpoints.append(int(f[LIGHTCURVE].header['BRKPT%02d' % (c + 1)]))
+          self.cdpp_arr.append(f[LIGHTCURVE].header['CDPP%02d' % (c + 1)])
+          self.cdppr_arr.append(f[LIGHTCURVE].header['CDPPR%02d' % (c + 1)])
+          self.cdppv_arr.append(f[LIGHTCURVE].header['CDPPV%02d' % (c + 1)])
+          if f[LIGHTCURVE].header.get('SUBSN%02d' % (c + 1), None) is not None:
+            subseason.append(f[LIGHTCURVE].header['SUBSN%02d' % (c + 1)])
         except KeyError:
           break
-      if len(subseason) == 0:
-        self.nsub = 1
+      if self.nsub == 1:
         self.nseg = len(self.breakpoints)
       else:
         self.breakpoints = np.split(self.breakpoints, np.where(np.diff(subseason) != 0)[0] + 1)
-        self.nsub = len(self.breakpoints)
         self.nseg = len([item for sublist in self.breakpoints for item in sublist])
-      self.lam = [[f[1].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
+      self.lam = [[f[LIGHTCURVE].header['LAMB%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
                    for c in range(len(self._breakpoints))]
       if self.model_name == 'iPLD':
-        self.reclam = [[f[1].header['RECL%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
+        self.reclam = [[f[LIGHTCURVE].header['RECL%02d%02d' % (c + 1, o + 1)] for o in range(self.pld_order)] 
                         for c in range(len(self._breakpoints))]
       
-      # Masks
-      self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
-      self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
-      self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
-      self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
-      self.transitmask = np.where(self.quality & 2 ** (QUALITY_TRN - 1))[0]
+      # Get the aperture(s)
+      if self.nsub == 1:
+        self.aperture = f[APERTURE].data
+        self.aperture_name = f[LIGHTCURVE].header['APNAME']
+      else:
+        self.aperture = [f[n].data for n in APERTURE]
+        self.aperture_name = [f[LIGHTCURVE].header['APNAME%02d' % (k + 1)] for k in range(self.nsub)]
+      
+      # Get the pixel images
+      self.pixel_images = [f[IMAGES].data['STAMP1'], f[IMAGES].data['STAMP2'], f[IMAGES].data['STAMP3']]
+      
+      # Get the neighboring PLD vectors
+      try:
+        if self.nsub == 1:
+          self.X1N = f[PIXELS].data['X1N']
+        else:
+          self.X1N = [f[n].data['X1N'] for n in PIXELS]
+      except KeyError:
+        self.X1N = None
+      
+      # Get the masked planets
+      self.planets = []
+      for i in range(99):
+        try:
+          t0 = f[LIGHTCURVE].header['P%02dT0' % (i + 1)]
+          per = f[LIGHTCURVE].header['P%02dPER' % (i + 1)]
+          dur = f[LIGHTCURVE].header['P%02dDUR' % (i + 1)]
+          self.planets.append((t0, per, dur))
+        except KeyError:
+          break
+      
+      # Get the neighboring targets
+      self.nearby = []
+      for i in range(99):
+        try:
+          ID = f[LIGHTCURVE].header['NRBY%02dID' % (i + 1)]
+          x = f[LIGHTCURVE].header['NRBY%02dX' % (i + 1)]
+          y = f[LIGHTCURVE].header['NRBY%02dY' % (i + 1)]
+          mag = f[LIGHTCURVE].header['NRBY%02dM' % (i + 1)]
+          x0 = f[LIGHTCURVE].header['NRBY%02dX0' % (i + 1)]
+          y0 = f[LIGHTCURVE].header['NRBY%02dY0' % (i + 1)]
+          self.nearby.append({'ID': ID, 'x': x, 'y': y, 'mag': mag, 'x0': x0, 'y0': y0})
+        except KeyError:
+          break
+      self.neighbors = []
+      for c in range(99):
+        try:
+          self.neighbors.append(f[LIGHTCURVE].header['NEIGH%02d' % (c + 1)])
+        except KeyError:
+          break
 
+      # 1D Arrays
+      try:
+        self.bkg = f[LIGHTCURVE].data['BKG']
+      except KeyError:
+        self.bkg = 0.
+      self.cadn = f[LIGHTCURVE].data['CADN']
+      self.fraw = f[LIGHTCURVE].data['FRAW']
+      self.fraw_err = f[LIGHTCURVE].data['FRAW_ERR']
+      self.model = self.fraw - f[LIGHTCURVE].data['FLUX']
+      self.quality = f[LIGHTCURVE].data['QUALITY']
+      self.time = f[LIGHTCURVE].data['TIME']
+      self._norm = np.array(self.fraw)
+      
       # CBVs
       self.XCBV = np.empty((len(self.time), 0))
       for i in range(99):
         try:
-          self.XCBV = np.hstack([self.XCBV, f[1].data['CBV%02d' % (i + 1)].reshape(-1, 1)])
+          self.XCBV = np.hstack([self.XCBV, f[LIGHTCURVE].data['CBV%02d' % (i + 1)].reshape(-1, 1)])
         except KeyError:
           break
-    
+          
+      # Split into sub-seasons
+      if self.nsub > 1:
+        split = np.cumsum([b[-1] + 1 for b in self.breakpoints[:-1]])
+        if self.bkg == 0:
+          self.bkg = [0. for k in range(self.nsub)]
+        else:
+          self.bkg = np.split(self.bkg, split)
+        self.cadn = np.split(self.cadn, split)
+        self.fraw = np.split(self.fraw, split)
+        self.fraw_err = np.split(self.fraw_err, split)
+        self.model = np.split(self.model, split)
+        self.quality = np.split(self.quality, split)
+        self.time = np.split(self.time, split)
+        self._norm = np.split(self._norm, split)
+        self.XCBV = np.split(self.XCBV, split, axis = 0)
+
+      # 2D Arrays
+      if self.nsub == 1:
+        self.fpix = f[PIXELS].data['FPIX']
+      else:
+        self.fpix = [f[n].data['FPIX'] for n in PIXELS]
+
+      # Masks
+      if self.nsub == 1:
+        self.badmask = np.where(self.quality & 2 ** (QUALITY_BAD - 1))[0]
+        self.nanmask = np.where(self.quality & 2 ** (QUALITY_NAN - 1))[0]
+        self.outmask = np.where(self.quality & 2 ** (QUALITY_OUT - 1))[0]
+        self.recmask = np.where(self.quality & 2 ** (QUALITY_REC - 1))[0]  
+        self.transitmask = np.where(self.quality & 2 ** (QUALITY_TRN - 1))[0]
+      else:
+        self.badmask = [np.where(q & 2 ** (QUALITY_BAD - 1))[0] for q in self.quality]
+        self.nanmask = [np.where(q & 2 ** (QUALITY_NAN - 1))[0] for q in self.quality]
+        self.outmask = [np.where(q & 2 ** (QUALITY_OUT - 1))[0] for q in self.quality]
+        self.recmask = [np.where(q & 2 ** (QUALITY_REC - 1))[0] for q in self.quality]  
+        self.transitmask = [np.where(q & 2 ** (QUALITY_TRN - 1))[0] for q in self.quality]
+
     # These are not stored in the fits file; we don't need them
     self.saturated_aperture_name = None
     self.apertures = None
@@ -511,7 +582,7 @@ class Everest(Basecamp):
     
     # Set up axes
     if plot_raw:
-      fig, axes = pl.subplots(2, figsize = (13, 9), sharex = True)
+      fig, axes = pl.subplots(2, figsize = (11, 7), sharex = True)
       fig.subplots_adjust(hspace = 0.1)
       axes = [axes[1], axes[0]]
       if plot_cbv:
@@ -543,109 +614,134 @@ class Everest(Basecamp):
       ms = 4
     
     # Get the cdpps
-    cdpps = [[self.get_cdpp(self.flux), self.get_cdpp_arr(self.flux)],
-             [self.get_cdpp(self.fraw), self.get_cdpp_arr(self.fraw)]]
+    f = np.array(self.flux)
+    fr = np.array(self.fraw)
+    if self.nsub > 1:
+      for k in range(self.nsub):
+        f[k] = self.apply_mask(f[k], k = k)
+        fr[k] = self.apply_mask(fr[k], k = k)
+      f = np.concatenate(f)
+      fr = np.concatenate(fr)
+    else:
+      f = self.apply_mask(f)
+      fr = self.apply_mask(fr)
+    cdpps = [[self.get_cdpp(f), self.get_cdpp_arr(self.flux)],
+             [self.get_cdpp(fr), self.get_cdpp_arr(self.fraw)]]
     self.cdpp = cdpps[0][0]
     self.cdpp_arr = cdpps[0][1]
     
+    # Get y lims that bound 99% of the flux
+    if self.nsub == 1:
+      f = np.concatenate([np.delete(f, np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)) for f in fluxes])
+    else:
+      f = np.concatenate([np.delete(f[k], np.array(list(set(np.concatenate([badmask[k], nanmask[k]]))), dtype = int)) for k in range(self.nsub) for f in fluxes])
+    N = int(0.995 * len(f))
+    hi, lo = f[np.argsort(f)][[N,-N]]
+    pad = (hi - lo) * 0.1
+    ylim = (lo - pad, hi + pad)
+
+    # Loop over axes
     for n, ax, flux, label, c in zip([0,1], axes, fluxes, labels, cdpps):
+    
+      # Loop over all sub-seasons
+      for k in range(self.nsub):
       
-      # Initialize CDPP
-      cdpp = c[0]
-      cdpp_arr = c[1]
+        # No sub-seasons?
+        if self.nsub == 1:
+          k = slice(None, None, None)
+      
+        # Initialize CDPP
+        cdpp = c[0]
+        cdpp_arr = c[1]
         
-      # Plot the good data points
-      ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+        # Plot the good data points
+        ax.plot(self.apply_mask(time[k], k = k), self.apply_mask(flux[k], k = k), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
   
-      # Plot the outliers
-      bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
-      bmask = [i for i in self.badmask if i not in self.nanmask]
-      O1 = lambda x: x[outmask]
-      O2 = lambda x: x[bmask]
-      O3 = lambda x: x[transitmask]
-      if plot_out:
-        ax.plot(O1(time), O1(flux), ls = 'none', color = "#777777", marker = '.', markersize = ms, alpha = 0.5)
-      if plot_bad:
-        ax.plot(O2(time), O2(flux), 'r.', markersize = ms, alpha = 0.25)
-      ax.plot(O3(time), O3(flux), 'b.', markersize = ms, alpha = 0.25)
+        # Plot the outliers
+        bnmask = np.array(list(set(np.concatenate([badmask[k], nanmask[k]]))), dtype = int)
+        bmask = [i for i in self.badmask[k] if i not in self.nanmask[k]]
+        O1 = lambda x: x[outmask[k]]
+        O2 = lambda x: x[bmask]
+        O3 = lambda x: x[transitmask[k]]
+
+        if plot_out:
+          ax.plot(O1(time[k]), O1(flux[k]), ls = 'none', color = "#777777", marker = '.', markersize = ms, alpha = 0.5)
+        if plot_bad:
+          ax.plot(O2(time[k]), O2(flux[k]), 'r.', markersize = ms, alpha = 0.25)
+        ax.plot(O3(time[k]), O3(flux[k]), 'b.', markersize = ms, alpha = 0.25)
       
-      # Plot the GP
-      if n == 0 and plot_gp and self.cadence != 'sc':
-        _, amp, tau = self.kernel_params
-        gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-        gp.compute(self.apply_mask(time), self.apply_mask(fraw_err))
-        med = np.nanmedian(self.apply_mask(flux))
-        y, _ = gp.predict(self.apply_mask(flux) - med, time)
-        y += med
-        ax.plot(self.apply_mask(time), self.apply_mask(y), 'r-', lw = 0.5, alpha = 0.5)
+        # Plot the GP
+        if n == 0 and plot_gp and self.cadence != 'sc':
+          _, amp, tau = self.kernel_params
+          gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+          gp.compute(self.apply_mask(time[k], k = k), self.apply_mask(fraw_err[k], k = k))
+          med = np.nanmedian(self.apply_mask(flux[k], k = k))
+          y, _ = gp.predict(self.apply_mask(flux[k], k = k) - med, time[k])
+          y += med
+          ax.plot(self.apply_mask(time[k], k = k), self.apply_mask(y, k = k), 'r-', lw = 0.5, alpha = 0.5)
 
-      # Appearance
-      if n == 0: 
-        ax.set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
-      ax.set_ylabel(label, fontsize = 18)
-      for brkpt in breakpoints[:-1]:
-        ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
-      if len(cdpp_arr) == 2:
-        ax.annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                    ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
-        ax.annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                    ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
-      elif len(cdpp_arr) < 6:
-        for n in range(len(cdpp_arr)):
-          if n > 0:
-            x = (self.time[self.breakpoints[n - 1]] - self.time[0]) / (self.time[-1] - self.time[0]) + 0.02
+        # Appearance
+        if (self.nsub == 1 or k == 0):
+          if n == 0: 
+            ax.set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+          ax.set_ylabel(label, fontsize = 18)
+          for brkpt in breakpoints[k][:-1]:
+            ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
+          if len(cdpp_arr) == 2:
+            ax.annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                        ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+            ax.annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+                        ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+          elif len(cdpp_arr) < 6:
+            for n in range(len(cdpp_arr)):
+              if n > 0:
+                x = (self.time[self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
+              else:
+                x = 0.02
+              ax.annotate('%.2f ppm' % cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                          ha = 'left', va = 'top', fontsize = 10, zorder = 99, color = 'r')
           else:
-            x = 0.02
-          ax.annotate('%.2f ppm' % cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
-                      ha = 'left', va = 'top', fontsize = 10, zorder = 99, color = 'r')
-      else:
-        ax.annotate('%.2f ppm' % cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                    ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
-      ax.margins(0.01, 0.1)          
+            ax.annotate('%.2f ppm' % cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                        ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+          ax.margins(0.01, 0.1)          
 
-      # Get y lims that bound 99% of the flux
-      f = np.concatenate([np.delete(f, bnmask) for f in fluxes])
-      N = int(0.995 * len(f))
-      hi, lo = f[np.argsort(f)][[N,-N]]
-      pad = (hi - lo) * 0.1
-      ylim = (lo - pad, hi + pad)
+        # Indicate off-axis outliers
+        for i in np.where(flux[k] < ylim[0])[0]:
+          if i in bmask:
+            color = "#ffcccc"
+            if not plot_bad: 
+              continue
+          elif i in outmask[k]:
+            color = "#cccccc"
+            if not plot_out:
+              continue
+          elif i in nanmask[k]:
+            continue
+          else:
+            color = "#ccccff"
+          ax.annotate('', xy=(time[k][i], ylim[0]), xycoords = 'data',
+                      xytext = (0, 15), textcoords = 'offset points',
+                      arrowprops=dict(arrowstyle = "-|>", color = color))
+        for i in np.where(flux[k] > ylim[1])[0]:
+          if i in bmask:
+            color = "#ffcccc"
+            if not plot_bad:
+              continue
+          elif i in outmask[k]:
+            color = "#cccccc"
+            if not plot_out:
+              continue
+          elif i in nanmask[k]:
+            continue
+          else:
+            color = "#ccccff"
+          ax.annotate('', xy=(time[k][i], ylim[1]), xycoords = 'data',
+                      xytext = (0, -15), textcoords = 'offset points',
+                      arrowprops=dict(arrowstyle = "-|>", color = color))
+      
       ax.set_ylim(ylim)   
       ax.get_yaxis().set_major_formatter(Formatter.Flux)
-  
-      # Indicate off-axis outliers
-      for i in np.where(flux < ylim[0])[0]:
-        if i in bmask:
-          color = "#ffcccc"
-          if not plot_bad: 
-            continue
-        elif i in outmask:
-          color = "#cccccc"
-          if not plot_out:
-            continue
-        elif i in nanmask:
-          continue
-        else:
-          color = "#ccccff"
-        ax.annotate('', xy=(time[i], ylim[0]), xycoords = 'data',
-                    xytext = (0, 15), textcoords = 'offset points',
-                    arrowprops=dict(arrowstyle = "-|>", color = color))
-      for i in np.where(flux > ylim[1])[0]:
-        if i in bmask:
-          color = "#ffcccc"
-          if not plot_bad:
-            continue
-        elif i in outmask:
-          color = "#cccccc"
-          if not plot_out:
-            continue
-        elif i in nanmask:
-          continue
-        else:
-          color = "#ccccff"
-        ax.annotate('', xy=(time[i], ylim[1]), xycoords = 'data',
-                    xytext = (0, -15), textcoords = 'offset points',
-                    arrowprops=dict(arrowstyle = "-|>", color = color))
-    
+      
     # Show total CDPP improvement
     pl.figtext(0.5, 0.94, '%s %d' % (self._mission.IDSTRING, self.ID), fontsize = 18, ha = 'center', va = 'bottom')
     pl.figtext(0.5, 0.905, r'$%.2f\ \mathrm{ppm} \rightarrow %.2f\ \mathrm{ppm}$' % (self.cdppr, self.cdpp), fontsize = 14, ha = 'center', va = 'bottom')
@@ -702,27 +798,40 @@ class Everest(Basecamp):
         ylabel = "EVEREST2 Flux"
         
       # Remove nans
-      bnmask = np.concatenate([self.nanmask, self.badmask])
-      time = np.delete(self.time, bnmask)
-      flux = np.delete(y, bnmask)
+      if self.nsub == 1:
+        bnmask = np.concatenate([self.nanmask, self.badmask])
+        time = np.delete(self.time, bnmask)
+        flux = np.delete(y, bnmask)
+      else:
+        bnmask = [np.concatenate([self.nanmask[k], self.badmask[k]]) for k in range(self.nsub)]
+        time = [np.delete(self.time[k], bnmask[k]) for k in range(self.nsub)]
+        flux = [np.delete(y[k], bnmask[k]) for k in range(self.nsub)]
   
       # Plot it
       fig, ax = pl.subplots(1, figsize = (10, 4))
       fig.subplots_adjust(bottom = 0.15)
-      ax.plot(time, flux, "k.", markersize = 3, alpha = 0.5)
+      for k in range(self.nsub):
+        if self.nsub == 1: k = slice(None, None, None)
+        ax.plot(time[k], flux[k], "k.", markersize = 3, alpha = 0.5)
   
       # Axis limits
-      N = int(0.995 * len(flux))
-      hi, lo = flux[np.argsort(flux)][[N,-N]]
+      if self.nsub == 1:
+        N = int(0.995 * len(flux))
+        hi, lo = flux[np.argsort(flux)][[N,-N]]
+      else:
+        N = int(0.995 * len(np.concatenate(flux)))
+        hi, lo = np.concatenate(flux)[np.argsort(np.concatenate(flux))][[N,-N]]
       pad = (hi - lo) * 0.1
       ylim = (lo - pad, hi + pad)
       ax.set_ylim(ylim)
       
       # Plot bad data points
-      ax.plot(self.time[self.badmask], y[self.badmask], "r.", markersize = 3, alpha = 0.2)
+      for k in range(self.nsub):
+        if self.nsub == 1: k = slice(None, None, None)
+        ax.plot(self.time[k][self.badmask[k]], y[k][self.badmask[k]], "r.", markersize = 3, alpha = 0.2)
       
       # Show the CDPP
-      ax.annotate('%.2f ppm' % self._mission.CDPP(flux), 
+      ax.annotate('%.2f ppm' % self.get_cdpp(), 
                   xy = (0.98, 0.975), xycoords = 'axes fraction', 
                   ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
   
@@ -762,12 +871,15 @@ class Everest(Basecamp):
     
     '''
     
-    mask = []
-    t0 += np.ceil((self.time[0] - dur - t0) / period) * period
-    for t in np.arange(t0, self.time[-1] + dur, period):
-      mask.extend(np.where(np.abs(self.time - t) < dur / 2.)[0])
-    self.transitmask = np.array(list(set(np.concatenate([self.transitmask, mask]))))
-
+    for k in range(self.nsub):      
+      if self.nsub == 1:
+        k = slice(None, None, None)
+      mask = []
+      t0 += np.ceil((self.time[k][0] - dur - t0) / period) * period
+      for t in np.arange(t0, self.time[k][-1] + dur, period):
+        mask.extend(np.where(np.abs(self.time[k] - t) < dur / 2.)[0])
+      self.transitmask[k] = np.array(list(set(np.concatenate([self.transitmask[k], mask]))))
+    
   def _plot_weights(self, show = True):
     '''
     .. warning:: Untested!
@@ -1108,16 +1220,29 @@ class Everest(Basecamp):
     self.mask_planet(t0, period, dur)
     
     # Whiten
-    _, amp, tau = self.kernel_params
-    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-    gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
-    med = np.nanmedian(self.apply_mask(self.flux))
-    y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
-    fwhite = (self.flux - y)
-    fwhite /= np.nanmedian(fwhite)
+    if self.nsub == 1:
+      _, amp, tau = self.kernel_params
+      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+      med = np.nanmedian(self.apply_mask(self.flux))
+      y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
+      fwhite = (self.flux - y)
+      fwhite /= np.nanmedian(fwhite)
+      time = np.array(self.time)
+    else:
+      fwhite = np.array([])
+      _, amp, tau = self.kernel_params
+      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      for k in range(self.nsub):
+        gp.compute(self.apply_mask(self.time[k], k = k), self.apply_mask(self.fraw_err[k], k = k))
+        med = np.nanmedian(self.apply_mask(self.flux[k], k = k))
+        y, _ = gp.predict(self.apply_mask(self.flux[k], k = k) - med, self.time[k])
+        fw = (self.flux[k] - y)
+        fwhite = np.append(fwhite, fw / np.nanmedian(fw))
+      time = np.concatenate(self.time)
     
     # Fold
-    tfold = (self.time - t0 - period / 2.) % period - period / 2. 
+    tfold = (time - t0 - period / 2.) % period - period / 2. 
     
     # Crop
     inds = np.where(np.abs(tfold) < 2 * dur)[0]

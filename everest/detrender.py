@@ -217,7 +217,6 @@ class Detrender(Basecamp):
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(self.nseg)]
     self.reclam = None
-    self.recmask = []
     self.X1N = None
     self.XCBV = None
     self.cdpp_arr = np.array([np.nan for b in range(self.nseg)])
@@ -940,12 +939,14 @@ class Detrender(Basecamp):
         self.fraw_err = [np.sqrt(np.sum(self.fpix_err[k] ** 2, axis = 1)) for k in range(self.nsub)]
         self.transitmask = [np.array([], dtype = int) for k in range(self.nsub)]
         self.outmask = [np.array([], dtype = int) for k in range(self.nsub)]
+        self.recmask = [np.array([], dtype = int) for k in range(self.nsub)]
       else:
         self.model = np.zeros_like(self.time)
         self.fraw = np.sum(self.fpix, axis = 1)
         self.fraw_err = np.sqrt(np.sum(self.fpix_err ** 2, axis = 1))
         self.transitmask = np.array([], dtype = int)
         self.outmask = np.array([], dtype = int)
+        self.recmask = [np.array([], dtype = int) for k in range(self.nsub)]
       self.aperture = data.aperture
       self.aperture_name = data.aperture_name
       self.apertures = data.apertures

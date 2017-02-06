@@ -166,6 +166,15 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
   if len(logging.getLogger().handlers) == 0:
     InitLog(file_name = None, screen_level = logging.DEBUG)
   log.info('Computing CBVs for campaign %d...' % (campaign))
+  
+  # Is this a campaign with sub-seasons?
+  # TODO DEBUG: We still need to re-write the code below to
+  # work for these campaigns.
+  if campaign == 9:
+    X = [np.ones(1290).reshape(-1, 1), np.ones(2022).reshape(-1, 1)]
+    return X
+  elif campaign == 10:
+    raise NotImplementedError("CBV functionality for campaign 10 not yet implemented.")
     
   # Output path
   path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign)

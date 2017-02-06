@@ -25,6 +25,9 @@ log = logging.getLogger(__name__)
 #: The supported pipelines
 Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc', 'raw']
 
+#: The K2 campaigns that are split into sub-seasons
+SplitCampaigns = {9: [91, 92], 10: [101, 102]}
+
 def get(ID, pipeline = 'everest1'):
   '''
   Returns the `time` and `flux` for a given EPIC `ID` and
@@ -33,31 +36,67 @@ def get(ID, pipeline = 'everest1'):
   '''
   
   log.info('Downloading %s light curve for %d...' % (pipeline, ID))
+  
+  # Everest 2?
   if pipeline.lower() == 'everest2':
     s = k2plr.EVEREST(ID, version = 2)
     time = s.time
     flux = s.flux
-  elif pipeline.lower() == 'everest1':
-    s = k2plr.EVEREST(ID, version = 1)
-    time = s.time
-    flux = s.flux
-  elif pipeline.lower() == 'k2sff':
-    s = k2plr.K2SFF(ID)
-    time = s.time
-    flux = s.fcor
-    # Normalize to the median flux
-    s = k2plr.EVEREST(ID, version = 1)
-    flux *= np.nanmedian(s.flux)
-  elif pipeline.lower() == 'k2sc':
-    s = k2plr.K2SC(ID)
-    time = s.time
-    flux = s.pdcflux
+    return time, flux
   elif pipeline.lower() == 'raw':
-    s = k2plr.EVEREST(ID, version = 1, raw = True)
+    s = k2plr.EVEREST(ID, version = 2, raw = True)
     time = s.time
     flux = s.flux
+    return time, flux
+  
+  # Check for split campaign?
+  from .k2 import Season
+  campaign = Season(ID)
+  if campaign in SplitCampaigns:
+    # We're going to mend the sub-seasons
+    if pipeline.lower() == 'everest1':
+      raise ValueError('No `everest1` data for target.')
+    elif pipeline.lower() == 'k2sff':
+      time = np.array([])
+      flux = np.array([])
+      for c in SplitCampaigns[campaign]:
+        s = k2plr.K2SFF(ID, sci_campaign = c)
+        t = s.time
+        f = s.fcor
+        # Normalize to the median flux
+        s = k2plr.EVEREST(ID, version = 2)
+        f *= np.nanmedian(s.flux)
+        time = np.append(time, t)
+        flux = np.append(flux, f)
+    elif pipeline.lower() == 'k2sc':
+      time = np.array([])
+      flux = np.array([])
+      for c in SplitCampaigns[campaign]:
+        s = k2plr.K2SC(ID, sci_campaign = c)
+        time = np.append(time, s.time)
+        flux = np.append(flux, s.pdcflux)
+    else:
+      raise ValueError('Invalid pipeline: `%s`.' % pipeline)
   else:
-    raise ValueError('Invalid pipeline: `%s`.' % pipeline)
+  
+    # Business as usual
+    if pipeline.lower() == 'everest1':
+      s = k2plr.EVEREST(ID, version = 1)
+      time = s.time
+      flux = s.flux
+    elif pipeline.lower() == 'k2sff':
+      s = k2plr.K2SFF(ID)
+      time = s.time
+      flux = s.fcor
+      # Normalize to the median flux
+      s = k2plr.EVEREST(ID, version = 2)
+      flux *= np.nanmedian(s.flux)
+    elif pipeline.lower() == 'k2sc':
+      s = k2plr.K2SC(ID)
+      time = s.time
+      flux = s.pdcflux
+    else:
+      raise ValueError('Invalid pipeline: `%s`.' % pipeline)
     
   return time, flux
   

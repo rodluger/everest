@@ -70,11 +70,18 @@ def LightcurveHDU(model):
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   cards.append(('MODEL', model.name, 'Name of EVEREST model used'))
-  cards.append(('APNAME', model.aperture_name, 'Name of aperture used'))
+  if model.nsub == 1:
+    cards.append(('APNAME', model.aperture_name, 'Name of aperture used'))
+  else:
+    for k in range(model.nsub):
+      cards.append(('APNAME%02d' % (k + 1), model.aperture_name[k], 'Name of aperture used'))
   cards.append(('BPAD', model.bpad, 'Chunk overlap in cadences'))
   for c in range(len(model._breakpoints)):
     cards.append(('BRKPT%02d' % (c + 1), model._breakpoints[c], 'Light curve breakpoint'))
-    cards.append(('SUBSN%02d' % (c + 1), model.subseason(c), 'Light curve sub-season'))
+    subseason = model.subseason(c)
+    if subseason == slice(None, None, None):
+      subseason = 0
+    cards.append(('SUBSN%02d' % (c + 1), subseason, 'Light curve sub-season'))
   cards.append(('CBVNUM', model.cbv_num, 'Number of CBV signals to recover'))
   cards.append(('CBVNITER', model.cbv_niter, 'Number of CBV SysRem iterations'))
   cards.append(('CBVWIN', model.cbv_win, 'Window size for smoothing CBVs'))
@@ -126,35 +133,78 @@ def LightcurveHDU(model):
   cards.append(('SATTOL', model.saturation_tolerance, 'Fractional saturation tolerance'))
   
   # Add the EVEREST quality flags to the QUALITY array
-  quality = np.array(model.quality)
-  quality[np.array(model.badmask, dtype = int)] += 2 ** (QUALITY_BAD - 1)
-  quality[np.array(model.nanmask, dtype = int)] += 2 ** (QUALITY_NAN - 1)
-  quality[np.array(model.outmask, dtype = int)] += 2 ** (QUALITY_OUT - 1)
-  quality[np.array(model.recmask, dtype = int)] += 2 ** (QUALITY_REC - 1)
-  quality[np.array(model.transitmask, dtype = int)] += 2 ** (QUALITY_TRN - 1)
+  if model.nsub == 1:
   
-  # When de-trending, we interpolated to fill in NaN fluxes. Here
-  # we insert the NaNs back in, since there's no actual physical
-  # information at those cadences.
-  flux = np.array(model.flux); flux[model.nanmask] = np.nan
+    # Single sub-season
+    quality = np.array(model.quality)
+    quality[np.array(model.badmask, dtype = int)] += 2 ** (QUALITY_BAD - 1)
+    quality[np.array(model.nanmask, dtype = int)] += 2 ** (QUALITY_NAN - 1)
+    quality[np.array(model.outmask, dtype = int)] += 2 ** (QUALITY_OUT - 1)
+    quality[np.array(model.recmask, dtype = int)] += 2 ** (QUALITY_REC - 1)
+    quality[np.array(model.transitmask, dtype = int)] += 2 ** (QUALITY_TRN - 1)
+  
+    # When de-trending, we interpolated to fill in NaN fluxes. Here
+    # we insert the NaNs back in, since there's no actual physical
+    # information at those cadences.
+    flux = np.array(model.flux); flux[model.nanmask] = np.nan
     
-  # Create the arrays list
-  arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),
-            pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
-            pyfits.Column(name = 'FRAW', format = 'D', array = model.fraw, unit = 'e-/s'),
-            pyfits.Column(name = 'FRAW_ERR', format = 'D', array = model.fraw_err, unit = 'e-/s'),
-            pyfits.Column(name = 'QUALITY', format = 'J', array = quality),
-            pyfits.Column(name = 'TIME', format = 'D', array = model.time, unit = 'BJD - 2454833')]
+    # Create the arrays list
+    arrays = [pyfits.Column(name = 'CADN', format = 'D', array = model.cadn),
+              pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
+              pyfits.Column(name = 'FRAW', format = 'D', array = model.fraw, unit = 'e-/s'),
+              pyfits.Column(name = 'FRAW_ERR', format = 'D', array = model.fraw_err, unit = 'e-/s'),
+              pyfits.Column(name = 'QUALITY', format = 'J', array = quality),
+              pyfits.Column(name = 'TIME', format = 'D', array = model.time, unit = 'BJD - 2454833')]
   
-  # Add the CBVs
-  if model.fcor is not None:
-    arrays += [pyfits.Column(name = 'FCOR', format = 'D', array = model.fcor, unit = 'e-/s')]
-    for n in range(model.XCBV.shape[1]):
-      arrays += [pyfits.Column(name = 'CBV%02d' % (n + 1), format = 'D', array = model.XCBV[:,n])]
+    # Add the CBVs
+    if model.fcor is not None:
+      arrays += [pyfits.Column(name = 'FCOR', format = 'D', array = model.fcor, unit = 'e-/s')]
+      for n in range(model.XCBV.shape[1]):
+        arrays += [pyfits.Column(name = 'CBV%02d' % (n + 1), format = 'D', array = model.XCBV[:,n])]
   
-  # Did we subtract a background term?
-  if hasattr(model.bkg, '__len__'):
-    arrays.append(pyfits.Column(name = 'BKG', format = 'D', array = model.bkg, unit = 'e-/s'))     
+    # Did we subtract a background term?
+    if hasattr(model.bkg, '__len__'):
+      arrays.append(pyfits.Column(name = 'BKG', format = 'D', array = model.bkg, unit = 'e-/s'))     
+  
+  else:
+    
+    # We need to worry about sub-seasons
+    quality = []
+    for k in range(model.nsub):
+      q = np.array(model.quality[k])
+      q[np.array(model.badmask[k], dtype = int)] += 2 ** (QUALITY_BAD - 1)
+      q[np.array(model.nanmask[k], dtype = int)] += 2 ** (QUALITY_NAN - 1)
+      q[np.array(model.outmask[k], dtype = int)] += 2 ** (QUALITY_OUT - 1)
+      q[np.array(model.recmask[k], dtype = int)] += 2 ** (QUALITY_REC - 1)
+      q[np.array(model.transitmask[k], dtype = int)] += 2 ** (QUALITY_TRN - 1)
+      quality = np.append(quality, q)
+    
+    # When de-trending, we interpolated to fill in NaN fluxes. Here
+    # we insert the NaNs back in, since there's no actual physical
+    # information at those cadences.
+    flux = []
+    for k in range(model.nsub):
+      f = np.array(model.flux[k])
+      f[model.nanmask[k]] = np.nan
+      flux = np.append(flux, f)
+    
+    # Create the arrays list
+    arrays = [pyfits.Column(name = 'CADN', format = 'D', array = np.concatenate(model.cadn)),
+              pyfits.Column(name = 'FLUX', format = 'D', array = flux, unit = 'e-/s'),
+              pyfits.Column(name = 'FRAW', format = 'D', array = np.concatenate(model.fraw), unit = 'e-/s'),
+              pyfits.Column(name = 'FRAW_ERR', format = 'D', array = np.concatenate(model.fraw_err), unit = 'e-/s'),
+              pyfits.Column(name = 'QUALITY', format = 'J', array = quality),
+              pyfits.Column(name = 'TIME', format = 'D', array = np.concatenate(model.time), unit = 'BJD - 2454833')]
+  
+    # Add the CBVs
+    if model.fcor is not None:
+      arrays += [pyfits.Column(name = 'FCOR', format = 'D', array = np.concatenate(model.fcor), unit = 'e-/s')]
+      for n in range(model.XCBV[0].shape[1]):
+        arrays += [pyfits.Column(name = 'CBV%02d' % (n + 1), format = 'D', array = np.vstack([model.XCBV[k][:,n].reshape(-1, 1) for k in range(model.nsub)]))]
+  
+    # Did we subtract a background term?
+    if hasattr(model.bkg[0], '__len__'):
+      arrays.append(pyfits.Column(name = 'BKG', format = 'D', array = np.concatenate(model.bkg), unit = 'e-/s'))
   
   # Create the HDU
   header = pyfits.Header(cards = cards)
@@ -163,7 +213,7 @@ def LightcurveHDU(model):
 
   return hdu
 
-def PixelsHDU(model):
+def PixelsHDU(model, k = slice(None, None, None)):
   '''
   Construct the HDU containing the pixel-level light curve.
   
@@ -183,21 +233,24 @@ def PixelsHDU(model):
   
   # Create the HDU
   header = pyfits.Header(cards = cards)
-  
-  # The pixel timeseries
-  arrays = [pyfits.Column(name = 'FPIX', format = '%dD' % model.fpix.shape[1], array = model.fpix)]
-  
-  # The first order PLD vectors for all the neighbors (npixels, ncadences)
-  X1N = model.X1N
-  if X1N is not None:
-    arrays.append(pyfits.Column(name = 'X1N', format = '%dD' % X1N.shape[1], array = X1N))
-    
-  cols = pyfits.ColDefs(arrays)
-  hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'PIXELS')
 
+  # The pixel timeseries
+  arrays = [pyfits.Column(name = 'FPIX', format = '%dD' % model.fpix[k].shape[1], array = model.fpix[k])]
+
+  # The first order PLD vectors for all the neighbors (npixels, ncadences)
+  if model.X1N is not None:
+    X1N = model.X1N[k]
+    arrays.append(pyfits.Column(name = 'X1N', format = '%dD' % X1N.shape[1], array = X1N))
+
+  cols = pyfits.ColDefs(arrays)
+  if model.nsub == 1:
+    hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'PIXELS')
+  else:
+    hdu = pyfits.BinTableHDU.from_columns(cols, header = header, name = 'PIXELS%02d' % (k + 1))
+    
   return hdu
 
-def ApertureHDU(model):
+def ApertureHDU(model, k = slice(None, None, None)):
   '''
   Construct the HDU containing the aperture used to de-trend.
   
@@ -216,8 +269,10 @@ def ApertureHDU(model):
   
   # Create the HDU
   header = pyfits.Header(cards = cards)
-  hdu = pyfits.ImageHDU(data = model.aperture, header = header, name = 'APERTURE MASK')
-
+  if model.nsub == 1:
+    hdu = pyfits.ImageHDU(data = model.aperture, header = header, name = 'APERTURE MASK')
+  else:
+    hdu = pyfits.ImageHDU(data = model.aperture[k], header = header, name = 'APERTURE MASK %02d' % (k + 1))
   return hdu
 
 def ImagesHDU(model):
@@ -295,13 +350,17 @@ def MakeFITS(model):
   # Create the HDUs
   primary = PrimaryHDU(model)
   lightcurve = LightcurveHDU(model)
-  pixels = PixelsHDU(model)
-  aperture = ApertureHDU(model)
+  if model.nsub == 1:
+    pixels = [PixelsHDU(model)]
+    aperture = [ApertureHDU(model)]
+  else:
+    pixels = [PixelsHDU(model, k) for k in range(model.nsub)]
+    aperture = [ApertureHDU(model, k) for k in range(model.nsub)]   
   images = ImagesHDU(model)
   hires = HiResHDU(model)
   
   # Combine to get the HDUList
-  hdulist = pyfits.HDUList([primary, lightcurve, pixels, aperture, images, hires])
+  hdulist = pyfits.HDUList([primary, lightcurve] + pixels + aperture + [images, hires])
   
   # Output to the FITS file
   hdulist.writeto(outfile)

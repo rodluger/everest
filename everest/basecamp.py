@@ -73,7 +73,7 @@ class Basecamp(object):
     Returns the full path to the log file for the current run.
     
     '''
-    
+
     return os.path.join(self.dir, '%s.log' % self.name)
 
   @logfile.setter

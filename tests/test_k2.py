@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-test_detrend.py
----------------
+test_k2.py
+----------
 
-Test the de-trending core.
+Test the K2 de-trending core and the user interface.
 
 '''
 
@@ -17,7 +17,7 @@ import shutil
 
 def test_c1():
   '''
-  Campaign 1 is a regular campaign with 2 breakpoints.
+  Testing the de-trending for campaign 1, a regular campaign with 2 breakpoints
   
   '''
   
@@ -55,20 +55,30 @@ def test_c1():
   np.savez(os.path.join(dest, 'X.npz'), time = time, X = X, breakpoints = breakpoints)
   
   # Run the de-trending
-  star = everest.rPLD(201367065, clobber = True, mission = 'k2',
-                      giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
-                      pld_order = 2, get_hires = False, get_nearby = False)
+  star1 = everest.rPLD(201367065, clobber = True, mission = 'k2', debug = False,
+                       giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
+                       pld_order = 2, get_hires = False, get_nearby = False)
   
   # Check!
-  print("De-trended CDPP: %.3f ppm" % star.cdpp)
-  assert (star.cdpp > 15.) and (star.cdpp < 19.), "De-trended CDPP is different from benchmark value (17.302 ppm)."
+  print("De-trended CDPP: %.3f ppm" % star1.cdpp)
+  assert (star1.cdpp > 15.) and (star1.cdpp < 19.), "De-trended CDPP is different from benchmark value (17.302 ppm)."
 
   # Publish
-  star.publish()
+  star1.publish()
 
+  # Load the FITS file
+  star2 = everest.Everest(201367065)
+  
+  # Compute the model
+  star2.compute()
+  
+  # Check!
+  print("De-trended CDPP (Stage 2): %.3f ppm" % star2.cdpp)
+  assert np.abs(star2.cdpp - star1.cdpp) / star1.cdpp < 0.001, "De-trended CDPP is different from Stage 1 value (%.3f ppm)." % star1.cdpp
+  
 def test_c9():
   '''
-  Campaign 9 is a split campaign (91, 92) with no other breakpoints.
+  Testing the de-trending for campaign 9, a split campaign (91, 92) with no other breakpoints
   
   '''
   
@@ -91,10 +101,23 @@ def test_c9():
   shutil.copy(orig, dest)
 
   # Run the de-trending
-  star = everest.rPLD(221312395, clobber = True, mission = 'k2', debug = True, # debug
-                      giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
-                      pld_order = 2, get_hires = False, get_nearby = False, aperture = 'k2sff_13')
+  star1 = everest.rPLD(221312395, clobber = True, mission = 'k2', debug = False,
+                       giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
+                       pld_order = 2, get_hires = False, get_nearby = False, aperture = 'k2sff_13')
   
   # Check!
-  print("De-trended CDPP: %.3f ppm" % star.cdpp)
-  assert (star.cdpp > 300.) and (star.cdpp < 400.), "De-trended CDPP is different from benchmark value (352.3 ppm)."
+  print("De-trended CDPP: %.3f ppm" % star1.cdpp)
+  assert (star1.cdpp > 300.) and (star1.cdpp < 400.), "De-trended CDPP is different from benchmark value (352.3 ppm)."
+
+  # Publish
+  star1.publish()
+
+  # Load the FITS file
+  star2 = everest.Everest(221312395)
+  
+  # Compute the model
+  star2.compute()
+  
+  # Check!
+  print("De-trended CDPP (Stage 2): %.3f ppm" % star2.cdpp)
+  assert np.abs(star2.cdpp - star1.cdpp) / star1.cdpp < 0.001, "De-trended CDPP is different from Stage 1 value (%.3f ppm)." % star1.cdpp
