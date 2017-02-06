@@ -55,7 +55,7 @@ def test_c1():
   np.savez(os.path.join(dest, 'X.npz'), time = time, X = X, breakpoints = breakpoints)
   
   # Run the de-trending
-  star1 = everest.rPLD(201367065, clobber = True, mission = 'k2', debug = False,
+  star1 = everest.rPLD(201367065, clobber = True, mission = 'k2', screen_level = 0,
                        giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
                        pld_order = 2, get_hires = False, get_nearby = False)
   
@@ -101,7 +101,7 @@ def test_c9():
   shutil.copy(orig, dest)
 
   # Run the de-trending
-  star1 = everest.rPLD(221312395, clobber = True, mission = 'k2', debug = False,
+  star1 = everest.rPLD(221312395, clobber = True, mission = 'k2', screen_level = 0,
                        giter = 1, gmaxf = 3, lambda_arr = [1e0, 1e5, 1e10], oiter = 3,
                        pld_order = 2, get_hires = False, get_nearby = False, aperture = 'k2sff_13')
   
