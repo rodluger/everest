@@ -28,55 +28,55 @@ The main data unit containing the de-trended light curve. Again, the header keyw
 were taken from the equivalent extension in the original *K2* target pixel files. The
 following :py:mod:`everest` keywords were added:
   
-==============  =================================================================================
- **Keyword**      **Description**
---------------  ---------------------------------------------------------------------------------
-MISSION         The photometry mission name
-VERSION         The EVEREST pipeline version
-DATE            FITS file creation date (YYYY-MM-DD)
-MODEL           The name of the :py:obj:`everest` model used to de-trend
-APNAME          The name of the aperture used
-BPAD            Light curve segment overlap in cadences for mending at breakpoints
-BRKPTXX         Index/indices of light curve breakpoint(s)
-CBVNUM          Number of CBV signals to regress on
-CBVNITER        Number of CBV SysRem iterations
-CBVWIN          Window size for smoothing CBVs
-CBVORD          Filter order when smoothing CBVs
-CDIVS           Number of cross-validation subdivisions
-CDPP            Average de-trended CDPP
-CDPPR           Raw light curve CDPP
-CDPPV           Estimated average validation CDPP
-CDPPG           Average GP-de-trended CDPP
-CDPPXX          De-trended CDPP in light curve segment :py:obj:`XX`
-CDPPRXX         Raw CDPP in light curve segment :py:obj:`XX`
-CDPPVXX         Estimated validation CDPP in light curve segment :py:obj:`XX`
-CVMIN           Cross-validation objective function
-GITER           Number of GP optimiziation iterations
-GPFACTOR        GP amplitude initialization factor
-GPWHITE         GP white noise amplitude (e-/s)
-GPRED           GP red noise amplitude (e-/s)
-GPTAU           GP red noise timescale (days)
-LAMXXYY         Cross-validation parameter for segment XX and PLD order YY
-RECLXXYY        Cross-validation parameter for segment XX and PLD order YY (:py:class:`iPLD` only)
-LEPS            Cross-validation minimum-finding CDPP tolerance
-MAXPIX          Maximum size of TPF aperture in pixels
-NRBYXXID        Nearby source XX ID number
-NRBYXXX         Nearby source XX X position (pixels)
-NRBYXXY         Nearby source XX Y position (pixels)
-NRBYXXM         Nearby source XX magnitude
-NRBYXXX0        Nearby source reference X (pixels)
-NRBYXXY0        Nearby source reference Y (pixels)
-NEIGHXX         Neighboring star ID used to de-trend (:py:class:`nPLD` only)
-OITER           Number of outlier clipping iterations
-OPTGP           GP optimization performed?
-OSIGMA          Outlier tolerance (standard deviations)
-PXXT0           Masked planet transit time (days)
-PXXPER          Masked planet period (days)
-PXXDUR          Masked planet transit duration (days)
-PLDORDER        PLD de-trending order
-SATUR           Is target saturated?
-SATTOL          Fractional saturation tolerance
-==============  =================================================================================
+================  =================================================================================
+ **Keyword**       **Description**
+----------------  ---------------------------------------------------------------------------------
+MISSION           The photometry mission name
+VERSION           The EVEREST pipeline version
+DATE              FITS file creation date (YYYY-MM-DD)
+MODEL             The name of the :py:obj:`everest` model used to de-trend
+APNAME            The name of the aperture used
+BPAD              Light curve segment overlap in cadences for mending at breakpoints
+BRKPT\ **XX**     Index/indices of light curve breakpoint(s)
+CBVNUM            Number of CBV signals to regress on
+CBVNITER          Number of CBV SysRem iterations
+CBVWIN            Window size for smoothing CBVs
+CBVORD            Filter order when smoothing CBVs
+CDIVS             Number of cross-validation subdivisions
+CDPP              Average de-trended CDPP
+CDPPR             Raw light curve CDPP
+CDPPV             Estimated average validation CDPP
+CDPPG             Average GP-de-trended CDPP
+CDPP\ **XX**      De-trended CDPP in light curve segment **XX**
+CDPPR\ **XX**     Raw CDPP in light curve segment **XX**
+CDPPV\ **XX**     Estimated validation CDPP in light curve segment **XX**
+CVMIN             Cross-validation objective function
+GITER             Number of GP optimiziation iterations
+GPFACTOR          GP amplitude initialization factor
+GPWHITE           GP white noise amplitude (e-/s)
+GPRED             GP red noise amplitude (e-/s)
+GPTAU             GP red noise timescale (days)
+LAM\ **XXYY**     Cross-validation parameter for segment **XX** and PLD order **YY**
+RECL\ **XXYY**    Cross-validation parameter for segment **XX** and PLD order **YY** (:py:class:`iPLD` only)
+LEPS              Cross-validation minimum-finding CDPP tolerance
+MAXPIX            Maximum size of TPF aperture in pixels
+NRBY\ **XX**\ ID  Nearby source **XX** ID number
+NRBY\ **XX**\ X   Nearby source **XX** X position (pixels)
+NRBY\ **XX**\ Y   Nearby source **XX** Y position (pixels)
+NRBY\ **XX**\ M   Nearby source **XX** magnitude
+NRBY\ **XX**\ X0  Nearby source reference X (pixels)
+NRBY\ **XX**\ Y0  Nearby source reference Y (pixels)
+NEIGH\ **XX**     Neighboring star ID used to de-trend (:py:class:`nPLD` only)
+OITER             Number of outlier clipping iterations
+OPTGP             GP optimization performed?
+OSIGMA            Outlier tolerance (standard deviations)
+P\ **XX**\ T0     Masked planet transit time (days)
+P\ **XX**\ PER    Masked planet period (days)
+P\ **XX**\ DUR    Masked planet transit duration (days)
+PLDORDER          PLD de-trending order
+SATUR             Is target saturated?
+SATTOL            Fractional saturation tolerance
+================  =================================================================================
 
 The ``data`` container of this extension contains the following arrays:
 
@@ -91,6 +91,7 @@ FRAW            The original (raw) SAP flux
 FRAW_ERR        The observing errors on the raw flux
 QUALITY         An :py:obj:`int64` array of quality flags for each cadence (see note below)
 BKG             If present, the background flux subtracted from each cadence
+CBV\ **XX**     The co-trending basis vectors used to produce the corrected flux :py:obj:`FCOR`
 ==============  =================================================================================
 
 .. note:: The :py:obj:`QUALITY` array uses the same bit flags as `K2`, with the addition of \
