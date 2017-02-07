@@ -20,7 +20,7 @@ Note that <b>EVEREST</b> depends on <b>george</b>, which requires the <b>Eigen3<
 <br/><br/>
 You can also install the current development version of <b>EVEREST</b> from source:
 <br/><br/>
-<pre><code>git clone --recursive https://github.com/rodluger/everest
+<pre><code>git clone https://github.com/rodluger/everest
 cd everest
 python setup.py install --user</code></pre>
 For more information on how to install and use <b>EVEREST</b>, please refer to the <a href="http://staff.washington.edu/rodluger/everest">documentation</a>. And if you're looking for the previous version of <b>EVEREST</b>, check out the latest <a href="https://github.com/rodluger/everest/tree/1.0.5">v1</a> release.
