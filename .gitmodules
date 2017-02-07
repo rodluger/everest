@@ -1,6 +1,0 @@
-[submodule "k2plr"]
-	path = k2plr
-	url = git@github.com:rodluger/k2plr.git
-[submodule "pysyzygy"]
-	path = pysyzygy
-	url = git@github.com:rodluger/pysyzygy.git
