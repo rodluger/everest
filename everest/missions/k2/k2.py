@@ -32,6 +32,9 @@ from tempfile import NamedTemporaryFile
 import random
 import os, sys, shutil
 import time
+import warnings
+warnings.filterwarnings('ignore', r'Mean of empty slice')
+warnings.filterwarnings('ignore', r'All-NaN slice encountered')
 import logging
 log = logging.getLogger(__name__)
 
@@ -310,13 +313,13 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
     
     # Get K2SFF apertures
     try:
-      k2sff = kplr.K2SFF(EPIC)
+      k2sff = kplr.K2SFF(EPIC, sci_campaign = kwargs.get('subseason', campaign))
       k2sff_apertures = k2sff.apertures
       if delete_raw:
         os.remove(k2sff._file)
     except:
       k2sff_apertures = [None for i in range(20)]
-    
+
     # Make a dict of all our apertures
     # We're not getting K2SFF apertures 0-9 any more
     apertures = {'tpf': tpf_aperture, 'tpf_big': tpf_big_aperture}
@@ -428,7 +431,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
   pixel_images = data['pixel_images']
   nearby = data['nearby']
   hires = data['hires'][()]
-
+  
   if cadence == 'lc':
     fitsheader = data['fitsheader']
     cadn = data['cadn']
@@ -678,7 +681,13 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
   # Interpolate the nans
   fpix = Interpolate(time, nanmask, fpix)
   fpix_err = Interpolate(time, nanmask, fpix_err)
-
+  
+  # Check if the pixel array is empty 
+  # (can happen if there's no aperture)
+  if fpix.shape[1] == 0:
+    fpix = np.zeros((fpix.shape[0],1)) * np.nan
+    fpix_err = np.zeros((fpix.shape[0],1)) * np.nan
+  
   # Return
   data = DataContainer()
   data.ID = EPIC
@@ -1696,7 +1705,8 @@ def FitCBVs(model):
         weights[b] = np.linalg.solve(A, B)
       except np.linalg.linalg.LinAlgError:
         # Singular matrix
-        log.warn('Singular matrix!')
+        if len(masked_inds) > 0:
+          log.warn('Singular matrix!')
         weights[b] = np.zeros(mX.shape[1])
         
       m[b] = np.dot(model.XCBV[k][inds,:ncbv + 1], weights[b])

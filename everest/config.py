@@ -14,6 +14,9 @@ from . import __version__ as EVEREST_VERSION
 import os
 import six
 from six.moves import urllib
+import matplotlib as mpl
+mpl.rc('xtick', direction = 'in')
+mpl.rc('ytick', direction = 'in')
 import logging
 log = logging.getLogger(__name__)
 
@@ -23,7 +26,6 @@ if EVEREST_DEV:
   
   # Dev version hack: enforce a non-ui backend
   import platform
-  import matplotlib as mpl
   if platform.system() == "Linux":
     mpl.use("Agg", warn=False)
   else:

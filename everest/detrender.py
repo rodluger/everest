@@ -450,8 +450,20 @@ class Detrender(Basecamp):
         self.cdppv_arr[b] = np.nan
         self.lam[b][self.lam_idx] = 0.
         log.info("Insufficient data to run cross-validation on this chunk.")
+        ax[b].set_ylabel(r'Scatter (ppm)', fontsize = 5)
+        ax[b].set_yticks([])
+        lambda_arr = np.array(self.lambda_arr)
+        lambda_arr[0] = 10 ** (np.log10(lambda_arr[1]) - 3)
+        xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
+        ax[b].set_xticks(xticks)
+        ax[b].set_xticklabels(['' for x in xticks])
+        pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
+        ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
+        ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
+                       ha = 'left', va = 'bottom', fontsize = 7, alpha = 0.25, 
+                       fontweight = 'bold')
         continue
-        
+
       # Mask transits and outliers
       time = self.time[k][m]
       flux = self.fraw[k][m]
@@ -720,10 +732,12 @@ class Detrender(Basecamp):
       
     # Appearance
     if len(self.cdpp_arr) == 2:
-      ax.annotate('%.2f ppm' % self.cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                  ha = 'left', va = 'top', fontsize = 10)
-      ax.annotate('%.2f ppm' % self.cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                  ha = 'right', va = 'top', fontsize = 10)
+      if not np.isnan(self.cdpp_arr[0]):
+        ax.annotate('%.2f ppm' % self.cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                    ha = 'left', va = 'top', fontsize = 10)
+      if not np.isnan(self.cdpp_arr[1]):
+        ax.annotate('%.2f ppm' % self.cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+                    ha = 'right', va = 'top', fontsize = 10)
     elif len(self.cdpp_arr) < 6:
       for n in range(len(self.cdpp_arr)):
         if n > 0:
@@ -731,8 +745,9 @@ class Detrender(Basecamp):
           x = (self.time[k][self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
         else:
           x = 0.02
-        ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
-                    ha = 'left', va = 'top', fontsize = 8)
+        if not np.isnan(self.cdpp_arr[n]):
+          ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                      ha = 'left', va = 'top', fontsize = 8)
     else:
       ax.annotate('%.2f ppm' % self.cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
                   ha = 'left', va = 'top', fontsize = 10)
@@ -772,18 +787,21 @@ class Detrender(Basecamp):
       ax.plot(self.time[k][-1], np.nanmedian(M(self.flux[k])), marker = '.', alpha = 0)
     
       # Plot the GP (long cadence only)
-      if self.cadence == 'lc':
+      if self.cadence == 'lc' and (len(self.mask[k]) < len(self.time[k])):
         _, amp, tau = self.kernel_params
         gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-        gp.compute(self.apply_mask(self.time[k], k = k), self.apply_mask(self.fraw_err[k], k = k))
-        med = np.nanmedian(self.apply_mask(self.flux[k], k = k))
-        y, _ = gp.predict(self.apply_mask(self.flux[k], k = k) - med, self.time[k])
-        y += med
-        ax.plot(M(self.time[k]), M(y), 'r-', lw = 0.5, alpha = 0.5)
+        try:
+          gp.compute(self.apply_mask(self.time[k], k = k), self.apply_mask(self.fraw_err[k], k = k))
+          med = np.nanmedian(self.apply_mask(self.flux[k], k = k))
+          y, _ = gp.predict(self.apply_mask(self.flux[k], k = k) - med, self.time[k])
+          y += med
+          ax.plot(M(self.time[k]), M(y), 'r-', lw = 0.5, alpha = 0.5)
       
-        # Compute the CDPP of the GP-detrended flux
-        self.cdppg = self._mission.CDPP(self.apply_mask(self.flux[k] - y + med, k = k), cadence = self.cadence)
-    
+          # Compute the CDPP of the GP-detrended flux
+          self.cdppg = self._mission.CDPP(self.apply_mask(self.flux[k] - y + med, k = k), cadence = self.cadence)
+        except:
+          self.cdppg = 0.
+
       else:
       
         # We're not going to calculate this
@@ -830,14 +848,14 @@ class Detrender(Basecamp):
       bnmask = np.array(list(set(np.concatenate([self.badmask[k], self.nanmask[k]]))), dtype = int)
       M = lambda x: np.delete(x, bnmask)
       if self.cadence == 'lc':
-        ax.plot(M(self.time[k]), M(self.flux[k]), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
+        ax.plot(M(self.time[k]), M(flux[k]), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
       else:
-        ax.plot(M(self.time[k]), M(self.flux[k]), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
+        ax.plot(M(self.time[k]), M(flux[k]), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
         ax.set_rasterization_zorder(0)
       # Hack: Plot invisible first and last points to ensure the x axis limits are the
       # same in the other plots, where we also plot outliers!
-      ax.plot(self.time[k][0], np.nanmedian(M(self.flux[k])), marker = '.', alpha = 0)
-      ax.plot(self.time[k][-1], np.nanmedian(M(self.flux[k])), marker = '.', alpha = 0)
+      ax.plot(self.time[k][0], np.nanmedian(M(flux[k])), marker = '.', alpha = 0)
+      ax.plot(self.time[k][-1], np.nanmedian(M(flux[k])), marker = '.', alpha = 0)
     
       # Show CBV fit?
       if show_cbv:
@@ -1115,18 +1133,22 @@ class Detrender(Basecamp):
     '''
     
     if self.kernel_params is None:
-      if self.nsub > 1:
-        y = []
-        for k in range(self.nsub):
-          X = self.apply_mask(self.fpix[k] / self.flux[k].reshape(-1, 1), k = k)
-          y = np.append(y, self.apply_mask(self.flux[k], k = k) - np.dot(X, np.linalg.solve(np.dot(X.T, X), 
-                        np.dot(X.T, self.apply_mask(self.flux[k], k = k)))))
-      else:
-        X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
-        y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))   
-      white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
-      amp = self.gp_factor * np.nanstd(y)
-      tau = 30.0
+      
+      try:
+        if self.nsub > 1:
+          y = []
+          for k in range(self.nsub):
+            X = self.apply_mask(self.fpix[k] / self.flux[k].reshape(-1, 1), k = k)
+            y = np.append(y, self.apply_mask(self.flux[k], k = k) - np.dot(X, np.linalg.solve(np.dot(X.T, X), 
+                          np.dot(X.T, self.apply_mask(self.flux[k], k = k)))))
+        else:
+          X = self.apply_mask(self.fpix / self.flux.reshape(-1, 1))
+          y = self.apply_mask(self.flux) - np.dot(X, np.linalg.solve(np.dot(X.T, X), np.dot(X.T, self.apply_mask(self.flux))))   
+        white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
+        amp = self.gp_factor * np.nanstd(y)
+        tau = 30.0
+      except np.linalg.linalg.LinAlgError:
+        white, amp, tau = 10., 1000., 30.0
       self.kernel_params = [white, amp, tau]
   
   def mask_planets(self):

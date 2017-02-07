@@ -671,7 +671,7 @@ class Everest(Basecamp):
         ax.plot(O3(time[k]), O3(flux[k]), 'b.', markersize = ms, alpha = 0.25)
       
         # Plot the GP
-        if n == 0 and plot_gp and self.cadence != 'sc':
+        if n == 0 and plot_gp and self.cadence != 'sc' and (len(self.mask[k]) < len(self.time[k])):
           _, amp, tau = self.kernel_params
           gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
           gp.compute(self.apply_mask(time[k], k = k), self.apply_mask(fraw_err[k], k = k))
@@ -688,18 +688,21 @@ class Everest(Basecamp):
           for brkpt in breakpoints[k][:-1]:
             ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
           if len(cdpp_arr) == 2:
-            ax.annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                        ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
-            ax.annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                        ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+            if not np.isnan(cdpp_arr[0]):
+              ax.annotate('%.2f ppm' % cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
+                          ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)
+            if not np.isnan(cdpp_arr[1]):
+              ax.annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
+                          ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
           elif len(cdpp_arr) < 6:
             for n in range(len(cdpp_arr)):
               if n > 0:
                 x = (self.time[self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
               else:
                 x = 0.02
-              ax.annotate('%.2f ppm' % cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
-                          ha = 'left', va = 'top', fontsize = 10, zorder = 99, color = 'r')
+              if not np.isnan(cdpp_arr[n]):
+                ax.annotate('%.2f ppm' % cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
+                            ha = 'left', va = 'top', fontsize = 10, zorder = 99, color = 'r')
           else:
             ax.annotate('%.2f ppm' % cdpp, xy = (0.02, 0.975), xycoords = 'axes fraction', 
                         ha = 'left', va = 'top', fontsize = 12, color = 'r', zorder = 99)

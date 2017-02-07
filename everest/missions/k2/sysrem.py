@@ -160,6 +160,8 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
   :param str model: The name of the :py:obj:`everest` model. Default `nPLD`
   :param bool clobber: Overwrite existing files? Default `False`
   
+  .. todo :: This routine needs to be updated for campaigns 9 and 10.
+  
   '''
   
   # Initialize logging?
@@ -174,7 +176,8 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
     X = [np.ones(1290).reshape(-1, 1), np.ones(2022).reshape(-1, 1)]
     return X
   elif campaign == 10:
-    raise NotImplementedError("CBV functionality for campaign 10 not yet implemented.")
+    X = [np.ones(306).reshape(-1, 1), np.ones(3384).reshape(-1, 1)]
+    return X
     
   # Output path
   path = os.path.join(EVEREST_DAT, 'k2', 'cbv', 'c%02d' % campaign)
