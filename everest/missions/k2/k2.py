@@ -214,19 +214,25 @@ def GetData(EPIC, **kwargs):
                    'get_nearby': k == 0})
     if k == 0:
       data = _GetData(EPIC, **kwargs)
-      # Turn these attributes into lists
-      for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
-                   'badmask', 'aperture', 'aperture_name',
-                   'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
-        setattr(data, attr, [getattr(data, attr)])
+      if not kwargs.get('download_only', False):
+        # Turn these attributes into lists
+        for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
+                     'badmask', 'aperture', 'aperture_name',
+                     'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
+          setattr(data, attr, [getattr(data, attr)])
     else:
       _data = _GetData(EPIC, **kwargs)
-      # Append to running lists
-      for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
-                   'badmask', 'aperture', 'aperture_name',
-                   'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
-        getattr(data, attr).append(getattr(_data, attr))
-    
+      if not kwargs.get('download_only', False):
+        # Append to running lists
+        for attr in ['cadn', 'time', 'fpix', 'fpix_err', 'nanmask', 
+                     'badmask', 'aperture', 'aperture_name',
+                     'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
+          getattr(data, attr).append(getattr(_data, attr))
+  
+  # Download only?
+  if kwargs.get('download_only', False):
+    return
+  
   # Select the first, middle and last pixel images
   data.pixel_images = [data.pixel_images[0][0], 
                        data.pixel_images[(nsub - 1) // 2][((nsub + 1) % 2) + 1], 
