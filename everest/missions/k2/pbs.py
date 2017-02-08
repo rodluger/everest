@@ -365,7 +365,8 @@ def Status(season = range(18), model = 'nPLD', purge = False, injection = False,
         for subfolder in os.listdir(os.path.join(path, folder)):
           ID = int(folder[:4] + subfolder)
           if ID in stars:
-            if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data.npz')):
+            if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data.npz')) \
+               or os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, 'data01.npz')):
               down += 1
             if os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % c, folder, subfolder, FITSFile(ID, c, cadence = cadence))):
               fits += 1
