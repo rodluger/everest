@@ -83,9 +83,10 @@ def _Download(campaign, subcampaign):
   # Download the TPF data for each one
   for i, EPIC in enumerate(stars):
     print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
-                         ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
-                         'data.npz')):
+    path = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
+                       ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:])
+    if not (os.path.exists(os.path.join(path, 'data.npz')) or
+            os.path.exists(os.path.join(path, 'data01.npz'))):
       try:
         GetData(EPIC, download_only = True)
       except KeyboardInterrupt:
