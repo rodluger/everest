@@ -432,8 +432,8 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
     f.close()
     shutil.move(f.name, filename)
     
-    if download_only:
-      return
+  if download_only:
+    return
   
   # Load
   data = np.load(filename)
