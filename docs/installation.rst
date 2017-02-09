@@ -27,7 +27,7 @@ You can install it by cloning the repository and running the setup script:
 
 .. code-block:: bash
 
-   git clone --recursive https://github.com/rodluger/everest
+   git clone https://github.com/rodluger/everest
    cd everest
    python setup.py install --user
 

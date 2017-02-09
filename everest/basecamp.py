@@ -408,7 +408,12 @@ class Basecamp(object):
             i = 1
             while len(self.model[k]) - i in self.mask[k]:
               i += 1
-            offset = self.model[k][-i] - m[self.bpad - i]
+            if i <= self.bpad:
+              offset = self.model[k][-i] - m[self.bpad - i]
+            else:
+              # All data points in the padded region are bad;
+              # We have no choice, so let's align the chunks anyways
+              offset = self.model[k][-1] - m[self.bpad - 1]
             self.model[k] = np.concatenate([self.model[k], m[self.bpad:-self.bpad] + offset])
         
         n += nseg
@@ -662,7 +667,11 @@ class Basecamp(object):
       
       # Plot it
       ax = axes[i]
-      ax.imshow(image, aspect = 'auto', interpolation = 'nearest', cmap = plasma)
+      if np.all(np.isnan(self.flux[k])):
+        alpha = 0.3
+      else:
+        alpha = 1
+      ax.imshow(image, aspect = 'auto', interpolation = 'nearest', cmap = plasma, alpha = alpha)
       ax.contour(highres, levels=[0.5], extent=extent, origin='lower', colors='r', linewidths=1)
       
       # Check for saturated columns

@@ -60,19 +60,28 @@ def get(ID, pipeline = 'everest1'):
       time = np.array([])
       flux = np.array([])
       for c in SplitCampaigns[campaign]:
-        s = k2plr.K2SFF(ID, sci_campaign = c)
+        try:
+          s = k2plr.K2SFF(ID, sci_campaign = c)
+        except:
+          continue
         t = s.time
         f = s.fcor
         # Normalize to the median flux
-        s = k2plr.EVEREST(ID, version = 2)
-        f *= np.nanmedian(s.flux)
+        try:
+          s = k2plr.EVEREST(ID, version = 2)
+          f *= np.nanmedian(s.flux)
+        except:
+          pass
         time = np.append(time, t)
         flux = np.append(flux, f)
     elif pipeline.lower() == 'k2sc':
       time = np.array([])
       flux = np.array([])
       for c in SplitCampaigns[campaign]:
-        s = k2plr.K2SC(ID, sci_campaign = c)
+        try:
+          s = k2plr.K2SC(ID, sci_campaign = c)
+        except:
+          continue
         time = np.append(time, s.time)
         flux = np.append(flux, s.pdcflux)
     else:
@@ -89,8 +98,11 @@ def get(ID, pipeline = 'everest1'):
       time = s.time
       flux = s.fcor
       # Normalize to the median flux
-      s = k2plr.EVEREST(ID, version = 2)
-      flux *= np.nanmedian(s.flux)
+      try:
+        s = k2plr.EVEREST(ID, version = 2)
+        flux *= np.nanmedian(s.flux)
+      except:
+        pass
     elif pipeline.lower() == 'k2sc':
       s = k2plr.K2SC(ID)
       time = s.time
@@ -109,6 +121,7 @@ def plot(ID, pipeline = 'everest1', show = True):
   
   # Get the data
   time, flux = get(ID, pipeline = pipeline)
+  assert len(time), "No data found for target."
   
   # Remove nans
   mask = np.where(np.isnan(flux))[0]

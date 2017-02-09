@@ -91,7 +91,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                    7: [1192, 2319],   
                    8: [1950],         
                    9: [[], []],
-                  10: [[], []],
+                  10: [[], [1534]],
                   11: [],
                   12: [],
                   13: [],
@@ -127,7 +127,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   7: np.array(np.linspace(0, 121290, 31)[1:-1], dtype = int),     
                   8: np.array(np.linspace(0, 115590, 31)[1:-1], dtype = int),     
                   9: [[], []], # TODO
-                 10: [[], []], # TODO
+                 10: [[], [np.array(np.linspace(0, 101520, 31)[1:-1], dtype = int)]],
                  11: [],
                  12: [],
                  13: [],
@@ -159,6 +159,10 @@ def CDPP(flux, mask = [], cadence = 'lc'):
   rmswin = 13
   # Smooth the data on a 2 day timescale
   svgwin = 49
+  
+  # Check if there's data
+  if not len(flux):
+    return np.nan
   
   # If short cadence, need to downbin
   if cadence == 'sc':
@@ -693,6 +697,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
   if fpix.shape[1] == 0:
     fpix = np.zeros((fpix.shape[0],1)) * np.nan
     fpix_err = np.zeros((fpix.shape[0],1)) * np.nan
+    nanmask = np.arange(0, fpix.shape[0])
   
   # Return
   data = DataContainer()

@@ -337,6 +337,11 @@ class Detrender(Basecamp):
       else:
         log.info('Subseason %d/%d, iter %d/%d: %d outliers' % (k + 1, self.nsub, 0, self.oiter, len(self.outmask[k])))
       
+      # Is there any data at all?
+      if len(self.mask[k]) == len(self.time[k]):
+        continue
+      
+      # Setup
       M = lambda x: np.delete(x, np.concatenate([self.nanmask[k], self.badmask[k], self.transitmask[k]]), axis = 0)
       t = M(self.time[k])
       outmask = [np.array([-1]), np.array(self.outmask[k])]
@@ -446,22 +451,24 @@ class Detrender(Basecamp):
       m = self.get_masked_chunk(b)
       
       # Check that we have enough data
-      if len(m) < 3 * self.cdivs:
+      if (len(m) < 3 * self.cdivs) or np.all(np.isnan(m)):
         self.cdppv_arr[b] = np.nan
         self.lam[b][self.lam_idx] = 0.
         log.info("Insufficient data to run cross-validation on this chunk.")
-        ax[b].set_ylabel(r'Scatter (ppm)', fontsize = 5)
-        ax[b].set_yticks([])
-        lambda_arr = np.array(self.lambda_arr)
-        lambda_arr[0] = 10 ** (np.log10(lambda_arr[1]) - 3)
-        xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
-        ax[b].set_xticks(xticks)
-        ax[b].set_xticklabels(['' for x in xticks])
-        pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
-        ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
-        ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
-                       ha = 'left', va = 'bottom', fontsize = 7, alpha = 0.25, 
-                       fontweight = 'bold')
+        if self.nseg <= 3:
+          ax[b].set_yticks([])
+          lambda_arr = np.array(self.lambda_arr)
+          lambda_arr[0] = 10 ** (np.log10(lambda_arr[1]) - 3)
+          xticks = [np.log10(lambda_arr[0])] + list(np.linspace(np.log10(lambda_arr[1]), np.log10(lambda_arr[-1]), 6))
+          ax[b].set_xticks([])
+          ax[b].set_xticklabels(['' for x in xticks])
+          ax[b].annotate('No data', xy = (0.5, 0.5), xycoords = 'axes fraction', va = 'center', 
+                         ha = 'center', color = 'r', alpha = 0.3, fontsize = 12)
+          pad = 0.01 * (np.log10(lambda_arr[-1]) - np.log10(lambda_arr[0]))
+          ax[b].set_xlim(np.log10(lambda_arr[0]) - pad, np.log10(lambda_arr[-1]) + pad)
+          ax[b].annotate('%s.%d' % (info, b), xy = (0.02, 0.025), xycoords = 'axes fraction', 
+                         ha = 'left', va = 'bottom', fontsize = 7, alpha = 0.25, 
+                         fontweight = 'bold')
         continue
 
       # Mask transits and outliers
@@ -727,25 +734,19 @@ class Detrender(Basecamp):
           ax.axvline(self.time[k][brkpt], color = 'r', ls = '-', alpha = 0.025)
       
       # Plot the sub-season divisions
-      if (self.nsub > 1) and (k < self.nsub - 1):
+      if (self.nsub > 1) and (k < self.nsub - 1) and not np.all(np.isnan(self.flux[k])):
         ax.axvline(0.5 * (self.time[k][-1] + self.time[k + 1][0]), color = 'b', ls = '--', alpha = 0.5)
       
     # Appearance
-    if len(self.cdpp_arr) == 2:
-      if not np.isnan(self.cdpp_arr[0]):
-        ax.annotate('%.2f ppm' % self.cdpp_arr[0], xy = (0.02, 0.975), xycoords = 'axes fraction', 
-                    ha = 'left', va = 'top', fontsize = 10)
-      if not np.isnan(self.cdpp_arr[1]):
-        ax.annotate('%.2f ppm' % self.cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
-                    ha = 'right', va = 'top', fontsize = 10)
-    elif len(self.cdpp_arr) < 6:
+    ax.margins(0.01, 0.1)
+    if len(self.cdpp_arr) < 6:
       for n in range(len(self.cdpp_arr)):
-        if n > 0:
-          k = self.subseason(n)
-          x = (self.time[k][self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
-        else:
-          x = 0.02
         if not np.isnan(self.cdpp_arr[n]):
+          if n == 0:
+            x = 0.02
+          else:
+            k = self.subseason(n - 1)
+            x = 0.02 + (self.time[k][self._breakpoints[n - 1]] - ax.get_xlim()[0]) / (ax.get_xlim()[1] - ax.get_xlim()[0])
           ax.annotate('%.2f ppm' % self.cdpp_arr[n], xy = (x, 0.975), xycoords = 'axes fraction', 
                       ha = 'left', va = 'top', fontsize = 8)
     else:
@@ -757,7 +758,6 @@ class Detrender(Basecamp):
     ax.annotate(info_left, xy = (0.02, 0.025), xycoords = 'axes fraction', 
                 ha = 'left', va = 'bottom', fontsize = 8)     
     ax.set_xlabel(r'Time (%s)' % self._mission.TIMEUNITS, fontsize = 5)
-    ax.margins(0.01, 0.1)
     ax.set_ylim(*ylim)
     ax.get_yaxis().set_major_formatter(Formatter.Flux)
   
@@ -983,8 +983,10 @@ class Detrender(Basecamp):
       if self.nsub > 1:
         for i, t in enumerate(self.time):
           self.breakpoints[i][-1] = len(t) - 1
+          self.breakpoints[i] = np.array(self.breakpoints[i], dtype = int)
       else:
         self.breakpoints[-1] = len(self.time) - 1
+        self.breakpoints = np.array(self.breakpoints, dtype = int)
       
       # Get PLD normalization
       self.get_norm()
