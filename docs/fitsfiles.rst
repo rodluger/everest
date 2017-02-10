@@ -9,7 +9,7 @@ customized post-processing. Each FITS file is composed of six extensions:
    :local:
 
 .. note:: It is **highly recommended** that users access the catalog through the \
-          :py:mod:`everest` interface, as this allows for post-processing of \
+          :py:mod:`everest` :doc:`user interface <ui>`, as this allows for post-processing of \
           the light curves with custom masks.
 
 
@@ -104,7 +104,18 @@ CBV\ **XX**     The co-trending basis vectors used to produce the corrected flux
             **26** *Not used*
             **27** Data point is during a transit/eclipse
             ====== =================================================
-            
+          
+          As an example, to get the indices of all points that were flagged with bit **23** in
+          Python, run
+          
+          .. code-block:: python
+             
+             inds = np.where(QUALITY & 2 ** (23 - 1))[0]
+          
+          Note, however, that the :py:obj:`everest` :doc:`user interface <ui>` provides easy access to
+          these masks via the :py:attr:`Everest.badmask`, :py:attr:`Everest.nanmask`,
+          :py:attr:`Everest.outmask`, and :py:attr:`Everest.transitmask` attributes.
+          
 ``[2]`` Pixels HDU
 ~~~~~~~~~~~~~~~~~~
 
