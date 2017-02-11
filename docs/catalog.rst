@@ -32,6 +32,7 @@ the light curves with custom masks.
    
    fitsfiles
    dvsfigs
+   bulk
    issues
 
 .. raw:: html
