@@ -12,6 +12,7 @@ These *FITS* files make up the public :py:mod:`everest` catalog.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
+from . import __subversion__ as EVEREST_SUBVERSION
 from .config import EVEREST_DAT, EVEREST_SRC, QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, QUALITY_TRN
 try:
   import pyfits
@@ -45,6 +46,7 @@ def PrimaryHDU(model):
   cards.append(('COMMENT', '************************'))
   cards.append(('MISSION', model.mission, 'Mission name'))
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
+  cards.append(('SUBVER', EVEREST_SUBVERSION, 'EVEREST pipeline sub-version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   
   # Create the HDU
@@ -68,6 +70,7 @@ def LightcurveHDU(model):
   cards.append(('COMMENT', '************************'))
   cards.append(('MISSION', model.mission, 'Mission name'))
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
+  cards.append(('SUBVER', EVEREST_SUBVERSION, 'EVEREST pipeline sub-version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   cards.append(('MODEL', model.name, 'Name of EVEREST model used'))
   if model.nsub == 1:
@@ -229,6 +232,7 @@ def PixelsHDU(model, k = slice(None, None, None)):
   cards.append(('COMMENT', '************************'))
   cards.append(('MISSION', model.mission, 'Mission name'))
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
+  cards.append(('SUBVER', EVEREST_SUBVERSION, 'EVEREST pipeline sub-version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   
   # Create the HDU
@@ -265,6 +269,7 @@ def ApertureHDU(model, k = slice(None, None, None)):
   cards.append(('COMMENT', '************************'))
   cards.append(('MISSION', model.mission, 'Mission name'))
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
+  cards.append(('SUBVER', EVEREST_SUBVERSION, 'EVEREST pipeline sub-version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   
   # Create the HDU
@@ -290,6 +295,7 @@ def ImagesHDU(model):
   cards.append(('COMMENT', '************************'))
   cards.append(('MISSION', model.mission, 'Mission name'))
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
+  cards.append(('SUBVER', EVEREST_SUBVERSION, 'EVEREST pipeline sub-version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   
   # The images
@@ -320,6 +326,7 @@ def HiResHDU(model):
   cards.append(('COMMENT', '************************'))
   cards.append(('MISSION', model.mission, 'Mission name'))
   cards.append(('VERSION', EVEREST_VERSION, 'EVEREST pipeline version'))
+  cards.append(('SUBVER', EVEREST_SUBVERSION, 'EVEREST pipeline sub-version'))
   cards.append(('DATE', strftime('%Y-%m-%d'), 'EVEREST file creation date (YYYY-MM-DD)'))
   
   # Create the HDU

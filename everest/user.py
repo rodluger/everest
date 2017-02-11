@@ -22,6 +22,7 @@ from the online MAST catalog. So, to get started, all you need to do is run
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
+from . import __subversion__ as EVEREST_SUBVERSION
 from . import missions
 from .basecamp import Basecamp
 from .detrender import pPLD
@@ -44,6 +45,7 @@ import six
 from six.moves import urllib
 from tempfile import NamedTemporaryFile
 import shutil
+from distutils.version import LooseVersion
 import logging
 log = logging.getLogger(__name__)
 
@@ -214,8 +216,17 @@ class Everest(Basecamp):
     # Download the FITS file if necessary
     self.fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence, season = self.season)
     self.model_name = pyfits.getheader(self.fitsfile, 1)['MODEL']
-    self.load_fits()
     self._weights = None
+    
+    # Check the pipeline version. Do we need to upgrade?
+    subversion = pyfits.getheader(self.fitsfile, 1).get('SUBVER', None)
+    if subversion is not None:
+      if LooseVersion(subversion) > LooseVersion(EVEREST_SUBVERSION):
+        raise Exception("Desired light curve was generated with EVEREST version %s, but current version is %s.\n" % (subversion, EVEREST_SUBVERSION) +
+                        "Please upgrade EVEREST by running `pip install everest --upgrade`.")
+    
+    # Load the FITS file
+    self.load_fits()
 
   def __repr__(self):
     '''
