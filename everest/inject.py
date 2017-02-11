@@ -41,6 +41,7 @@ def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.0
   :param bool mask: Explicitly mask the in-transit cadences when computing the PLD model? Default :py:obj:`False`
   :param float trn_win: The size of the transit window in units of the transit duration
   :param int poly_order: The order of the polynomial used to fit the continuum
+  :param int season: The season (campaign) number
   
   '''
   

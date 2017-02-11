@@ -88,7 +88,7 @@ def _Download(campaign, subcampaign):
     if not (os.path.exists(os.path.join(path, 'data.npz')) or
             os.path.exists(os.path.join(path, 'data01.npz'))):
       try:
-        GetData(EPIC, download_only = True)
+        GetData(EPIC, download_only = True, season = int(campaign))
       except KeyboardInterrupt:
         sys.exit()
       except:
@@ -192,6 +192,7 @@ def _Run(campaign, subcampaign, epic, strkwargs):
   cadence = kwargs.get('cadence', 'lc')
   
   # Model wrapper
+  kwargs.update({'season': int(campaign)})
   m = FunctionWrapper(EverestModel, **kwargs)
   
   # Set up our custom exception handler
@@ -304,6 +305,7 @@ def _Publish(campaign, subcampaign, strkwargs):
   cadence = kwargs.get('cadence', 'lc')
   
   # Model wrapper
+  kwargs.update({'season': int(campaign)})
   m = FunctionWrapper(EverestModel, publish = True, **kwargs)
   
   # Set up our custom exception handler
