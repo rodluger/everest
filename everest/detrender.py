@@ -189,7 +189,7 @@ class Detrender(Basecamp):
     else:
       # Get the breakpoints from the mission module?
       if bkpts is True:
-        bkpts = self._mission.Breakpoints(self.ID, cadence = self.cadence)
+        bkpts = self._mission.Breakpoints(self.ID, cadence = self.cadence, season = self.season)
       # Check if this light curve has sub-seasons
       if hasattr(bkpts[0], '__len__'):
         for subseason in range(len(bkpts)):
@@ -1386,7 +1386,8 @@ class nPLD(Detrender):
                                    neighbors = num_neighbors, 
                                    mag_range = kwargs.get('mag_range', (11., 13.)), 
                                    cdpp_range = kwargs.get('cdpp_range', None),
-                                   aperture_name = self.aperture_name)
+                                   aperture_name = self.aperture_name,
+                                   season = self.season)
     if len(self.neighbors):
       if len(self.neighbors) < num_neighbors:
         log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))

@@ -120,16 +120,23 @@ class StatsPicker(object):
 
 def Campaign(EPIC, **kwargs):
   '''
-  Returns the campaign number for a given EPIC target. If target is not found, returns :py:obj:`None`.
+  Returns the campaign number(s) for a given EPIC target. If target is not found, returns :py:obj:`None`.
   
   :param int EPIC: The EPIC number of the target.
   
   '''
   
+  campaigns = []
   for campaign, stars in GetK2Stars().items():
     if EPIC in [s[0] for s in stars]:
-      return campaign
-  return None
+      campaigns.append(campaign)
+  
+  if len(campaigns) == 1:
+    return campaigns[0]
+  elif len(campaigns) == 0:
+    return None
+  else:
+    return campaigns
 
 def GetK2Stars(clobber = False, update = False):
   '''
@@ -247,24 +254,28 @@ def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False, 
   else:
     raise Exception('Argument `subcampaign` must be an `int` or a `float` in the form `X.Y`')
 
-def Channel(EPIC):
+def Channel(EPIC, **kwargs):
   '''
   Returns the channel number for a given EPIC target.
   
+  :param int season: The `K2` campaign number
+  
   '''
   
-  campaign = Campaign(EPIC)
+  campaign = kwargs.get('season', Campaign(EPIC))
   stars = GetK2Stars()[campaign]
   i = np.argmax([s[0] == EPIC for s in stars])
   return stars[i][2]
 
-def Module(EPIC):
+def Module(EPIC, **kwargs):
   '''
   Returns the module number for a given EPIC target.
   
+  :param int season: The `K2` campaign number
+  
   '''
   
-  channel = Channel(EPIC)
+  channel = Channel(EPIC, **kwargs)
   nums = {2:1, 3:5, 4:9, 6:13, 7:17, 8:21, 9:25, 
           10:29, 11:33, 12:37, 13:41, 14:45, 15:49, 
           16:53, 17:57, 18:61, 19:65, 20:69, 22:73, 
@@ -293,25 +304,30 @@ def Channels(module):
   else:
     return None
   
-def KepMag(EPIC):
+def KepMag(EPIC, **kwargs):
   '''
   Returns the *Kepler* magnitude for a given EPIC target.
   
+  :param int season: The `K2` campaign number
+  
   '''
   
-  campaign = Campaign(EPIC)
+  campaign = kwargs.get('season', Campaign(EPIC))
   stars = GetK2Stars()[campaign]
   i = np.argmax([s[0] == EPIC for s in stars])
   return stars[i][1]
   
-def RemoveBackground(EPIC):
+def RemoveBackground(EPIC, **kwargs):
   '''
   Returns :py:obj:`True` or :py:obj:`False`, indicating whether or not to remove the background
   flux for the target. If ``campaign < 3``, returns :py:obj:`True`, otherwise returns :py:obj:`False`.
   
+  :param int season: The `K2` campaign number
+  
   '''
 
-  if Campaign(EPIC) < 3:
+  campaign = kwargs.get('season', Campaign(EPIC))
+  if campaign < 3:
     return True
   else:
     return False
@@ -554,9 +570,11 @@ def SaturationFlux(EPIC, **kwargs):
   cause charge bleeding. The well depths were obtained from Table 13
   of the Kepler instrument handbook. We assume an exposure time of 6.02s.
   
+  :param int season: The `K2` campaign number
+  
   '''
   
   channel, well_depth = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'well_depth.tsv'), unpack = True)
-  satflx = well_depth[channel == Channel(EPIC)][0] / 6.02
+  satflx = well_depth[channel == Channel(EPIC, **kwargs)][0] / 6.02
   return satflx

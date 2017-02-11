@@ -12,7 +12,7 @@ for each `K2` campaign using the :py:obj:`SysRem` algorithm.
 from __future__ import division, print_function, absolute_import, unicode_literals
 from ...config import EVEREST_DAT
 from ...utils import InitLog
-from .aux import GetK2Campaign, Campaign, Channels
+from .aux import GetK2Campaign, Channels
 import os
 import numpy as np
 import matplotlib.pyplot as pl

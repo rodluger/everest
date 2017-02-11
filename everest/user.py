@@ -47,7 +47,7 @@ import shutil
 import logging
 log = logging.getLogger(__name__)
 
-def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = False):
+def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = False, **kwargs):
   '''
   Download a given :py:mod:`everest` file from MAST.
   
@@ -56,11 +56,12 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   :param str filename: The name of the file to download. Default :py:obj:`None`, in which case the default \
                        FITS file is retrieved.
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
+  :param int season: The observing season (campaign) number
   
   '''
   
   # Grab some info
-  season = getattr(missions, mission).Season(ID)
+  season = kwargs.get('season', getattr(missions, mission).Season(ID))
   if season is None:
     raise ValueError('Target not found.')
   path = getattr(missions, mission).TargetDirectory(ID, season)
@@ -125,18 +126,19 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   else:
     raise Exception("Unable to download the file.")
 
-def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
+def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD', **kwargs):
   '''
   Show the data validation summary (DVS) for a given target.
   
   :param str mission: The mission name. Default `k2`
   :param str cadence: The light curve cadence. Default `lc`
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
+  :param int season: The observing season (campaign) number
   
   '''
   
   # Get season
-  season = getattr(missions, mission).Season(ID)
+  season = kwargs.get('season', getattr(missions, mission).Season(ID))
   
   # Get file name
   if model == 'nPLD':
@@ -149,7 +151,7 @@ def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
     
   file = DownloadFile(ID, mission = mission, 
                       filename = filename, 
-                      clobber = clobber)  
+                      clobber = clobber, season = season)  
   
   try:
     if platform.system().lower().startswith('darwin'):
@@ -176,6 +178,7 @@ class Everest(Basecamp):
   :param bool quiet: Suppress :py:obj:`stdout` messages? Default :py:obj:`False`
   :param str cadence: The light curve cadence. Default `lc`
   :param bool clobber: If :py:obj:`True`, download and overwrite existing files. Default :py:obj:`False`
+  :param int season: The observing season (campaign)
   
   '''
   
@@ -188,6 +191,7 @@ class Everest(Basecamp):
     self.ID = ID
     self.mission = mission
     self.clobber = clobber
+    self.season = kwargs.get('season', getattr(missions, mission).Season(ID))
     
     # Initialize preliminary logging
     if not quiet:
@@ -202,7 +206,7 @@ class Everest(Basecamp):
     self.cadence = cadence
     
     # Download the FITS file if necessary
-    self.fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence)
+    self.fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence, season = self.season)
     self.model_name = pyfits.getheader(self.fitsfile, 1)['MODEL']
     self.load_fits()
     self._weights = None
@@ -764,7 +768,7 @@ class Everest(Basecamp):
     
     '''
     
-    DVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
+    DVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber, season = self.season)
   
   def plot_pipeline(self, pipeline, *args, **kwargs):
     '''

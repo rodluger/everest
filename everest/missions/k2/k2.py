@@ -68,6 +68,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   Returns the location of the breakpoints for a given target.
   
   :param int EPIC: The EPIC ID number
+  :param int season: The `K2` campaign number
   :param str cadence: The light curve cadence. Default `lc`
   
   .. note :: The number corresponding to a given breakpoint is the number \
@@ -76,7 +77,7 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   '''
   
   # Get the campaign number
-  campaign = Season(EPIC)
+  campaign = kwargs.get('season', Season(EPIC))
   
   # Select LC or SC
   if cadence == 'lc':
@@ -198,17 +199,17 @@ def GetData(EPIC, **kwargs):
   :param bool get_nearby: Retrieve location of nearby sources? Default :py:obj:`True`
     
   '''
+    
+  # Get the season number
+  season = kwargs.get('season', Season(EPIC))
   
   # Determine the number of sub-seasons
-  breakpoints = Breakpoints(EPIC)
+  breakpoints = Breakpoints(EPIC, season = season)
   if hasattr(breakpoints[0], '__len__'):
-    nsub = len(Breakpoints(EPIC))
+    nsub = len(breakpoints)
   else:
     nsub = 1
     return _GetData(EPIC, **kwargs)
-  
-  # Get the season number
-  season = Season(EPIC)
   
   # Get the data for each sub-season
   for k in range(nsub):
@@ -486,7 +487,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
   # to compare these to decide if the star is saturated.
-  satflx = SaturationFlux(EPIC) * (1. + saturation_tolerance)
+  satflx = SaturationFlux(EPIC, season = campaign) * (1. + saturation_tolerance)
   f97 = np.zeros((fpix.shape[1], fpix.shape[2]))
   for i in range(fpix.shape[1]):
     for j in range(fpix.shape[2]):
@@ -643,7 +644,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
     
   # Compute the background
   binds = np.where(aperture ^ 1)
-  if RemoveBackground(EPIC) and (len(binds[0]) > 0):
+  if RemoveBackground(EPIC, season = campaign) and (len(binds[0]) > 0):
     bkg = np.nanmedian(np.array([f[binds] for f in fpix], dtype='float64'), axis = 1)
     # Uncertainty of the median: http://davidmlane.com/hyperstat/A106993.html
     bkg_err = 1.253 * np.nanmedian(np.array([e[binds] for e in fpix_err], 
@@ -732,6 +733,7 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   Return `neighbors` random bright stars on the same module as `EPIC`.
   
   :param int EPIC: The EPIC ID number
+  :param int season: The `K2` campaign number
   :param str model: The :py:obj:`everest` model name. Only used when imposing CDPP bounds. Default :py:obj:`None`
   :param int neighbors: Number of neighbors to return. Default 10
   :param str aperture_name: The name of the aperture to use. Select `custom` to call \
@@ -747,11 +749,11 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
     return []
   
   # Get the IDs
-  campaign = Season(EPIC)
+  campaign = kwargs.get('season', Season(EPIC))
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T
   short_cadence = np.array(short_cadence, dtype = bool)
   epics = np.array(epics, dtype = int)
-  c = GetNeighboringChannels(Channel(EPIC))
+  c = GetNeighboringChannels(Channel(EPIC, season = campaign))
   
   # Manage kwargs
   if aperture_name is None:
@@ -1754,13 +1756,13 @@ def FitCBVs(model):
       flux = Interpolate(model.time, model.mask, model.flux)
       time = Downbin(model.time, len(model.time) // 30, operation = 'mean')
       flux = Downbin(flux, len(model.time) // 30, operation = 'mean')
-      breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
+      breakpoints = list(Breakpoints(model.ID, cadence = 'lc', season = model.season))
       breakpoints += [len(time) - 1]
     else:
       flux = [Interpolate(model.time[k], model.mask[k], model.flux[k]) for k in range(model.nsub)]
       time = [Downbin(model.time[k], len(model.time[k]) // 30, operation = 'mean') for k in range(model.nsub)]
       flux = [Downbin(flux[k], len(model.time[k]) // 30, operation = 'mean') for k in range(model.nsub)]
-      breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
+      breakpoints = list(Breakpoints(model.ID, cadence = 'lc', season = model.season))
       for subseason in range(len(breakpoints)):
         breakpoints[subseason] = np.append(breakpoints[subseason], [len(time[subseason]) - 1])
       breakpoints = [item for sublist in breakpoints for item in sublist]
