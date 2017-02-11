@@ -26,6 +26,16 @@ Then, you can load the cached light curve in Python by running
    import everest
    star = everest.Everest(201367065)
 
+.. note::
+   
+   You can change the directory :py:obj:`everest` searches in by setting the \
+   :py:obj:`$EVEREST2_DATA_DIR` environment variable. \
+   :py:obj:`everest` will then search for EPIC 201367065 (for example) in \
+   
+   .. code-block:: bash
+
+      $EVEREST2_DATA_DIR/k2/c01/201300000/67065/
+
 .. raw:: html
 
   <script>
