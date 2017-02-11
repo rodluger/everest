@@ -96,6 +96,8 @@ class Basecamp(object):
       self._season
     except:
       self._season = self._mission.Season(self.ID)
+      if hasattr(self._season, '__len__'):
+        raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
     return self._season
 
   @season.setter

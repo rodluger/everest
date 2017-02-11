@@ -28,14 +28,21 @@ Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc', 'raw']
 #: The K2 campaigns that are split into sub-seasons
 SplitCampaigns = {9: [91, 92], 10: [101, 102]}
 
-def get(ID, pipeline = 'everest1'):
+def get(ID, pipeline = 'everest1', season = None):
   '''
   Returns the `time` and `flux` for a given EPIC `ID` and
   a given `pipeline` name.
   
+  :param int season: The `K2` observing campaign
+  
   '''
   
   log.info('Downloading %s light curve for %d...' % (pipeline, ID))
+  if season is None:
+    from .k2 import Season
+    campaign = Season(ID)
+  else:
+    campaign = season
   
   # Everest 2?
   if pipeline.lower() == 'everest2':
@@ -50,8 +57,6 @@ def get(ID, pipeline = 'everest1'):
     return time, flux
   
   # Check for split campaign?
-  from .k2 import Season
-  campaign = Season(ID)
   if campaign in SplitCampaigns:
     # We're going to mend the sub-seasons
     if pipeline.lower() == 'everest1':

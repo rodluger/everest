@@ -51,6 +51,7 @@ class Detrender(Basecamp):
                      enters :py:obj:`pdb` post-mortem mode for debugging when an error is raised.
                      Default :py:obj:`False`
   :param str mission: The name of the mission. Default `k2`
+  :param int season: The observing season (campaign)
   
   **Detrender:**
   
@@ -130,6 +131,9 @@ class Detrender(Basecamp):
     if self.cadence not in ['lc', 'sc']:
       raise ValueError("Invalid cadence selected.")
     self.mission = kwargs.get('mission', 'k2')
+    self._season = kwargs.get('season', getattr(missions, self.mission).Season(ID))
+    if hasattr(self._season, '__len__'):
+      raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
     self.clobber = kwargs.get('clobber', False)
     self.debug = kwargs.get('debug', False)
     self.is_parent = kwargs.get('is_parent', False)

@@ -64,6 +64,8 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   season = kwargs.get('season', getattr(missions, mission).Season(ID))
   if season is None:
     raise ValueError('Target not found.')
+  elif hasattr(season, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   path = getattr(missions, mission).TargetDirectory(ID, season)
   relpath = getattr(missions, mission).TargetDirectory(ID, season, relative = True)
   if filename is None:
@@ -139,6 +141,8 @@ def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD', **k
   
   # Get season
   season = kwargs.get('season', getattr(missions, mission).Season(ID))
+  if hasattr(season, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   
   # Get file name
   if model == 'nPLD':
@@ -191,7 +195,9 @@ class Everest(Basecamp):
     self.ID = ID
     self.mission = mission
     self.clobber = clobber
-    self.season = kwargs.get('season', getattr(missions, mission).Season(ID))
+    self._season = kwargs.get('season', getattr(missions, mission).Season(ID))
+    if hasattr(self._season, '__len__'):
+      raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
     
     # Initialize preliminary logging
     if not quiet:

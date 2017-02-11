@@ -263,6 +263,8 @@ def Channel(EPIC, **kwargs):
   '''
   
   campaign = kwargs.get('season', Campaign(EPIC))
+  if hasattr(campaign, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   stars = GetK2Stars()[campaign]
   i = np.argmax([s[0] == EPIC for s in stars])
   return stars[i][2]
@@ -313,6 +315,8 @@ def KepMag(EPIC, **kwargs):
   '''
   
   campaign = kwargs.get('season', Campaign(EPIC))
+  if hasattr(campaign, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   stars = GetK2Stars()[campaign]
   i = np.argmax([s[0] == EPIC for s in stars])
   return stars[i][1]
@@ -327,6 +331,8 @@ def RemoveBackground(EPIC, **kwargs):
   '''
 
   campaign = kwargs.get('season', Campaign(EPIC))
+  if hasattr(campaign, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   if campaign < 3:
     return True
   else:

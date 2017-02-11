@@ -78,6 +78,8 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   
   # Get the campaign number
   campaign = kwargs.get('season', Season(EPIC))
+  if hasattr(campaign, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   
   # Select LC or SC
   if cadence == 'lc':
@@ -202,6 +204,8 @@ def GetData(EPIC, **kwargs):
     
   # Get the season number
   season = kwargs.get('season', Season(EPIC))
+  if hasattr(season, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   
   # Determine the number of sub-seasons
   breakpoints = Breakpoints(EPIC, season = season)
@@ -276,6 +280,8 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
   # Campaign no.
   if season is None:
     campaign = Season(EPIC)
+    if hasattr(campaign, '__len__'):
+      raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   else:
     campaign = season
 
@@ -750,6 +756,8 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
   
   # Get the IDs
   campaign = kwargs.get('season', Season(EPIC))
+  if hasattr(campaign, '__len__'):
+    raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T
   short_cadence = np.array(short_cadence, dtype = bool)
   epics = np.array(epics, dtype = int)
