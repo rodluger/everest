@@ -41,17 +41,19 @@ def get(ID, pipeline = 'everest1', season = None):
   if season is None:
     from .k2 import Season
     campaign = Season(ID)
+    if hasattr(campaign, '__len__'):
+      raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `season` kwarg.")
   else:
     campaign = season
   
   # Everest 2?
   if pipeline.lower() == 'everest2':
-    s = k2plr.EVEREST(ID, version = 2)
+    s = k2plr.EVEREST(ID, version = 2, sci_campaign = campaign)
     time = s.time
     flux = s.flux
     return time, flux
   elif pipeline.lower() == 'raw':
-    s = k2plr.EVEREST(ID, version = 2, raw = True)
+    s = k2plr.EVEREST(ID, version = 2, raw = True, sci_campaign = campaign)
     time = s.time
     flux = s.flux
     return time, flux
@@ -73,7 +75,7 @@ def get(ID, pipeline = 'everest1', season = None):
         f = s.fcor
         # Normalize to the median flux
         try:
-          s = k2plr.EVEREST(ID, version = 2)
+          s = k2plr.EVEREST(ID, version = 2, sci_campaign = c)
           f *= np.nanmedian(s.flux)
         except:
           pass
@@ -95,21 +97,21 @@ def get(ID, pipeline = 'everest1', season = None):
   
     # Business as usual
     if pipeline.lower() == 'everest1':
-      s = k2plr.EVEREST(ID, version = 1)
+      s = k2plr.EVEREST(ID, version = 1, sci_campaign = campaign)
       time = s.time
       flux = s.flux
     elif pipeline.lower() == 'k2sff':
-      s = k2plr.K2SFF(ID)
+      s = k2plr.K2SFF(ID, sci_campaign = campaign)
       time = s.time
       flux = s.fcor
       # Normalize to the median flux
       try:
-        s = k2plr.EVEREST(ID, version = 2)
+        s = k2plr.EVEREST(ID, version = 2, sci_campaign = campaign)
         flux *= np.nanmedian(s.flux)
       except:
         pass
     elif pipeline.lower() == 'k2sc':
-      s = k2plr.K2SC(ID)
+      s = k2plr.K2SC(ID, sci_campaign = campaign)
       time = s.time
       flux = s.pdcflux
     else:
@@ -117,7 +119,7 @@ def get(ID, pipeline = 'everest1', season = None):
     
   return time, flux
   
-def plot(ID, pipeline = 'everest1', show = True):
+def plot(ID, pipeline = 'everest1', show = True, season = None):
   '''
   Plots the de-trended flux for the given EPIC `ID` and for
   the specified `pipeline`.
@@ -125,7 +127,7 @@ def plot(ID, pipeline = 'everest1', show = True):
   '''
   
   # Get the data
-  time, flux = get(ID, pipeline = pipeline)
+  time, flux = get(ID, pipeline = pipeline, season = season)
   assert len(time), "No data found for target."
   
   # Remove nans

@@ -14,6 +14,7 @@ import everest
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog = 'everest', add_help = True)
   parser.add_argument("ID", type = int, help = 'The target ID')
+  parser.add_argument("-S", "--season", type = int, default = None, help = 'The season (campaign) number')
   parser.add_argument("-m", "--mission", type = str, default = 'k2', help = 'The mission name')
   parser.add_argument("-2", "--everest2", action = 'store_true', help = 'Plot the everest 2.0 de-trended light curve')
   parser.add_argument("-n", "--nocbv", action = 'store_true', help = 'Do not apply the CBV correction')
@@ -31,9 +32,15 @@ if __name__ == '__main__':
   if not any([getattr(args, a) for a in ['raw', 'dvs', 'k2sff', 'k2sc', 'everest1', 'aperture']]):
     args.everest2 = True
   
+  # Get the season number
+  if args.season is None:
+    args.season = getattr(everest.missions, args.mission).Season(args.ID)
+    if hasattr(args.season, '__len__'):
+      raise ValueError("Multiple seasons available for this target. Please specify the desired one with the `--season` option.")
+  
   # Plot the data
   if args.everest2 or args.raw or args.aperture:
-    star = everest.Everest(args.ID, mission = args.mission, cadence = args.cadence)
+    star = everest.Everest(args.ID, mission = args.mission, cadence = args.cadence, season = args.season)
     if args.everest2:
       star.plot_pipeline('everest2', show = False, plot_cbv = not args.nocbv)
     if args.raw:
@@ -44,17 +51,17 @@ if __name__ == '__main__':
   
   # Show the DVS
   if args.dvs:
-    everest.DVS(args.ID, cadence = args.cadence)
+    everest.DVS(args.ID, cadence = args.cadence, season = args.season)
   
   # Plot other pipelines
   if args.everest1:
-    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'everest1', show = False)
+    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'everest1', show = False, season = args.season)
     show = True
   if args.k2sff:
-    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'k2sff', show = False)
+    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'k2sff', show = False, season = args.season)
     show = True
   if args.k2sc:
-    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'k2sc', show = False)
+    getattr(everest.missions, args.mission).pipelines.plot(args.ID, 'k2sc', show = False, season = args.season)
     show = True
   
   if show:

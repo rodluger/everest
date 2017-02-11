@@ -790,6 +790,7 @@ class Everest(Basecamp):
     '''
     
     if pipeline != 'everest2':
+      kwargs.update({'season', self.season})
       return getattr(missions, self.mission).pipelines.plot(self.ID, pipeline, *args, **kwargs)
     
     else:
@@ -870,6 +871,7 @@ class Everest(Basecamp):
     
     '''
     
+    kwargs.update({'season', self.season})
     return getattr(missions, self.mission).pipelines.get(self.ID, *args, **kwargs)
   
   def mask_planet(self, t0, period, dur = 0.2):
