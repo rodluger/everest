@@ -64,7 +64,10 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   # Grab some info
   season = getattr(missions, mission).Season(ID)
   if season is None:
-    raise ValueError('Target not found.')
+    if getattr(missions, mission).ISTARGET(ID):
+      raise ValueError("Target not found in local database. Consider upgrading EVEREST by running `pip install everest --upgrade`.")
+    else:
+      raise ValueError('Invalid target ID.')
   path = getattr(missions, mission).TargetDirectory(ID, season)
   relpath = getattr(missions, mission).TargetDirectory(ID, season, relative = True)
   if filename is None:
