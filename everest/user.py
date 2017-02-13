@@ -65,7 +65,7 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   season = getattr(missions, mission).Season(ID)
   if season is None:
     if getattr(missions, mission).ISTARGET(ID):
-      raise ValueError("Target not found in local database. Consider upgrading EVEREST by running `pip install everest --upgrade`.")
+      raise ValueError("Target not found in local database. Consider upgrading EVEREST by running `pip install everest-pipeline --upgrade`.")
     else:
       raise ValueError('Invalid target ID.')
   path = getattr(missions, mission).TargetDirectory(ID, season)
@@ -216,7 +216,7 @@ class Everest(Basecamp):
     if subversion is not None:
       if LooseVersion(subversion) > LooseVersion(EVEREST_SUBVERSION):
         raise Exception("Desired light curve was generated with EVEREST version %s, but current version is %s.\n" % (subversion, EVEREST_SUBVERSION) +
-                        "Please upgrade EVEREST by running `pip install everest --upgrade`.")
+                        "Please upgrade EVEREST by running `pip install everest-pipeline --upgrade`.")
     
     # Load the FITS file
     self.load_fits()
