@@ -17,3 +17,13 @@ SEASONCHAR = 'Q'
 MAGSTRING = r'K$_\mathrm{p}$'
 #: The time units for the mission
 TIMEUNITS = 'BJD'
+#: The currently supported seasons
+SEASONS = []
+#: Returns :py:obj:`True` if argument is a valid `Kepler` target identifier (necessary but not sufficient)
+ISTARGET = lambda x: ((type(x) is int) and (x > 1e6) and (x < 1e7))
+#: The published light curve CSV file header
+CSVHEADER = \
+'''KIC %07d
+============
+
+'''
