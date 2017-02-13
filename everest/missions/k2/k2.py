@@ -1684,7 +1684,8 @@ def GetTargetCBVs(model):
   model.XCBV = sysrem.GetCBVs(season, model = name,
                               niter = model.cbv_niter,
                               sv_win = model.cbv_win, 
-                              sv_order = model.cbv_order)
+                              sv_order = model.cbv_order,
+                              nsub = model.nsub)
   
 def FitCBVs(model):
   '''

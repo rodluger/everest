@@ -37,7 +37,7 @@ def GetChunk(time, breakpoints, b, mask = []):
     res = M[M <= breakpoints[b]]
   return res
 
-def GetStars(campaign, module, model = 'nPLD', **kwargs):
+def GetStars(campaign, module, model = 'nPLD', nsub = 1, **kwargs):
   '''
   Returns de-trended light curves for all stars on a given module in
   a given campaign.
@@ -72,24 +72,43 @@ def GetStars(campaign, module, model = 'nPLD', **kwargs):
     
     # Get the data
     data = np.load(nf)
-    t = data['time']
     if n == 0:
-      time = t
+      time = data['time']
       breakpoints = data['breakpoints']
+    
+    if nsub == 1:
+    
+      # Get de-trended light curve
+      y = data['fraw'] - data['model'] 
+      err = data['fraw_err']
+
+      # De-weight outliers and bad timestamps 
+      m = np.array(list(set(np.concatenate([data['outmask'], data['badmask'], 
+                                            data['nanmask'], data['transitmask']]))), 
+                                            dtype = int)
+    
+      # Interpolate over the outliers
+      y = np.interp(time, np.delete(time, m), np.delete(y, m))
+      err = np.interp(time, np.delete(time, m), np.delete(err, m))
+    
+    else:
       
-    # Get de-trended light curve
-    y = data['fraw'] - data['model'] 
-    err = data['fraw_err']
-    
-    # De-weight outliers and bad timestamps 
-    m = np.array(list(set(np.concatenate([data['outmask'], data['badmask'], 
-                                          data['nanmask'], data['transitmask']]))), 
-                                          dtype = int)
-    
-    # Interpolate over the outliers
-    y = np.interp(t, np.delete(t, m), np.delete(y, m))
-    err = np.interp(t, np.delete(t, m), np.delete(err, m))
-       
+      # Loop over the sub-seasons 
+      y = [None for k in range(nsub)]
+      err = [None for k in range(nsub)]     
+      for k in range(nsub):
+        y[k] = data['fraw'][k] - data['model'][k]
+        err[k] = data['fraw_err'][k]
+        
+        # De-weight outliers and bad timestamps 
+        m[k] = np.array(list(set(np.concatenate([data['outmask'][k], data['badmask'][k], 
+                                                 data['nanmask'][k], data['transitmask'][k]]))), 
+                                                 dtype = int)
+        
+        # Interpolate over the outliers
+        y[k] = np.interp(time[k], np.delete(time[k], m[k]), np.delete(y[k], m[k]))
+        err[k] = np.interp(time[k], np.delete(time[k], m[k]), np.delete(err[k], m[k]))
+        
     # Append to our running lists
     fluxes.append(y)
     errors.append(err)
@@ -152,15 +171,16 @@ def SysRem(time, flux, err, ncbv = 5, niter = 50, sv_win = 999, sv_order = 3, **
     
   return cbvs
 
-def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
+def GetCBVs(campaign, model = 'nPLD', clobber = False, nsub = 1, **kwargs):
   '''
   Computes the CBVs for a given campaign.
   
   :param int campaign: The campaign number
   :param str model: The name of the :py:obj:`everest` model. Default `nPLD`
   :param bool clobber: Overwrite existing files? Default `False`
+  :param int nsub: The number of sub-seasons in this campaign. Default 1
   
-  .. todo :: This routine needs to be updated for campaigns 9 and 10.
+  .. todo:: Untested for campaigns with sub-seasons!
   
   '''
   
@@ -170,13 +190,9 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
   log.info('Computing CBVs for campaign %d...' % (campaign))
   
   # Is this a campaign with sub-seasons?
-  # TODO DEBUG: We still need to re-write the code below to
-  # work for these campaigns.
+  # TODO: Update this for campaign 9; update c9 test to use real CBVs.
   if campaign == 9:
     X = [np.ones(1290).reshape(-1, 1), np.ones(2022).reshape(-1, 1)]
-    return X
-  elif campaign == 10:
-    X = [np.ones(306).reshape(-1, 1), np.ones(3384).reshape(-1, 1)]
     return X
     
   # Output path
@@ -196,7 +212,7 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
       lcfile = os.path.join(path, '%d.npz' % module)
       if clobber or not os.path.exists(lcfile):
         try:
-          time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, **kwargs)
+          time, breakpoints, fluxes, errors, kpars = GetStars(campaign, module, model = model, nsub = nsub, **kwargs)
         except AssertionError:
           continue
         np.savez(lcfile, time = time, breakpoints = breakpoints, fluxes = fluxes, errors = errors, kpars = kpars)
@@ -216,25 +232,54 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
     
     # Compute the design matrix  
     log.info('Running SysRem...')
-    X = np.ones((len(time), 1 + kwargs.get('ncbv', 5)))
     
-    # Loop over the segments
-    new_fluxes = np.zeros_like(fluxes)
-    for b in range(len(breakpoints)):
-      
-      # Get the current segment's indices
-      inds = GetChunk(time, breakpoints, b)
+    # Are there sub-seasons to worry about?
+    if nsub == 1:
     
-      # Update the error arrays with the white GP component
-      for j in range(len(errors)):
-        errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
+      # Init the design matrix
+      X = np.ones((len(time), 1 + kwargs.get('ncbv', 5)))
+    
+      # Loop over the segments
+      for b in range(len(breakpoints)):
       
-      # Get de-trended fluxes
-      X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], **kwargs).T
+        # Get the current segment's indices
+        inds = GetChunk(time, breakpoints, b)
+    
+        # Update the error arrays with the white GP component
+        for j in range(len(errors)):
+          errors[j] = np.sqrt(errors[j] ** 2 + kpars[j][0] ** 2)
       
-    # Save
-    np.savez(xfile, X = X, time = time, breakpoints = breakpoints)
-  
+        # Get de-trended fluxes
+        X[inds,1:] = SysRem(time[inds], fluxes[:,inds], errors[:,inds], **kwargs).T
+      
+      # Save
+      np.savez(xfile, X = X, time = time, breakpoints = breakpoints)
+    
+    else:
+      
+      # Init the design matrix
+      X = [np.ones((len(time[k]), 1 + kwargs.get('ncbv', 5))) for k in range(nsub)]
+      
+      # Loop over the sub-seasons
+      for k in range(nsub):
+      
+        # Loop over the segments
+        for b in range(len(breakpoints[k])):
+      
+          # Get the current segment's indices
+          inds = GetChunk(time[k], breakpoints[k], b)
+    
+          # Update the error arrays with the white GP component
+          for j in range(len(errors[k])):
+            errors[k][j] = np.sqrt(errors[k][j] ** 2 + kpars[j][0] ** 2)
+      
+          # Get de-trended fluxes
+          X[k][inds,1:] = SysRem(time[k][inds], fluxes[k][:,inds], errors[k][:,inds], **kwargs).T
+      
+      # Save
+      np.savez(xfile, X = X, time = time, breakpoints = breakpoints)
+      
+    
   else:
     
     # Load from disk
@@ -252,11 +297,14 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, **kwargs):
     for axis in ax:
       axis.set_xticks([])
       axis.set_yticks([])
-    for b in range(len(breakpoints)):
-      inds = GetChunk(time, breakpoints, b)
-      for n in range(min(6, X.shape[1])):
-        ax[n].plot(time[inds], X[inds,n])
-        ax[n].set_title(n, fontsize = 14)
+    for k in range(nsub):
+      if nsub == 1:
+        k = slice(None, None, None)
+      for b in range(len(breakpoints[k])):
+        inds = GetChunk(time[k], breakpoints[k], b)
+        for n in range(min(6, X.shape[1])):
+          ax[n].plot(time[k][inds], X[k][inds,n])
+          ax[n].set_title(n, fontsize = 14)
     fig.savefig(plotfile, bbox_inches = 'tight')
     
   return X
