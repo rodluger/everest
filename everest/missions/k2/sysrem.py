@@ -106,9 +106,13 @@ def GetStars(campaign, module, model = 'nPLD', nsub = 1, **kwargs):
                                               dtype = int)
         
         # Interpolate over the outliers
-        y[k] = np.interp(time[k], np.delete(time[k], m), np.delete(y[k], m))
-        err[k] = np.interp(time[k], np.delete(time[k], m), np.delete(err[k], m))
-        
+        if len(m) < len(time[k]):
+          y[k] = np.interp(time[k], np.delete(time[k], m), np.delete(y[k], m))
+          err[k] = np.interp(time[k], np.delete(time[k], m), np.delete(err[k], m))
+        else:
+          y[k] = np.ones_like(time[k])
+          err[k] = np.ones_like(time[k])
+          
     # Append to our running lists
     fluxes.append(y)
     errors.append(err)
