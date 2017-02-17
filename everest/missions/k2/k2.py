@@ -705,6 +705,28 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
     fpix = np.zeros((fpix.shape[0],1)) * np.nan
     fpix_err = np.zeros((fpix.shape[0],1)) * np.nan
     nanmask = np.arange(0, fpix.shape[0])
+
+  # Campaign 10 hack: Light curves on module 4 were abruptly cut off in second segment
+  # Affected light curves: 228896690, 228892728, 228890594, 228924109, ...
+  if (campaign == 10) and (fitsheader[0]['MODULE'][1] == 4) and (cadn[0] == 129231) or (cadn[0] == 3865390):
+    if cadence == 'lc':
+      time = np.append(time, np.linspace(time[-1] + np.nanmedian(np.diff(time)), 2818.7110641903928, 3031))
+      cadn = np.append(cadn, np.arange(cadn[-1] + 1, 132615))
+      fpix = np.vstack([fpix, np.nan * np.zeros((3031, fpix.shape[1]))])
+      fpix_err = np.vstack([fpix_err, np.nan * np.zeros((3031, fpix.shape[1]))])
+      nanmask = np.append(nanmask, np.arange(353, 3384))
+      qual = np.append(qual, np.nan * np.zeros(3031))
+      pc1 = np.append(pc1, np.nan * np.zeros(3031))
+      pc2 = np.append(pc2, np.nan * np.zeros(3031))
+    else:
+      time = np.append(time, np.linspace(time[-1] + np.nanmedian(np.diff(time)), 2818.720964087639, 90930))
+      cadn = np.append(cadn, np.arange(cadn[-1] + 1, 3966909))
+      fpix = np.vstack([fpix, np.nan * np.zeros((90930, fpix.shape[1]))])
+      fpix_err = np.vstack([fpix_err, np.nan * np.zeros((90930, fpix.shape[1]))])
+      nanmask = np.append(nanmask, np.arange(10590, 101520))
+      qual = np.append(qual, np.nan * np.zeros(90930))
+      pc1 = np.append(pc1, np.nan * np.zeros(90930))
+      pc2 = np.append(pc2, np.nan * np.zeros(90930))
   
   # Return
   data = DataContainer()

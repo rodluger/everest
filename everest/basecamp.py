@@ -354,17 +354,29 @@ class Basecamp(object):
         # Center chunks
         for m in model[1:-1]:
           # Join the chunks at the first non-outlier cadence
-          i = 1
-          while len(self.model) - i in self.mask:
-            i += 1
-          offset = self.model[-i] - m[self.bpad - i]
+          if len(self.model) - 1 in self.mask:
+            i = np.argmax(-np.diff(self.mask[::-1]) > 1) + 2
+          else:
+            i = 1
+          if i <= self.bpad:
+            offset = self.model[-i] - m[self.bpad - i]
+          else:
+            # All data points in the padded region are bad;
+            # We have no choice, so let's align the chunks anyways
+            offset = self.model[-1] - m[self.bpad - 1]
           self.model = np.concatenate([self.model, m[self.bpad:-self.bpad] + offset])
   
         # Last chunk
-        i = 1
-        while len(self.model) - i in self.mask:
-          i += 1
-        offset = self.model[-i] - model[-1][self.bpad - i]
+        if len(self.model) - 1 in self.mask:
+          i = np.argmax(-np.diff(self.mask[::-1]) > 1) + 2
+        else:
+          i = 1
+        if i <= self.bpad:
+          offset = self.model[-i] - m[self.bpad - i]
+        else:
+          # All data points in the padded region are bad;
+          # We have no choice, so let's align the chunks anyways
+          offset = self.model[-1] - m[self.bpad - 1]
         self.model = np.concatenate([self.model, model[-1][self.bpad:] + offset])      
   
       else:
@@ -398,18 +410,25 @@ class Basecamp(object):
                   
           # Last chunk?
           elif j == nseg - 1:
-            i = 1
-            while len(self.model[k]) - i in self.mask[k]:
-              i += 1
-            offset = self.model[k][-i] - m[self.bpad - i]
+            if len(self.model[k]) - 1 in self.mask[k]:
+              i = np.argmax(-np.diff(self.mask[k][::-1]) > 1) + 2
+            else:
+              i = 1
+            if i <= self.bpad:
+              offset = self.model[k][-i] - m[self.bpad - i]
+            else:
+              # All data points in the padded region are bad;
+              # We have no choice, so let's align the chunks anyways
+              offset = self.model[k][-1] - m[self.bpad - 1]
             self.model[k] = np.concatenate([self.model[k], m[self.bpad:] + offset])
           
           # Center chunks?
           else:
             # Join the chunks at the first non-outlier cadence
-            i = 1
-            while len(self.model[k]) - i in self.mask[k]:
-              i += 1
+            if len(self.model[k]) - 1 in self.mask[k]:
+              i = np.argmax(-np.diff(self.mask[k][::-1]) > 1) + 2
+            else:
+              i = 1
             if i <= self.bpad:
               offset = self.model[k][-i] - m[self.bpad - i]
             else:
