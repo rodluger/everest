@@ -101,13 +101,13 @@ def GetStars(campaign, module, model = 'nPLD', nsub = 1, **kwargs):
         err[k] = data['fraw_err'][k]
         
         # De-weight outliers and bad timestamps 
-        m[k] = np.array(list(set(np.concatenate([data['outmask'][k], data['badmask'][k], 
-                                                 data['nanmask'][k], data['transitmask'][k]]))), 
-                                                 dtype = int)
+        m = np.array(list(set(np.concatenate([data['outmask'][k], data['badmask'][k], 
+                                              data['nanmask'][k], data['transitmask'][k]]))), 
+                                              dtype = int)
         
         # Interpolate over the outliers
-        y[k] = np.interp(time[k], np.delete(time[k], m[k]), np.delete(y[k], m[k]))
-        err[k] = np.interp(time[k], np.delete(time[k], m[k]), np.delete(err[k], m[k]))
+        y[k] = np.interp(time[k], np.delete(time[k], m), np.delete(y[k], m))
+        err[k] = np.interp(time[k], np.delete(time[k], m), np.delete(err[k], m))
         
     # Append to our running lists
     fluxes.append(y)
