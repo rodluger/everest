@@ -647,7 +647,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
     ap = np.where(aperture & 1)
     fpix2D = np.array([f[ap] for f in fpix], dtype='float64')
     fpix_err2D = np.array([p[ap] for p in fpix_err], dtype='float64')
-    
+  
   # Compute the background
   binds = np.where(aperture ^ 1)
   if RemoveBackground(EPIC, season = campaign) and (len(binds[0]) > 0):
@@ -708,7 +708,7 @@ def _GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = 
 
   # Campaign 10 hack: Light curves on module 4 were abruptly cut off in second segment
   # Affected light curves: 228896690, 228892728, 228890594, 228924109, ...
-  if (campaign == 10) and (fitsheader[0]['MODULE'][1] == 4) and (cadn[0] == 129231) or (cadn[0] == 3865390):
+  if (campaign == 10) and (fitsheader[0]['MODULE'][1] == 4) and ((cadn[0] == 129231) or (cadn[0] == 3865390)):
     if cadence == 'lc':
       time = np.append(time, np.linspace(time[-1] + np.nanmedian(np.diff(time)), 2818.7110641903928, 3031))
       cadn = np.append(cadn, np.arange(cadn[-1] + 1, 132615))
