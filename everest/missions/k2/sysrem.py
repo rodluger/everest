@@ -223,17 +223,30 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, nsub = 1, **kwargs):
       
       # Load the light curves
       lcs = np.load(lcfile)
-      if time is None:
-        time = lcs['time']
-        breakpoints = lcs['breakpoints']
-        fluxes = lcs['fluxes']
-        errors = lcs['errors']
-        kpars = lcs['kpars']
+      if nsub == 1:
+        if time is None:
+          time = lcs['time']
+          breakpoints = lcs['breakpoints']
+          fluxes = lcs['fluxes']
+          errors = lcs['errors']
+          kpars = lcs['kpars']
+        else:        
+          fluxes = np.vstack([fluxes, lcs['fluxes']])
+          errors = np.vstack([errors, lcs['errors']])
+          kpars = np.vstack([kpars, lcs['kpars']])
       else:
-        fluxes = np.vstack([fluxes, lcs['fluxes']])
-        errors = np.vstack([errors, lcs['errors']])
-        kpars = np.vstack([kpars, lcs['kpars']])
-    
+        if time is None:
+          time = lcs['time']
+          breakpoints = lcs['breakpoints']
+          fluxes = [np.array([f for f in lcs['fluxes'][:,k]]) for k in range(nsub)]
+          errors = [np.array([f for f in lcs['errors'][:,k]]) for k in range(nsub)]
+          kpars = lcs['kpars']
+        else:
+          for k in range(nsub):
+            fluxes[k] = np.vstack([fluxes[k], np.array([f for f in lcs['fluxes'][:,k]])])
+            errors[k] = np.vstack([errors[k], np.array([f for f in lcs['errors'][:,k]])])
+            kpars = np.vstack([kpars, lcs['kpars']])
+            
     # Compute the design matrix  
     log.info('Running SysRem...')
     
@@ -282,7 +295,6 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, nsub = 1, **kwargs):
       
       # Save
       np.savez(xfile, X = X, time = time, breakpoints = breakpoints)
-      
     
   else:
     
@@ -291,7 +303,7 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, nsub = 1, **kwargs):
     X = data['X'][()]
     time = data['time'][()]
     breakpoints = data['breakpoints'][()]
-  
+
   # Plot
   plotfile = os.path.join(path, 'X.pdf')
   if clobber or not os.path.exists(plotfile):
@@ -306,7 +318,7 @@ def GetCBVs(campaign, model = 'nPLD', clobber = False, nsub = 1, **kwargs):
         k = slice(None, None, None)
       for b in range(len(breakpoints[k])):
         inds = GetChunk(time[k], breakpoints[k], b)
-        for n in range(min(6, X.shape[1])):
+        for n in range(min(6, X[k].shape[1])):
           ax[n].plot(time[k][inds], X[k][inds,n])
           ax[n].set_title(n, fontsize = 14)
     fig.savefig(plotfile, bbox_inches = 'tight')
