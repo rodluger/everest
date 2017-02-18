@@ -1763,7 +1763,10 @@ def FitCBVs(model):
         # We could consider something more elaborate in the future
         i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i]) for i in range(1, len(m[b - 1]) - 1)])
         i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
-        m[b] += (m[b - 1][i0] - m[b][i1])
+        if np.isfinite(m[b - 1][i0]):
+          m[b] += (m[b - 1][i0] - m[b][i1])
+        else:
+          m[b] -= np.nanmedian(m[b])
   
     # Join model and normalize  
     if model.nsub == 1:
@@ -1827,8 +1830,11 @@ def FitCBVs(model):
         # We could consider something more elaborate in the future
         i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i]) for i in range(1, len(m[b - 1]) - 1)])
         i1 = np.argmax([np.isfinite(m[b][i]) for i in range(len(m[b]))])
-        m[b] += (m[b - 1][i0] - m[b][i1])
-  
+        if np.isfinite(m[b - 1][i0]):
+          m[b] += (m[b - 1][i0] - m[b][i1])
+        else:
+          m[b] -= np.nanmedian(m[b])
+          
     # Join model and normalize, then interpolate back to short cadence
     if model.nsub == 1:
       mfin = np.concatenate(m)
