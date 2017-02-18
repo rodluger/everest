@@ -1159,7 +1159,12 @@ def Statistics(season = None, clobber = False, model = 'nPLD', injection = False
           data = np.load(nf)
           
           # Remove NaNs and flagged cadences
-          flux = np.delete(data['fraw'] - data['model'], np.array(list(set(np.concatenate([data['nanmask'], data['badmask']])))))
+          if data['nsub'] == 1:
+            flux = np.delete(data['fraw'] - data['model'], np.array(list(set(np.concatenate([data['nanmask'], data['badmask']])))))
+          else:
+            flux = np.concatenate([np.delete(data['fraw'][k] - data['model'][k], 
+                                   np.array(list(set(np.concatenate([data['nanmask'][k], data['badmask'][k]])))))
+                                   for k in range(data['nsub'])])
           # Iterative sigma clipping to get 5 sigma outliers
           inds = np.array([], dtype = int)
           m = 1

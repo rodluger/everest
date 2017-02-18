@@ -30,6 +30,7 @@ the light curves with custom masks.
 .. toctree::
    :maxdepth: 2   
    
+   releasenotes
    fitsfiles
    dvsfigs
    bulk
