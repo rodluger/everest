@@ -269,16 +269,29 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
       # Get the number of outliers
       try:
         time, flux = get(EPIC, pipeline = pipeline)
-        
+
         # Get the raw K2 data
-        with client.k2_star(EPIC).get_target_pixel_files()[0].open() as f:
-          k2_qual = np.array(f[1].data.field('QUALITY'), dtype=int)
-          k2_time = np.array(f[1].data.field('TIME'), dtype='float64') 
+        if campaign not in SplitCampaigns:        
+          with client.k2_star(EPIC).get_target_pixel_files()[0].open() as f:
+            k2_qual = np.array(f[1].data.field('QUALITY'), dtype=int)
+            k2_time = np.array(f[1].data.field('TIME'), dtype='float64') 
+            mask = []
+            for b in [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]:
+              mask += list(np.where(k2_qual & 2 ** (b - 1))[0])
+            mask = np.array(sorted(list(set(mask))))        
+        else:
+          tpfs = client.k2_star(EPIC).get_target_pixel_files()
+          k2_time = np.array([], dtype = 'float64')
+          k2_qual = np.array([], dtype = int)
+          for tpf in tpfs:
+            with tpf.open() as f:
+              k2_qual = np.concatenate([k2_qual, np.array(f[1].data.field('QUALITY'), dtype=int)])
+              k2_time = np.concatenate([k2_time, np.array(f[1].data.field('TIME'), dtype='float64')])
           mask = []
           for b in [1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]:
             mask += list(np.where(k2_qual & 2 ** (b - 1))[0])
-          mask = np.array(sorted(list(set(mask))))
-          
+          mask = np.array(sorted(list(set(mask))))     
+        
         # Fill in missing cadences, if any
         tol = 0.005
         if not ((len(time) == len(k2_time)) and (np.abs(time[0] - k2_time[0]) < tol) and (np.abs(time[-1] - k2_time[-1]) < tol)):
