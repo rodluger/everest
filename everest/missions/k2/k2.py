@@ -9,10 +9,9 @@ Implements several routines specific to the `K2` mission.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from ... import __version__ as EVEREST_VERSION
 from . import sysrem
 from .aux import *
-from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT
+from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, EVEREST_MAJOR_MINOR
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
 from ...math import SavGol, Interpolate, Scatter, Downbin
 try:
@@ -1665,7 +1664,7 @@ def DVSFile(ID, season, cadence = 'lc'):
     strcadence = '_sc'
   else:
     strcadence = ''
-  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_dvs%s.pdf' % (ID, season, EVEREST_VERSION, strcadence)  
+  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_dvs%s.pdf' % (ID, season, EVEREST_MAJOR_MINOR, strcadence)  
 
 def FITSFile(ID, season, cadence = 'lc'):
   '''
@@ -1677,7 +1676,7 @@ def FITSFile(ID, season, cadence = 'lc'):
   
   '''
   
-  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s.fits' % (ID, season, EVEREST_VERSION, cadence)
+  return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s.fits' % (ID, season, EVEREST_MAJOR_MINOR, cadence)
     
 def FITSUrl(ID, season):
   '''

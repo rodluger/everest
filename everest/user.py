@@ -22,12 +22,11 @@ from the online MAST catalog. So, to get started, all you need to do is run
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import __version__ as EVEREST_VERSION
-from . import __subversion__ as EVEREST_SUBVERSION
 from . import missions
 from .basecamp import Basecamp
 from .detrender import pPLD
 from .gp import GetCovariance
-from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, QUALITY_TRN, EVEREST_DEV, EVEREST_FITS
+from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, QUALITY_TRN, EVEREST_DEV, EVEREST_FITS, EVEREST_MAJOR_MINOR
 from .utils import InitLog, Formatter
 import george
 import os, sys, platform
@@ -224,8 +223,8 @@ class Everest(Basecamp):
     # Check the pipeline version. Do we need to upgrade?
     subversion = pyfits.getheader(self.fitsfile, 1).get('SUBVER', None)
     if subversion is not None:
-      if LooseVersion(subversion) > LooseVersion(EVEREST_SUBVERSION):
-        raise Exception("Desired light curve was generated with EVEREST version %s, but current version is %s.\n" % (subversion, EVEREST_SUBVERSION) +
+      if LooseVersion(subversion) > LooseVersion(EVEREST_VERSION):
+        raise Exception("Desired light curve was generated with EVEREST version %s, but current version is %s.\n" % (subversion, EVEREST_VERSION) +
                         "Please upgrade EVEREST by running `pip install everest-pipeline --upgrade`.")
     
     # Load the FITS file

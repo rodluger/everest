@@ -20,6 +20,9 @@ mpl.rc('ytick', direction = 'in')
 import logging
 log = logging.getLogger(__name__)
 
+#: major.minor version number
+EVEREST_MAJOR_MINOR = ".".join(EVEREST_VERSION.split(".")[:-1])
+
 #: Is this the development (pre-publication) version?
 EVEREST_DEV = int(os.environ.get('EVEREST2_DEV', 0))
 if EVEREST_DEV:

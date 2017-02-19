@@ -26,7 +26,7 @@ settings. Read the documentation at https://github.com/rodluger/everest
 
 # Setup!
 setup(name = 'everest-pipeline',
-      version = everest.__subversion__,
+      version = everest.__version__,
       description = 'EPIC Variability Extraction and Removal for Exoplanet Science Targets',
       long_description = long_description,
       classifiers = [
