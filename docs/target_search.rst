@@ -39,6 +39,7 @@
   </tr>
   <tr class="row-even"><td style="font-weight:bold;">Improvement factor</td>
   <td id="target-impr"></td>
+  </tr>
   <tr class="row-odd"><td style="font-weight:bold;">Links</td>
   <td id="target-links">
     <span id="target-links-lc">
@@ -52,6 +53,11 @@
       &nbsp;
       [<a id="target-dvs-link-sc" href = "#">SC DVS</a>]
     </span>
+  </td>
+  </tr>
+  <tr class="row-even"><td style="font-weight:bold;">Requires</td>
+  <td id="target-req">
+  <a id="target-req-link" href = "releasenotes.html"></a>
   </td>
   </tr>
   </tbody>
@@ -142,7 +148,15 @@
                   var fits_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_sc.fits";
                   var dvs = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs.pdf";
                   var dvs_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs_sc.fits";
-          
+                  
+                  // Everest version
+                  if (campaign_int <= 8)
+                    var requires = "EVEREST 2.0.5";
+                  else if (campaign_int == 10)
+                    var requires = "EVEREST 2.0.6";
+                  else
+                    var requires = "";
+                    
                   // Set the info
                   document.getElementById("target-mission").innerHTML = ("K2");
                   document.getElementById("target-season").innerHTML = (campaign_int);
@@ -152,6 +166,7 @@
                   document.getElementById("target-cdppr").innerHTML = (cdppr + " ppm");
                   document.getElementById("target-cdpp").innerHTML = (cdpp + " ppm");
                   document.getElementById("target-impr").innerHTML = ( (cdppr / cdpp).toFixed(2) );
+                  document.getElementById("target-req-link").innerHTML = ( requires );
                   document.getElementById("target-fits-link-lc").setAttribute('href', fits);
                   document.getElementById("target-fits-link-sc").setAttribute('href', fits_sc);
                   document.getElementById("target-dvs-link-lc").setAttribute('href', dvs);
