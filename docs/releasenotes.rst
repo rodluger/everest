@@ -1,10 +1,37 @@
 Data Release Notes
 ==================
 
-Coming soon.
-
 .. contents::
    :local:
+
+The :py:obj:`everest` source code and catalog are updated periodically as new *K2*
+campaigns become available and as we make small changes to the de-trending algorithm.
+Below we keep a log of these changes. We encourage users to periodically upgrade
+their :py:obj:`everest` installation by running
+
+.. code-block:: bash
+
+   pip install everest-pipeline --upgrade
+
+Note that users **must** upgrade to enable access to new *K2* campaigns.
+
+Updates to the source code
+--------------------------
+
+2.0.6 (coming soon)
+~~~~~~~~~~~~~~~~~~~
+Updates the catalog with *K2* C9 and C10 light curves.
+
+2.0.5 (02/19/2017)
+~~~~~~~~~~~~~~~~~~
+Includes de-trended light curves from *K2* campaigns 0-8. This is the first
+public release of the :py:obj:`everest` 2.0 code and is described in detail 
+in our `paper <papers.html>`_.
+
+Updates to the catalog
+----------------------
+
+*Coming soon!*
 
 .. raw:: html
 
