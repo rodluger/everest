@@ -18,11 +18,11 @@ Note that users **must** upgrade to enable access to new *K2* campaigns.
 Updates to the source code
 --------------------------
 
-2.0.6 (coming soon)
+2.0.7 (coming soon)
 ~~~~~~~~~~~~~~~~~~~
 Updates the catalog with *K2* C9 and C10 light curves.
 
-2.0.5 (02/19/2017)
+2.0.6 (02/20/2017)
 ~~~~~~~~~~~~~~~~~~
 Includes de-trended light curves from *K2* campaigns 0-8. This is the first
 public release of the :py:obj:`everest` 2.0 code and is described in detail 

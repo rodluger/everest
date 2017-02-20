@@ -151,9 +151,9 @@
                   
                   // Everest version
                   if (campaign_int <= 8)
-                    var requires = "EVEREST 2.0.5";
-                  else if (campaign_int == 10)
                     var requires = "EVEREST 2.0.6";
+                  else if (campaign_int == 10)
+                    var requires = "EVEREST 2.0.7";
                   else
                     var requires = "";
                     
