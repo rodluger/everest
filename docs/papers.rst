@@ -28,7 +28,7 @@ If you make use of :py:obj:`everest`, please cite the following papers:
     &nbsp;
     [<span style="color:#999999;">AJ</span>]
     [<span style="color:#999999;">ADS</span>]
-    [<span style="color:#999999;">arXiv</span>]
+    [<a href="https://arxiv.org/abs/1702.05488">arXiv</a>]
     [<a href="https://github.com/rodluger/everest_paper">Source</a>]
    </span>
    <br/>
