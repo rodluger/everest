@@ -236,7 +236,8 @@ def GetData(EPIC, **kwargs):
                      'badmask', 'aperture', 'aperture_name',
                      'quality', 'Xpos', 'Ypos', 'bkg', 'meta', 'pixel_images']:
           getattr(data, attr).append(getattr(_data, attr))
-  
+        data.saturated = (data.saturated or _data.saturated)
+        
   # Download only?
   if kwargs.get('download_only', False):
     return

@@ -239,6 +239,27 @@ class Detrender(Basecamp):
     
     # Check for saved model
     if self.load_model():
+    
+      # DEBUG DEBUG DEBUG - REMOVE THIS AFTER PUBLISHING
+      # Fix the saturation flag in C10 stars
+      if (self.season == 10) and np.any(self.aperture[1] == AP_SATURATED_PIXEL) and (not self.saturated):
+        self.saturated = True
+        log.info("Saving data to '%s.npz'..." % self.name)
+        d = dict(self.__dict__)
+        d.pop('_weights', None)
+        d.pop('_A', None)
+        d.pop('_B', None)
+        d.pop('_f', None)
+        d.pop('_mK', None)
+        d.pop('K', None)
+        d.pop('dvs', None)
+        d.pop('clobber', None)
+        d.pop('clobber_tpf', None)
+        d.pop('_mission', None)
+        d.pop('debug', None)
+        np.savez(os.path.join(self.dir, self.name + '.npz'), **d)
+      # DEBUG DEBUG DEBUG
+      
       return
     
     # Setup (subclass-specific)
