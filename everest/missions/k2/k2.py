@@ -1003,7 +1003,7 @@ def Statistics(season = None, clobber = False, model = 'nPLD', injection = False
   :param bool planets: Statistics for known K2 planets? Default :py:obj:`False`
   
   '''
-  
+
   # Multi-mission compatibility
   campaign = season
   
@@ -1171,7 +1171,7 @@ def Statistics(season = None, clobber = False, model = 'nPLD', injection = False
           i = np.where((y > -np.inf) & (y < np.inf) & (kp >= bin - 0.5) & (kp < bin + 0.5))[0]
           if len(i) > 10:
             by[b] = np.median(y[i])
-        ax[0].plot(bins, by, style)
+        ax[0].plot(bins, by, style, markeredgecolor = 'w')
     else:  
       ax[0].scatter(kepler_kp, kepler_cdpp6, color = 'y', marker = '.', alpha = alpha_kepler)
       ax[0].scatter(kp, cdpp6, color = 'b', marker = '.', alpha = alpha_unsat, picker = True)
@@ -1181,7 +1181,7 @@ def Statistics(season = None, clobber = False, model = 'nPLD', injection = False
           i = np.where((y > -np.inf) & (y < np.inf) & (x >= bin - 0.5) & (x < bin + 0.5))[0]
           if len(i) > 10:
             by[b] = np.median(y[i])
-        ax[0].plot(bins, by, style)
+        ax[0].plot(bins, by, style, markeredgecolor = 'w')
     ax[0].set_ylim(-10, 500)
     ax[0].set_xlim(8, 18)
     ax[0].set_xlabel('Kepler Magnitude', fontsize = 18)
