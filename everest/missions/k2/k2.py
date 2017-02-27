@@ -1804,11 +1804,11 @@ def FitCBVs(model):
       breakpoints = list(Breakpoints(model.ID, cadence = 'lc', season = model.season))
       for subseason in range(len(breakpoints)):
         breakpoints[subseason] = np.append(breakpoints[subseason], [len(time[subseason]) - 1])
-      breakpoints = [item for sublist in breakpoints for item in sublist]
+      breakpoints = [int(item) for sublist in breakpoints for item in sublist]
       
     # Loop over all the light curve segments
-    m = [None for b in range(model.nseg)]
-    weights = [None for b in range(model.nseg)]
+    m = [None for b in range(len(breakpoints))]
+    weights = [None for b in range(len(breakpoints))]
     for b, brkpt in enumerate(breakpoints):
       
       # Get the sub-season
