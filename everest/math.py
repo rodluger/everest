@@ -30,7 +30,7 @@ def Interpolate(time, mask, y):
   
   # Pathological case where all points are masked
   if len(mask) == len(time):
-    return np.array([], dtype = type(y))
+    return np.array([])
   
   # Ensure `y` doesn't get modified in place
   yy = np.array(y)
@@ -167,6 +167,10 @@ def Downbin(x, newsize, axis = 0, operation = 'mean'):
   :param str operation: The operation to perform when down-binning. Default `mean`
   '''
   
+  # Pathological case where x is empty
+  if len(x) == 0:
+    return np.array([])
+    
   assert newsize < x.shape[axis], "The new size of the array must be smaller than the current size."
   oldsize = x.shape[axis]
   newshape = list(x.shape)
