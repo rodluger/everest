@@ -1816,7 +1816,7 @@ def FitCBVs(model):
     
       # Get the indices for this light curve segment
       M = np.arange(len(time[k]))
-      if b > 0:
+      if (b > 0) and (k == model.subseason(b - 1)):
         inds = M[(M > breakpoints[b - 1]) & (M <= breakpoints[b])]
       else:
         inds = M[M <= breakpoints[b]]
