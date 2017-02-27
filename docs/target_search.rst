@@ -147,13 +147,13 @@
                   var fits = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_lc.fits";
                   var fits_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_sc.fits";
                   var dvs = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs.pdf";
-                  var dvs_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs_sc.fits";
+                  var dvs_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs_sc.pdf";
                   
                   // Everest version
                   if (campaign_int <= 8)
-                    var requires = "EVEREST 2.0.5";
-                  else if (campaign_int == 10)
                     var requires = "EVEREST 2.0.6";
+                  else if (campaign_int == 10)
+                    var requires = "EVEREST 2.0.7";
                   else
                     var requires = "";
                     

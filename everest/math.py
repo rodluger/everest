@@ -28,6 +28,10 @@ def Interpolate(time, mask, y):
   
   '''
   
+  # Pathological case where all points are masked
+  if len(mask) == len(time):
+    return np.array([], dtype = type(y))
+  
   # Ensure `y` doesn't get modified in place
   yy = np.array(y)
   t_ = np.delete(time, mask)

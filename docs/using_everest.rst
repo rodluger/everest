@@ -89,6 +89,17 @@ to minimize de-trending bias. This can be done **easily** and **quickly** as fol
 where :python:`t0` is the time of first transit, :python:`per` is the period,
 and :python:`dur` is the full transit duration (all in days).
 
+Alternatively, you can specify directly which indices in the light curve should be masked by
+setting the :python:`star.transitmask` attribute:
+
+.. code-block:: python
+  
+    star.transit_mask = np.array([0, 1, 2, ...], dtype = int)
+    star.compute()
+
+Note that this does not overwrite outlier masks, which are stored in the
+:python:`star.outmask`, :python:`star.badmask`, and :python:`star.nanmask` arrays.
+
 .. note :: You must run the :py:meth:`compute <everest.basecamp.Basecamp.compute>` method \
            for the model to be re-trained on the out-of-transit data. Running \
            :py:meth:`compute <everest.basecamp.Basecamp.compute>` typically takes a few \
