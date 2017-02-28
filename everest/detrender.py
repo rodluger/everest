@@ -126,6 +126,9 @@ class Detrender(Basecamp):
         
     # Initialize logging
     self.ID = ID
+    if kwargs.get('season', None):
+      self._season = kwargs.get('season')
+    self._data = kwargs.get('data', None)
     self.cadence = kwargs.get('cadence', 'lc').lower()
     if self.cadence not in ['lc', 'sc']:
       raise ValueError("Invalid cadence selected.")
@@ -833,15 +836,18 @@ class Detrender(Basecamp):
     '''
     
     if not self.loaded:
-      data = self._mission.GetData(self.ID, season = self.season, 
-                  cadence = self.cadence, clobber = self.clobber_tpf, 
-                  aperture_name = self.aperture_name, 
-                  saturated_aperture_name = self.saturated_aperture_name, 
-                  max_pixels = self.max_pixels,
-                  saturation_tolerance = self.saturation_tolerance,
-                  get_hires = self.get_hires, get_nearby = self.get_nearby)
-      if data is None:
-        raise Exception("Unable to retrieve target data.")
+      if self._data is not None:
+        data = self._data
+      else:
+        data = self._mission.GetData(self.ID, season = self.season, 
+                    cadence = self.cadence, clobber = self.clobber_tpf, 
+                    aperture_name = self.aperture_name, 
+                    saturated_aperture_name = self.saturated_aperture_name, 
+                    max_pixels = self.max_pixels,
+                    saturation_tolerance = self.saturation_tolerance,
+                    get_hires = self.get_hires, get_nearby = self.get_nearby)
+        if data is None:
+          raise Exception("Unable to retrieve target data.")
       self.cadn = data.cadn
       self.time = data.time
       self.model = np.zeros_like(self.time)
