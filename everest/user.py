@@ -718,9 +718,9 @@ class Everest(Basecamp):
               ax.annotate('%.2f ppm' % cdpp_arr[1], xy = (0.98, 0.975), xycoords = 'axes fraction', 
                           ha = 'right', va = 'top', fontsize = 12, color = 'r', zorder = 99)
           elif len(cdpp_arr) < 6:
-            for n in range(len(cdpp_arr)):
+            for n in range(len(self.breakpoints[k])):
               if n > 0:
-                x = (self.time[self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
+                x = (self.time[k][self.breakpoints[k][n - 1]] - self.time[k][0]) / (self.time[k][-1] - self.time[k][0]) + 0.02
               else:
                 x = 0.02
               if not np.isnan(cdpp_arr[n]):
