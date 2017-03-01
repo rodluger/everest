@@ -1225,8 +1225,9 @@ class nPLD(Detrender):
     # Get neighbors
     self.parent_model = kwargs.get('parent_model', None)
     neighbors = kwargs.get('neighbors', 10)
+    neighbors_data = kwargs.get('neighbors_data', None)
     if hasattr(neighbors, '__len__'):
-      self.neighbors = neighbors
+      self.neighbors = neighbors  
     else:    
       num_neighbors = neighbors
       self.neighbors = self._mission.GetNeighbors(self.ID, 
@@ -1242,9 +1243,13 @@ class nPLD(Detrender):
       elif num_neighbors > 0:
         log.warn("No neighbors found! Running standard PLD...")
     
-    for neighbor in self.neighbors:
+    for n, neighbor in enumerate(self.neighbors):
       log.info("Loading data for neighboring target %d..." % neighbor)
-      if self.parent_model is not None and self.cadence == 'lc':
+      if neighbors_data is not None:
+        data = neighbors_data[n]
+        data.mask = np.array(list(set(np.concatenate([data.badmask, data.nanmask]))), dtype = int)
+        data.fraw = np.sum(data.fpix, axis = 1)
+      elif self.parent_model is not None and self.cadence == 'lc':
         # We load the `parent` model. The advantage here is that outliers have
         # properly been identified and masked. I haven't tested this on short
         # cadence data, so I'm going to just forbid it...
