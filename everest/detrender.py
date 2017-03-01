@@ -1224,19 +1224,23 @@ class nPLD(Detrender):
     
     # Get neighbors
     self.parent_model = kwargs.get('parent_model', None)
-    num_neighbors = kwargs.get('neighbors', 10)
-    self.neighbors = self._mission.GetNeighbors(self.ID, 
-                                   cadence = self.cadence,
-                                   model = self.parent_model,
-                                   neighbors = num_neighbors, 
-                                   mag_range = kwargs.get('mag_range', (11., 13.)), 
-                                   cdpp_range = kwargs.get('cdpp_range', None),
-                                   aperture_name = self.aperture_name)
-    if len(self.neighbors):
-      if len(self.neighbors) < num_neighbors:
-        log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
-    elif num_neighbors > 0:
-      log.warn("No neighbors found! Running standard PLD...")
+    neighbors = kwargs.get('neighbors', 10)
+    if hasattr(neighbors, '__len__'):
+      self.neighbors = neighbors
+    else:    
+      num_neighbors = neighbors
+      self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                     cadence = self.cadence,
+                                     model = self.parent_model,
+                                     neighbors = num_neighbors, 
+                                     mag_range = kwargs.get('mag_range', (11., 13.)), 
+                                     cdpp_range = kwargs.get('cdpp_range', None),
+                                     aperture_name = self.aperture_name)
+      if len(self.neighbors):
+        if len(self.neighbors) < num_neighbors:
+          log.warn("%d neighbors requested, but only %d found." % (num_neighbors, len(self.neighbors)))
+      elif num_neighbors > 0:
+        log.warn("No neighbors found! Running standard PLD...")
     
     for neighbor in self.neighbors:
       log.info("Loading data for neighboring target %d..." % neighbor)
