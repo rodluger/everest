@@ -1452,18 +1452,22 @@ class nPLD(Detrender):
 
       # Compute the linear PLD vectors and interpolate over outliers, NaNs and bad timestamps
       if self.nsub > 1:
-        X1 = [None for k in range(self.nsub)]
+        if self.X1N is None:
+          self.X1N = [None for k in range(self.nsub)]
         for k in range(self.nsub):
-          X1[k] = data.fpix[k] / data.fraw[k].reshape(-1, 1)
-          X1[k] = Interpolate(data.time[k], data.mask[k], X1[k])
-        X1 = np.vstack(X1)
+          X1 = data.fpix[k] / data.fraw[k].reshape(-1, 1)
+          X1 = Interpolate(data.time[k], data.mask[k], X1)
+          if self.X1N[k] is None:
+            self.X1N[k] = np.array(X1)
+          else:
+            self.X1N[k] = np.hstack([self.X1N[k], X1])
       else:
         X1 = data.fpix / data.fraw.reshape(-1, 1)
         X1 = Interpolate(data.time, data.mask, X1)
-      if self.X1N is None:
-        self.X1N = np.array(X1)
-      else:
-        self.X1N = np.hstack([self.X1N, X1])
+        if self.X1N is None:
+          self.X1N = np.array(X1)
+        else:
+          self.X1N = np.hstack([self.X1N, X1])
       del X1
       del data
 

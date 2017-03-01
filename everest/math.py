@@ -30,7 +30,7 @@ def Interpolate(time, mask, y):
   
   # Pathological case where all points are masked
   if len(mask) == len(time):
-    return np.zeros_like(time) * np.nan
+    return np.zeros_like(y) * np.nan
   
   # Ensure `y` doesn't get modified in place
   yy = np.array(y)

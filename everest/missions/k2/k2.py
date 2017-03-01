@@ -829,18 +829,31 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
       # Reject if self or if already in list
       if (star == EPIC) or (star in targets):
         continue
-    
+
       # Ensure raw light curve file exists
-      if not os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data.npz')):
+      if not (os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data.npz')) or
+              os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data01.npz'))):
         continue
       
       # Ensure crowding is OK. This is quite conservative, as we
       # need to prevent potential astrophysical false positive contamination
       # from crowded planet-hosting neighbors when doing neighboring PLD.
       contam = False
-      data = np.load(os.path.join(TargetDirectory(star, campaign), 'data.npz'))
-      aperture = data['apertures'][()][aperture_name]
-      fpix = data['fpix']
+      
+      if os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data.npz')):
+        data = np.load(os.path.join(TargetDirectory(star, campaign), 'data.npz'))
+        aperture = data['apertures'][()][aperture_name]
+        fpix = data['fpix']
+      else:
+        aperture = [0.]
+        dnum = 1
+        while not np.sum(aperture):
+          if not os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data%02d.npz' % dnum)):
+            raise Exception('No data available for EPIC %d.' % star)
+          data = np.load(os.path.join(TargetDirectory(star, campaign), 'data%02d.npz' % dnum))
+          aperture = data['apertures'][()][aperture_name]
+          fpix = data['fpix']
+          dnum += 1
       for source in data['nearby'][()]:
         # Ignore self
         if source['ID'] == star:
