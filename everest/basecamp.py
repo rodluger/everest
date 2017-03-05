@@ -557,3 +557,6 @@ class Basecamp(object):
       ax.set_ylim(-0.7, ny - 0.3)
       ax.annotate('hires', xy = (0.5, 0.975), xycoords = 'axes fraction',
                   ha = 'center', va = 'top', size = labelsize, color = 'w')
+    else:
+      ax = axes[-1]
+      ax.axis('off')

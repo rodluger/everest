@@ -104,7 +104,7 @@ def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.0
       self.fraw = np.sum(self.fpix, axis = 1)
       if self.inject['mask']:
         self.transitmask = np.array(list(set(np.concatenate([self.transitmask, np.where(transit_model < 1.)[0]]))), dtype = int)
-      
+
       # Update the PLD normalization
       self.get_norm()
       
@@ -262,8 +262,8 @@ def Inject(ID, inj_model = 'nPLD', t0 = None, per = None, dur = 0.1, depth = 0.0
       N = int(0.995 * len(self.inject['fold_flux_control']))
       hi, lo = self.inject['fold_flux_control'][np.argsort(self.inject['fold_flux_control'])][[N,-N]]
       fsort = self.inject['fold_flux_control'][np.argsort(self.inject['fold_flux_control'])]
-      pad = (hi - lo) * 0.1
-      ylim = (lo - pad, hi + pad)   
+      pad = (hi - lo) * 0.2
+      ylim = (lo - 2 * pad, hi + pad)   
       ax2.set_ylim(ylim) 
       ax1.set_ylim(ylim)
       
