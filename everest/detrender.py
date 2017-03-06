@@ -203,6 +203,11 @@ class Detrender(Basecamp):
     pld_order = kwargs.get('pld_order', 3)
     assert (pld_order > 0), "Invalid value for the de-trending order."
     self.pld_order = pld_order
+    
+    # Get the transit model
+    self.transit_model = kwargs.get('transit_model', None)
+    if self.transit_model is not None:
+      self.transit_model = np.atleast_1d(self.transit_model)
 
     # Initialize model params 
     self.lam_idx = -1
@@ -294,18 +299,33 @@ class Detrender(Basecamp):
         B[n] = np.dot(X1, X2.T)
         del X1, X2
     
-    return A, B, mK, f
+    if self.transit_model is None:
+      C = 0
+    else:
+      C = np.zeros((len(m2), len(m2)))
+      mean_transit_model = med * np.sum([tm.depth * tm(self.time[m2]) for tm in self.transit_model], axis = 0)
+      f -= mean_transit_model
+      for tm in self.transit_model:
+        X2 = tm(self.time[m2]).reshape(-1,1)
+        C += tm.var_depth * np.dot(X2, X2.T)
+        del X2
+      
+    return A, B, C, mK, f, m1, m2
     
-  def cv_compute(self, b, A, B, mK, f):
+  def cv_compute(self, b, A, B, C, mK, f, m1, m2):
     '''
     Compute the model (cross-validation step only) for chunk :py:obj:`b`.
     
     '''
-
+    
     A = np.sum([l * a for l, a in zip(self.lam[b], A) if l is not None], axis = 0)
     B = np.sum([l * b for l, b in zip(self.lam[b], B) if l is not None], axis = 0)
-    W = np.linalg.solve(mK + A, f)
-    model = np.dot(B, W)
+    W = np.linalg.solve(mK + A + C, f)
+    if self.transit_model is None:  
+      model = np.dot(B, W)
+    else:
+      w_pld = np.concatenate([l * np.dot(self.X(n,m2).T, W) for n, l in enumerate(self.lam[b]) if l is not None])
+      model = np.dot(np.hstack([self.X(n,m1) for n, l in enumerate(self.lam[b]) if l is not None]), w_pld)      
     model -= np.nanmedian(model)
     
     return model
@@ -956,6 +976,7 @@ class Detrender(Basecamp):
     d.pop('clobber_tpf', None)
     d.pop('_mission', None)
     d.pop('debug', None)
+    d.pop('transit_model', None)
     np.savez(os.path.join(self.dir, self.name + '.npz'), **d)
     
     # Save the DVS

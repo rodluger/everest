@@ -20,6 +20,28 @@ from scipy.optimize import fmin
 import logging
 log = logging.getLogger(__name__)
 
+class Planet(object):
+  '''
+  
+  '''
+  
+  def __init__(self, sig_RpRs = 0.001, **kwargs):
+    '''
+    
+    '''
+
+    self._transit = ps.Transit(**kwargs)
+    self.depth = (1. - self._transit([kwargs.get('t0', 0.)]))[0]
+    self.var_depth = (2 * sig_RpRs) ** 2
+    
+  def __call__(self, time):
+    '''
+    
+    '''
+    
+    model = (self._transit(time) - 1) / self.depth
+    return model 
+
 def Get_RpRs(d, **kwargs):
   '''
   Returns the value of the planet radius over the stellar radius for a given depth :py:obj:`d`, given

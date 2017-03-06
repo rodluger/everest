@@ -245,7 +245,7 @@ class Basecamp(object):
       return np.hstack([X, self.X1N[j] ** (i + 1)])
     else:
       return X
-  
+     
   def compute(self):
     '''
     Compute the model for the current value of lambda.
@@ -270,7 +270,7 @@ class Basecamp(object):
       
       # Normalize the flux
       f = self.fraw[m] - med
-      
+            
       # The X^2 matrices
       A = np.zeros((len(m), len(m)))
       B = np.zeros((len(c), len(m)))
@@ -285,11 +285,38 @@ class Basecamp(object):
           A += self.lam[b][n] * np.dot(XM, XM.T)
           B += self.lam[b][n] * np.dot(XC, XM.T)
           del XM, XC
-      
-      W = np.linalg.solve(mK + A, f)
-      model[b] = np.dot(B, W)
-      del A, B, W
 
+      # Now take care of the transit model terms
+      if self.transit_model is not None:
+
+        # Subtract off the mean total transit model
+        mean_transit_model = med * np.sum([tm.depth * tm(self.time[m]) for tm in self.transit_model], axis = 0)
+        f -= mean_transit_model
+        
+        # Now add each transit model to the matrix of regressors
+        for tm in self.transit_model:
+          XM = tm(self.time[m]).reshape(-1,1)
+          A += tm.var_depth * np.dot(XM, XM.T)
+          del XM
+        
+        # Dot the inverse of the covariance matrix
+        W = np.linalg.solve(mK + A, f)
+        
+        # Compute the PLD weights
+        w_pld = np.concatenate([l * np.dot(self.X(n,m).T, W) for n, l in enumerate(self.lam[b]) if l is not None])
+      
+        # Compute the model w/o the transit prediction
+        model[b] = np.dot(np.hstack([self.X(n,c) for n, l in enumerate(self.lam[b]) if l is not None]), w_pld)
+        
+      else:
+        
+        # Easy
+        W = np.linalg.solve(mK + A, f)
+        model[b] = np.dot(B, W)
+
+    # Free up some memory
+    del A, B, W
+      
     # Join the chunks after applying the correct offset
     if len(model) > 1:
 
