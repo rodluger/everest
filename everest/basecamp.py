@@ -253,7 +253,9 @@ class Basecamp(object):
     '''
 
     log.info('Computing the model...')
-
+    if self.transit_model is not None:
+      self.transit_depth = []
+    
     # Loop over all chunks
     model = [None for b in self.breakpoints]
     for b, brkpt in enumerate(self.breakpoints):
@@ -296,7 +298,7 @@ class Basecamp(object):
         # Now add each transit model to the matrix of regressors
         for tm in self.transit_model:
           XM = tm(self.time[m]).reshape(-1,1)
-          A += tm.var_depth * np.dot(XM, XM.T)
+          A += med ** 2 * tm.var_depth * np.dot(XM, XM.T)
           del XM
         
         # Dot the inverse of the covariance matrix
@@ -308,6 +310,10 @@ class Basecamp(object):
         # Compute the model w/o the transit prediction
         model[b] = np.dot(np.hstack([self.X(n,c) for n, l in enumerate(self.lam[b]) if l is not None]), w_pld)
         
+        # Compute the transit weights and maximum likelihood transit model
+        w_trn = med ** 2 * np.concatenate([tm.var_depth * np.dot(tm(self.time[m]).reshape(1,-1), W) for tm in self.transit_model])
+        self.transit_depth.append(np.array([med * tm.depth + w_trn[i] for i, tm in enumerate(self.transit_model)]) / med)
+
       else:
         
         # Easy
