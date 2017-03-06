@@ -29,9 +29,19 @@ class Planet(object):
     '''
     
     '''
-
+    
+    # The transit model
     self._transit = ps.Transit(**kwargs)
-    self.depth = (1. - self._transit([kwargs.get('t0', 0.)]))[0]
+    
+    # Compute the depth
+    times = kwargs.get('times', None)
+    if times is not None:
+      t0 = times[0]
+    else:
+      t0 = kwargs.get('t0', 0.)
+    self.depth = (1. - self._transit([t0]))[0]
+    
+    # Approximate variance on the depth
     self.var_depth = (2 * sig_RpRs) ** 2
     
   def __call__(self, time):
