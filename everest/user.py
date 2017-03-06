@@ -470,6 +470,7 @@ class Everest(Basecamp):
     self.parent_model = None
     self.lambda_arr = None
     self.meta = None
+    self.transit_model = None
   
   def plot_aperture(self, show = True):
     '''
