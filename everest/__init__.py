@@ -34,5 +34,5 @@ if not __EVEREST_SETUP__:
   from .detrender import *
   from .inject import *
   from .missions import *
-  from .transit import Transit, Planet
+  from .transit import Transit, Planet, TransitShape
   from .user import Everest, DVS

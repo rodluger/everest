@@ -251,10 +251,12 @@ class Basecamp(object):
     Compute the model for the current value of lambda.
 
     '''
+    
+    # Is there a transit model?
+    if self.transit_model is not None:
+      return self.compute_joint()
 
     log.info('Computing the model...')
-    if self.transit_model is not None:
-      self.transit_depth = []
     
     # Loop over all chunks
     model = [None for b in self.breakpoints]
@@ -287,38 +289,10 @@ class Basecamp(object):
           A += self.lam[b][n] * np.dot(XM, XM.T)
           B += self.lam[b][n] * np.dot(XC, XM.T)
           del XM, XC
-
-      # Now take care of the transit model terms
-      if self.transit_model is not None:
-
-        # Subtract off the mean total transit model
-        mean_transit_model = med * np.sum([tm.depth * tm(self.time[m]) for tm in self.transit_model], axis = 0)
-        f -= mean_transit_model
         
-        # Now add each transit model to the matrix of regressors
-        for tm in self.transit_model:
-          XM = tm(self.time[m]).reshape(-1,1)
-          A += med ** 2 * tm.var_depth * np.dot(XM, XM.T)
-          del XM
-        
-        # Dot the inverse of the covariance matrix
-        W = np.linalg.solve(mK + A, f)
-        
-        # Compute the PLD weights
-        w_pld = np.concatenate([l * np.dot(self.X(n,m).T, W) for n, l in enumerate(self.lam[b]) if l is not None])
-      
-        # Compute the model w/o the transit prediction
-        model[b] = np.dot(np.hstack([self.X(n,c) for n, l in enumerate(self.lam[b]) if l is not None]), w_pld)
-        
-        # Compute the transit weights and maximum likelihood transit model
-        w_trn = med ** 2 * np.concatenate([tm.var_depth * np.dot(tm(self.time[m]).reshape(1,-1), W) for tm in self.transit_model])
-        self.transit_depth.append(np.array([med * tm.depth + w_trn[i] for i, tm in enumerate(self.transit_model)]) / med)
-
-      else:
-        
-        # Easy
-        W = np.linalg.solve(mK + A, f)
-        model[b] = np.dot(B, W)
+      # Compute the model
+      W = np.linalg.solve(mK + A, f)
+      model[b] = np.dot(B, W)
 
     # Free up some memory
     del A, B, W
@@ -356,23 +330,15 @@ class Basecamp(object):
     self.cdpp_arr = self.get_cdpp_arr()
     self.cdpp = self.get_cdpp()
     self._weights = None
-
-  def compute_joint(self):
-    '''
-    Compute the model in a single step, allowing for covariance
-    between cadences in different chunks. This should in principle
-    help remove kinks at the breakpoints, but is more expensive to
-    compute. 
     
-    .. warning:: Everest does not cross-validate with this sort of \
-                 model (it's too expensive), so care is needed when using \
-                 light curves de-trended with this method, as they may not \
-                 be optimized against over-fitting/under-fitting. I suspect \
-                 it doesn't matter much, though.
+  def compute_joint(self, sparse_cov = False):
+    '''
+    Compute the model in a single step, allowing for a light curve-wide
+    transit model. This is a bit more expensive to compute. 
     
     '''
 
-    log.info('Computing the model...')
+    log.info('Computing the joint model...')
     A = [None for b in self.breakpoints]
     B = [None for b in self.breakpoints]
     
@@ -407,12 +373,58 @@ class Basecamp(object):
     BIGB = block_diag(*B)
     del B
     
-    # Compute the model
-    mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    # Compute the covariance matrix
+    if sparse_cov:
+      # We're going to zero out sections of it to
+      # enforce zero covariance across chunks so that 
+      # the model is consistent
+      # with what we use in the cross-validation step.
+      mK = []
+      for b, brkpt in enumerate(self.breakpoints):
+        m = self.get_masked_chunk(b, pad = False)
+        mK.append(GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m]))
+      mK = block_diag(*mK)
+    else:
+      # Compute the full covariance matrix.
+      mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    
+    # The normalized, masked flux array
     f = self.apply_mask(self.fraw)
-    f -= np.nanmedian(f)
-    W = np.linalg.solve(mK + BIGA, f)
-    self.model = np.dot(BIGB, W)
+    med = np.nanmedian(f)
+    f -= med
+    
+    # Are we computing a joint transit model?
+    if self.transit_model is not None:
+      
+      # Get the unmasked indices
+      m = self.apply_mask()
+
+      # Subtract off the mean total transit model
+      mean_transit_model = med * np.sum([tm.depth * tm(self.time[m]) for tm in self.transit_model], axis = 0)
+      f -= mean_transit_model
+    
+      # Now add each transit model to the matrix of regressors
+      for tm in self.transit_model:
+        XM = tm(self.time[m]).reshape(-1,1)
+        BIGA += med ** 2 * tm.var_depth * np.dot(XM, XM.T)
+        del XM
+    
+      # Dot the inverse of the covariance matrix
+      W = np.linalg.solve(mK + BIGA, f)
+      self.model = np.dot(BIGB, W)
+        
+      # Compute the transit weights and maximum likelihood transit model
+      w_trn = med ** 2 * np.concatenate([tm.var_depth * np.dot(tm(self.time[m]).reshape(1,-1), W) for tm in self.transit_model])
+      self.transit_depth = np.array([med * tm.depth + w_trn[i] for i, tm in enumerate(self.transit_model)]) / med
+
+      # Remove the transit prediction from the model
+      self.model -= np.dot(np.hstack([tm(self.time).reshape(-1,1) for tm in self.transit_model]), w_trn)
+      
+    else:
+      
+      # No transit model to worry about
+      W = np.linalg.solve(mK + BIGA, f)
+      self.model = np.dot(BIGB, W)
 
     # Subtract the global median
     self.model -= np.nanmedian(self.model)
