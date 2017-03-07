@@ -40,7 +40,7 @@ class TransitModel(object):
     else:
       t0 = kwargs.get('t0', 0.)
     self.depth = (1. - self._transit([t0]))[0]
-    
+
     # Approximate variance on the depth
     self.var_depth = (2 * sig_RpRs) ** 2
     

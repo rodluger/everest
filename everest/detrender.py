@@ -20,7 +20,6 @@ from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
 from .dvs import DVS, CBV
-from .transit import TransitModel
 import os, sys
 import numpy as np
 import george
@@ -210,12 +209,7 @@ class Detrender(Basecamp):
     self.pld_order = pld_order
     
     # Get the transit model
-    self.transit_model = kwargs.get('transit_model', None)
-    if self.transit_model is not None:
-      self.transit_model = np.atleast_1d(self.transit_model)
-      for tm in self.transit_model:
-        assert type(tm) is TransitModel, "Kwarg `transit_model` must be an instance or a list of instances of `everest.TransitModel`."
-    self.transit_depths = None
+    self._transit_model = kwargs.get('transit_model', None)
     
     # Initialize model params 
     self.lam_idx = -1

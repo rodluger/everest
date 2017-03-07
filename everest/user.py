@@ -470,8 +470,8 @@ class Everest(Basecamp):
     self.parent_model = None
     self.lambda_arr = None
     self.meta = None
-    self.transit_model = None
-    self.transit_depths = None
+    self._transit_model = None
+    self.transit_depth = None
   
   def plot_aperture(self, show = True):
     '''
@@ -1147,3 +1147,93 @@ class Everest(Basecamp):
     fig.canvas.set_window_title('%s %d' % (self._mission.IDSTRING, self.ID))
     
     pl.show()
+  
+  def plot_transit_model(self, show = True):
+    '''
+  
+    '''
+  
+    if self.transit_model is None:
+      raise ValueError("No transit model provided!")
+    if self.transit_depth is None:
+      raise Exception("Please run `compute()` to compute the transit depth(s).")
+    log.info('Plotting the transit model...')
+  
+    # Set up axes
+    fig, ax = pl.subplots(1, figsize = (13, 6))
+    fig.canvas.set_window_title('EVEREST Light curve')
+  
+    # Set up some stuff
+    time = self.time
+    badmask = self.badmask
+    nanmask = self.nanmask
+    outmask = self.outmask
+    transitmask = self.transitmask
+    flux = self.flux
+    fraw_err = self.fraw_err
+    breakpoints = self.breakpoints
+    if self.cadence == 'sc':
+      ms = 2
+    else:
+      ms = 4
+  
+    # Plot the good data points
+    ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+    ax.plot(time[outmask], flux[outmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+    ax.plot(time[transitmask], flux[transitmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+
+    # Plot the transit + GP model
+    med = np.nanmedian(self.apply_mask(flux))
+    transit_model = med * np.sum([depth * tm(time) for tm, depth in zip(self.transit_model, self.transit_depth)], axis = 0)
+    _, amp, tau = self.kernel_params
+    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+    gp.compute(self.apply_mask(time), self.apply_mask(fraw_err))
+    y, _ = gp.predict(self.apply_mask(flux - transit_model) - med, time)
+    y += med
+    y += transit_model
+    ax.plot(time, y, 'r-', lw = 1, alpha = 1)
+    
+    # Plot the bad data points
+    bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
+    bmask = [i for i in self.badmask if i not in self.nanmask]
+    ax.plot(time[bmask], flux[bmask], 'r.', markersize = ms, alpha = 0.25)
+
+    # Appearance
+    ax.set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+    ax.set_ylabel('EVEREST Flux', fontsize = 18)
+    for brkpt in breakpoints[:-1]:
+      ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
+    ax.margins(0.01, 0.1)          
+
+    # Get y lims that bound 99% of the flux
+    f = np.delete(flux, bnmask)
+    N = int(0.995 * len(f))
+    hi, lo = f[np.argsort(f)][[N,-N]]
+    pad = (hi - lo) * 0.1
+    ylim = (lo - pad, hi + pad)
+    ax.set_ylim(ylim)   
+    ax.get_yaxis().set_major_formatter(Formatter.Flux)
+
+    # Indicate off-axis outliers
+    for i in np.where(flux < ylim[0])[0]:
+      if i in bmask:
+        color = "#ffcccc"
+      else:
+        color = "#ccccff"
+      ax.annotate('', xy=(time[i], ylim[0]), xycoords = 'data',
+                  xytext = (0, 15), textcoords = 'offset points',
+                  arrowprops=dict(arrowstyle = "-|>", color = color))
+    for i in np.where(flux > ylim[1])[0]:
+      if i in bmask:
+        color = "#ffcccc"
+      else:
+        color = "#ccccff"
+      ax.annotate('', xy=(time[i], ylim[1]), xycoords = 'data',
+                  xytext = (0, -15), textcoords = 'offset points',
+                  arrowprops=dict(arrowstyle = "-|>", color = color))
+  
+    if show:
+      pl.show()
+      pl.close()
+    else:
+      return fig, ax

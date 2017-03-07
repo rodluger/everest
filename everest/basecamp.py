@@ -15,6 +15,7 @@ from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .gp import GetCovariance, GetKernelParams
 from .search import Search
+from .transit import TransitModel
 from scipy.linalg import block_diag
 import os, sys
 import numpy as np
@@ -221,6 +222,34 @@ class Basecamp(object):
     
     raise NotImplementedError("Can't set this property.") 
   
+  @property
+  def transit_model(self):
+    '''
+    
+    '''
+    
+    try:
+      self._transit_model
+    except:
+      self._transit_model = None
+    return self._transit_model
+  
+  @transit_model.setter
+  def transit_model(self, val):
+    '''
+    
+    '''
+    
+    if val is None:
+      self._transit_model = None
+      self.transit_depth = None
+    else:
+      val = np.atleast_1d(val)
+      for tm in val:
+        assert type(tm) is TransitModel, "Kwarg `transit_model` must be an instance or a list of instances of `everest.TransitModel`."
+      self._transit_model = val
+      self.transit_depth = None
+  
   def get_norm(self):
     '''
     Computes the PLD normalization. In the base class, this is just
@@ -407,19 +436,21 @@ class Basecamp(object):
       # Now add each transit model to the matrix of regressors
       for tm in self.transit_model:
         XM = tm(self.time[m]).reshape(-1,1)
+        XC = tm(self.time).reshape(-1,1)
         BIGA += med ** 2 * tm.var_depth * np.dot(XM, XM.T)
-        del XM
+        BIGB += med ** 2 * tm.var_depth * np.dot(XC, XM.T)
+        del XM, XC
     
       # Dot the inverse of the covariance matrix
       W = np.linalg.solve(mK + BIGA, f)
       self.model = np.dot(BIGB, W)
-        
+
       # Compute the transit weights and maximum likelihood transit model
       w_trn = med ** 2 * np.concatenate([tm.var_depth * np.dot(tm(self.time[m]).reshape(1,-1), W) for tm in self.transit_model])
       self.transit_depth = np.array([med * tm.depth + w_trn[i] for i, tm in enumerate(self.transit_model)]) / med
 
       # Remove the transit prediction from the model
-      self.model -= np.dot(np.hstack([tm(self.time).reshape(-1,1) for tm in self.transit_model]), w_trn)
+      self.model -= med * np.dot(np.hstack([tm(self.time).reshape(-1,1) for tm in self.transit_model]), self.transit_depth)
       
     else:
       
