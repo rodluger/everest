@@ -1150,7 +1150,28 @@ class Everest(Basecamp):
   
   def plot_transit_model(self, show = True):
     '''
-  
+    Try the following:
+    
+    .. code-block:: python
+    
+      import everest
+      star = everest.Everest(211916756)
+
+      # Planet parameters from Obermeier et al. (2016)
+      transit_model = everest.TransitModel(t0 = 2338.1477, per = 10.13389, 
+                                           aRs = 1/0.04, RpRs = 0.001, 
+                                           b = 0.6, sig_RpRs = 0.1)
+
+      # Compute the joint model
+      star.transit_model = transit_model
+      star.compute()
+
+      # Plot
+      star.plot_transit_model()
+      print(star.transit_depth)
+      
+    The true value of `RpRs` is 0.0786, and we recover that quite nicely.
+    
     '''
   
     if self.transit_model is None:

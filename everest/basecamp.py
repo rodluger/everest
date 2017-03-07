@@ -450,7 +450,7 @@ class Basecamp(object):
       self.transit_depth = np.array([med * tm.depth + w_trn[i] for i, tm in enumerate(self.transit_model)]) / med
 
       # Remove the transit prediction from the model
-      self.model -= med * np.dot(np.hstack([tm(self.time).reshape(-1,1) for tm in self.transit_model]), self.transit_depth)
+      self.model -= np.dot(np.hstack([tm(self.time).reshape(-1,1) for tm in self.transit_model]), w_trn)
       
     else:
       
