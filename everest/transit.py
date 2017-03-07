@@ -20,7 +20,7 @@ from scipy.optimize import fmin
 import logging
 log = logging.getLogger(__name__)
 
-class Planet(object):
+class TransitModel(object):
   '''
   
   '''
@@ -93,8 +93,7 @@ def Get_rhos(dur, **kwargs):
 def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   '''
   A `Mandel-Agol <http://adsabs.harvard.edu/abs/2002ApJ...580L.171M>`_ transit model, 
-  but with the depth and the duration
-  as primary input variables.
+  but with the depth and the duration as primary input variables.
   
   :param numpy.ndarray time: The time array
   :param float t0: The time of first transit in units of :py:obj:`BJD` - 2454833.
@@ -115,11 +114,10 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
 
 class TransitShape(object):
   '''
-  TODO, NOTE: Duration is not defined the proper way here...
   
   '''
   
-  def __init__(self, dur = 0.1, depth = 1, window = 0.5, **kwargs):
+  def __init__(self, depth = 1, window = 0.5, **kwargs):
     '''
     
     '''
@@ -129,17 +127,14 @@ class TransitShape(object):
     t = np.linspace(-window / 2, window / 2, 5000)
     trn = ps.Transit(t0 = 0., **kwargs)
     transit_model = trn(t)
-    tinds = np.where(transit_model < 1)[0]
-    stretch = dur / (t[tinds][-1] - t[tinds][0])
-    t *= stretch
     transit_model -= 1
     transit_model *= depth / (1 - trn([0.])[0])
-    self.thires = t
-    self.model = transit_model
+    self.x = t
+    self.y = transit_model
     
   def __call__(self, time, t0 = 0.):
     '''
     
     '''
-    
-    return np.interp(time, self.thires + t0, self.model)
+
+    return np.interp(time, self.x + t0, self.y)

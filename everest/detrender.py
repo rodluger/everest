@@ -20,6 +20,7 @@ from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
 from .gp import GetCovariance, GetKernelParams
 from .dvs import DVS, CBV
+from .transit import TransitModel
 import os, sys
 import numpy as np
 import george
@@ -116,7 +117,11 @@ class Detrender(Basecamp):
                                      in the aperture. The column collapsing is implemented in the individual \
                                      mission modules. Default -0.1, i.e., if a target is 10% shy of the \
                                      nominal saturation level, it is considered to be saturated.
-                                     
+  :param transit_model: An instance or list of instances of :py:class:`everest.transit.TransitModel`. If specified, \
+                        :py:obj:`everest` will include these in the regression when calculating the PLD coefficients. \
+                        The final instrumental light curve model will **not** include the transit fits -- they are used \
+                        solely to obtain unbiased PLD coefficients. The best fit transit depths from the fit are stored \
+                        in the :py:obj:`transit_depth` attribute of the model. Default :py:obj:`None`.
   '''
 
   def __init__(self, ID, **kwargs):
@@ -208,7 +213,10 @@ class Detrender(Basecamp):
     self.transit_model = kwargs.get('transit_model', None)
     if self.transit_model is not None:
       self.transit_model = np.atleast_1d(self.transit_model)
-
+      for tm in self.transit_model:
+        assert type(tm) is TransitModel, "Kwarg `transit_model` must be an instance or a list of instances of `everest.TransitModel`."
+    self.transit_depths = None
+    
     # Initialize model params 
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
@@ -1192,7 +1200,6 @@ class Detrender(Basecamp):
     except:
     
       self.exception_handler(self.debug)
-
     
 class rPLD(Detrender):
   '''
@@ -1241,6 +1248,9 @@ class nPLD(Detrender):
                               with events such as thruster firings and are present in all light curves, \
                               and therefore *help* in the de-trending. Default `None`
     
+    ..note :: Optionally, the :py:obj:`neighbors` may be specified directly as a list of target IDs to use. \
+              In this case, users may also provide a list of :py:class:`everest.utils.DataContainer` instances \
+              corresponding to each of the neighbors in the :py:obj:`neighbors_data` kwarg.
     '''
     
     # Get neighbors
@@ -1307,6 +1317,8 @@ class nPLD(Detrender):
 class iPLD(Detrender):
   '''
   The iterative PLD model.
+  
+  ..warning :: Deprecated and not thoroughly tested.
   
   '''
   

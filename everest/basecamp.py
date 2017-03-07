@@ -14,6 +14,7 @@ from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .gp import GetCovariance, GetKernelParams
+from .search import Search
 from scipy.linalg import block_diag
 import os, sys
 import numpy as np
@@ -331,17 +332,29 @@ class Basecamp(object):
     self.cdpp = self.get_cdpp()
     self._weights = None
     
-  def compute_joint(self, sparse_cov = False):
+  def compute_joint(self):
     '''
     Compute the model in a single step, allowing for a light curve-wide
     transit model. This is a bit more expensive to compute. 
     
     '''
-
+    
+    # Init
     log.info('Computing the joint model...')
     A = [None for b in self.breakpoints]
     B = [None for b in self.breakpoints]
     
+    # We need to make sure that we're not masking the transits we are trying to fit!
+    # NOTE: If there happens to be an index that *SHOULD* be masked during a transit
+    # (cosmic ray, detector anomaly), update `self.badmask` to include that index.
+    # Bad data points are *never* used in the regression.
+    if self.transit_model is not None:
+      outmask = np.array(self.outmask)
+      transitmask = np.array(self.transitmask)
+      transit_inds = np.where(np.sum([tm(self.time) for tm in self.transit_model], axis = 0) < 0)[0]
+      self.outmask = np.array([i for i in self.outmask if i not in transit_inds])
+      self.transitmask = np.array([i for i in self.transitmask if i not in transit_inds])
+      
     # Loop over all chunks
     for b, brkpt in enumerate(self.breakpoints):
     
@@ -373,20 +386,8 @@ class Basecamp(object):
     BIGB = block_diag(*B)
     del B
     
-    # Compute the covariance matrix
-    if sparse_cov:
-      # We're going to zero out sections of it to
-      # enforce zero covariance across chunks so that 
-      # the model is consistent
-      # with what we use in the cross-validation step.
-      mK = []
-      for b, brkpt in enumerate(self.breakpoints):
-        m = self.get_masked_chunk(b, pad = False)
-        mK.append(GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m]))
-      mK = block_diag(*mK)
-    else:
-      # Compute the full covariance matrix.
-      mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    # Compute the full covariance matrix
+    mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
     
     # The normalized, masked flux array
     f = self.apply_mask(self.fraw)
@@ -429,11 +430,16 @@ class Basecamp(object):
     # Subtract the global median
     self.model -= np.nanmedian(self.model)
     
+    # Restore the mask
+    if self.transit_model is not None:
+      self.outmask = outmask
+      self.transitmask = transitmask
+    
     # Get the CDPP and reset the weights
     self.cdpp_arr = self.get_cdpp_arr()
     self.cdpp = self.get_cdpp()
     self._weights = None
-
+    
   def apply_mask(self, x = None):
     '''
     Returns the outlier mask, an array of indices corresponding to the non-outliers.
@@ -487,7 +493,8 @@ class Basecamp(object):
   def get_weights(self):
     '''
     Computes the PLD weights vector :py:obj:`w`.
-    Not currently used in the code.
+    
+    ..warning :: Deprecated and not thoroughly tested.
     
     '''
     
@@ -605,3 +612,33 @@ class Basecamp(object):
     else:
       ax = axes[-1]
       ax.axis('off')
+  
+  def search(self, pos_tol = 2.5, neg_tol = 50., clobber = False, name = 'search', **kwargs):
+    '''
+    
+    '''
+    
+    log.info("Searching for transits...")
+    fname = os.path.join(self.dir, self.name + '_%s.npz' % name)
+    pname = os.path.join(self.dir, self.name + '_%s.pdf' % name)
+    if not os.path.exists(fname) or clobber:
+    
+      # Compute
+      time, depth, vardepth, delchisq = Search(self, pos_tol = pos_tol, neg_tol = neg_tol, **kwargs)
+      data = np.vstack([time, depth, vardepth, delchisq]).T
+      header = "TIME, DEPTH, VARDEPTH, DELTACHISQ"
+      np.savetxt(fname, data, fmt = '%.10e', header = header)
+      
+      # Plot
+      fig, ax = pl.subplots(1, figsize = (10, 4))
+      ax.plot(time, delchisq, lw = 1)
+      ax.set_ylabel(r'$\Delta \chi^2$', fontsize = 18)
+      ax.set_xlabel('Time (days)', fontsize = 18)
+      ax.set_xlim(time[0], time[-1])
+      fig.savefig(pname, bbox_inches = 'tight')
+      pl.close()
+      
+    else:
+      time, depth, vardepth, delchisq = np.loadtxt(fname, unpack = True, skiprows = 1)
+    
+    return time, depth, vardepth, delchisq
