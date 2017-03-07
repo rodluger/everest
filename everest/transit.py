@@ -115,10 +115,11 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
 
 class TransitShape(object):
   '''
+  TODO, NOTE: Duration is not defined the proper way here...
   
   '''
   
-  def __init__(self, dur = 0.1, depth = 1, window = 2.5, **kwargs):
+  def __init__(self, dur = 0.1, depth = 1, window = 0.5, **kwargs):
     '''
     
     '''
@@ -127,16 +128,15 @@ class TransitShape(object):
     kwargs.pop('times', None)
     t = np.linspace(-window / 2, window / 2, 5000)
     trn = ps.Transit(t0 = 0., **kwargs)
-    unbinned = trn(t, 'unbinned')
-    tinds = np.where(unbinned < 1)[0]
+    transit_model = trn(t)
+    tinds = np.where(transit_model < 1)[0]
     stretch = dur / (t[tinds][-1] - t[tinds][0])
     t *= stretch
-    transit_model = trn(t)
     transit_model -= 1
     transit_model *= depth / (1 - trn([0.])[0])
     self.thires = t
     self.model = transit_model
-  
+    
   def __call__(self, time, t0 = 0.):
     '''
     
