@@ -25,17 +25,17 @@ def GP(kernel, kernel_params, white = False):
   '''
   
   if kernel == 'Basic':
-    white, amp, tau = kernel_params
+    w, a, t = kernel_params
     if white:
-      return george.GP(WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2))
+      return george.GP(WhiteKernel(w ** 2) + a ** 2 * Matern32Kernel(t ** 2))
     else:
-      return george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
+      return george.GP(a ** 2 * Matern32Kernel(t ** 2))
   elif kernel == 'QuasiPeriodic':
-    white, amp, gamma, period = kernel_params
+    w, a, g, p = kernel_params
     if white:
-      return george.GP(white ** 2 + amp ** 2 * ExpSine2Kernel(gamma, period))
+      return george.GP(WhiteKernel(w ** 2) + a ** 2 * ExpSine2Kernel(g, p))
     else:
-      return george.GP(amp ** 2 * ExpSine2Kernel(gamma, period))
+      return george.GP(a ** 2 * ExpSine2Kernel(g, p))
   else:
     raise ValueError('Invalid value for `kernel`.')
     
