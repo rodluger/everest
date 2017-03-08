@@ -979,6 +979,7 @@ class Detrender(Basecamp):
     d.pop('_mission', None)
     d.pop('debug', None)
     d.pop('transit_model', None)
+    d.pop('_transit_model', None)
     np.savez(os.path.join(self.dir, self.name + '.npz'), **d)
     
     # Save the DVS
@@ -1043,7 +1044,7 @@ class Detrender(Basecamp):
       if self.kernel == 'Basic':
         self.kernel_params = [white, amp, tau]
       elif self.kernel == 'QuasiPeriodic':
-        self.kernel_params = [white, amp, tau, 1., 20.]
+        self.kernel_params = [white, amp, 1., 20.]
         
   def mask_planets(self):
     '''

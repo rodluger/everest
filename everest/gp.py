@@ -31,11 +31,11 @@ def GP(kernel, kernel_params, white = False):
     else:
       return george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
   elif kernel == 'QuasiPeriodic':
-    white, amp, tau, gamma, period = kernel_params
+    white, amp, gamma, period = kernel_params
     if white:
-      return george.GP(white ** 2 + amp ** 2 * Matern32Kernel(tau ** 2) * ExpSine2Kernel(gamma, period))
+      return george.GP(white ** 2 + amp ** 2 * ExpSine2Kernel(gamma, period))
     else:
-      return george.GP(amp ** 2 * Matern32Kernel(tau ** 2) * ExpSine2Kernel(gamma, period))
+      return george.GP(amp ** 2 * ExpSine2Kernel(gamma, period))
   else:
     raise ValueError('Invalid value for `kernel`.')
     
@@ -109,7 +109,7 @@ def GetKernelParams(time, flux, errors, kernel = 'Basic', mask = [], giter = 3, 
       guess = [white, amp, tau, 1., 20.]
     bounds = [[0.1 * white, 10. * white], 
               [1., 10000. * amp],
-              [0.01, 10.],
+              [1e-5, 1e2],
               [0.02, 100.]]
   else:
     raise ValueError('Invalid value for `kernel`.')
@@ -138,12 +138,15 @@ def GetKernelParams(time, flux, errors, kernel = 'Basic', mask = [], giter = 3, 
     log.info('   ' + x[2]['task'].decode('utf-8'))
     log.info('   ' + 'Function calls: %d' % x[2]['funcalls'])
     log.info('   ' + 'Log-likelihood: %.3e' % -x[1])
-    log.info('   ' + 'White noise   : %.3e (%.1f x error bars)' % (x[0][0], x[0][0] / np.nanmedian(errors)))
-    log.info('   ' + 'Red amplitude : %.3e (%.1f x stand dev)' % (x[0][1], x[0][1] / np.nanstd(flux)))
-    log.info('   ' + 'Red timescale : %.2f days' % x[0][2])
-    if kernel == 'QuasiPeriodic':
-      log.info('   ' + 'Gamma       : %.2f' % x[0][3])
-      log.info('   ' + 'Period      : %.2f days' % x[0][4])
+    if kernel == 'Basic':
+      log.info('   ' + 'White noise   : %.3e (%.1f x error bars)' % (x[0][0], x[0][0] / np.nanmedian(errors)))
+      log.info('   ' + 'Red amplitude : %.3e (%.1f x stand dev)' % (x[0][1], x[0][1] / np.nanstd(flux)))
+      log.info('   ' + 'Red timescale : %.2f days' % x[0][2])
+    elif kernel == 'QuasiPeriodic':
+      log.info('   ' + 'White noise   : %.3e (%.1f x error bars)' % (x[0][0], x[0][0] / np.nanmedian(errors)))
+      log.info('   ' + 'Red amplitude : %.3e (%.1f x stand dev)' % (x[0][1], x[0][1] / np.nanstd(flux)))
+      log.info('   ' + 'Gamma         : %.3e' % x[0][2])
+      log.info('   ' + 'Period        : %.2f days' % x[0][3])
     if -x[1] > llbest:
       llbest = -x[1]
       xbest = np.array(x[0])
