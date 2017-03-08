@@ -18,7 +18,7 @@ from .config import EVEREST_DAT
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
-from .gp import GetCovariance, GetKernelParams
+from .gp import GetCovariance, GetKernelParams, GP
 from .dvs import DVS, CBV
 import os, sys
 import numpy as np
@@ -171,7 +171,9 @@ class Detrender(Basecamp):
     self.giter = kwargs.get('giter', 3)
     self.gmaxf = kwargs.get('gmaxf', 200)
     self.optimize_gp = kwargs.get('optimize_gp', True)
-    self.kernel_params = kwargs.get('kernel_params', None)    
+    self.kernel_params = kwargs.get('kernel_params', None)  
+    self.kernel = kwargs.get('kernel', 'Basic')  
+    assert self.kernel in ['Basic', 'QuasiPeriodic'], "Kwarg `kernel` must be one of `Basic` or `QuasiPeriodic`."
     self.clobber_tpf = kwargs.get('clobber_tpf', False)
     self.bpad = kwargs.get('bpad', 100)
     self.aperture_name = kwargs.get('aperture', None)
@@ -280,7 +282,7 @@ class Detrender(Basecamp):
     # Get current chunk and mask outliers
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
-    K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
+    K = GetCovariance(self.kernel, self.kernel_params, self.time[m1], self.fraw_err[m1])
     med = np.nanmedian(flux)
     
     # Now mask the validation set
@@ -461,8 +463,7 @@ class Detrender(Basecamp):
       training = [[] for k, _ in enumerate(self.lambda_arr)]
     
       # Setup the GP
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp = GP(self.kernel, self.kernel_params, white = False)
       gp.compute(time, ferr)
     
       # The masks
@@ -737,8 +738,7 @@ class Detrender(Basecamp):
     
     # Plot the GP (long cadence only)
     if self.cadence == 'lc':
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp = GP(self.kernel, self.kernel_params, white = False)
       gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
       med = np.nanmedian(self.apply_mask(self.flux))
       y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
@@ -1026,7 +1026,7 @@ class Detrender(Basecamp):
     
     self.kernel_params = GetKernelParams(self.time, self.flux, self.fraw_err, 
                                          mask = self.mask, guess = self.kernel_params, 
-                                         giter = self.giter, gmaxf = self.gmaxf)
+                                         kernel = self.kernel, giter = self.giter, gmaxf = self.gmaxf)
   
   def init_kernel(self):
     '''
@@ -1040,8 +1040,11 @@ class Detrender(Basecamp):
       white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
       amp = self.gp_factor * np.nanstd(y)
       tau = 30.0
-      self.kernel_params = [white, amp, tau]
-  
+      if self.kernel == 'Basic':
+        self.kernel_params = [white, amp, tau]
+      elif self.kernel == 'QuasiPeriodic':
+        self.kernel_params = [white, amp, tau, 1., 20.]
+        
   def mask_planets(self):
     '''
     
@@ -1434,8 +1437,7 @@ class pPLD(Detrender):
       med = np.nanmedian(self.fraw)
     
       # Setup the GP
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp = GP(self.kernel, self.kernel_params, white = False)
       gp.compute(time, ferr)
     
       # The masks

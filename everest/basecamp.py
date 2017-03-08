@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
-from .gp import GetCovariance, GetKernelParams
+from .gp import GetCovariance
 from .search import Search
 from .transit import TransitModel
 from scipy.linalg import block_diag
@@ -297,7 +297,7 @@ class Basecamp(object):
       c = self.get_chunk(b)
       
       # This block of the masked covariance matrix
-      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      mK = GetCovariance(self.kernel, self.kernel_params, self.time[m], self.fraw_err[m])
       
       # Get median
       med = np.nanmedian(self.fraw[m])
@@ -416,7 +416,7 @@ class Basecamp(object):
     del B
     
     # Compute the full covariance matrix
-    mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    mK = GetCovariance(self.kernel, self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
     
     # The normalized, masked flux array
     f = self.apply_mask(self.fraw)
@@ -540,7 +540,7 @@ class Basecamp(object):
       c = self.get_chunk(b)
       
       # This block of the masked covariance matrix
-      _mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      _mK = GetCovariance(self.kernel, self.kernel_params, self.time[m], self.fraw_err[m])
       
       # This chunk of the normalized flux
       f = self.fraw[m] - np.nanmedian(self.fraw)  
@@ -652,15 +652,18 @@ class Basecamp(object):
     log.info("Searching for transits...")
     fname = os.path.join(self.dir, self.name + '_%s.npz' % name)
     pname = os.path.join(self.dir, self.name + '_%s.pdf' % name)
-    if not os.path.exists(fname) or clobber:
     
-      # Compute
+    # Compute
+    if not os.path.exists(fname) or clobber:
       time, depth, vardepth, delchisq = Search(self, pos_tol = pos_tol, neg_tol = neg_tol, **kwargs)
       data = np.vstack([time, depth, vardepth, delchisq]).T
       header = "TIME, DEPTH, VARDEPTH, DELTACHISQ"
       np.savetxt(fname, data, fmt = '%.10e', header = header)
-      
-      # Plot
+    else:
+      time, depth, vardepth, delchisq = np.loadtxt(fname, unpack = True, skiprows = 1)
+    
+    # Plot
+    if not os.path.exists(pname) or clobber:
       fig, ax = pl.subplots(1, figsize = (10, 4))
       ax.plot(time, delchisq, lw = 1)
       ax.set_ylabel(r'$\Delta \chi^2$', fontsize = 18)
@@ -668,8 +671,5 @@ class Basecamp(object):
       ax.set_xlim(time[0], time[-1])
       fig.savefig(pname, bbox_inches = 'tight')
       pl.close()
-      
-    else:
-      time, depth, vardepth, delchisq = np.loadtxt(fname, unpack = True, skiprows = 1)
     
     return time, depth, vardepth, delchisq

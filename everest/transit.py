@@ -44,6 +44,9 @@ class TransitModel(object):
     # Approximate variance on the depth
     self.var_depth = (2 * sig_RpRs) ** 2
     
+    # Save the kwargs
+    self.params = kwargs
+    
   def __call__(self, time):
     '''
     

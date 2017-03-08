@@ -66,7 +66,7 @@ def Search(star, pos_tol = 2.5, neg_tol = 50., **ps_kwargs):
     m = star.get_masked_chunk(b, pad = False)
     
     # This block of the masked covariance matrix
-    K = GetCovariance(star.kernel_params, star.time[m], star.fraw_err[m])
+    K = GetCovariance(star.kernel, star.kernel_params, star.time[m], star.fraw_err[m])
     
     # The masked X.L.X^T term
     A = np.zeros((len(m), len(m)))

@@ -15,11 +15,31 @@ from scipy.signal import savgol_filter
 import numpy as np
 np.random.seed(48151623)
 import george
-from george.kernels import WhiteKernel, Matern32Kernel
+from george.kernels import WhiteKernel, Matern32Kernel, ExpSine2Kernel
 import logging
 log = logging.getLogger(__name__)
 
-def GetCovariance(kernel_params, time, errors):
+def GP(kernel, kernel_params, white = False):
+  '''
+  
+  '''
+  
+  if kernel == 'Basic':
+    white, amp, tau = kernel_params
+    if white:
+      return george.GP(white ** 2 + amp ** 2 * Matern32Kernel(tau ** 2))
+    else:
+      return george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
+  elif kernel == 'QuasiPeriodic':
+    white, amp, tau, gamma, period = kernel_params
+    if white:
+      return george.GP(white ** 2 + amp ** 2 * Matern32Kernel(tau ** 2) * ExpSine2Kernel(gamma, period))
+    else:
+      return george.GP(amp ** 2 * Matern32Kernel(tau ** 2) * ExpSine2Kernel(gamma, period))
+  else:
+    raise ValueError('Invalid value for `kernel`.')
+    
+def GetCovariance(kernel, kernel_params, time, errors):
   '''
   Returns the covariance matrix for a given light curve
   segment.
@@ -33,16 +53,13 @@ def GetCovariance(kernel_params, time, errors):
   
   '''
 
-  white, amp, tau = kernel_params
   # NOTE: We purposefully compute the covariance matrix 
   # *without* the GP white noise term
-  gp = george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
   K = np.diag(errors ** 2)
-  K += gp.get_matrix(time)
-  
+  K += GP(kernel, kernel_params, white = False).get_matrix(time)
   return K
 
-def GetKernelParams(time, flux, errors, mask = [], giter = 3, gmaxf = 200, guess = None):
+def GetKernelParams(time, flux, errors, kernel = 'Basic', mask = [], giter = 3, gmaxf = 200, guess = None):
   '''
   Optimizes the GP by training it on the current de-trended light curve.
   Returns the white noise amplitude, red noise amplitude, and red noise timescale.
@@ -77,25 +94,33 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, gmaxf = 200, guess
   flux = np.delete(flux, mask)
   errors = np.delete(errors, mask)
     
-  # Initial guesses
+  # Initial guesses and bounds
   white = np.nanmedian([np.nanstd(c) for c in Chunks(flux, 13)])
   amp = np.nanstd(flux)
-  tau = 30.0
-  if guess is None:
-    guess = [white, amp, tau]
+  tau = 30.0  
+  if kernel == 'Basic':
+    if guess is None: 
+      guess = [white, amp, tau]
+    bounds = [[0.1 * white, 10. * white], 
+              [1., 10000. * amp],
+              [0.5, 100.]]
+  elif kernel == 'QuasiPeriodic':
+    if guess is None: 
+      guess = [white, amp, tau, 1., 20.]
+    bounds = [[0.1 * white, 10. * white], 
+              [1., 10000. * amp],
+              [0.01, 10.],
+              [0.02, 100.]]
+  else:
+    raise ValueError('Invalid value for `kernel`.')
     
-  # Bounds
-  bounds = [[0.1 * white, 10. * white], 
-            [1., 10000. * amp],
-            [0.5, 100.]]
-  
   # Loop
   llbest = -np.inf
   xbest = np.array(guess)
   for i in range(giter):
     
     # Randomize an initial guess
-    iguess = [np.inf, np.inf, np.inf]
+    iguess = [np.inf for g in guess]
     for j, b in enumerate(bounds):
       tries = 0
       while (iguess[j] < b[0]) or (iguess[j] > b[1]):
@@ -107,7 +132,7 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, gmaxf = 200, guess
     
     # Optimize
     x = fmin_l_bfgs_b(NegLnLike, iguess, approx_grad = False, 
-                      bounds = bounds, args = (time, flux, errors),
+                      bounds = bounds, args = (time, flux, errors, kernel),
                       maxfun = gmaxf)
     log.info('Iteration #%d/%d:' % (i + 1, giter))
     log.info('   ' + x[2]['task'].decode('utf-8'))
@@ -116,20 +141,22 @@ def GetKernelParams(time, flux, errors, mask = [], giter = 3, gmaxf = 200, guess
     log.info('   ' + 'White noise   : %.3e (%.1f x error bars)' % (x[0][0], x[0][0] / np.nanmedian(errors)))
     log.info('   ' + 'Red amplitude : %.3e (%.1f x stand dev)' % (x[0][1], x[0][1] / np.nanstd(flux)))
     log.info('   ' + 'Red timescale : %.2f days' % x[0][2])
+    if kernel == 'QuasiPeriodic':
+      log.info('   ' + 'Gamma       : %.2f' % x[0][3])
+      log.info('   ' + 'Period      : %.2f days' % x[0][4])
     if -x[1] > llbest:
       llbest = -x[1]
       xbest = np.array(x[0])
       
   return xbest
 
-def NegLnLike(x, time, flux, errors):
+def NegLnLike(x, time, flux, errors, kernel):
   '''
   Returns the negative log-likelihood function and its gradient.
   
   '''
   
-  white, amp, tau = x
-  gp = george.GP(WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2))
+  gp = GP(kernel, x, white = True)
   gp.compute(time, errors)
   nll = -gp.lnlikelihood(flux)
   ngr = -gp.grad_lnlikelihood(flux) / gp.kernel.pars

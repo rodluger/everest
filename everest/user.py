@@ -25,7 +25,7 @@ from . import __version__ as EVEREST_VERSION
 from . import missions
 from .basecamp import Basecamp
 from .detrender import pPLD
-from .gp import GetCovariance
+from .gp import GetCovariance, GP
 from .config import QUALITY_BAD, QUALITY_NAN, QUALITY_OUT, QUALITY_REC, QUALITY_TRN, EVEREST_DEV, EVEREST_FITS, EVEREST_MAJOR_MINOR
 from .utils import InitLog, Formatter
 import george
@@ -290,7 +290,7 @@ class Everest(Basecamp):
         m = M[M <= self.breakpoints[b] + self.bpad]
 
       # This block of the masked covariance matrix
-      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      mK = GetCovariance(self.kernel, self.kernel_params, self.time[m], self.fraw_err[m])
       
       # Get median
       med = np.nanmedian(self.fraw[m])
@@ -385,6 +385,11 @@ class Everest(Basecamp):
       self.kernel_params = np.array([f[1].header['GPWHITE'], 
                                      f[1].header['GPRED'], 
                                      f[1].header['GPTAU']])
+      try:
+        self.kernel = f[1].header['KERNEL']
+        self.kernel_params = np.append(self.kernel_params, [f[1].header['GPGAMMA'], f[1].header['GPPER']])
+      except KeyError:
+        self.kernel = 'Basic'
       self.pld_order = f[1].header['PLDORDER']
       self.lam_idx = self.pld_order
       self.leps = f[1].header['LEPS']
@@ -576,8 +581,7 @@ class Everest(Basecamp):
       
       # Plot the GP
       if n == 0 and plot_gp and self.cadence != 'sc':
-        _, amp, tau = self.kernel_params
-        gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+        gp = GP(self.kernel, self.kernel_params)
         gp.compute(self.apply_mask(time), self.apply_mask(fraw_err))
         med = np.nanmedian(self.apply_mask(flux))
         y, _ = gp.predict(self.apply_mask(flux) - med, time)
@@ -950,7 +954,7 @@ class Everest(Basecamp):
     for b in range(len(self.breakpoints)):    
       m = self.get_masked_chunk(b)
       c = np.arange(len(self.time))
-      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      mK = GetCovariance(self.kernel, self.kernel_params, self.time[m], self.fraw_err[m])
       med = np.nanmedian(self.fraw[m])
       f = self.fraw[m] - med
       A = np.zeros((len(m), len(m)))
@@ -1113,8 +1117,7 @@ class Everest(Basecamp):
     self.mask_planet(t0, period, dur)
     
     # Whiten
-    _, amp, tau = self.kernel_params
-    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+    gp = GP(self.kernel, self.kernel_params, white = False)
     gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
     med = np.nanmedian(self.apply_mask(self.flux))
     y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
@@ -1148,7 +1151,7 @@ class Everest(Basecamp):
     
     pl.show()
   
-  def plot_transit_model(self, show = True):
+  def plot_transit_model(self, show = True, fold = None):
     '''
     Try the following:
     
@@ -1177,7 +1180,10 @@ class Everest(Basecamp):
     if self.transit_model is None:
       raise ValueError("No transit model provided!")
     if self.transit_depth is None:
-      raise Exception("Please run `compute()` to compute the transit depth(s).")
+      self.compute()
+    if fold is not None:
+      if fold is True and len(self.transit_model) > 1:
+        raise Exception("Kwarg `fold` should be the index of the transit model on which to fold the data.")
     log.info('Plotting the transit model...')
   
     # Set up axes
@@ -1185,56 +1191,77 @@ class Everest(Basecamp):
     fig.canvas.set_window_title('EVEREST Light curve')
   
     # Set up some stuff
-    time = self.time
-    badmask = self.badmask
-    nanmask = self.nanmask
-    outmask = self.outmask
-    transitmask = self.transitmask
-    flux = self.flux
-    fraw_err = self.fraw_err
-    breakpoints = self.breakpoints
     if self.cadence == 'sc':
       ms = 2
     else:
       ms = 4
-  
-    # Plot the good data points
-    ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
-    ax.plot(time[outmask], flux[outmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
-    ax.plot(time[transitmask], flux[transitmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
-
+    
+    # Fold?
+    if fold is not None:
+      times = self.transit_model[fold].params.get('times', None)
+      if times is not None:
+        time = self.time - [times[np.argmin(np.abs(ti - times))] for ti in self.time] 
+        t0 = times[0]
+      else:
+        t0 = self.transit_model[fold].params.get('t0', 0.)
+        period = self.transit_model[fold].params.get('per', 10.)
+        time = (self.time - t0 - period / 2.) % period - period / 2. 
+      dur = 0.01 * len(np.where(self.transit_model[fold](np.linspace(t0 - 0.5, t0 + 0.5, 100)) < 0)[0])
+    else:
+      time = self.time
+      ax.plot(self.apply_mask(time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+      ax.plot(time[self.outmask], self.flux[self.outmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+      ax.plot(time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+      
     # Plot the transit + GP model
-    med = np.nanmedian(self.apply_mask(flux))
-    transit_model = med * np.sum([depth * tm(time) for tm, depth in zip(self.transit_model, self.transit_depth)], axis = 0)
-    _, amp, tau = self.kernel_params
-    gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
-    gp.compute(self.apply_mask(time), self.apply_mask(fraw_err))
-    y, _ = gp.predict(self.apply_mask(flux - transit_model) - med, time)
-    y += med
-    y += transit_model
-    ax.plot(time, y, 'r-', lw = 1, alpha = 1)
+    med = np.nanmedian(self.apply_mask(self.flux))
+    transit_model = med * np.sum([depth * tm(self.time) for tm, depth in zip(self.transit_model, self.transit_depth)], axis = 0)
+    gp = GP(self.kernel, self.kernel_params, white = False)
+    gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    y, _ = gp.predict(self.apply_mask(self.flux - transit_model) - med, self.time)
+    if fold is not None:
+      flux = (self.flux - y) / med
+      ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+      ax.plot(time[self.outmask], flux[self.outmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+      ax.plot(time[self.transitmask], flux[self.transitmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
+      hires_time = np.linspace(-3 * dur, 3 * dur, 1000)
+      hires_transit_model = 1 + self.transit_depth[fold] * self.transit_model[fold](hires_time + t0)
+      ax.plot(hires_time, hires_transit_model, 'r-', lw = 1, alpha = 1)
+    else:
+      flux = self.flux
+      y += med
+      y += transit_model
+      ax.plot(time, y, 'r-', lw = 1, alpha = 1)
     
     # Plot the bad data points
-    bnmask = np.array(list(set(np.concatenate([badmask, nanmask]))), dtype = int)
+    bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     bmask = [i for i in self.badmask if i not in self.nanmask]
     ax.plot(time[bmask], flux[bmask], 'r.', markersize = ms, alpha = 0.25)
 
     # Appearance
-    ax.set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
     ax.set_ylabel('EVEREST Flux', fontsize = 18)
-    for brkpt in breakpoints[:-1]:
-      ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)
-    ax.margins(0.01, 0.1)          
-
+    ax.margins(0.01, 0.1)
+    if fold is not None:
+      ax.set_xlabel('Time From Transit Center (days)', fontsize = 18)
+      ax.set_xlim(-3 * dur, 3 * dur)
+    else:
+      ax.set_xlabel('Time (%s)' % self._mission.TIMEUNITS, fontsize = 18)
+      for brkpt in self.breakpoints[:-1]:
+        ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)   
+      ax.get_yaxis().set_major_formatter(Formatter.Flux)  
+        
     # Get y lims that bound 99% of the flux
-    f = np.delete(flux, bnmask)
-    N = int(0.995 * len(f))
+    if fold is not None:
+      f = flux[np.where(np.abs(time) < 3 * dur)]
+      N = int(0.9 * len(f))
+    else:
+      f = np.delete(flux, bnmask)
+      N = int(0.995 * len(f))
     hi, lo = f[np.argsort(f)][[N,-N]]
     pad = (hi - lo) * 0.1
     ylim = (lo - pad, hi + pad)
     ax.set_ylim(ylim)   
-    ax.get_yaxis().set_major_formatter(Formatter.Flux)
-
+    
     # Indicate off-axis outliers
     for i in np.where(flux < ylim[0])[0]:
       if i in bmask:
