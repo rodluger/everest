@@ -27,7 +27,7 @@ def GP(kernel, kernel_params, white = False):
   if kernel == 'Basic':
     white, amp, tau = kernel_params
     if white:
-      return george.GP(white ** 2 + amp ** 2 * Matern32Kernel(tau ** 2))
+      return george.GP(WhiteKernel(white ** 2) + amp ** 2 * Matern32Kernel(tau ** 2))
     else:
       return george.GP(amp ** 2 * Matern32Kernel(tau ** 2))
   elif kernel == 'QuasiPeriodic':
