@@ -96,9 +96,16 @@ def LightcurveHDU(model):
   cards.append(('GITER', model.giter, 'Number of GP optimiziation iterations'))
   cards.append(('GMAXF', model.giter, 'Max number of GP function evaluations'))
   cards.append(('GPFACTOR', model.gp_factor, 'GP amplitude initialization factor'))
-  cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))
-  cards.append(('GPRED', model.kernel_params[1], 'GP red noise amplitude (e-/s)'))
-  cards.append(('GPTAU', model.kernel_params[2], 'GP red noise timescale (days)'))
+  cards.append(('KERNEL', model.kernel, 'GP kernel name'))
+  if model.kernel == 'Basic':
+    cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))
+    cards.append(('GPRED', model.kernel_params[1], 'GP red noise amplitude (e-/s)'))
+    cards.append(('GPTAU', model.kernel_params[2], 'GP red noise timescale (days)'))
+  elif model.kernel == 'QuasiPeriodic':
+    cards.append(('GPWHITE', model.kernel_params[0], 'GP white noise amplitude (e-/s)'))
+    cards.append(('GPRED', model.kernel_params[1], 'GP red noise amplitude (e-/s)'))
+    cards.append(('GPGAMMA', model.kernel_params[2], 'GP scale factor'))
+    cards.append(('GPPER', model.kernel_params[3], 'GP period (days)'))
   for c in range(len(model.breakpoints)):
     for o in range(model.pld_order):
       cards.append(('LAMB%02d%02d' % (c + 1, o + 1), model.lam[c][o], 'Cross-validation parameter'))

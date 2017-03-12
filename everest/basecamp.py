@@ -13,7 +13,9 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from . import missions
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
-from .gp import GetCovariance, GetKernelParams
+from .gp import GetCovariance
+from .search import Search
+from .transit import TransitModel
 from scipy.linalg import block_diag
 import os, sys
 import numpy as np
@@ -220,6 +222,34 @@ class Basecamp(object):
     
     raise NotImplementedError("Can't set this property.") 
   
+  @property
+  def transit_model(self):
+    '''
+    
+    '''
+    
+    try:
+      self._transit_model
+    except:
+      self._transit_model = None
+    return self._transit_model
+  
+  @transit_model.setter
+  def transit_model(self, val):
+    '''
+    
+    '''
+    
+    if val is None:
+      self._transit_model = None
+      self.transit_depth = None
+    else:
+      val = np.atleast_1d(val)
+      for tm in val:
+        assert type(tm) is TransitModel, "Kwarg `transit_model` must be an instance or a list of instances of `everest.TransitModel`."
+      self._transit_model = val
+      self.transit_depth = None
+  
   def get_norm(self):
     '''
     Computes the PLD normalization. In the base class, this is just
@@ -245,15 +275,19 @@ class Basecamp(object):
       return np.hstack([X, self.X1N[j] ** (i + 1)])
     else:
       return X
-  
+     
   def compute(self):
     '''
     Compute the model for the current value of lambda.
 
     '''
+    
+    # Is there a transit model?
+    if self.transit_model is not None:
+      return self.compute_joint()
 
     log.info('Computing the model...')
-
+    
     # Loop over all chunks
     model = [None for b in self.breakpoints]
     for b, brkpt in enumerate(self.breakpoints):
@@ -263,14 +297,14 @@ class Basecamp(object):
       c = self.get_chunk(b)
       
       # This block of the masked covariance matrix
-      mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      mK = GetCovariance(self.kernel, self.kernel_params, self.time[m], self.fraw_err[m])
       
       # Get median
       med = np.nanmedian(self.fraw[m])
       
       # Normalize the flux
       f = self.fraw[m] - med
-      
+            
       # The X^2 matrices
       A = np.zeros((len(m), len(m)))
       B = np.zeros((len(c), len(m)))
@@ -285,11 +319,14 @@ class Basecamp(object):
           A += self.lam[b][n] * np.dot(XM, XM.T)
           B += self.lam[b][n] * np.dot(XC, XM.T)
           del XM, XC
-      
+        
+      # Compute the model
       W = np.linalg.solve(mK + A, f)
       model[b] = np.dot(B, W)
-      del A, B, W
 
+    # Free up some memory
+    del A, B, W
+      
     # Join the chunks after applying the correct offset
     if len(model) > 1:
 
@@ -323,26 +360,30 @@ class Basecamp(object):
     self.cdpp_arr = self.get_cdpp_arr()
     self.cdpp = self.get_cdpp()
     self._weights = None
-
+    
   def compute_joint(self):
     '''
-    Compute the model in a single step, allowing for covariance
-    between cadences in different chunks. This should in principle
-    help remove kinks at the breakpoints, but is more expensive to
-    compute. 
-    
-    .. warning:: Everest does not cross-validate with this sort of \
-                 model (it's too expensive), so care is needed when using \
-                 light curves de-trended with this method, as they may not \
-                 be optimized against over-fitting/under-fitting. I suspect \
-                 it doesn't matter much, though.
+    Compute the model in a single step, allowing for a light curve-wide
+    transit model. This is a bit more expensive to compute. 
     
     '''
-
-    log.info('Computing the model...')
+    
+    # Init
+    log.info('Computing the joint model...')
     A = [None for b in self.breakpoints]
     B = [None for b in self.breakpoints]
     
+    # We need to make sure that we're not masking the transits we are trying to fit!
+    # NOTE: If there happens to be an index that *SHOULD* be masked during a transit
+    # (cosmic ray, detector anomaly), update `self.badmask` to include that index.
+    # Bad data points are *never* used in the regression.
+    if self.transit_model is not None:
+      outmask = np.array(self.outmask)
+      transitmask = np.array(self.transitmask)
+      transit_inds = np.where(np.sum([tm(self.time) for tm in self.transit_model], axis = 0) < 0)[0]
+      self.outmask = np.array([i for i in self.outmask if i not in transit_inds])
+      self.transitmask = np.array([i for i in self.transitmask if i not in transit_inds])
+      
     # Loop over all chunks
     for b, brkpt in enumerate(self.breakpoints):
     
@@ -374,21 +415,62 @@ class Basecamp(object):
     BIGB = block_diag(*B)
     del B
     
-    # Compute the model
-    mK = GetCovariance(self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    # Compute the full covariance matrix
+    mK = GetCovariance(self.kernel, self.kernel_params, self.apply_mask(self.time), self.apply_mask(self.fraw_err))
+    
+    # The normalized, masked flux array
     f = self.apply_mask(self.fraw)
-    f -= np.nanmedian(f)
-    W = np.linalg.solve(mK + BIGA, f)
-    self.model = np.dot(BIGB, W)
+    med = np.nanmedian(f)
+    f -= med
+    
+    # Are we computing a joint transit model?
+    if self.transit_model is not None:
+      
+      # Get the unmasked indices
+      m = self.apply_mask()
+
+      # Subtract off the mean total transit model
+      mean_transit_model = med * np.sum([tm.depth * tm(self.time[m]) for tm in self.transit_model], axis = 0)
+      f -= mean_transit_model
+    
+      # Now add each transit model to the matrix of regressors
+      for tm in self.transit_model:
+        XM = tm(self.time[m]).reshape(-1,1)
+        XC = tm(self.time).reshape(-1,1)
+        BIGA += med ** 2 * tm.var_depth * np.dot(XM, XM.T)
+        BIGB += med ** 2 * tm.var_depth * np.dot(XC, XM.T)
+        del XM, XC
+    
+      # Dot the inverse of the covariance matrix
+      W = np.linalg.solve(mK + BIGA, f)
+      self.model = np.dot(BIGB, W)
+
+      # Compute the transit weights and maximum likelihood transit model
+      w_trn = med ** 2 * np.concatenate([tm.var_depth * np.dot(tm(self.time[m]).reshape(1,-1), W) for tm in self.transit_model])
+      self.transit_depth = np.array([med * tm.depth + w_trn[i] for i, tm in enumerate(self.transit_model)]) / med
+
+      # Remove the transit prediction from the model
+      self.model -= np.dot(np.hstack([tm(self.time).reshape(-1,1) for tm in self.transit_model]), w_trn)
+      
+    else:
+      
+      # No transit model to worry about
+      W = np.linalg.solve(mK + BIGA, f)
+      self.model = np.dot(BIGB, W)
 
     # Subtract the global median
     self.model -= np.nanmedian(self.model)
+    
+    # Restore the mask
+    if self.transit_model is not None:
+      self.outmask = outmask
+      self.transitmask = transitmask
     
     # Get the CDPP and reset the weights
     self.cdpp_arr = self.get_cdpp_arr()
     self.cdpp = self.get_cdpp()
     self._weights = None
-
+    
   def apply_mask(self, x = None):
     '''
     Returns the outlier mask, an array of indices corresponding to the non-outliers.
@@ -442,7 +524,8 @@ class Basecamp(object):
   def get_weights(self):
     '''
     Computes the PLD weights vector :py:obj:`w`.
-    Not currently used in the code.
+    
+    ..warning :: Deprecated and not thoroughly tested.
     
     '''
     
@@ -457,7 +540,7 @@ class Basecamp(object):
       c = self.get_chunk(b)
       
       # This block of the masked covariance matrix
-      _mK = GetCovariance(self.kernel_params, self.time[m], self.fraw_err[m])
+      _mK = GetCovariance(self.kernel, self.kernel_params, self.time[m], self.fraw_err[m])
       
       # This chunk of the normalized flux
       f = self.fraw[m] - np.nanmedian(self.fraw)  
@@ -560,3 +643,33 @@ class Basecamp(object):
     else:
       ax = axes[-1]
       ax.axis('off')
+  
+  def search(self, pos_tol = 2.5, neg_tol = 50., clobber = False, name = 'search', **kwargs):
+    '''
+    
+    '''
+    
+    log.info("Searching for transits...")
+    fname = os.path.join(self.dir, self.name + '_%s.npz' % name)
+    pname = os.path.join(self.dir, self.name + '_%s.pdf' % name)
+    
+    # Compute
+    if not os.path.exists(fname) or clobber:
+      time, depth, vardepth, delchisq = Search(self, pos_tol = pos_tol, neg_tol = neg_tol, **kwargs)
+      data = np.vstack([time, depth, vardepth, delchisq]).T
+      header = "TIME, DEPTH, VARDEPTH, DELTACHISQ"
+      np.savetxt(fname, data, fmt = '%.10e', header = header)
+    else:
+      time, depth, vardepth, delchisq = np.loadtxt(fname, unpack = True, skiprows = 1)
+    
+    # Plot
+    if not os.path.exists(pname) or clobber:
+      fig, ax = pl.subplots(1, figsize = (10, 4))
+      ax.plot(time, delchisq, lw = 1)
+      ax.set_ylabel(r'$\Delta \chi^2$', fontsize = 18)
+      ax.set_xlabel('Time (days)', fontsize = 18)
+      ax.set_xlim(time[0], time[-1])
+      fig.savefig(pname, bbox_inches = 'tight')
+      pl.close()
+    
+    return time, depth, vardepth, delchisq
