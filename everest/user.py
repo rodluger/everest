@@ -381,7 +381,10 @@ class Everest(Basecamp):
       self.giter = f[1].header['GITER']
       self.gmaxf = f[1].header.get('GMAXF', 200)
       self.gp_factor = f[1].header['GPFACTOR']
-      self.hires = f[5].data
+      try:
+        self.hires = f[5].data
+      except:
+        self.hires = None
       self.kernel_params = np.array([f[1].header['GPWHITE'], 
                                      f[1].header['GPRED'], 
                                      f[1].header['GPTAU']])
@@ -1224,7 +1227,7 @@ class Everest(Basecamp):
       ax.plot(self.apply_mask(time), self.apply_mask(flux), ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
       ax.plot(time[self.outmask], flux[self.outmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
       ax.plot(time[self.transitmask], flux[self.transitmask], ls = 'none', marker = '.', color = 'k', markersize = ms, alpha = 0.5)
-      hires_time = np.linspace(-3 * dur, 3 * dur, 1000)
+      hires_time = np.linspace(-5 * dur, 5 * dur, 1000)
       hires_transit_model = 1 + self.transit_depth[fold] * self.transit_model[fold](hires_time + t0)
       ax.plot(hires_time, hires_transit_model, 'r-', lw = 1, alpha = 1)
     else:
@@ -1253,7 +1256,7 @@ class Everest(Basecamp):
     # Get y lims that bound 99% of the flux
     if fold is not None:
       f = flux[np.where(np.abs(time) < 3 * dur)]
-      N = int(0.9 * len(f))
+      N = int(0.999 * len(f))
     else:
       f = np.delete(flux, bnmask)
       N = int(0.995 * len(f))
