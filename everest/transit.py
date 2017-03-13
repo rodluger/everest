@@ -20,6 +20,45 @@ from scipy.optimize import fmin
 import logging
 log = logging.getLogger(__name__)
 
+class TransitModel(object):
+  '''
+  
+  '''
+  
+  def __init__(self, name, sig_RpRs = 0.001, **kwargs):
+    '''
+    
+    '''
+    
+    # The planet/transit model ID
+    assert type(name) is str, "Arg `name` must be a string."
+    self.name = name
+    
+    # The transit model
+    self._transit = ps.Transit(**kwargs)
+    
+    # Compute the depth
+    times = kwargs.get('times', None)
+    if times is not None:
+      t0 = times[0]
+    else:
+      t0 = kwargs.get('t0', 0.)
+    self.depth = (1. - self._transit([t0]))[0]
+
+    # Approximate variance on the depth
+    self.var_depth = (2 * sig_RpRs) ** 2
+    
+    # Save the kwargs
+    self.params = kwargs
+    
+  def __call__(self, time):
+    '''
+    
+    '''
+    
+    model = (self._transit(time) - 1) / self.depth
+    return model 
+
 def Get_RpRs(d, **kwargs):
   '''
   Returns the value of the planet radius over the stellar radius for a given depth :py:obj:`d`, given
@@ -42,7 +81,7 @@ def Get_rhos(dur, **kwargs):
   
   '''
   
-  assert dur >= 0.05 and dur <= 0.5, "Invalid value for the duration."
+  assert dur >= 0.01 and dur <= 0.5, "Invalid value for the duration."
   
   def Dur(rhos, **kwargs):
     t0 = kwargs.get('t0', 0.)
@@ -61,8 +100,7 @@ def Get_rhos(dur, **kwargs):
 def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   '''
   A `Mandel-Agol <http://adsabs.harvard.edu/abs/2002ApJ...580L.171M>`_ transit model, 
-  but with the depth and the duration
-  as primary input variables.
+  but with the depth and the duration as primary input variables.
   
   :param numpy.ndarray time: The time array
   :param float t0: The time of first transit in units of :py:obj:`BJD` - 2454833.
@@ -80,3 +118,30 @@ def Transit(time, t0 = 0., dur = 0.1, per = 3.56789, depth = 0.001, **kwargs):
   RpRs = Get_RpRs(depth, t0 = t0, per = per, **kwargs)
   rhos = Get_rhos(dur, t0 = t0, per = per, **kwargs)
   return ps.Transit(t0 = t0, per = per, RpRs = RpRs, rhos = rhos, **kwargs)(time)
+
+class TransitShape(object):
+  '''
+  
+  '''
+  
+  def __init__(self, depth = 1, window = 0.5, **kwargs):
+    '''
+    
+    '''
+    
+    kwargs.pop('t0', None)
+    kwargs.pop('times', None)
+    t = np.linspace(-window / 2, window / 2, 5000)
+    trn = ps.Transit(t0 = 0., **kwargs)
+    transit_model = trn(t)
+    transit_model -= 1
+    transit_model *= depth / (1 - trn([0.])[0])
+    self.x = t
+    self.y = transit_model
+    
+  def __call__(self, time, t0 = 0.):
+    '''
+    
+    '''
+
+    return np.interp(time, self.x + t0, self.y)

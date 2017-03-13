@@ -24,15 +24,17 @@ if not __EVEREST_SETUP__:
   from . import fits
   from . import dvs
   from . import gp
+  from . import search
   from . import missions
   from . import basecamp
   from . import detrender
   from . import inject
   from . import user
   
+  
   # Import the good stuff
   from .detrender import *
   from .inject import *
   from .missions import *
-  from .transit import Transit
+  from .transit import Transit, TransitModel, TransitShape
   from .user import Everest, DVS

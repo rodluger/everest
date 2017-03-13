@@ -18,7 +18,7 @@ from .config import EVEREST_DAT
 from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
 from .math import Chunks, Scatter, SavGol, Interpolate
 from .fits import MakeFITS
-from .gp import GetCovariance, GetKernelParams
+from .gp import GetCovariance, GetKernelParams, GP
 from .dvs import DVS, CBV
 import os, sys
 import numpy as np
@@ -116,7 +116,11 @@ class Detrender(Basecamp):
                                      in the aperture. The column collapsing is implemented in the individual \
                                      mission modules. Default -0.1, i.e., if a target is 10% shy of the \
                                      nominal saturation level, it is considered to be saturated.
-                                     
+  :param transit_model: An instance or list of instances of :py:class:`everest.transit.TransitModel`. If specified, \
+                        :py:obj:`everest` will include these in the regression when calculating the PLD coefficients. \
+                        The final instrumental light curve model will **not** include the transit fits -- they are used \
+                        solely to obtain unbiased PLD coefficients. The best fit transit depths from the fit are stored \
+                        in the :py:obj:`transit_depth` attribute of the model. Default :py:obj:`None`.
   '''
 
   def __init__(self, ID, **kwargs):
@@ -167,7 +171,9 @@ class Detrender(Basecamp):
     self.giter = kwargs.get('giter', 3)
     self.gmaxf = kwargs.get('gmaxf', 200)
     self.optimize_gp = kwargs.get('optimize_gp', True)
-    self.kernel_params = kwargs.get('kernel_params', None)    
+    self.kernel_params = kwargs.get('kernel_params', None)  
+    self.kernel = kwargs.get('kernel', 'Basic')  
+    assert self.kernel in ['Basic', 'QuasiPeriodic'], "Kwarg `kernel` must be one of `Basic` or `QuasiPeriodic`."
     self.clobber_tpf = kwargs.get('clobber_tpf', False)
     self.bpad = kwargs.get('bpad', 100)
     self.aperture_name = kwargs.get('aperture', None)
@@ -203,7 +209,10 @@ class Detrender(Basecamp):
     pld_order = kwargs.get('pld_order', 3)
     assert (pld_order > 0), "Invalid value for the de-trending order."
     self.pld_order = pld_order
-
+    
+    # Get the transit model
+    self._transit_model = kwargs.get('transit_model', None)
+    
     # Initialize model params 
     self.lam_idx = -1
     self.lam = [[1e5] + [None for i in range(self.pld_order - 1)] for b in range(nseg)]
@@ -273,7 +282,7 @@ class Detrender(Basecamp):
     # Get current chunk and mask outliers
     m1 = self.get_masked_chunk(b)
     flux = self.fraw[m1]
-    K = GetCovariance(self.kernel_params, self.time[m1], self.fraw_err[m1])
+    K = GetCovariance(self.kernel, self.kernel_params, self.time[m1], self.fraw_err[m1])
     med = np.nanmedian(flux)
     
     # Now mask the validation set
@@ -294,18 +303,33 @@ class Detrender(Basecamp):
         B[n] = np.dot(X1, X2.T)
         del X1, X2
     
-    return A, B, mK, f
+    if self.transit_model is None:
+      C = 0
+    else:
+      C = np.zeros((len(m2), len(m2)))
+      mean_transit_model = med * np.sum([tm.depth * tm(self.time[m2]) for tm in self.transit_model], axis = 0)
+      f -= mean_transit_model
+      for tm in self.transit_model:
+        X2 = tm(self.time[m2]).reshape(-1,1)
+        C += tm.var_depth * np.dot(X2, X2.T)
+        del X2
+      
+    return A, B, C, mK, f, m1, m2
     
-  def cv_compute(self, b, A, B, mK, f):
+  def cv_compute(self, b, A, B, C, mK, f, m1, m2):
     '''
     Compute the model (cross-validation step only) for chunk :py:obj:`b`.
     
     '''
-
+    
     A = np.sum([l * a for l, a in zip(self.lam[b], A) if l is not None], axis = 0)
     B = np.sum([l * b for l, b in zip(self.lam[b], B) if l is not None], axis = 0)
-    W = np.linalg.solve(mK + A, f)
-    model = np.dot(B, W)
+    W = np.linalg.solve(mK + A + C, f)
+    if self.transit_model is None:  
+      model = np.dot(B, W)
+    else:
+      w_pld = np.concatenate([l * np.dot(self.X(n,m2).T, W) for n, l in enumerate(self.lam[b]) if l is not None])
+      model = np.dot(np.hstack([self.X(n,m1) for n, l in enumerate(self.lam[b]) if l is not None]), w_pld)      
     model -= np.nanmedian(model)
     
     return model
@@ -439,8 +463,7 @@ class Detrender(Basecamp):
       training = [[] for k, _ in enumerate(self.lambda_arr)]
     
       # Setup the GP
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp = GP(self.kernel, self.kernel_params, white = False)
       gp.compute(time, ferr)
     
       # The masks
@@ -499,6 +522,7 @@ class Detrender(Basecamp):
         # Plot cross-val
         for n in range(len(masks)):
           ax[b].plot(np.log10(lambda_arr), validation[:,n], 'r-', alpha = 0.3)
+          
         ax[b].plot(np.log10(lambda_arr), med_training, 'b-', lw = 1., alpha = 1)
         ax[b].plot(np.log10(lambda_arr), med_validation, 'r-', lw = 1., alpha = 1)            
         ax[b].axvline(np.log10(self.lam[b][self.lam_idx]), color = 'k', ls = '--', lw = 0.75, alpha = 0.75)
@@ -616,7 +640,7 @@ class Detrender(Basecamp):
     '''
 
     # Plot
-    if self.cadence == 'lc':
+    if (self.cadence == 'lc') or (len(self.time) < 4000):
       ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
       ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
     else:
@@ -703,7 +727,7 @@ class Detrender(Basecamp):
     # Plot the light curve
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
-    if self.cadence == 'lc':
+    if (self.cadence == 'lc') or (len(self.time) < 4000):
       ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
     else:
       ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)
@@ -715,8 +739,7 @@ class Detrender(Basecamp):
     
     # Plot the GP (long cadence only)
     if self.cadence == 'lc':
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp = GP(self.kernel, self.kernel_params, white = False)
       gp.compute(self.apply_mask(self.time), self.apply_mask(self.fraw_err))
       med = np.nanmedian(self.apply_mask(self.flux))
       y, _ = gp.predict(self.apply_mask(self.flux) - med, self.time)
@@ -956,6 +979,8 @@ class Detrender(Basecamp):
     d.pop('clobber_tpf', None)
     d.pop('_mission', None)
     d.pop('debug', None)
+    d.pop('transit_model', None)
+    d.pop('_transit_model', None)
     np.savez(os.path.join(self.dir, self.name + '.npz'), **d)
     
     # Save the DVS
@@ -1003,7 +1028,7 @@ class Detrender(Basecamp):
     
     self.kernel_params = GetKernelParams(self.time, self.flux, self.fraw_err, 
                                          mask = self.mask, guess = self.kernel_params, 
-                                         giter = self.giter, gmaxf = self.gmaxf)
+                                         kernel = self.kernel, giter = self.giter, gmaxf = self.gmaxf)
   
   def init_kernel(self):
     '''
@@ -1017,8 +1042,11 @@ class Detrender(Basecamp):
       white = np.nanmedian([np.nanstd(c) for c in Chunks(y, 13)])
       amp = self.gp_factor * np.nanstd(y)
       tau = 30.0
-      self.kernel_params = [white, amp, tau]
-  
+      if self.kernel == 'Basic':
+        self.kernel_params = [white, amp, tau]
+      elif self.kernel == 'QuasiPeriodic':
+        self.kernel_params = [white, amp, 1., 20.]
+        
   def mask_planets(self):
     '''
     
@@ -1171,7 +1199,6 @@ class Detrender(Basecamp):
     except:
     
       self.exception_handler(self.debug)
-
     
 class rPLD(Detrender):
   '''
@@ -1220,6 +1247,9 @@ class nPLD(Detrender):
                               with events such as thruster firings and are present in all light curves, \
                               and therefore *help* in the de-trending. Default `None`
     
+    ..note :: Optionally, the :py:obj:`neighbors` may be specified directly as a list of target IDs to use. \
+              In this case, users may also provide a list of :py:class:`everest.utils.DataContainer` instances \
+              corresponding to each of the neighbors in the :py:obj:`neighbors_data` kwarg.
     '''
     
     # Get neighbors
@@ -1286,6 +1316,8 @@ class nPLD(Detrender):
 class iPLD(Detrender):
   '''
   The iterative PLD model.
+  
+  ..warning :: Deprecated and not thoroughly tested.
   
   '''
   
@@ -1407,8 +1439,7 @@ class pPLD(Detrender):
       med = np.nanmedian(self.fraw)
     
       # Setup the GP
-      _, amp, tau = self.kernel_params
-      gp = george.GP(amp ** 2 * george.kernels.Matern32Kernel(tau ** 2))
+      gp = GP(self.kernel, self.kernel_params, white = False)
       gp.compute(time, ferr)
     
       # The masks
