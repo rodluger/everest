@@ -25,10 +25,14 @@ class TransitModel(object):
   
   '''
   
-  def __init__(self, sig_RpRs = 0.001, **kwargs):
+  def __init__(self, name, sig_RpRs = 0.001, **kwargs):
     '''
     
     '''
+    
+    # The planet/transit model ID
+    assert type(name) is str, "Arg `name` must be a string."
+    self.name = name
     
     # The transit model
     self._transit = ps.Transit(**kwargs)

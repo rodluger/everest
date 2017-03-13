@@ -522,6 +522,7 @@ class Detrender(Basecamp):
         # Plot cross-val
         for n in range(len(masks)):
           ax[b].plot(np.log10(lambda_arr), validation[:,n], 'r-', alpha = 0.3)
+          
         ax[b].plot(np.log10(lambda_arr), med_training, 'b-', lw = 1., alpha = 1)
         ax[b].plot(np.log10(lambda_arr), med_validation, 'r-', lw = 1., alpha = 1)            
         ax[b].axvline(np.log10(self.lam[b][self.lam_idx]), color = 'k', ls = '--', lw = 0.75, alpha = 0.75)
@@ -639,7 +640,7 @@ class Detrender(Basecamp):
     '''
 
     # Plot
-    if self.cadence == 'lc':
+    if (self.cadence == 'lc') or (len(self.time) < 4000):
       ax.plot(self.apply_mask(self.time), self.apply_mask(self.flux), ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
       ax.plot(self.time[self.transitmask], self.flux[self.transitmask], ls = 'none', marker = '.', color = color, markersize = 2, alpha = 0.5)
     else:
@@ -726,7 +727,7 @@ class Detrender(Basecamp):
     # Plot the light curve
     bnmask = np.array(list(set(np.concatenate([self.badmask, self.nanmask]))), dtype = int)
     M = lambda x: np.delete(x, bnmask)
-    if self.cadence == 'lc':
+    if (self.cadence == 'lc') or (len(self.time) < 4000):
       ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.3)
     else:
       ax.plot(M(self.time), M(self.flux), ls = 'none', marker = '.', color = 'k', markersize = 2, alpha = 0.03, zorder = -1)

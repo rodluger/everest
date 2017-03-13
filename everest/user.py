@@ -1154,29 +1154,18 @@ class Everest(Basecamp):
     
     pl.show()
   
-  def plot_transit_model(self, show = True, fold = None):
+  def plot_transit_model(self, show = True, fold = None, ax = None):
     '''
-    Try the following:
+    Plot the light curve de-trended with a join instrumental + transit model
+    with the best fit transit model overlaid. The transit model should be
+    specified using the :py:obj:`transit_model` attribute and should be an
+    instance or list of instances of :py:class:`everest.transit.TransitModel`.
     
-    .. code-block:: python
-    
-      import everest
-      star = everest.Everest(211916756)
-
-      # Planet parameters from Obermeier et al. (2016)
-      transit_model = everest.TransitModel(t0 = 2338.1477, per = 10.13389, 
-                                           aRs = 1/0.04, RpRs = 0.001, 
-                                           b = 0.6, sig_RpRs = 0.1)
-
-      # Compute the joint model
-      star.transit_model = transit_model
-      star.compute()
-
-      # Plot
-      star.plot_transit_model()
-      print(star.transit_depth)
-      
-    The true value of `RpRs` is 0.0786, and we recover that quite nicely.
+    :param bool show: Show the plot, or return the `fig, ax` instances? Default `True`
+    :param str fold: The name of the planet/transit model on which to fold. If only \
+                     one model is present, can be set to :py:obj:`True`. Default \
+                     :py:obj:`False` (does not fold the data).
+    :param ax: A `matplotlib` axis instance to use for plotting. Default :py:obj:`None`
     
     '''
   
@@ -1185,13 +1174,27 @@ class Everest(Basecamp):
     if self.transit_depth is None:
       self.compute()
     if fold is not None:
-      if fold is True and len(self.transit_model) > 1:
-        raise Exception("Kwarg `fold` should be the index of the transit model on which to fold the data.")
-    log.info('Plotting the transit model...')
-  
+      if (fold is True and len(self.transit_model) > 1) or (type(fold) is not str):
+        raise Exception("Kwarg `fold` should be the name of the transit model on which to fold the data.")
+      if fold is True:
+        # We are folding on the first index of `self.transit_model`
+        fold = 0
+      elif type(fold) is str:
+        # Figure out the index of the transit model on which to fold
+        fold = np.argmax([fold == tm.name for tm in self.transit_model])
+      log.info('Plotting the transit model folded on transit model index %d...' % fold)
+    else:
+      log.info('Plotting the transit model...')
+      
     # Set up axes
-    fig, ax = pl.subplots(1, figsize = (13, 6))
-    fig.canvas.set_window_title('EVEREST Light curve')
+    if ax is None:
+      if fold is not None:
+        fig, ax = pl.subplots(1, figsize = (8, 5))
+      else:
+        fig, ax = pl.subplots(1, figsize = (13, 6))
+      fig.canvas.set_window_title('EVEREST Light curve')
+    else:
+      fig = pl.gcf()
   
     # Set up some stuff
     if self.cadence == 'sc':
@@ -1253,16 +1256,17 @@ class Everest(Basecamp):
         ax.axvline(time[brkpt], color = 'r', ls = '--', alpha = 0.25)   
       ax.get_yaxis().set_major_formatter(Formatter.Flux)  
         
-    # Get y lims that bound 99% of the flux
+    # Get y lims that bound most of the flux
     if fold is not None:
-      f = flux[np.where(np.abs(time) < 3 * dur)]
-      N = int(0.999 * len(f))
+      lo = np.min(hires_transit_model)
+      pad = 1.5 * (1 - lo)
+      ylim = (lo - pad, 1 + pad) 
     else:
       f = np.delete(flux, bnmask)
       N = int(0.995 * len(f))
-    hi, lo = f[np.argsort(f)][[N,-N]]
-    pad = (hi - lo) * 0.1
-    ylim = (lo - pad, hi + pad)
+      hi, lo = f[np.argsort(f)][[N,-N]]
+      pad = (hi - lo) * 0.1
+      ylim = (lo - pad, hi + pad)
     ax.set_ylim(ylim)   
     
     # Indicate off-axis outliers
@@ -1273,7 +1277,7 @@ class Everest(Basecamp):
         color = "#ccccff"
       ax.annotate('', xy=(time[i], ylim[0]), xycoords = 'data',
                   xytext = (0, 15), textcoords = 'offset points',
-                  arrowprops=dict(arrowstyle = "-|>", color = color))
+                  arrowprops=dict(arrowstyle = "-|>", color = color, alpha = 0.5))
     for i in np.where(flux > ylim[1])[0]:
       if i in bmask:
         color = "#ffcccc"
@@ -1281,7 +1285,7 @@ class Everest(Basecamp):
         color = "#ccccff"
       ax.annotate('', xy=(time[i], ylim[1]), xycoords = 'data',
                   xytext = (0, -15), textcoords = 'offset points',
-                  arrowprops=dict(arrowstyle = "-|>", color = color))
+                  arrowprops=dict(arrowstyle = "-|>", color = color, alpha = 0.5))
   
     if show:
       pl.show()
