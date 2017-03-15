@@ -658,7 +658,7 @@ class Basecamp(object):
       time, depth, vardepth, delchisq = Search(self, pos_tol = pos_tol, neg_tol = neg_tol, **kwargs)
       data = np.vstack([time, depth, vardepth, delchisq]).T
       header = "TIME, DEPTH, VARDEPTH, DELTACHISQ"
-      np.savetxt(fname, data, fmt = '%.10e', header = header)
+      np.savetxt(fname, data, fmt = str('%.10e'), header = header)
     else:
       time, depth, vardepth, delchisq = np.loadtxt(fname, unpack = True, skiprows = 1)
     
