@@ -151,15 +151,17 @@ class Detrender(Basecamp):
     # take way too long and too much memory to optimize
     # the GP based on the short cadence light curve
     if self.cadence == 'sc':
-      log.info("Loading long cadence model...")
-      kwcpy = dict(kwargs)
-      kwcpy.pop('cadence', None)
-      kwcpy.pop('clobber', None)
-      lc = self.__class__(ID, is_parent = True, **kwcpy)
-      kwargs.update({'kernel_params': kwargs.get('kernel_params', lc.kernel_params),
-                     'optimize_gp': False})
-      del lc
-    
+      kernel_params = kwargs.get('kernel_params', None)
+      if kernel_params is None:
+        log.info("Loading long cadence model...")
+        kwcpy = dict(kwargs)
+        kwcpy.pop('cadence', None)
+        kwcpy.pop('clobber', None)
+        lc = self.__class__(ID, is_parent = True, **kwcpy)
+        kernel_params = np.array(lc.kernel_params)
+        del lc
+      kwargs.update({'kernel_params': kernel_params, 'optimize_gp': False})
+      
     # Read general model kwargs
     self.lambda_arr = kwargs.get('lambda_arr', 10 ** np.arange(0,18,0.5))
     if self.lambda_arr[0] != 0:
