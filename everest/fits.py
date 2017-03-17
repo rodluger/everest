@@ -287,7 +287,7 @@ def HiResHDU(model):
     hdu = pyfits.ImageHDU(data = np.empty((0,0), dtype = float), header = header, name = 'HI RES IMAGE')
   return hdu
 
-def MakeFITS(model):
+def MakeFITS(model, fitsfile = None):
   '''
   Generate a FITS file for a given :py:mod:`everest` run.
   
@@ -298,7 +298,10 @@ def MakeFITS(model):
   log.info('Generating FITS file...')
   
   # Get the fits file name
-  outfile = os.path.join(model.dir, model._mission.FITSFile(model.ID, model.season, model.cadence))
+  if fitsfile is None:
+    outfile = os.path.join(model.dir, model._mission.FITSFile(model.ID, model.season, model.cadence))
+  else:
+    outfile = os.path.join(model.dir, fitsfile)
   if os.path.exists(outfile) and not model.clobber:
     return
   elif os.path.exists(outfile):
