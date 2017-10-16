@@ -39,7 +39,10 @@ def get(ID, pipeline = 'everest1'):
     from . import Season, TargetDirectory, FITSFile
     campaign = Season(ID)
     fits = os.path.join(TargetDirectory(ID, campaign), FITSFile(ID, campaign))
-    shutil.copy(fits, os.path.join(KPLR_ROOT, "data", "everest", str(ID)))
+    newdir = os.path.join(KPLR_ROOT, "data", "everest", str(ID))
+    if not os.path.exists(newdir):
+        os.makedirs(newdir)
+    shutil.copy(fits, newdir)
   
   if pipeline.lower() == 'everest2':
     s = k2plr.EVEREST(ID, version = 2)
