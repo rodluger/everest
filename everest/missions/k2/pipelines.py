@@ -36,8 +36,8 @@ def get(ID, pipeline = 'everest1'):
   
   # Dev version hack
   if pipeline.lower() == 'everest2' or pipeline.lower() == 'k2sff':
-    from . import Campaign, TargetDirectory
-    campaign = Campaign(ID)
+    from . import Season, TargetDirectory, FITSFile
+    campaign = Season(ID)
     fits = os.path.join(TargetDirectory(ID, campaign), FITSFile(ID, campaign))
     shutil.copy(fits, os.path.join(KPLR_ROOT, "data", "everest", str(EPIC)))
   
