@@ -21,7 +21,7 @@ MAGSTRING = r'K$_\mathrm{p}$'
 #: The time units for the mission
 TIMEUNITS = 'BJD - 2454833'
 #: The currently supported seasons
-SEASONS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+SEASONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 101, 102, 111, 112, 12, 13]
 #: Returns :py:obj:`True` if argument is a valid `K2` target identifier (necessary but not sufficient)
 ISTARGET = lambda x: ((type(x) is int) and (x > 1e8) and (x < 1e9) and str(x).startswith('2'))
 #: The published light curve CSV file header

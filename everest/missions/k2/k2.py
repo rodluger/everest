@@ -58,7 +58,7 @@ def Season(EPIC, **kwargs):
   
   return Campaign(EPIC, **kwargs)
 
-def Breakpoints(EPIC, cadence = 'lc', **kwargs):  
+def Breakpoints(EPIC, season = None, cadence = 'lc', **kwargs):  
   '''
   
   Returns the location of the breakpoints for a given target.
@@ -72,7 +72,12 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
   '''
   
   # Get the campaign number
-  campaign = Season(EPIC)
+  if season is None:
+    campaign = Season(EPIC)
+    if hasattr(campaign, '__len__'):
+      raise AttributeError("Please choose a campaign/season for this target: %s." % campaign)
+  else:
+    campaign = season
   
   # Select LC or SC
   if cadence == 'lc':
@@ -86,9 +91,12 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                    6: [2143],         # OK
                    7: [1192, 2319],   # OK
                    8: [1950],         # OK
-                   9: [],
-                  10: [],
-                  11: [],
+                  91: [],
+                  92: [],
+                 101: [],             # NO DATA
+                 102: [],             # NO BREAKPOINT
+                 111: [],
+                 112: [],
                   12: [1900],         # GUESS
                   13: [],
                   14: [],
@@ -122,9 +130,12 @@ def Breakpoints(EPIC, cadence = 'lc', **kwargs):
                   6: np.array(np.linspace(0, 115890, 31)[1:-1], dtype = int),     # OK
                   7: np.array(np.linspace(0, 121290, 31)[1:-1], dtype = int),     # OK
                   8: np.array(np.linspace(0, 115590, 31)[1:-1], dtype = int),     # Unclear
-                  9: [],
-                 10: [],
-                 11: [],
+                 91: [],
+                 92: [],
+                101: [],
+                102: [],
+                111: [],
+                112: [],
                  12: [],
                  13: [],
                  14: [],
@@ -198,6 +209,8 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   # Campaign no.
   if season is None:
     campaign = Season(EPIC)
+    if hasattr(campaign, '__len__'):
+      raise AttributeError("Please choose a campaign/season for this target: %s." % campaign)
   else:
     campaign = season
 
@@ -221,7 +234,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
                           str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz' % (EPIC, campaign))
     if clobber or not os.path.exists(tpf):                 
       kplr_client.k2_star(EPIC).get_target_pixel_files(fetch = True)
-
+    
     with pyfits.open(tpf) as f:
       qdata = f[1].data
       
@@ -246,7 +259,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     
     # Get K2SFF apertures
     try:
-      k2sff = kplr.K2SFF(EPIC)
+      k2sff = kplr.K2SFF(EPIC, sci_campaign = campaign)
       k2sff_apertures = k2sff.apertures
       if delete_raw:
         os.remove(k2sff._file)
@@ -409,7 +422,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
   # Compute the saturation flux and the 97.5th percentile 
   # flux in each pixel of the saturated aperture. We're going
   # to compare these to decide if the star is saturated.
-  satflx = SaturationFlux(EPIC) * (1. + saturation_tolerance)
+  satflx = SaturationFlux(EPIC, campaign = campaign) * (1. + saturation_tolerance)
   f97 = np.zeros((fpix.shape[1], fpix.shape[2]))
   for i in range(fpix.shape[1]):
     for j in range(fpix.shape[2]):
@@ -566,7 +579,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     
   # Compute the background
   binds = np.where(aperture ^ 1)
-  if RemoveBackground(EPIC) and (len(binds[0]) > 0):
+  if RemoveBackground(EPIC, campaign = campaign) and (len(binds[0]) > 0):
     bkg = np.nanmedian(np.array([f[binds] for f in fpix], dtype='float64'), axis = 1)
     # Uncertainty of the median: http://davidmlane.com/hyperstat/A106993.html
     bkg_err = 1.253 * np.nanmedian(np.array([e[binds] for e in fpix_err], 
@@ -641,7 +654,7 @@ def GetData(EPIC, season = None, cadence = 'lc', clobber = False, delete_raw = F
     
   return data
 
-def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.), 
+def GetNeighbors(EPIC, season = None, model = None, neighbors = 10, mag_range = (11., 13.), 
                  cdpp_range = None, aperture_name = 'k2sff_15', 
                  cadence = 'lc', **kwargs):
   '''
@@ -663,7 +676,13 @@ def GetNeighbors(EPIC, model = None, neighbors = 10, mag_range = (11., 13.),
     return []
   
   # Get the IDs
-  campaign = Season(EPIC)
+  # Campaign no.
+  if season is None:
+    campaign = Season(EPIC)
+    if hasattr(campaign, '__len__'):
+      raise AttributeError("Please choose a campaign/season for this target: %s." % campaign)
+  else:
+    campaign = season
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T
   short_cadence = np.array(short_cadence, dtype = bool)
   epics = np.array(epics, dtype = int)
@@ -1652,7 +1671,7 @@ def FitCBVs(model):
     flux = Downbin(flux, newsize, operation = 'mean')
     
     # Get LC breakpoints
-    breakpoints = list(Breakpoints(model.ID, cadence = 'lc'))
+    breakpoints = list(Breakpoints(model.ID, season = model.season, cadence = 'lc'))
     breakpoints += [len(time) - 1]
     
     # Loop over all the light curve segments

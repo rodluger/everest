@@ -24,6 +24,7 @@ except ImportError:
 from astropy.wcs import WCS
 from scipy.interpolate import griddata
 import k2plr as kplr; kplr_client = kplr.API()
+from k2plr.api import K2_CAMPAIGNS
 import numpy as np
 from tempfile import NamedTemporaryFile
 import urllib
@@ -119,16 +120,22 @@ class StatsPicker(object):
 
 def Campaign(EPIC, **kwargs):
   '''
-  Returns the campaign number for a given EPIC target. If target is not found, returns :py:obj:`None`.
+  Returns the campaign number(s) for a given EPIC target. If target is not found, returns :py:obj:`None`.
   
   :param int EPIC: The EPIC number of the target.
   
   '''
   
+  campaigns = []
   for campaign, stars in GetK2Stars().items():
     if EPIC in [s[0] for s in stars]:
-      return campaign
-  return None
+      campaigns.append(campaign)
+  if len(campaigns) == 0:
+    return None
+  elif len(campaigns) == 1:
+    return campaigns[0]
+  else:
+    return campaigns
 
 def GetK2Stars(clobber = False):
   '''
@@ -158,7 +165,7 @@ def GetK2Stars(clobber = False):
   
   # Return
   res = {}
-  for campaign in range(18):
+  for campaign in K2_CAMPAIGNS:
     f = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d.stars' % campaign)
     if os.path.exists(f):
       with open(f, 'r') as file:
@@ -228,24 +235,27 @@ def GetK2Campaign(campaign, clobber = False, split = False, epics_only = False, 
   else:
     raise Exception('Argument `subcampaign` must be an `int` or a `float` in the form `X.Y`')
 
-def Channel(EPIC):
+def Channel(EPIC, campaign = None):
   '''
   Returns the channel number for a given EPIC target.
   
   '''
   
-  campaign = Campaign(EPIC)
+  if campaign is None:
+    campaign = Campaign(EPIC)
+  if hasattr(campaign, '__len__'):
+    raise AttributeError("Please choose a campaign/season for this target: %s." % campaign)
   stars = GetK2Stars()[campaign]
   i = np.argmax([s[0] == EPIC for s in stars])
   return stars[i][2]
 
-def Module(EPIC):
+def Module(EPIC, campaign = None):
   '''
   Returns the module number for a given EPIC target.
   
   '''
   
-  channel = Channel(EPIC)
+  channel = Channel(EPIC, campaign = campaign)
   nums = {2:1, 3:5, 4:9, 6:13, 7:17, 8:21, 9:25, 
           10:29, 11:33, 12:37, 13:41, 14:45, 15:49, 
           16:53, 17:57, 18:61, 19:65, 20:69, 22:73, 
@@ -274,25 +284,32 @@ def Channels(module):
   else:
     return None
   
-def KepMag(EPIC):
+def KepMag(EPIC, campaign = None):
   '''
   Returns the *Kepler* magnitude for a given EPIC target.
   
   '''
   
-  campaign = Campaign(EPIC)
+  if campaign is None:
+    campaign = Campaign(EPIC)
+  if hasattr(campaign, '__len__'):
+    raise AttributeError("Please choose a campaign/season for this target: %s." % campaign)
   stars = GetK2Stars()[campaign]
   i = np.argmax([s[0] == EPIC for s in stars])
   return stars[i][1]
   
-def RemoveBackground(EPIC):
+def RemoveBackground(EPIC, campaign = None):
   '''
   Returns :py:obj:`True` or :py:obj:`False`, indicating whether or not to remove the background
   flux for the target. If ``campaign < 3``, returns :py:obj:`True`, otherwise returns :py:obj:`False`.
   
   '''
-
-  if Campaign(EPIC) < 3:
+  
+  if campaign is None:
+    campaign = Campaign(EPIC)
+  if hasattr(campaign, '__len__'):
+    raise AttributeError("Please choose a campaign/season for this target: %s." % campaign)
+  if campaign < 3:
     return True
   else:
     return False
@@ -528,7 +545,7 @@ def GetCustomAperture(data):
   
   raise NotImplementedError('TODO: This routine still needs to be written.')
 
-def SaturationFlux(EPIC, **kwargs):
+def SaturationFlux(EPIC, campaign = None, **kwargs):
   '''
   Returns the well depth for the target. If any of the target's pixels
   have flux larger than this value, they are likely to be saturated and
@@ -539,5 +556,5 @@ def SaturationFlux(EPIC, **kwargs):
   
   channel, well_depth = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
                                    'tables', 'well_depth.tsv'), unpack = True)
-  satflx = well_depth[channel == Channel(EPIC)][0] / 6.02
+  satflx = well_depth[channel == Channel(EPIC, campaign = campaign)][0] / 6.02
   return satflx

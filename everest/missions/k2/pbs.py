@@ -191,7 +191,7 @@ def _Run(campaign, subcampaign, epic, strkwargs):
   cadence = kwargs.get('cadence', 'lc')
   
   # Model wrapper
-  m = FunctionWrapper(EverestModel, **kwargs)
+  m = FunctionWrapper(EverestModel, season = campaign, **kwargs)
   
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook

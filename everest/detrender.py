@@ -132,6 +132,8 @@ class Detrender(Basecamp):
     self.ID = ID
     if kwargs.get('season', None):
       self._season = kwargs.get('season')
+      if hasattr(self._season, '__len__'):
+        raise AttributeError("Please choose a campaign/season for this target: %s." % self._season)
     self._data = kwargs.get('data', None)
     self.cadence = kwargs.get('cadence', 'lc').lower()
     if self.cadence not in ['lc', 'sc']:
@@ -194,7 +196,7 @@ class Detrender(Basecamp):
     # light curve chunk.
     bkpts = kwargs.get('breakpoints', True)
     if bkpts is True:
-      self.breakpoints = np.append(self._mission.Breakpoints(self.ID, cadence = self.cadence), [999999])
+      self.breakpoints = np.append(self._mission.Breakpoints(self.ID, season = self.season, cadence = self.cadence), [999999])
     elif hasattr(bkpts, '__len__'):
       self.breakpoints = np.append(bkpts, [999999])
     else:
@@ -1263,6 +1265,7 @@ class nPLD(Detrender):
     else:    
       num_neighbors = neighbors
       self.neighbors = self._mission.GetNeighbors(self.ID, 
+                                     season = self.season,
                                      cadence = self.cadence,
                                      model = self.parent_model,
                                      neighbors = num_neighbors, 
