@@ -48,7 +48,7 @@ from distutils.version import LooseVersion
 import logging
 log = logging.getLogger(__name__)
 
-def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = False):
+def DownloadFile(ID, season = None, mission = 'k2', cadence = 'lc', filename = None, clobber = False):
   '''
   Download a given :py:mod:`everest` file from MAST.
   
@@ -60,8 +60,11 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   
   '''
   
-  # Grab some info
-  season = getattr(missions, mission).Season(ID)
+  # Get season
+  if season is None:
+    season = getattr(missions, mission).Season(ID)
+  if hasattr(season, '__len__'):
+    raise AttributeError("Please choose a `season` for this target: %s." % season)
   if season is None:
     if getattr(missions, mission).ISTARGET(ID):
       raise ValueError("Target not found in local database. Consider upgrading EVEREST by running `pip install everest-pipeline --upgrade`.")
@@ -129,7 +132,7 @@ def DownloadFile(ID, mission = 'k2', cadence = 'lc', filename = None, clobber = 
   else:
     raise Exception("Unable to download the file.")
 
-def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
+def DVS(ID, season = None, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
   '''
   Show the data validation summary (DVS) for a given target.
   
@@ -140,8 +143,11 @@ def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
   '''
   
   # Get season
-  season = getattr(missions, mission).Season(ID)
-  
+  if season is None:
+    season = getattr(missions, mission).Season(ID)
+  if hasattr(season, '__len__'):
+    raise AttributeError("Please choose a `season` for this target: %s." % season)
+      
   # Get file name
   if model == 'nPLD':
     filename = getattr(missions, mission).DVSFile(ID, season, cadence)
@@ -151,7 +157,8 @@ def DVS(ID, mission = 'k2', clobber = False, cadence = 'lc', model = 'nPLD'):
     else:
       filename = model + '.pdf'
     
-  file = DownloadFile(ID, mission = mission, 
+  file = DownloadFile(ID, season = season, 
+                      mission = mission, 
                       filename = filename, 
                       clobber = clobber)  
   
@@ -183,7 +190,7 @@ class Everest(Basecamp):
   
   '''
   
-  def __init__(self, ID, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', **kwargs):
+  def __init__(self, ID, season = None, mission = 'k2', quiet = False, clobber = False, cadence = 'lc', **kwargs):
     '''
     
     '''
@@ -206,7 +213,7 @@ class Everest(Basecamp):
     self.cadence = cadence
     
     # Download the FITS file if necessary
-    self.fitsfile = DownloadFile(ID, mission = mission, clobber = clobber, cadence = cadence)
+    self.fitsfile = DownloadFile(ID, season = season, mission = mission, clobber = clobber, cadence = cadence)
     self.model_name = pyfits.getheader(self.fitsfile, 1)['MODEL']
     self._weights = None
     
@@ -677,7 +684,7 @@ class Everest(Basecamp):
     
     '''
     
-    DVS(self.ID, mission = self.mission, model = self.model_name, clobber = self.clobber)
+    DVS(self.ID, season = self.season, mission = self.mission, model = self.model_name, clobber = self.clobber)
   
   def plot_pipeline(self, pipeline, *args, **kwargs):
     '''
