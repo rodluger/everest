@@ -87,7 +87,7 @@ def _Download(campaign, subcampaign):
                          ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
                          'data.npz')):
       try:
-        GetData(EPIC, download_only = True)
+        GetData(EPIC, season = campaign, download_only = True)
       except KeyboardInterrupt:
         sys.exit()
       except:
@@ -303,7 +303,7 @@ def _Publish(campaign, subcampaign, strkwargs):
   cadence = kwargs.get('cadence', 'lc')
   
   # Model wrapper
-  m = FunctionWrapper(EverestModel, publish = True, **kwargs)
+  m = FunctionWrapper(EverestModel, season = campaign, publish = True, **kwargs)
   
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
