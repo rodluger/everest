@@ -54,7 +54,7 @@ setup(name = 'everest-pipeline',
                           'PyPDF2',
                           'choldate'
                          ],
-      dependency_links = ['https://github.com/rodluger/choldate/tarball/master',
+      dependency_links = ['https://github.com/rodluger/choldate/tarball/master#egg=choldate-0.0.1',
                           'https://github.com/rodluger/k2plr/tarball/dev#egg=k2plr-0.2.7'],
       scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
       include_package_data = True,
