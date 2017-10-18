@@ -30,6 +30,7 @@ if not __EVEREST_SETUP__:
   from . import detrender
   from . import inject
   from . import user
+  from . import overfit
   
   
   # Import the good stuff

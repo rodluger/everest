@@ -16,6 +16,7 @@ from .math import Chunks, Scatter, SavGol, Interpolate
 from .gp import GetCovariance
 from .search import Search
 from .transit import TransitModel
+from .overfit import Overfit, SavedOverfitObject
 from scipy.linalg import block_diag
 import os, sys
 import numpy as np
@@ -675,3 +676,97 @@ class Basecamp(object):
       pl.close()
     
     return time, depth, vardepth, delchisq
+
+  def overfit(self, tau = None, plot = True, clobber = False, **kwargs):
+    '''
+    Returns the overfitting metrics for the light curve.
+    
+    NOTE: We are doing math on the _normalized_ light curve
+    here, meaning we re-scale the regularization matrix and
+    the covariance matrix for numerical stability. This needs
+    to be done _everywhere_ in the code eventually!
+    
+    '''
+    
+    fname = os.path.join(self.dir, self.name + '_overfit.npz')
+    
+    # Compute
+    if not os.path.exists(fname) or clobber:
+      
+      # Set up
+      log.info("Computing some large matrices...")
+      XLX = [None for b in self.breakpoints]
+      XLmX = [None for b in self.breakpoints]
+      X = [None for b in self.breakpoints]
+      XL = [None for b in self.breakpoints]
+      med = np.nanmedian(self.fraw)
+    
+      # Loop over all chunks
+      for b, brkpt in enumerate(self.breakpoints):
+    
+        # Masks for current chunk
+        m = self.get_masked_chunk(b, pad = False)
+        c = self.get_chunk(b, pad = False)
+      
+        # The X^2 matrices
+        XLX[b] = np.zeros((len(c), len(c)))
+        XLmX[b] = np.zeros((len(c), len(m)))
+      
+        # Loop over all orders
+        for n in range(self.pld_order):
+
+          # Only compute up to the current PLD order
+          if (self.lam_idx >= n) and (self.lam[b][n] is not None):
+            XM = self.X(n,m,**kwargs)
+            X[b] = self.X(n,c,**kwargs)
+            XL[b] = (1 / med ** 2) * self.lam[b][n] * X[b]
+            XLX[b] += (1 / med ** 2) * self.lam[b][n] * np.dot(X[b], X[b].T)
+            XLmX[b] += (1 / med ** 2) * self.lam[b][n] * np.dot(X[b], XM.T)
+            del XM
+    
+      # Merge chunks
+      X = block_diag(*X)
+      XL = block_diag(*XL)
+      XLX = block_diag(*XLX)
+      XLmX = block_diag(*XLmX)
+
+      # Compute the full astrophysical covariance matrix
+      log.info("Inverting the covariance...")
+      if self.kernel == 'Basic':
+        w, a, t = self.kernel_params
+        w /= med
+        a /= med
+        kernel_params = [w, a, t]
+      elif self.kernel == 'QuasiPeriodic':
+        w, a, g, p = self.kernel_params
+        w /= med
+        a /= med
+        kernel_params = [w, a, g, p]
+      K = GetCovariance(self.kernel, kernel_params, self.time, self.fraw_err / med)
+      Kinv = np.linalg.inv(K)
+    
+      # Compute the overfitting metrics
+      log.info("Computing the overfitting...")
+      overfit = Overfit(self.time, self.fraw / med - 1, X, XL, XLmX, XLX + K, Kinv, 
+                        mask = self.mask, tau = tau, **kwargs)
+    
+      # Save
+      np.savez(fname, O1 = overfit._O1, O2 = overfit._O2, O3 = overfit._O3,
+               O4 = overfit._O4, O5 = overfit._O5, time = overfit.time,
+               mask = overfit.mask)
+    
+    else:
+      
+      # Load
+      data = np.load(fname)
+      overfit = SavedOverfitObject(data['time'], data['mask'], data['O1'],
+                                   data['O2'], data['O3'], data['O4'],
+                                   data['O5'])
+
+    # TODO!
+    if plot:
+        overfit.plot_unmasked()
+        overfit.plot_masked()
+        pl.show()
+    
+    return overfit

@@ -51,8 +51,10 @@ setup(name = 'everest-pipeline',
                           'astropy',
                           'pysyzygy>=0.0.1',
                           'k2plr==0.2.7',
-                          'PyPDF2'
+                          'PyPDF2',
+                          'choldate'
                          ],
+      dependency_links = ['git+git://github.com/rodluger/choldate.git'],
       scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
       include_package_data = True,
       zip_safe = False,

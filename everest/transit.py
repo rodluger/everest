@@ -124,14 +124,23 @@ class TransitShape(object):
   
   '''
   
-  def __init__(self, depth = 1, window = 0.5, **kwargs):
+  def __init__(self, depth = 1, dur = 0.1, per = 3.56789, **kwargs):
     '''
     
     '''
     
     kwargs.pop('t0', None)
     kwargs.pop('times', None)
+    
+    # Update kwargs with correct duration
+    kwargs.update({'per': per})
+    kwargs.update({'rhos': Get_rhos(dur, **kwargs)})
+    
+    # Transit window size w/ padding
+    window = dur * 3
     t = np.linspace(-window / 2, window / 2, 5000)
+    
+    # Construct a transit model
     trn = ps.Transit(t0 = 0., **kwargs)
     transit_model = trn(t)
     transit_model -= 1
