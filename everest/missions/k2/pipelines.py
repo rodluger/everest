@@ -166,7 +166,7 @@ def get_cdpp(campaign, pipeline = 'everest1'):
         mask = np.where(np.isnan(flux))[0]
         flux = np.delete(flux, mask)
         cdpp = CDPP(flux)
-      except (urllib.error.HTTPError, TypeError, ValueError):
+      except (urllib.error.HTTPError, TypeError, ValueError, IndexError):
         print("{:>09d} {:>15.3f}".format(EPIC, 0), file = outfile)
         continue
 
