@@ -64,6 +64,10 @@ setup(name = 'everest-pipeline',
       )
 
 # Set up the individual missions
-from everest import missions
-for mission in missions.Missions:
-  getattr(missions, mission).Setup()
+# Fail silently!
+try:
+  from everest import missions
+  for mission in missions.Missions:
+    getattr(missions, mission).Setup()
+except:
+  pass
