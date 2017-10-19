@@ -263,7 +263,7 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
         nout = len(inds)
         ntot = len(flux)
 
-      except (urllib.error.HTTPError, TypeError, ValueError):
+      except (urllib.error.HTTPError, TypeError, ValueError, IndexError):
         print("{:>09d} {:>5d} {:>5d}".format(EPIC, -1, -1), file = outfile)
         continue
 
