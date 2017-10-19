@@ -223,7 +223,12 @@ def get_outliers(campaign, pipeline = 'everest1', sigma = 5):
         time, flux = get(EPIC, pipeline = pipeline)
         
         # Get the raw K2 data
-        with client.k2_star(EPIC).get_target_pixel_files()[0].open() as f:
+        tpf = os.path.join(KPLR_ROOT, "data", "k2", "target_pixel_files", 
+                           "%09d" % EPIC, "ktwo%09d-c%02d_lpd-targ.fits.gz" 
+                           % (EPIC, campaign))
+        if not os.path.exists(tpf):
+            client.k2_star(EPIC).get_target_pixel_files(fetch = True)
+        with pyfits.open(tpf) as f:
           k2_qual = np.array(f[1].data.field('QUALITY'), dtype=int)
           k2_time = np.array(f[1].data.field('TIME'), dtype='float64') 
           mask = []
