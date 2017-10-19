@@ -19,6 +19,13 @@ from six.moves import urllib
 import matplotlib.pyplot as pl
 import numpy as np
 import warnings
+try:
+  import pyfits
+except ImportError:
+  try:
+    import astropy.io.fits as pyfits
+  except ImportError:
+    raise Exception('Please install the `pyfits` package.')
 import logging
 log = logging.getLogger(__name__)
 
