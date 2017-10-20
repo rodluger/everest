@@ -25,7 +25,7 @@ class TransitModel(object):
   
   '''
   
-  def __init__(self, name, sig_RpRs = 0.001, **kwargs):
+  def __init__(self, name, single = False, sig_RpRs = 0.001, **kwargs):
     '''
     
     '''
@@ -40,11 +40,13 @@ class TransitModel(object):
     # Compute the depth
     times = kwargs.get('times', None)
     if times is not None:
-      t0 = times[0]
+      self.t0 = times[0]
     else:
-      t0 = kwargs.get('t0', 0.)
-    self.depth = (1. - self._transit([t0]))[0]
-
+      self.t0 = kwargs.get('t0', 0.)
+    self.per = kwargs.get('per', 10.)
+    self.single = single
+    self.depth = (1. - self._transit([self.t0]))[0]
+    
     # Approximate variance on the depth
     self.var_depth = (2 * sig_RpRs) ** 2
     
@@ -57,6 +59,11 @@ class TransitModel(object):
     '''
     
     model = (self._transit(time) - 1) / self.depth
+    
+    # Single transit?
+    if self.single:
+        model[np.where(np.abs(time - self.t0) > self.per / 5.)[0]] = 0.
+
     return model 
 
 def Get_RpRs(d, **kwargs):
