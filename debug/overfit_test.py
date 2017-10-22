@@ -67,7 +67,8 @@ if not os.path.exists('overfit.npz'):
       # Compute the joint overfitting metric
       star.transit_model = TransitModel('injected', sig_RpRs = depth / 100.,
                                         t0 = t0, per = 3.56789,
-                                        rhos = Get_rhos(0.1, per = 3.56789))
+                                        rhos = Get_rhos(0.1, per = 3.56789),
+                                        single = True)
       star.compute_joint()
       d = star.transit_depth
       star.transit_model = None 
@@ -83,6 +84,24 @@ else:
     MOMbf = data['MOMbf']
     JOMbf = data['JOMbf']
 
-pl.plot(star.time, 1 - (overfit._O2 + overfit._O3 / depth) / overfit._O1, 'k-', lw = 1)
-pl.plot(star.apply_mask(star.time), 1 - 1 / (1 - UOMbf), 'r-', lw = 1, alpha = 0.5)
+# Plot
+fig, ax = pl.subplots(3, figsize = (10, 6))
+
+# Unmasked
+ax[0].plot(star.apply_mask(star.time), star.apply_mask(1 - (overfit._O2 + overfit._O3 / depth) / overfit._O1), 'k-', lw = 1)
+ax[0].plot(star.apply_mask(star.time), UOMbf, 'r-', lw = 1, alpha = 0.5)
+ax[0].set_xlim(star.apply_mask(star.time)[30],star.apply_mask(star.time)[-1])
+ax[0].set_ylim(-1.5, 1.5)
+
+# Masked
+ax[1].plot(star.apply_mask(star.time), star.apply_mask(overfit._O5), 'k-', lw = 1)
+ax[1].plot(star.apply_mask(star.time), MOMbf, 'r-', lw = 1, alpha = 0.5)
+ax[1].set_xlim(star.apply_mask(star.time)[30],star.apply_mask(star.time)[-1])
+#ax[1].set_ylim(-1.5, 1.5)
+
+# Joint
+ax[2].plot(star.apply_mask(star.time), JOMbf, 'r-', lw = 1, alpha = 0.5)
+ax[2].set_xlim(star.apply_mask(star.time)[30],star.apply_mask(star.time)[-1])
+#ax[2].set_ylim(-1.5, 1.5)
+
 pl.show()
