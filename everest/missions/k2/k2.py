@@ -686,7 +686,7 @@ def GetNeighbors(EPIC, season = None, model = None, neighbors = 10, mag_range = 
   epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[campaign]).T
   short_cadence = np.array(short_cadence, dtype = bool)
   epics = np.array(epics, dtype = int)
-  c = GetNeighboringChannels(Channel(EPIC, season = season))
+  c = GetNeighboringChannels(Channel(EPIC, campaign = season))
   
   # Manage kwargs
   if aperture_name is None:
