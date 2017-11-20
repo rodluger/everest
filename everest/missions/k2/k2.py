@@ -747,7 +747,7 @@ def GetNeighbors(EPIC, season = None, model = None, neighbors = 10, mag_range = 
       # Check that the aperture exists!
       if aperture is None:
         continue
-    
+
       fpix = data['fpix']
       for source in data['nearby'][()]:
         # Ignore self
@@ -807,7 +807,7 @@ def GetNeighbors(EPIC, season = None, model = None, neighbors = 10, mag_range = 
   # Return what we have anyway.
   return targets
 
-def PlanetStatistics(model = 'nPLD', compare_to = 'everest1', **kwargs):
+def PlanetStatistics(model = 'nPLD', compare_to = 'k2sff', **kwargs):
   '''
   Computes and plots the CDPP statistics comparison between `model` and
   `compare_to` for all known K2 planets.
@@ -1013,7 +1013,7 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
   # Show
   pl.show()
 
-def Statistics(season = None, clobber = False, model = 'nPLD', injection = False, compare_to = 'everest1', plot = True, cadence = 'lc', planets = False, **kwargs):
+def Statistics(season = None, clobber = False, model = 'nPLD', injection = False, compare_to = 'k2sff', plot = True, cadence = 'lc', planets = False, **kwargs):
   '''
   Computes and plots the CDPP statistics comparison between `model` and `compare_to`
   for all long cadence light curves in a given campaign

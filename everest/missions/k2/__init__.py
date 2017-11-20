@@ -16,12 +16,12 @@ from .pbs import Download, Run, Status, Publish
 IDSTRING = 'EPIC'
 #: The character abbreviation of the name given to an observing "season" for this mission
 SEASONCHAR = 'C'
-#: The string representing the filter/band used in the mission 
+#: The string representing the filter/band used in the mission
 MAGSTRING = r'K$_\mathrm{p}$'
 #: The time units for the mission
 TIMEUNITS = 'BJD - 2454833'
 #: The currently supported seasons
-SEASONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 101, 102, 111, 112, 12, 13]
+SEASONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 102, 111, 112, 12, 13]
 #: Returns :py:obj:`True` if argument is a valid `K2` target identifier (necessary but not sufficient)
 ISTARGET = lambda x: ((type(x) is int) and (x > 1e8) and (x < 1e9) and str(x).startswith('2'))
 #: The published light curve CSV file header
@@ -39,7 +39,7 @@ provide a simple version of the de-trended timeseries, but
 users are encouraged to interface with the Everest catalog
 using the Python code available at
 
-https://github.com/rodluger/everest 
+https://github.com/rodluger/everest
 
 This is particularly useful for users interested in transit
 photometry. Like any regression method that attempts to min-
@@ -65,7 +65,7 @@ CADN (int):   Cadence number
 FCOR (float): CBV-corrected, PLD de-trended flux
 FLUX (float): PLD de-trended flux
 FRAW (float): Raw simple aperture photometry flux
-MASK (int):   0 = Data point was included in the model 
+MASK (int):   0 = Data point was included in the model
                   calculation
               1 = Data point was NaN in the raw flux
               2 = Data point has a flagged QUALITY bit

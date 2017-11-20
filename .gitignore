@@ -9,3 +9,5 @@ misc/*
 *.pyc
 build/*
 dist/*
+*.log
+*.npz

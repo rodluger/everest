@@ -16,8 +16,8 @@ import everest
 
 long_description = \
 """
-EPIC Variability Extraction and Removal for Exoplanet Science Targets: 
-A pipeline for de-trending `K2`, `Kepler`, and `TESS` light curves with 
+EPIC Variability Extraction and Removal for Exoplanet Science Targets:
+A pipeline for de-trending `K2`, `Kepler`, and `TESS` light curves with
 pixel level decorrelation and Gaussian processes. The Python interface
 allows easy access to the online EVEREST de-trended light curve catalog;
 alternatively, users can de-trend their own light curves with customized
@@ -52,10 +52,10 @@ setup(name = 'everest-pipeline',
                           'pysyzygy>=0.0.1',
                           'k2plr==0.2.7',
                           'PyPDF2',
-                          'choldate'
+                          # not yet 'choldate'
                          ],
-      dependency_links = ['https://github.com/rodluger/choldate/tarball/master#egg=choldate-0.0.1',
-                          'https://github.com/rodluger/k2plr/tarball/dev#egg=k2plr-0.2.7'],
+      dependency_links = ['https://github.com/rodluger/k2plr/tarball/dev#egg=k2plr-0.2.7'],
+                         # not yet 'https://github.com/rodluger/choldate/tarball/master#egg=choldate-0.0.1',
       scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
       include_package_data = True,
       zip_safe = False,
