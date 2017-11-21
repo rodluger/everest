@@ -10,7 +10,7 @@ Implements several routines specific to the `K2` mission.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from . import sysrem
-from .aux import *
+from .utils import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, EVEREST_MAJOR_MINOR
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
 from ...math import SavGol, Interpolate, Scatter, Downbin

@@ -9,7 +9,7 @@ Routines for submitting batch jobs to a cluster.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from .aux import *
+from .utils import *
 from .k2 import GetData, FITSFile
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
 from ...utils import ExceptionHook, FunctionWrapper
@@ -31,14 +31,14 @@ def Download(campaign = 0, queue = 'build', email = None, walltime = 8, **kwargs
   '''
   Submits a cluster job to the build queue to download all TPFs for a given
   campaign.
-  
+
   :param int campaign: The `K2` campaign to run
   :param str queue: The name of the queue to submit to. Default `build`
   :param str email: The email to send job status notifications to. Default `None`
   :param int walltime: The number of hours to request. Default `8`
-  
+
   '''
-  
+
   # Figure out the subcampaign
   if type(campaign) is int:
     subcampaign = -1
@@ -46,7 +46,7 @@ def Download(campaign = 0, queue = 'build', email = None, walltime = 8, **kwargs
     x, y = divmod(campaign, 1)
     campaign = int(x)
     subcampaign = round(y * 10)
-  # Submit the cluster job      
+  # Submit the cluster job
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'download.pbs')
   str_w = 'walltime=%d:00:00' % walltime
   str_v = 'EVEREST_DAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (EVEREST_DAT, campaign, subcampaign)
@@ -55,11 +55,11 @@ def Download(campaign = 0, queue = 'build', email = None, walltime = 8, **kwargs
   else:
     str_name = 'download_c%02d.%d' % (campaign, subcampaign)
   str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
-  qsub_args = ['qsub', pbsfile, 
+  qsub_args = ['qsub', pbsfile,
                '-q', queue,
-               '-v', str_v, 
+               '-v', str_v,
                '-o', str_out,
-               '-j', 'oe', 
+               '-j', 'oe',
                '-N', str_name,
                '-l', str_w]
   if email is not None: qsub_args.append(['-M', email, '-m', 'ae'])
@@ -71,7 +71,7 @@ def _Download(campaign, subcampaign):
   '''
   Download all stars from a given campaign. This is
   called from ``missions/k2/download.pbs``
-  
+
   '''
 
   # Are we doing a subcampaign?
@@ -83,7 +83,7 @@ def _Download(campaign, subcampaign):
   # Download the TPF data for each one
   for i, EPIC in enumerate(stars):
     print("Downloading data for EPIC %d (%d/%d)..." % (EPIC, i + 1, nstars))
-    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign), 
+    if not os.path.exists(os.path.join(EVEREST_DAT, 'k2', 'c%02d' % int(campaign),
                          ('%09d' % EPIC)[:4] + '00000', ('%09d' % EPIC)[4:],
                          'data.npz')):
       try:
@@ -99,11 +99,11 @@ def _Download(campaign, subcampaign):
           print(l)
         continue
 
-def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100, 
+def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
         mpn = None, email = None, queue = None, **kwargs):
   '''
   Submits a cluster job to compute and plot data for all targets in a given campaign.
-  
+
   :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
                    all targets in that campaign. If a :py:class:`float` in the form \
                    `X.Y`, runs the `Y^th` decile of campaign `X`.
@@ -113,21 +113,21 @@ def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
   :param int nodes: The number of nodes to request. Default `5`
   :param int ppn: The number of processors per node to request. Default `12`
   :param int mpn: Memory per node in gb to request. Default no setting.
-    
+
   '''
-  
+
   # Figure out the subcampaign
   if type(campaign) is int:
     subcampaign = -1
   elif type(campaign) is float:
     x, y = divmod(campaign, 1)
     campaign = int(x)
-    subcampaign = round(y * 10) 
-  
+    subcampaign = round(y * 10)
+
   # DEV hack: limit backfill jobs to 10 hours
   if EVEREST_DEV and (queue == 'bf'):
     walltime = min(10, walltime)
-  
+
   # Convert kwargs to string. This is really hacky. Pickle creates an array
   # of bytes, which we must convert into a regular string to pass to the pbs
   # script and then back into python. Decoding the bytes isn't enough, since
@@ -136,22 +136,22 @@ def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
   # with '%%%', then undo the replacement when reading the kwargs. This works
   # for most cases, but sometimes pickle creates a byte array that can't be
   # decoded into utf-8 -- this happens when trying to pass numpy arrays around,
-  # for instance. This needs to be fixed in the future, but for now we'll 
+  # for instance. This needs to be fixed in the future, but for now we'll
   # restrict the kwargs to be ints, floats, lists, and strings.
   try:
     strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '%%%')
   except UnicodeDecodeError:
     raise ValueError('Unable to pickle `kwargs`. Currently the `kwargs` values may only be ' +
                      '`int`s, `float`s, `string`s, `bool`s, or lists of these.')
-  
-  # Submit the cluster job      
+
+  # Submit the cluster job
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.pbs')
   if mpn is not None:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore,mem=%dgb' % (nodes, ppn, ppn, mpn * nodes)
   else:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = "EVEREST_DAT=%s,NODES=%d,EPIC=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
+  str_v = "EVEREST_DAT=%s,NODES=%d,EPIC=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT,
           nodes, 0 if EPIC is None else EPIC, campaign, subcampaign, strkwargs)
   if EPIC is None:
     if subcampaign == -1:
@@ -161,18 +161,18 @@ def Run(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
   else:
     str_name = 'EPIC%d' % EPIC
   str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
-  qsub_args = ['qsub', pbsfile, 
-               '-v', str_v, 
+  qsub_args = ['qsub', pbsfile,
+               '-v', str_v,
                '-o', str_out,
-               '-j', 'oe', 
+               '-j', 'oe',
                '-N', str_name,
                '-l', str_n,
                '-l', str_w]
-  if email is not None: 
+  if email is not None:
     qsub_args.append(['-M', email, '-m', 'ae'])
   if queue is not None:
-    qsub_args += ['-q', queue]          
-  
+    qsub_args += ['-q', queue]
+
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
@@ -181,24 +181,24 @@ def _Run(campaign, subcampaign, epic, strkwargs):
   '''
   The actual function that runs a given campaign; this must
   be called from ``missions/k2/run.pbs``.
-  
+
   '''
-  
+
   # Get kwargs from string
   kwargs = pickle.loads(strkwargs.replace('%%%', '\n').encode('utf-8'))
-  
+
   # Check the cadence
   cadence = kwargs.get('cadence', 'lc')
-  
+
   # Model wrapper
   m = FunctionWrapper(EverestModel, season = campaign, **kwargs)
-  
+
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
-  
+
   # Are we running a campaign or a single target?
-  if epic == 0:  
-  
+  if epic == 0:
+
     # Initialize our multiprocessing pool
     with Pool() as pool:
       # Are we doing a subcampaign?
@@ -208,17 +208,17 @@ def _Run(campaign, subcampaign, epic, strkwargs):
       stars = GetK2Campaign(campaign, epics_only = True, cadence = cadence)
       # Run
       pool.map(m, stars)
-  
+
   else:
-    
+
     m(epic)
 
-def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100, 
+def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
             mpn = None, email = None, queue = None, **kwargs):
   '''
   Submits a cluster job to generate the FITS files for publication.
   Make sure to run :py:func:`everest.k2.GetCBVs` for this campaign beforehand.
-  
+
   :param campaign: The K2 campaign number. If this is an :py:class:`int`, returns \
                    all targets in that campaign. If a :py:class:`float` in the form \
                    `X.Y`, runs the `Y^th` decile of campaign `X`.
@@ -228,21 +228,21 @@ def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
   :param int nodes: The number of nodes to request. Default `5`
   :param int ppn: The number of processors per node to request. Default `12`
   :param int mpn: Memory per node in gb to request. Default no setting.
-    
+
   '''
-  
+
   # Figure out the subcampaign
   if type(campaign) is int:
     subcampaign = -1
   elif type(campaign) is float:
     x, y = divmod(campaign, 1)
     campaign = int(x)
-    subcampaign = round(y * 10) 
-  
+    subcampaign = round(y * 10)
+
   # DEV hack: limit backfill jobs to 10 hours
   if EVEREST_DEV and (queue == 'bf'):
     walltime = min(10, walltime)
-  
+
   # Convert kwargs to string. This is really hacky. Pickle creates an array
   # of bytes, which we must convert into a regular string to pass to the pbs
   # script and then back into python. Decoding the bytes isn't enough, since
@@ -251,40 +251,40 @@ def Publish(campaign = 0, EPIC = None, nodes = 5, ppn = 12, walltime = 100,
   # with '%%%', then undo the replacement when reading the kwargs. This works
   # for most cases, but sometimes pickle creates a byte array that can't be
   # decoded into utf-8 -- this happens when trying to pass numpy arrays around,
-  # for instance. This needs to be fixed in the future, but for now we'll 
+  # for instance. This needs to be fixed in the future, but for now we'll
   # restrict the kwargs to be ints, floats, lists, and strings.
   try:
     strkwargs = pickle.dumps(kwargs, 0).decode('utf-8').replace('\n', '%%%')
   except UnicodeDecodeError:
     raise ValueError('Unable to pickle `kwargs`. Currently the `kwargs` values may only be ' +
                      '`int`s, `float`s, `string`s, `bool`s, or lists of these.')
-  
-  # Submit the cluster job      
+
+  # Submit the cluster job
   pbsfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'publish.pbs')
   if mpn is not None:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore,mem=%dgb' % (nodes, ppn, ppn, mpn * nodes)
   else:
     str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
   str_w = 'walltime=%d:00:00' % walltime
-  str_v = "EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT, 
+  str_v = "EVEREST_DAT=%s,NODES=%d,CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % (EVEREST_DAT,
           nodes, campaign, subcampaign, strkwargs)
   if subcampaign == -1:
     str_name = 'c%02d' % campaign
   else:
     str_name = 'c%02d.%d' % (campaign, subcampaign)
   str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
-  qsub_args = ['qsub', pbsfile, 
-               '-v', str_v, 
+  qsub_args = ['qsub', pbsfile,
+               '-v', str_v,
                '-o', str_out,
-               '-j', 'oe', 
+               '-j', 'oe',
                '-N', str_name,
                '-l', str_n,
                '-l', str_w]
-  if email is not None: 
+  if email is not None:
     qsub_args.append(['-M', email, '-m', 'ae'])
   if queue is not None:
-    qsub_args += ['-q', queue]          
-  
+    qsub_args += ['-q', queue]
+
   # Now we submit the job
   print("Submitting the job...")
   subprocess.call(qsub_args)
@@ -293,21 +293,21 @@ def _Publish(campaign, subcampaign, strkwargs):
   '''
   The actual function that publishes a given campaign; this must
   be called from ``missions/k2/publish.pbs``.
-  
+
   '''
-  
+
   # Get kwargs from string
   kwargs = pickle.loads(strkwargs.replace('%%%', '\n').encode('utf-8'))
-  
+
   # Check the cadence
   cadence = kwargs.get('cadence', 'lc')
-  
+
   # Model wrapper
   m = FunctionWrapper(EverestModel, season = campaign, publish = True, **kwargs)
-  
+
   # Set up our custom exception handler
   sys.excepthook = ExceptionHook
-  
+
   # Initialize our multiprocessing pool
   with Pool() as pool:
     # Are we doing a subcampaign?
@@ -315,7 +315,7 @@ def _Publish(campaign, subcampaign, strkwargs):
       campaign = campaign + 0.1 * subcampaign
     # Get all the stars
     stars = GetK2Campaign(campaign, epics_only = True, cadence = cadence)
-        
+
     # Run
     pool.map(m, stars)
 
@@ -324,18 +324,18 @@ def Status(season = range(18), model = 'nPLD', purge = False, injection = False,
   Shows the progress of the de-trending runs for the specified campaign(s).
 
   '''
-  
+
   # Mission compatibility
   campaign = season
-  
+
   # Injection?
   if injection:
     return InjectionStatus(campaign = campaign, model = model, purge = purge, **kwargs)
-  
+
   # Cadence
   if cadence == 'sc':
     model = '%s.sc' % model
-  
+
   if not hasattr(campaign, '__len__'):
     if type(campaign) is int:
       # Return the subcampaigns
@@ -415,13 +415,13 @@ def Status(season = range(18), model = 'nPLD', purge = False, injection = False,
           print("         %s   %s   %s   %s" % (A, B, C, D))
           print()
 
-def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False, 
+def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
                     depths = [0.01, 0.001, 0.0001], **kwargs):
   '''
   Shows the progress of the injection de-trending runs for the specified campaign(s).
 
   '''
-  
+
   if not hasattr(campaign, '__len__'):
     if type(campaign) is int:
       # Return the subcampaigns
@@ -469,15 +469,15 @@ def InjectionStatus(campaign = range(18), model = 'nPLD', purge = False,
 def EverestModel(ID, model = 'nPLD', publish = False, csv = False, **kwargs):
   '''
   A wrapper around an :py:obj:`everest` model for PBS runs.
-  
+
   '''
-  
+
   if model != 'Inject':
     from ... import detrender
-    
+
     # HACK: We need to explicitly mask short cadence planets
     if kwargs.get('cadence', 'lc') == 'sc':
-      EPIC, t0, period, duration = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2', 
+      EPIC, t0, period, duration = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
                                    'tables', 'scmasks.tsv'), unpack = True)
       if ID in EPIC and kwargs.get('planets', None) is None:
         ii = np.where(EPIC == ID)[0]
@@ -485,17 +485,17 @@ def EverestModel(ID, model = 'nPLD', publish = False, csv = False, **kwargs):
         for i in ii:
           planets.append([t0[i], period[i], 1.25 * duration[i]])
         kwargs.update({'planets': planets})
-    
+
     # Run the model
     m = getattr(detrender, model)(ID, **kwargs)
-    
+
     # Publish?
     if publish:
       if csv:
         m.publish_csv()
       else:
         m.publish()
-    
+
   else:
     from ...inject import Inject
     Inject(ID, **kwargs)

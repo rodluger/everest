@@ -1,6 +1,6 @@
-.. automodule:: everest.missions.k2.aux
+.. automodule:: everest.missions.k2.utils
    :members:
-   
+
 .. raw:: html
 
   <script>

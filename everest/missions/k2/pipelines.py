@@ -135,7 +135,7 @@ def get_cdpp(campaign, pipeline = 'everest2'):
 
   # Imports
   from .k2 import CDPP
-  from .aux import GetK2Campaign
+  from .utils import GetK2Campaign
 
   # Check pipeline
   assert pipeline.lower() in Pipelines, 'Invalid pipeline: `%s`.' % pipeline
@@ -192,7 +192,7 @@ def get_outliers(campaign, pipeline = 'everest2', sigma = 5):
   '''
 
   # Imports
-  from .aux import GetK2Campaign
+  from .utils import GetK2Campaign
   client = k2plr.API()
 
   # Check pipeline
