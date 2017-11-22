@@ -37,7 +37,8 @@ def GP(kernel, kernel_params, white = False):
       if OLDGEORGE:
         return george.GP(WhiteKernel(w ** 2) + a ** 2 * Matern32Kernel(t ** 2))
       else:
-        return george.GP(a ** 2 * Matern32Kernel(t ** 2), white_noise = np.log(w ** 2))
+        return george.GP(a ** 2 * Matern32Kernel(t ** 2), white_noise = np.log(w ** 2),
+                         fit_white_noise = True)
     else:
       return george.GP(a ** 2 * Matern32Kernel(t ** 2))
   elif kernel == 'QuasiPeriodic':
@@ -46,7 +47,8 @@ def GP(kernel, kernel_params, white = False):
       if OLDGEORGE:
         return george.GP(WhiteKernel(w ** 2) + a ** 2 * ExpSine2Kernel(g, p))
       else:
-        return george.GP(a ** 2 * ExpSine2Kernel(g, p), white_noise = np.log(w ** 2))
+        return george.GP(a ** 2 * ExpSine2Kernel(g, p), white_noise = np.log(w ** 2),
+                         fit_white_noise = True)
     else:
       return george.GP(a ** 2 * ExpSine2Kernel(g, p))
   else:
@@ -199,13 +201,6 @@ def NegLnLike(x, time, flux, errors, kernel):
     ngr = -2 * gp.grad_lnlikelihood(flux) / np.sqrt(gp.kernel.pars)
   else:
     nll = -gp.log_likelihood(flux)
-    ngr = -2 * gp.grad_log_likelihood(flux) / np.sqrt(np.exp(gp.kernel.get_parameter_vector()))
-
-    # Add the derivative with respect to the white noise term
-    Kr = gp.solver.apply_inverse(flux)
-    Kinv = gp.solver.get_inverse()
-    dlogLdsig2 = 0.5 * np.dot(Kr.T, Kr) - 0.5 * np.trace(Kinv)
-    dlogLdsig = dlogLdsig2 * 2 * x[0]
-    ngr = np.append([-dlogLdsig], ngr)
+    ngr = -2 * gp.grad_log_likelihood(flux) / np.sqrt(np.exp(gp.get_parameter_vector()))
 
   return nll, ngr
