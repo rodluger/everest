@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 #: The supported pipelines
 Pipelines = ['everest2', 'everest1', 'k2sff', 'k2sc', 'raw']
 
-def get(ID, pipeline = 'everest2'):
+def get(ID, pipeline = 'everest2', campaign = None):
   '''
   Returns the `time` and `flux` for a given EPIC `ID` and
   a given `pipeline` name.
@@ -45,7 +45,8 @@ def get(ID, pipeline = 'everest2'):
   if EVEREST_DEV:
     if pipeline.lower() == 'everest2' or pipeline.lower() == 'k2sff':
       from . import Season, TargetDirectory, FITSFile
-      campaign = Season(ID)
+      if campaign is None:
+        campaign = Season(ID)
       fits = os.path.join(TargetDirectory(ID, campaign), FITSFile(ID, campaign))
       newdir = os.path.join(KPLR_ROOT, "data", "everest", str(ID))
       if not os.path.exists(newdir):
@@ -81,7 +82,7 @@ def get(ID, pipeline = 'everest2'):
 
   return time, flux
 
-def plot(ID, pipeline = 'everest2', show = True):
+def plot(ID, pipeline = 'everest2', show = True, campaign = None):
   '''
   Plots the de-trended flux for the given EPIC `ID` and for
   the specified `pipeline`.
@@ -89,7 +90,7 @@ def plot(ID, pipeline = 'everest2', show = True):
   '''
 
   # Get the data
-  time, flux = get(ID, pipeline = pipeline)
+  time, flux = get(ID, pipeline = pipeline, campaign = campaign)
 
   # Remove nans
   mask = np.where(np.isnan(flux))[0]
@@ -171,7 +172,7 @@ def get_cdpp(campaign, pipeline = 'everest2'):
 
       # Get the CDPP
       try:
-        _, flux = get(EPIC, pipeline = pipeline)
+        _, flux = get(EPIC, pipeline = pipeline, campaign = campaign)
         mask = np.where(np.isnan(flux))[0]
         flux = np.delete(flux, mask)
         cdpp = CDPP(flux)
@@ -229,7 +230,7 @@ def get_outliers(campaign, pipeline = 'everest2', sigma = 5):
 
       # Get the number of outliers
       try:
-        time, flux = get(EPIC, pipeline = pipeline)
+        time, flux = get(EPIC, pipeline = pipeline, campaign = campaign)
 
         # Get the raw K2 data
         tpf = os.path.join(KPLR_ROOT, "data", "k2", "target_pixel_files",
