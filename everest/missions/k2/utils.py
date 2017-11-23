@@ -62,7 +62,7 @@ class StatsPicker(object):
 
   '''
 
-  def __init__(self, axes, x, y, epic, model = 'PLD', compare_to = 'everest1', cadence = 'lc'):
+  def __init__(self, axes, x, y, epic, model = 'PLD', compare_to = 'everest1', cadence = 'lc', campaign = None):
     '''
 
     '''
@@ -83,6 +83,7 @@ class StatsPicker(object):
     self.compare_to = compare_to
     self.last = None
     self.cadence = cadence
+    self.campaign = campaign
 
   def __call__(self, event):
     '''
@@ -106,7 +107,7 @@ class StatsPicker(object):
 
       # Show the de-trended data for the model
       log.info('Plotting %s model for %d...' % (self.model, self.epic[i]))
-      self.show(self.epic[i], mission = 'k2', cadence = self.cadence)
+      self.show(self.epic[i], mission = 'k2', cadence = self.cadence, season = self.campaign)
 
       # Show the de-trended data for the comparison model
       if self.compare_to.lower() in Pipelines:

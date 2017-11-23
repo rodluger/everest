@@ -1007,7 +1007,7 @@ def ShortCadenceStatistics(campaign = None, clobber = False, model = 'nPLD', plo
   ax.plot(bins[8:], by[8:], 'k-', lw = 2)
 
   # Pickable points
-  Picker = StatsPicker([ax], [xall], [yall], epics, model = model[:-3], compare_to = model[:-3], cadence = 'sc')
+  Picker = StatsPicker([ax], [xall], [yall], epics, model = model[:-3], compare_to = model[:-3], cadence = 'sc', campaign = campaign)
   fig.canvas.mpl_connect('pick_event', Picker)
 
   # Show
@@ -1268,7 +1268,7 @@ def Statistics(season = None, clobber = False, model = 'nPLD', injection = False
     ax[3].set_xlabel('Number of Data Points', fontsize = 18)
 
     # Pickable points
-    Picker = StatsPicker([ax[0], ax[1]], [kp, kp], [cdpp6, y], epic, model = model, compare_to = compare_to)
+    Picker = StatsPicker([ax[0], ax[1]], [kp, kp], [cdpp6, y], epic, model = model, compare_to = compare_to, campaign = campaign)
     fig.canvas.mpl_connect('pick_event', Picker)
 
     # Show
