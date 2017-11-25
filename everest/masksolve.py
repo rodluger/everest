@@ -14,7 +14,6 @@ except:
     cholupdate = None
     choldowndate = None
 from scipy.linalg import cholesky, cho_solve, solve_triangular
-from tqdm import tqdm
 import logging
 log = logging.getLogger(__name__)
 
@@ -45,12 +44,6 @@ def MaskSolve(A, b, w=5, progress=True, niter=None):
         log.info("Running the slow version of `MaskSolve`.")
         log.info("Install the `choldate` package for better performance.")
         return MaskSolveSlow(A, b, w=w, progress=progress, niter=niter)
-
-    # Show progress bar?
-    if progress:
-        prange = lambda *x: tqdm(range(*x))
-    else:
-        prange = lambda *x: range(*x)
 
     # Number of data points
     N = b.shape[0]
@@ -109,12 +102,6 @@ def MaskSolveSlow(A, b, w=5, progress=True, niter=None):
     the brute-force way.
 
     '''
-
-    # Show progress bar?
-    if progress:
-        prange = lambda x: tqdm(range(x))
-    else:
-        prange = lambda x: range(x)
 
     # Number of data points
     N = b.shape[0]

@@ -801,12 +801,11 @@ class Basecamp(object):
                 kernel_params = [w, a, g, p]
             K = GetCovariance(self.kernel, kernel_params,
                               self.time, self.fraw_err / med)
-            Kinv = np.linalg.inv(K)
 
             # Compute the overfitting metrics
             log.info("Computing the overfitting...")
             overfit = Overfit(self.ID, self._mission.IDSTRING, self.time,
-                              self.fraw / med - 1, X, XL, XLmX, XLX + K, Kinv,
+                              self.fraw / med - 1, X, XL, XLmX, XLX + K, K,
                               mask=self.mask, tau=tau, **kwargs)
 
             # Save

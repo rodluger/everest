@@ -25,7 +25,7 @@ class Overfit(object):
 
     '''
 
-    def __init__(self, ID, IDSTRING, t, y, X, XL, XLX, C, Kinv, mask=[],
+    def __init__(self, ID, IDSTRING, t, y, X, XL, XLX, C, K, mask=[],
                  tau=None, w=9):
         '''
 
@@ -40,7 +40,8 @@ class Overfit(object):
         self.XL = XL
         self.XLX = XLX
         self.C = C
-        self.Kinv = Kinv
+        self.K = K
+        self.Kinv = np.linalg.inv(K)
         self.mask = mask
         self.w = w
 
@@ -249,6 +250,8 @@ class Overfit(object):
         C = np.delete(np.delete(self.C, self.mask, axis=0), self.mask, axis=1)
         X = np.delete(self.X, self.mask, axis=0)
         XL = np.delete(self.XL, self.mask, axis=0)
+        K = np.delete(np.delete(self.K, self.mask, axis=0), self.mask, axis=1)
+        Kinv = np.linalg.inv(K)
 
         # Initialize
         N = len(y)
@@ -280,9 +283,7 @@ class Overfit(object):
             # Update the P matrix
             # DEBUG P[:,?] = np.dot(self.X[?,:], self.XL.T)
             P = np.dot(XL, np.delete(X, mask, axis=0).T)
-
-            import pdb; pdb.set_trace()
-
+            
             # The linear solution to this step
             m = np.dot(P, A[n])
 
@@ -292,8 +293,8 @@ class Overfit(object):
             TAU = TAU[i].reshape(-1, 1)
 
             # Dot the transit model in
-            den = np.dot(np.dot(TAU.T, self.Kinv[i, :][:, i]), TAU)
-            num = np.dot(TAU.T, self.Kinv[i, :])
+            den = np.dot(np.dot(TAU.T, Kinv[i, :][:, i]), TAU)
+            num = np.dot(TAU.T, Kinv[i, :])
 
             # Compute the overfitting metric
             # Divide this number by a depth
