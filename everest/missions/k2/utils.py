@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from .pipelines import Pipelines
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV
 from ...utils import _float
-from ...math import Chunks
+from ...mathutils import Chunks
 try:
   import pyfits
 except ImportError:

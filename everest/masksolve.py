@@ -18,6 +18,8 @@ from tqdm import tqdm
 import logging
 log = logging.getLogger(__name__)
 
+__all__ = ["MaskSolve"]
+
 def MaskSolve(A, b, w=5, progress=True, niter=None):
     '''
     Finds the solution `x` to the linear problem
@@ -39,7 +41,10 @@ def MaskSolve(A, b, w=5, progress=True, niter=None):
     '''
 
     # Ensure we have choldate installed
-    assert cholupdate is not None, "Please install the choldate package."
+    if cholupdate is None:
+        log.info("Running the slow version of `MaskSolve`.")
+        log.info("Install the `choldate` package for better performance.")
+        return MaskSolveSlow(A, b, w=w, progress=progress, niter=niter)
 
     # Show progress bar?
     if progress:

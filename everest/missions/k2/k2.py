@@ -13,7 +13,7 @@ from . import sysrem
 from .utils import *
 from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, EVEREST_MAJOR_MINOR
 from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
-from ...math import SavGol, Interpolate, Scatter, Downbin
+from ...mathutils import SavGol, Interpolate, Scatter, Downbin
 try:
   import pyfits
 except ImportError:

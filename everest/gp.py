@@ -9,7 +9,7 @@ Routines for optimizing the GP hyperparameters for a given light curve.
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from .math import Chunks
+from .mathutils import Chunks
 from scipy.linalg import cho_factor, cho_solve
 from scipy.optimize import fmin_l_bfgs_b
 from scipy.signal import savgol_filter

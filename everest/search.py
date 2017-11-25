@@ -12,7 +12,7 @@ approach is similar to that in Foreman-Mackey et al. (2015).
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
-from .math import SavGol
+from .mathutils import SavGol
 from .gp import GetCovariance
 from .transit import TransitShape
 from scipy.linalg import cho_solve, cho_factor

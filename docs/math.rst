@@ -1,4 +1,4 @@
-.. automodule:: everest.math
+.. automodule:: everest.mathutils
    :members:
 
 .. raw:: html
