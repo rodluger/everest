@@ -236,3 +236,52 @@ class CBV(object):
         res = self._body[self.bcount]()
         self.bcount += 1
         return res
+
+class OVERFIT(object):
+    '''
+
+    '''
+
+    def __init__(self):
+        '''
+
+        '''
+
+        self.fig = pl.figure(figsize=(8.5, 11))
+        self.fig.subplots_adjust(
+            left=0.025 * (11 / 8.5), right=1 - 0.025 * (11 / 8.5),
+            top=0.975, bottom=0.025, hspace=0.5, wspace=0.5)
+        def GetFrame(y, x, dx, dy):
+            return Frame(self.fig, pl.subplot2grid((160, 160), (y, x),
+                         colspan=dx, rowspan=dy))
+        self.title_left = GetFrame(0, 6, 44, 10)
+        self.title_center = GetFrame(0, 50, 66, 10)
+        self.title_right = GetFrame(0, 116, 44, 10)
+        for ax in self.fig.get_axes():
+            ax.axis('off')
+        kw = dict(colspan=40, rowspan=10)
+        kwh = dict(colspan=10, rowspan=10)
+        self.axes1 = [pl.subplot2grid((70, 60), (5, 5), **kw),
+                      pl.subplot2grid((70, 60), (26, 5), **kw),
+                      pl.subplot2grid((70, 60), (47, 5), **kw)]
+        self.axes1h = [pl.subplot2grid((70, 60), (5, 45), **kwh),
+                       pl.subplot2grid((70, 60), (26, 45), **kwh),
+                       pl.subplot2grid((70, 60), (47, 45), **kwh)]
+        self.axes2 = [pl.subplot2grid((70, 60), (15, 5), **kw),
+                      pl.subplot2grid((70, 60), (36, 5), **kw),
+                      pl.subplot2grid((70, 60), (57, 5), **kw)]
+        self.axes2h = [pl.subplot2grid((70, 60), (15, 45), **kwh),
+                       pl.subplot2grid((70, 60), (36, 45), **kwh),
+                       pl.subplot2grid((70, 60), (57, 45), **kwh)]
+        for ax in [self.axes1, self.axes1h, self.axes2, self.axes2h]:
+            for axis in ax:
+                axis.tick_params(direction='in')
+
+    def title(self):
+        '''
+        Returns the axis instance where the title will be printed
+
+        '''
+
+        return self.title_left(on=False), self.title_center(on=False), \
+               self.title_right(on=False)

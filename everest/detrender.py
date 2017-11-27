@@ -941,51 +941,6 @@ class Detrender(Basecamp):
         for tick in ax.get_xticklabels() + ax.get_yticklabels():
             tick.set_fontsize(7)
 
-    def plot_info(self, dvs):
-        '''
-        Plots miscellaneous de-trending information on the data
-        validation summary figure.
-
-        :param dvs: A :py:class:`dvs.DVS` figure instance
-
-        '''
-
-        axl, axc, axr = dvs.title()
-        axc.annotate("%s %d" % (self._mission.IDSTRING, self.ID),
-                     xy=(0.5, 0.5), xycoords='axes fraction',
-                     ha='center', va='center', fontsize=18)
-
-        axc.annotate(r"%.2f ppm $\rightarrow$ %.2f ppm" %
-                     (self.cdppr, self.cdpp),
-                     xy=(0.5, 0.2), xycoords='axes fraction',
-                     ha='center', va='center', fontsize=8, color='k',
-                     fontstyle='italic')
-
-        axl.annotate("%s %s%02d: %s" %
-                     (self.mission.upper(),
-                      self._mission.SEASONCHAR, self.season, self.name),
-                     xy=(0.5, 0.5), xycoords='axes fraction',
-                     ha='center', va='center', fontsize=12,
-                     color='k')
-
-        axl.annotate(self.aperture_name if len(self.neighbors) == 0
-                     else "%s, %d neighbors" %
-                     (self.aperture_name, len(self.neighbors)),
-                     xy=(0.5, 0.2), xycoords='axes fraction',
-                     ha='center', va='center', fontsize=8, color='k',
-                     fontstyle='italic')
-
-        axr.annotate("%s %.3f" % (self._mission.MAGSTRING, self.mag),
-                     xy=(0.5, 0.5), xycoords='axes fraction',
-                     ha='center', va='center', fontsize=12,
-                     color='k')
-
-        if not np.isnan(self.cdppg) and self.cdppg > 0:
-            axr.annotate(r"GP %.3f ppm" % (self.cdppg),
-                         xy=(0.5, 0.2), xycoords='axes fraction',
-                         ha='center', va='center', fontsize=8, color='k',
-                         fontstyle='italic')
-
     def load_tpf(self):
         '''
         Loads the target pixel file.
@@ -996,17 +951,16 @@ class Detrender(Basecamp):
             if self._data is not None:
                 data = self._data
             else:
-                data = self._mission.GetData(self.ID, season=self.season,
-                                             cadence=self.cadence,
-                                             clobber=self.clobber_tpf,
-                                             aperture_name=self.aperture_name,
-                                             saturated_aperture_name=
-                                                 self.saturated_aperture_name,
-                                             max_pixels=self.max_pixels,
-                                             saturation_tolerance=
-                                                 self.saturation_tolerance,
-                                             get_hires=self.get_hires,
-                                             get_nearby=self.get_nearby)
+                data = self._mission.GetData(
+                         self.ID, season=self.season,
+                         cadence=self.cadence,
+                         clobber=self.clobber_tpf,
+                         aperture_name=self.aperture_name,
+                         saturated_aperture_name=self.saturated_aperture_name,
+                         max_pixels=self.max_pixels,
+                         saturation_tolerance=self.saturation_tolerance,
+                         get_hires=self.get_hires,
+                         get_nearby=self.get_nearby)
                 if data is None:
                     raise Exception("Unable to retrieve target data.")
             self.cadn = data.cadn

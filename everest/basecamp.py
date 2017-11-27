@@ -18,6 +18,7 @@ from .masksolve import MaskSolve
 from .gp import GetCovariance
 from .search import Search
 from .transit import TransitModel, TransitShape
+from .dvs import OVERFIT
 from scipy.linalg import block_diag, cholesky, cho_solve
 import os
 import sys
@@ -291,6 +292,51 @@ class Basecamp(object):
             return np.hstack([X, self.X1N[j] ** (i + 1)])
         else:
             return X
+
+    def plot_info(self, dvs):
+        '''
+        Plots miscellaneous de-trending information on the data
+        validation summary figure.
+
+        :param dvs: A :py:class:`dvs.DVS` figure instance
+
+        '''
+
+        axl, axc, axr = dvs.title()
+        axc.annotate("%s %d" % (self._mission.IDSTRING, self.ID),
+                     xy=(0.5, 0.5), xycoords='axes fraction',
+                     ha='center', va='center', fontsize=18)
+
+        axc.annotate(r"%.2f ppm $\rightarrow$ %.2f ppm" %
+                     (self.cdppr, self.cdpp),
+                     xy=(0.5, 0.2), xycoords='axes fraction',
+                     ha='center', va='center', fontsize=8, color='k',
+                     fontstyle='italic')
+
+        axl.annotate("%s %s%02d: %s" %
+                     (self.mission.upper(),
+                      self._mission.SEASONCHAR, self.season, self.name),
+                     xy=(0.5, 0.5), xycoords='axes fraction',
+                     ha='center', va='center', fontsize=12,
+                     color='k')
+
+        axl.annotate(self.aperture_name if len(self.neighbors) == 0
+                     else "%s, %d neighbors" %
+                     (self.aperture_name, len(self.neighbors)),
+                     xy=(0.5, 0.2), xycoords='axes fraction',
+                     ha='center', va='center', fontsize=8, color='k',
+                     fontstyle='italic')
+
+        axr.annotate("%s %.3f" % (self._mission.MAGSTRING, self.mag),
+                     xy=(0.5, 0.5), xycoords='axes fraction',
+                     ha='center', va='center', fontsize=12,
+                     color='k')
+
+        if not np.isnan(self.cdppg) and self.cdppg > 0:
+            axr.annotate(r"GP %.3f ppm" % (self.cdppg),
+                         xy=(0.5, 0.2), xycoords='axes fraction',
+                         ha='center', va='center', fontsize=8, color='k',
+                         fontstyle='italic')
 
     def compute(self):
         '''
@@ -896,26 +942,14 @@ class Basecamp(object):
             # Masked time array
             time = self.apply_mask(self.time)
 
-            for kind in ['unmasked', 'masked']:
+            # Plot the final corrected light curve
+            ovr = OVERFIT()
+            self.plot_info(ovr)
 
-                # Set up
-                fig = pl.figure(figsize=(8.5, 11))
-                fig.subplots_adjust(hspace=0.25, left=0.15, right=0.9)
-                axes = [pl.subplot2grid((3, 5), (0, 0), colspan=4, rowspan=1),
-                        pl.subplot2grid((3, 5), (1, 0), colspan=4, rowspan=1),
-                        pl.subplot2grid((3, 5), (2, 0), colspan=4, rowspan=1)]
-                axesh = [pl.subplot2grid((3, 5), (0, 4), colspan=1, rowspan=1),
-                         pl.subplot2grid((3, 5), (1, 4), colspan=1, rowspan=1),
-                         pl.subplot2grid((3, 5), (2, 4), colspan=1, rowspan=1)]
-
-                axt = pl.axes([0.15, 0.9, 0.75, 0.075])
-                axt.axis('off')
-                axt.annotate("%s %d" % (self._mission.IDSTRING, self.ID),
-                             xy=(0.5, 0.5), xycoords='axes fraction',
-                             ha='center', va='center', fontsize=18)
-                axt.annotate(r'%s overfitting metric' % kind,
-                             xy=(0.5, 0.2), xycoords='axes fraction',
-                             ha='center', va='center', fontsize=14, color='k')
+            # Loop over the two metrics
+            for kind, axes, axesh in zip(['unmasked', 'masked'],
+                                         [ovr.axes1, ovr.axes2],
+                                         [ovr.axes1h, ovr.axes2h]):
 
                 # Loop over three depths
                 for depth, ax, axh in zip([0.01, 0.001, 0.0001], axes, axesh):
@@ -942,9 +976,10 @@ class Basecamp(object):
                     ax.margins(0, None)
                     ax.axhline(0, color='k', lw=1, alpha=0.5)
                     ax.set_ylim(*ylim)
-                    ax.set_xlabel('Time (days)', fontsize=14)
-                    ax.set_ylabel('Overfitting (d = %s)' % str(depth),
-                                  fontsize=14)
+                    if kind == 'masked' and depth == 0.0001:
+                        ax.set_xlabel('Time (days)', fontsize=14)
+                    else:
+                        ax.set_xticklabels([])
 
                     # Plot the histogram
                     rng = (max(ylim[0], np.nanmin(metric)),
@@ -966,7 +1001,19 @@ class Basecamp(object):
                                  xycoords='axes fraction',
                                  ha="left", va="top", bbox=bbox, color=color)
 
-                    fig.savefig(figname + '_overfit_%s.pdf' % kind)
-                    log.info("Saved plot to %s." %
-                             (figname + '_overfit_%s.pdf' % kind))
-                    pl.close()
+                    bbox = dict(fc="w", ec="1", alpha=0.95)
+                    ax.annotate("%s overfitting metric" % kind, xy=(1-0.035, 0.92),
+                                xycoords='axes fraction',
+                                ha='right', va='top',
+                                bbox=bbox, color=color)
+
+            pl.figtext(0.025, 0.77, "depth = 0.01", rotation=90,
+                       ha='left', va='center', fontsize=18)
+            pl.figtext(0.025, 0.48, "depth = 0.001", rotation=90,
+                       ha='left', va='center', fontsize=18)
+            pl.figtext(0.025, 0.19, "depth = 0.0001", rotation=90,
+                       ha='left', va='center', fontsize=18)
+
+            ovr.fig.savefig(figname + '_overfit.pdf')
+            log.info("Saved plot to %s_overfit.pdf" % figname)
+            pl.close()
