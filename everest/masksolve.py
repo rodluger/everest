@@ -7,6 +7,7 @@
 '''
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+from .utils import prange
 import numpy as np
 try:
     from choldate import cholupdate, choldowndate

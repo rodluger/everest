@@ -12,13 +12,13 @@ inherit from :py:class:`Basecamp`.
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 from . import missions
-from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL
+from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL, prange
 from .mathutils import Chunks, Scatter, SavGol, Interpolate
+from .masksolve import MaskSolve
 from .gp import GetCovariance
 from .search import Search
-from .transit import TransitModel
-from .overfit import Overfit, SavedOverfitObject
-from scipy.linalg import block_diag
+from .transit import TransitModel, TransitShape
+from scipy.linalg import block_diag, cholesky, cho_solve
 import os
 import sys
 import numpy as np
@@ -732,103 +732,241 @@ class Basecamp(object):
 
         return time, depth, vardepth, delchisq
 
-    def overfit(self, tau=None, plot=True, clobber=False, **kwargs):
+    def overfit(self, tau=None, plot=True, clobber=False, w=9, **kwargs):
         '''
         Returns the overfitting metrics for the light curve.
-
-        NOTE: We are doing math on the _normalized_ light curve
-        here, meaning we re-scale the regularization matrix and
-        the covariance matrix for numerical stability. This needs
-        to be done _everywhere_ in the code eventually!
 
         '''
 
         fname = os.path.join(self.dir, self.name + '_overfit.npz')
+        figname = os.path.join(self.dir, self.name)
 
         # Compute
         if not os.path.exists(fname) or clobber:
 
-            # Set up
-            log.info("Computing some large matrices...")
-            XLX = [None for b in self.breakpoints]
-            XLmX = [None for b in self.breakpoints]
-            X = [None for b in self.breakpoints]
-            XL = [None for b in self.breakpoints]
+            # Baseline
             med = np.nanmedian(self.fraw)
+
+            # Default transit model
+            if tau is None:
+                tau = TransitShape(dur=0.1)
+
+            # The overfitting metrics
+            O1 = [None for brkpt in self.breakpoints]
+            O2 = [None for brkpt in self.breakpoints]
+            O3 = [None for brkpt in self.breakpoints]
+            O4 = [None for brkpt in self.breakpoints]
+            O5 = [None for brkpt in self.breakpoints]
 
             # Loop over all chunks
             for b, brkpt in enumerate(self.breakpoints):
 
                 # Masks for current chunk
                 m = self.get_masked_chunk(b, pad=False)
-                c = self.get_chunk(b, pad=False)
+                time = self.time[m]
+                ferr = self.fraw_err[m] / med
+                y = self.fraw[m] / med - 1
 
-                # The X^2 matrices
-                XLX[b] = np.zeros((len(c), len(c)))
-                XLmX[b] = np.zeros((len(c), len(m)))
+                # The metrics we're computing here
+                O1[b] = np.zeros(len(y)) * np.nan
+                O2[b] = np.zeros(len(y)) * np.nan
+                O3[b] = np.zeros(len(y)) * np.nan
+                O4[b] = np.zeros(len(y)) * np.nan
+                O5[b] = np.zeros(len(y)) * np.nan
+
+                # Compute the astrophysical covariance and its inverse
+                log.info("Computing the covariance...")
+                if self.kernel == 'Basic':
+                    wh, am, ta = self.kernel_params
+                    wh /= med
+                    am /= med
+                    kernel_params = [wh, am, ta]
+                elif self.kernel == 'QuasiPeriodic':
+                    wh, am, ga, pe = self.kernel_params
+                    wh /= med
+                    am /= med
+                    kernel_params = [wh, am, ga, pe]
+                K = GetCovariance(self.kernel, kernel_params, time, ferr)
+                Kinv = cho_solve((cholesky(K), False), np.eye(len(time)))
 
                 # Loop over all orders
+                log.info("Computing some large matrices...")
+                X = [None for n in range(self.pld_order)]
+                XL = [None for n in range(self.pld_order)]
+                XLX = [None for n in range(self.pld_order)]
                 for n in range(self.pld_order):
-
-                    # Only compute up to the current PLD order
                     if (self.lam_idx >= n) and (self.lam[b][n] is not None):
-                        XM = self.X(n, m, **kwargs)
-                        X[b] = self.X(n, c, **kwargs)
-                        XL[b] = (1 / med ** 2) * self.lam[b][n] * X[b]
-                        XLX[b] += (1 / med ** 2) * \
-                            self.lam[b][n] * np.dot(X[b], X[b].T)
-                        XLmX[b] += (1 / med ** 2) * \
-                            self.lam[b][n] * np.dot(X[b], XM.T)
-                        del XM
+                        X[n] = self.X(n, m, **kwargs)
+                        XL[n] = (self.lam[b][n] / med ** 2) * X[n]
+                        XLX[n] = np.dot(XL[n], X[n].T)
+                X = np.hstack(X)
+                XL = np.hstack(XL)
+                XLX = np.sum(XLX, axis=0)
 
-            # Merge chunks
-            X = block_diag(*X)
-            XL = block_diag(*XL)
-            XLX = block_diag(*XLX)
-            XLmX = block_diag(*XLmX)
+                # The full covariance
+                C = XLX + K
 
-            # Compute the full astrophysical covariance matrix
-            log.info("Inverting the covariance...")
-            if self.kernel == 'Basic':
-                w, a, t = self.kernel_params
-                w /= med
-                a /= med
-                kernel_params = [w, a, t]
-            elif self.kernel == 'QuasiPeriodic':
-                w, a, g, p = self.kernel_params
-                w /= med
-                a /= med
-                kernel_params = [w, a, g, p]
-            K = GetCovariance(self.kernel, kernel_params,
-                              self.time, self.fraw_err / med)
+                # The unmasked linear problem
+                log.info("Solving the unmasked linear problem...")
+                m = np.dot(XLX, np.linalg.solve(C, y))
+                m -= np.nanmedian(m)
+                f = y - m
+                R = np.linalg.solve(C, XLX.T).T
 
-            # Compute the overfitting metrics
-            log.info("Computing the overfitting...")
-            overfit = Overfit(self.ID, self._mission.IDSTRING, self.time,
-                              self.fraw / med - 1, X, XL, XLmX, XLX + K, K,
-                              mask=self.mask, tau=tau, **kwargs)
+                # The masked linear problem
+                log.info("Solving the masked linear problem...")
+                A = MaskSolve(C, y, w=w)
 
-            # Save
-            np.savez(fname, ID=overfit.ID, IDSTRING=overfit.IDSTRING,
-                     O1=overfit._O1,
-                     O2=overfit._O2, O3=overfit._O3,
-                     O4=overfit._O4, O5=overfit._O5, t=overfit.t,
-                     mask=overfit.mask)
+                # Now loop through and compute the metric
+                log.info("Computing the overfitting metrics...")
+                for n in prange(len(y)):
+
+                    #
+                    # *** Unmasked overfitting metric ***
+                    #
+
+                    # Evaluate the sparse transit model
+                    TAU = tau(time, t0=time[n])
+                    i = np.where(TAU < 0)[0]
+                    TAU = TAU.reshape(-1, 1)
+
+                    # Fast sparse algebra
+                    AA = np.dot(np.dot(TAU[i].T, Kinv[i, :][:, i]), TAU[i])
+                    BB = np.dot(TAU[i].T, Kinv[i, :])
+                    CC = TAU - np.dot(R[:, i], TAU[i])
+                    O1[b][n] = AA
+                    O2[b][n] = np.dot(BB, CC)
+                    O3[b][n] = np.dot(BB, f)
+                    O4[b][n] = np.dot(BB, y)
+
+                    #
+                    # *** Masked overfitting metric ***
+                    #
+
+                    # The current mask and mask centerpoint
+                    mask = np.arange(n, n + w)
+                    j = n + (w + 1) // 2 - 1
+                    if j >= len(y) - w:
+                        continue
+
+                    # The regularized design matrix
+                    # This is the same as
+                    # XLmX[:, n - 1] = \
+                    #   np.dot(XL, np.delete(X, mask, axis=0).T)[:, n - 1]
+                    if n == 0:
+                        XLmX = np.dot(XL, np.delete(X, mask, axis=0).T)
+                    else:
+                        XLmX[:, n - 1] = np.dot(XL, X[n - 1, :].T)
+
+                    # The linear solution to this step
+                    m = np.dot(XLmX, A[n])
+
+                    # Evaluate the sparse transit model
+                    TAU = tau(time, t0=time[j])
+                    i = np.where(TAU < 0)[0]
+                    TAU = TAU[i].reshape(-1, 1)
+
+                    # Dot the transit model in
+                    den = np.dot(np.dot(TAU.T, Kinv[i, :][:, i]), TAU)
+                    num = np.dot(TAU.T, Kinv[i, :])
+
+                    # Compute the overfitting metric
+                    # Divide this number by a depth
+                    # to get the overfitting for that
+                    # particular depth.
+                    O5[b][j] = -np.dot(num, y - m) / den
+
+            # Save!
+            np.savez(fname, O1=O1, O2=O2, O3=O3, O4=O4, O5=O5)
 
         else:
 
-            # Load
             data = np.load(fname)
-            overfit = SavedOverfitObject(data['ID'], data['IDSTRING'],
-                                         data['t'], data['mask'], data['O1'],
-                                         data['O2'], data['O3'], data['O4'],
-                                         data['O5'])
+            O1 = data['O1']
+            O2 = data['O2']
+            O3 = data['O3']
+            O4 = data['O4']
+            O5 = data['O5']
 
-        # TODO!
+        # Plot
         if plot:
-            fig = overfit.plot_unmasked()
-            fig.savefig(os.path.join(
-                self.dir, self.name + '_unmasked_overfit.pdf'))
-            # TODO overfit.plot_masked()
 
-        return overfit
+            log.info("Plotting the overfitting metrics...")
+
+            # Masked time array
+            time = self.apply_mask(self.time)
+
+            for kind in ['unmasked', 'masked']:
+
+                # Set up
+                fig = pl.figure(figsize=(8.5, 11))
+                fig.subplots_adjust(hspace=0.25, left=0.15, right=0.9)
+                axes = [pl.subplot2grid((3, 5), (0, 0), colspan=4, rowspan=1),
+                        pl.subplot2grid((3, 5), (1, 0), colspan=4, rowspan=1),
+                        pl.subplot2grid((3, 5), (2, 0), colspan=4, rowspan=1)]
+                axesh = [pl.subplot2grid((3, 5), (0, 4), colspan=1, rowspan=1),
+                         pl.subplot2grid((3, 5), (1, 4), colspan=1, rowspan=1),
+                         pl.subplot2grid((3, 5), (2, 4), colspan=1, rowspan=1)]
+
+                axt = pl.axes([0.15, 0.9, 0.75, 0.075])
+                axt.axis('off')
+                axt.annotate("%s %d" % (self._mission.IDSTRING, self.ID),
+                             xy=(0.5, 0.5), xycoords='axes fraction',
+                             ha='center', va='center', fontsize=18)
+                axt.annotate(r'%s overfitting metric' % kind,
+                             xy=(0.5, 0.2), xycoords='axes fraction',
+                             ha='center', va='center', fontsize=14, color='k')
+
+                # Loop over three depths
+                for depth, ax, axh in zip([0.01, 0.001, 0.0001], axes, axesh):
+
+                    # Get the metric
+                    if kind == 'unmasked':
+                        metric = 1 - (np.hstack(O2) +
+                                      np.hstack(O3) / depth) / np.hstack(O1)
+                        color = 'r'
+                    elif kind == 'masked':
+                        metric = np.hstack(O5) / depth
+                        color = 'b'
+                    else:
+                        raise ValueError("Invalid metric.")
+
+                    # Median and median absolute deviation
+                    med = np.nanmedian(metric)
+                    mad = np.nanmedian(np.abs(metric - med))
+
+                    # Plot the metric as a function of time
+                    ax.plot(time, metric, 'k.', alpha=0.5, ms=2)
+                    ax.plot(time, metric, 'k-', alpha=0.1, lw=0.5)
+                    ylim = (-0.2, 1.0)
+                    ax.margins(0, None)
+                    ax.axhline(0, color='k', lw=1, alpha=0.5)
+                    ax.set_ylim(*ylim)
+                    ax.set_xlabel('Time (days)', fontsize=14)
+                    ax.set_ylabel('Overfitting (d = %s)' % str(depth),
+                                  fontsize=14)
+
+                    # Plot the histogram
+                    rng = (max(ylim[0], np.nanmin(metric)),
+                           min(ylim[1], np.nanmax(metric)))
+                    axh.hist(metric, bins=30, range=rng,
+                             orientation="horizontal",
+                             histtype="step", fill=False, color='k')
+                    axh.axhline(med, color=color, ls='-', lw=1)
+                    axh.axhspan(med - mad, med + mad, color=color, alpha=0.1)
+                    axh.axhline(0, color='k', lw=1, alpha=0.5)
+                    axh.yaxis.tick_right()
+                    axh.set_ylim(*ax.get_ylim())
+                    axh.set_xticklabels([])
+
+                    bbox = dict(fc="w", ec="1", alpha=0.5)
+                    info = r"$\mathrm{med}=%.3f$" % med + \
+                        "\n" + r"$\mathrm{mad}=%.3f$" % mad
+                    axh.annotate(info, xy=(0.1, 0.925),
+                                 xycoords='axes fraction',
+                                 ha="left", va="top", bbox=bbox, color=color)
+
+                    fig.savefig(figname + '_overfit_%s.pdf' % kind)
+                    log.info("Saved plot to %s." %
+                             (figname + '_overfit_%s.pdf' % kind))
+                    pl.close()
