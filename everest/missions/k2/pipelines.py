@@ -60,26 +60,26 @@ def get(ID, pipeline='everest2', campaign=None):
                 shutil.copy(fits, newdir)
 
     if pipeline.lower() == 'everest2':
-        s = k2plr.EVEREST(ID, version=2)
+        s = k2plr.EVEREST(ID, version=2, sci_campaign=campaign)
         time = s.time
         flux = s.flux
     elif pipeline.lower() == 'everest1':
-        s = k2plr.EVEREST(ID, version=1)
+        s = k2plr.EVEREST(ID, version=1, sci_campaign=campaign)
         time = s.time
         flux = s.flux
     elif pipeline.lower() == 'k2sff':
-        s = k2plr.K2SFF(ID)
+        s = k2plr.K2SFF(ID, sci_campaign=campaign)
         time = s.time
         flux = s.fcor
         # Normalize to the median flux
-        s = k2plr.EVEREST(ID, version=2)
+        s = k2plr.EVEREST(ID, version=2, sci_campaign=campaign)
         flux *= np.nanmedian(s.flux)
     elif pipeline.lower() == 'k2sc':
-        s = k2plr.K2SC(ID)
+        s = k2plr.K2SC(ID, sci_campaign=campaign)
         time = s.time
         flux = s.pdcflux
     elif pipeline.lower() == 'raw':
-        s = k2plr.EVEREST(ID, version=2, raw=True)
+        s = k2plr.EVEREST(ID, version=2, raw=True, sci_campaign=campaign)
         time = s.time
         flux = s.flux
     else:
