@@ -1002,7 +1002,8 @@ class Basecamp(object):
                                  ha="left", va="top", bbox=bbox, color=color)
 
                     bbox = dict(fc="w", ec="1", alpha=0.95)
-                    ax.annotate("%s overfitting metric" % kind, xy=(1-0.035, 0.92),
+                    ax.annotate("%s overfitting metric" % kind,
+                                xy=(1-0.035, 0.92),
                                 xycoords='axes fraction',
                                 ha='right', va='top',
                                 bbox=bbox, color=color)
