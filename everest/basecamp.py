@@ -33,7 +33,39 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 
-__all__ = ['Basecamp']
+__all__ = ['Basecamp', 'Overfitting']
+
+
+class Overfitting(object):
+    """Stores information on the overfitting metrics for a light curve."""
+
+    def __init__(self, O1, O2, O3, O4, O5):
+        '''
+
+        '''
+
+        self._O1 = O1
+        self._O2 = O2
+        self._O3 = O3
+        self._O4 = O4
+        self._O5 = O5
+
+    def masked(self, depth = 0.01):
+        '''
+        The masked overfitting metric for a given transit depth.
+
+        '''
+
+        return np.hstack(self._O5) / depth
+
+    def unmasked(self, depth = 0.01):
+        '''
+        The unmasked overfitting metric for a given transit depth.
+
+        '''
+
+        return 1 - (np.hstack(self._O2) +
+                    np.hstack(self._O3) / depth) / np.hstack(self._O1)
 
 
 class Basecamp(object):
@@ -1018,3 +1050,5 @@ class Basecamp(object):
             ovr.fig.savefig(figname + '_overfit.pdf')
             log.info("Saved plot to %s_overfit.pdf" % figname)
             pl.close()
+
+        return Overfitting(O1, O2, O3, O4, O5)
