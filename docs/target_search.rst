@@ -89,7 +89,7 @@
     var mission = getParameterByName("mission");
 
     // Constants
-    var mast_root = "http://archive.stsci.edu/missions/hlsp/everest/v2/";
+    var mast_root = "https://archive.stsci.edu/hlsps/everest/v2/";
     var version = "2.0";
 
     // Initialize
@@ -121,11 +121,16 @@
                 if (start != -1) {
 
                   // We found the target; get the data
-                  var campaign = data.substr(0,3);
-                  if (campaign.substr(1,2) < 10)
-                    var campaign_int = campaign.substr(2,1)
-                  else
-                    var campaign_int = campaign.substr(1,2)
+                  var campaign = data.substr(0,4);
+                  if (campaign.substr(1,3) < 10) {
+                    var campaign_int = campaign.substr(3,1);
+                    campaign = "c" + campaign.substr(2,2);
+                  } else if (campaign.substr(1,3) < 100) {
+                    var campaign_int = campaign.substr(2,2);
+                    campaign = "c" + campaign.substr(2,2);
+                  } else {
+                    var campaign_int = campaign.substr(1,3);
+                  }
                   var stop = data.indexOf("\n", start);
                   var info = data.slice(start, stop).split(',');
                   var mag = info[1];
