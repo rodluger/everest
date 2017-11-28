@@ -4,7 +4,7 @@ Using Everest
 .. role:: python(code)
    :language: python
 
-There are two ways of interacting with the :py:obj:`everest` catalog: via the command line and 
+There are two ways of interacting with the :py:obj:`everest` catalog: via the command line and
 through the Python interface. For quick visualization, check out the :doc:`everest <everest>` and
 :doc:`estats <estats>` command line tools.
 For customized access to de-trended light curves in Python, keep reading!
@@ -18,40 +18,40 @@ A Simple Example
 Once you've installed :py:obj:`everest`, you can easily import it in Python:
 
 .. code-block :: python
-   
+
    import everest
 
 Say we're interested in **EPIC 201367065**, a :py:obj:`K2` transiting exoplanet host star.
 Let's instantiate the :py:class:`Everest <everest.user.Everest>` class for this target:
 
 .. code-block :: python
-   
+
    star = everest.Everest(201367065)
 
 You will see the following printed to the screen:
 
 .. code-block :: bash
-  
+
    INFO  [everest.user.DownloadFile()]: Downloading the file...
    INFO  [everest.user.load_fits()]: Loading FITS file for 201367065.
 
 Everest automatically downloaded the light curve and created an object containing all of
-the de-trending information. For more information on the various methods and attributes 
-of :py:obj:`star`, check out the 
-:py:class:`everest.Detrender <everest.detrender.Detrender>` documentation (from which 
+the de-trending information. For more information on the various methods and attributes
+of :py:obj:`star`, check out the
+:py:class:`everest.Detrender <everest.detrender.Detrender>` documentation (from which
 :py:class:`Everest <everest.user.Everest>` inherits a bunch of parameters) and the
 :py:class:`Everest <everest.user.Everest>` docstring.
 
 To bring up the DVS (:doc:`data validation summary <dvsfigs>`) for the target, execute
 
 .. code-block :: python
-   
+
    star.dvs()
 
 You can also plot it interactively:
 
 .. code-block :: python
-  
+
    star.plot()
 
 .. figure:: everest_plot.jpeg
@@ -63,7 +63,7 @@ The raw light curve is shown at the top and the de-trended light curve at the bo
 The 6 hr CDPP (a photometric precision metric) is shown at the top of each plot in
 red. Since this light curve was de-trended with a break point, which divides it into
 two separate segments, the CDPP is shown for each one. At the top, below the title,
-we indicate the CDPP for the entire light curve (raw → de-trended). Outliers are 
+we indicate the CDPP for the entire light curve (raw → de-trended). Outliers are
 indicated in red, and arrows indicate points that are beyond the limits of the plot
 (zoom out to see them). You can read more about these plots :doc:`here <dvsfigs>`.
 
@@ -82,7 +82,7 @@ still strongly recommended that all transits be masked during the de-trending st
 to minimize de-trending bias. This can be done **easily** and **quickly** as follows:
 
 .. code-block:: python
-  
+
     star.mask_planet(t0, per, dur = 0.2)
     star.compute()
 
@@ -93,7 +93,7 @@ Alternatively, you can specify directly which indices in the light curve should 
 setting the :python:`star.transitmask` attribute:
 
 .. code-block:: python
-  
+
     star.transit_mask = np.array([0, 1, 2, ...], dtype = int)
     star.compute()
 
@@ -119,12 +119,12 @@ For :py:obj:`K2`, :py:obj:`everest` calculates 5 CBVs for each campaign, so any 
 from 0-5 is possible. To correct the light curve with 2 CBVs, run
 
 .. code-block :: python
-   
+
    star.cbv_num = 2
    star.compute()
- 
+
 Plotting the light curve will now show the flux corrected with two CBVs.
- 
+
 .. note :: The :py:obj:`everest` catalog uses only 1 CBV to prevent fitting out \
            real astrophysical variability. Care must be taken when using more CBVs \
            to ensure this is not the case.
@@ -169,7 +169,7 @@ Tuning the Model
 
 The :py:meth:`cross-validation step <everest.detrender.Detrender.cross_validate>` seeks
 to find the optimal value of the regularization parameter :python:`lambda` for each
-PLD order. These are stored in the :python:`star.lam` array, which has shape 
+PLD order. These are stored in the :python:`star.lam` array, which has shape
 :python:`(nsegments, pld_order)`. Changing these numbers will change the PLD weights
 and thus the de-trending power, but it will likely lead to underfitting/overfitting.
 Nevertheless, in cases where the optimization fails, tweaking of these numbers could
@@ -216,7 +216,7 @@ folded transit/eclipse is easy. Just remember to mask the transit and re-compute
 the model beforehand:
 
 .. code-block :: python
-   
+
    star.mask_planet(1980.42, 10.054)
    star.compute()
    star.plot_folded(1980.42, 10.054)
@@ -225,6 +225,13 @@ the model beforehand:
    :width: 400px
    :align: center
    :figclass: align-center
+
+Custom Detrending
+=================
+
+   As of version **2.0.8**, users can de-trend their own raw *K2* FITS files
+   using the :py:func:`everest.standalone.DetrendFITS` function, which is
+   a wrapper for the :py:class:`everest.detrender.rPLD` detrender.
 
 .. raw:: html
 
