@@ -367,8 +367,6 @@ def MakeFITS(model, fitsfile=None):
 
     '''
 
-    log.info('Generating FITS file...')
-
     # Get the fits file name
     if fitsfile is None:
         outfile = os.path.join(model.dir, model._mission.FITSFile(
@@ -379,6 +377,8 @@ def MakeFITS(model, fitsfile=None):
         return
     elif os.path.exists(outfile):
         os.remove(outfile)
+
+    log.info('Generating FITS file...')
 
     # Create the HDUs
     primary = PrimaryHDU(model)

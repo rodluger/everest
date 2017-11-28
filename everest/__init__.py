@@ -31,9 +31,11 @@ if not __EVEREST_SETUP__:
     from . import detrender
     from . import inject
     from . import user
+    from . import standalone
 
     # Import the good stuff
     from .detrender import *
+    from .standalone import DetrendFITS
     from .inject import *
     from .missions import *
     from .transit import Transit, TransitModel, TransitShape
