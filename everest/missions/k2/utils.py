@@ -71,11 +71,11 @@ class StatsPicker(object):
     :param str model: The name of the current :py:mod:`everest` \
            model. Default `"PLD"`
     :param str compare_to: The name of the model against which the data \
-           is being compared. Default `"everest1"`
+           is being compared. Default `"k2sff"`
 
     '''
 
-    def __init__(self, axes, x, y, epic, model='PLD', compare_to='everest1',
+    def __init__(self, axes, x, y, epic, model='PLD', compare_to='k2sff',
                  cadence='lc', campaign=None):
         '''
 
@@ -134,8 +134,9 @@ class StatsPicker(object):
                          (self.compare_to, self.epic[i]))
                 subprocess.Popen(['python', '-c',
                                   'import everest; everest.k2.pipelines.' +
-                                  'plot(%d, pipeline = "%s")' %
-                                  (self.epic[i], self.compare_to)])
+                                  'plot(%d, pipeline="%s", campaign=%d)' %
+                                  (self.epic[i], self.compare_to,
+                                   self.campaign)])
             elif self.compare_to.lower() == 'kepler':
                 pass
             else:
