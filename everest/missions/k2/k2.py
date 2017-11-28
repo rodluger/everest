@@ -8,11 +8,14 @@ Implements several routines specific to the `K2` mission.
 
 '''
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+     unicode_literals
 from . import sysrem
 from .utils import *
-from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, EVEREST_MAJOR_MINOR
-from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, AP_SATURATED_PIXEL
+from ...config import EVEREST_SRC, EVEREST_DAT, EVEREST_DEV, MAST_ROOT, \
+     EVEREST_MAJOR_MINOR
+from ...utils import DataContainer, sort_like, AP_COLLAPSED_PIXEL, \
+     AP_SATURATED_PIXEL
 from ...mathutils import SavGol, Interpolate, Scatter, Downbin
 try:
     import pyfits
@@ -39,8 +42,8 @@ log = logging.getLogger(__name__)
 
 __all__ = ['Setup', 'Season', 'Breakpoints', 'GetData', 'GetNeighbors',
            'Statistics', 'TargetDirectory', 'HasShortCadence', 'DVSFile',
-           'InjectionStatistics', 'HDUCards', 'CSVFile', 'FITSFile', 'FITSUrl', 'CDPP',
-           'GetTargetCBVs', 'FitCBVs', 'PlanetStatistics']
+           'InjectionStatistics', 'HDUCards', 'CSVFile', 'FITSFile', 'FITSUrl',
+           'CDPP', 'GetTargetCBVs', 'FitCBVs', 'PlanetStatistics']
 
 
 def Setup():
@@ -82,7 +85,8 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
         campaign = Season(EPIC)
         if hasattr(campaign, '__len__'):
             raise AttributeError(
-                "Please choose a campaign/season for this target: %s." % campaign)
+                "Please choose a campaign/season for this target: %s."
+                % campaign)
     else:
         campaign = season
 
@@ -100,12 +104,12 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
             8: [1950],         # OK
             91: [],
             92: [],
-            101: [],             # NO DATA
-            102: [],             # NO BREAKPOINT
+            101: [],           # NO DATA
+            102: [],           # NO BREAKPOINT
             111: [],
             112: [],
-            12: [1900],         # GUESS
-            13: [2157],         # OK
+            12: [1900],        # GUESS
+            13: [2157],        # OK
             14: [],
             15: [],
             16: [],
@@ -117,7 +121,7 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
                          63801,  67554,  71307, 75060,  78815,
                          82566,  86319,  90072, 93825,  97578,
                          101331, 105084, 108837]),
-            1: np.array([8044,   12066,  16088,  20135,  24132,  28154,    # OK
+            1: np.array([8044,   12066,  16088,  20135,  24132,  28154,   # OK
                          32176,  36198,  40220,  44242,  48264,  52286,
                          56308,  60330,  64352,  68374,  72396,  76418,
                          80440,  84462,  88509,  92506,  96528,  100550,
@@ -183,7 +187,8 @@ def CDPP(flux, mask=[], cadence='lc'):
 
     flux_savgol = SavGol(np.delete(flux, mask), win=svgwin)
     if len(flux_savgol):
-        return Scatter(flux_savgol / np.nanmedian(flux_savgol), remove_outliers=True, win=rmswin)
+        return Scatter(flux_savgol / np.nanmedian(flux_savgol),
+                       remove_outliers=True, win=rmswin)
     else:
         return np.nan
 
@@ -191,28 +196,36 @@ def CDPP(flux, mask=[], cadence='lc'):
 def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
             aperture_name='k2sff_15', saturated_aperture_name='k2sff_19',
             max_pixels=75, download_only=False, saturation_tolerance=-0.1,
-            bad_bits=[1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17], get_hires=True,
+            bad_bits=[1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17],
+            get_hires=True,
             get_nearby=True, **kwargs):
     '''
-    Returns a :py:obj:`DataContainer` instance with the raw data for the target.
+    Returns a :py:obj:`DataContainer` instance with the
+    raw data for the target.
 
     :param int EPIC: The EPIC ID number
     :param int season: The observing season (campaign). Default :py:obj:`None`
     :param str cadence: The light curve cadence. Default `lc`
     :param bool clobber: Overwrite existing files? Default :py:obj:`False`
-    :param bool delete_raw: Delete the FITS TPF after processing it? Default :py:obj:`False`
-    :param str aperture_name: The name of the aperture to use. Select `custom` to call \
-           :py:func:`GetCustomAperture`. Default `k2sff_15`
-    :param str saturated_aperture_name: The name of the aperture to use if the target is \
-           saturated. Default `k2sff_19`
+    :param bool delete_raw: Delete the FITS TPF after processing it? \
+           Default :py:obj:`False`
+    :param str aperture_name: The name of the aperture to use. Select \
+           `custom` to call :py:func:`GetCustomAperture`. Default `k2sff_15`
+    :param str saturated_aperture_name: The name of the aperture to use if \
+           the target is saturated. Default `k2sff_19`
     :param int max_pixels: Maximum number of pixels in the TPF. Default 75
-    :param bool download_only: Download raw TPF and return? Default :py:obj:`False`
-    :param float saturation_tolerance: Target is considered saturated if flux is within \
-           this fraction of the pixel well depth. Default -0.1
-    :param array_like bad_bits: Flagged :py:obj`QUALITY` bits to consider outliers when \
-           computing the model. Default `[1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]`
-    :param bool get_hires: Download a high resolution image of the target? Default :py:obj:`True`
-    :param bool get_nearby: Retrieve location of nearby sources? Default :py:obj:`True`
+    :param bool download_only: Download raw TPF and return? Default \
+           :py:obj:`False`
+    :param float saturation_tolerance: Target is considered saturated \
+           if flux is within this fraction of the pixel well depth. \
+           Default -0.1
+    :param array_like bad_bits: Flagged :py:obj`QUALITY` bits to consider \
+           outliers when computing the model. \
+           Default `[1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]`
+    :param bool get_hires: Download a high resolution image of the target? \
+           Default :py:obj:`True`
+    :param bool get_nearby: Retrieve location of nearby sources? \
+           Default :py:obj:`True`
 
     '''
 
@@ -221,7 +234,8 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
         campaign = Season(EPIC)
         if hasattr(campaign, '__len__'):
             raise AttributeError(
-                "Please choose a campaign/season for this target: %s." % campaign)
+                "Please choose a campaign/season for this target: %s."
+                % campaign)
     else:
         campaign = season
 
@@ -240,9 +254,11 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
 
         # Get the TPF
         tpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files',
-                           str(EPIC), 'ktwo%09d-c%02d_lpd-targ.fits.gz' % (EPIC, campaign))
+                           str(EPIC), 'ktwo%09d-c%02d_lpd-targ.fits.gz'
+                           % (EPIC, campaign))
         sc_tpf = os.path.join(KPLR_ROOT, 'data', 'k2', 'target_pixel_files',
-                              str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz' % (EPIC, campaign))
+                              str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz'
+                              % (EPIC, campaign))
         if clobber or not os.path.exists(tpf):
             kplr_client.k2_star(EPIC).get_target_pixel_files(fetch=True)
 
@@ -257,9 +273,11 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
             for i in range(tpf_big_aperture.shape[0]):
                 for j in range(tpf_big_aperture.shape[1]):
                     if f[2].data[i][j] == 1:
-                        for n in [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]:
+                        for n in [(i - 1, j), (i + 1, j),
+                                  (i, j - 1), (i, j + 1)]:
                             if n[0] >= 0 and n[0] < tpf_big_aperture.shape[0]:
-                                if n[1] >= 0 and n[1] < tpf_big_aperture.shape[1]:
+                                if n[1] >= 0 and n[1] < \
+                                        tpf_big_aperture.shape[1]:
                                     if tpf_aperture[n[0]][n[1]] == 1:
                                         tpf_big_aperture[i][j] = 1
 
@@ -366,17 +384,21 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
         pixel_images = [fpix[0], fpix[len(fpix) // 2], fpix[len(fpix) - 1]]
 
         # Atomically write to disk.
-        # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
+        # http://stackoverflow.com/questions/2333872/
+        # atomic-writing-to-file-with-python
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
         f = NamedTemporaryFile("wb", delete=False)
-        np.savez_compressed(f, cadn=cadn, time=time, fpix=fpix, fpix_err=fpix_err,
+        np.savez_compressed(f, cadn=cadn, time=time, fpix=fpix,
+                            fpix_err=fpix_err,
                             qual=qual, apertures=apertures,
                             pc1=pc1, pc2=pc2, fitsheader=fitsheader,
-                            pixel_images=pixel_images, nearby=nearby, hires=hires,
+                            pixel_images=pixel_images, nearby=nearby,
+                            hires=hires,
                             sc_cadn=sc_cadn, sc_time=sc_time, sc_fpix=sc_fpix,
                             sc_fpix_err=sc_fpix_err, sc_qual=sc_qual,
-                            sc_pc1=sc_pc1, sc_pc2=sc_pc2, sc_fitsheader=sc_fitsheader)
+                            sc_pc1=sc_pc1, sc_pc2=sc_pc2,
+                            sc_fitsheader=sc_fitsheader)
         f.flush()
         os.fsync(f.fileno())
         f.close()
@@ -491,8 +513,8 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
     # Treat saturated and unsaturated stars differently.
     if saturated:
 
-        # We need to check if we have too many pixels *after* collapsing the columns.
-        # Sort the apertures in decreasing order of pixels, but keep the aperture
+        # Need to check if we have too many pixels *after* collapsing columns.
+        # Sort the apertures in decreasing order of pixels, but keep the apert.
         # chosen by the user first.
         aperture_names = np.array(list(apertures.keys()))
         npix_per_aperture = np.array(
@@ -501,7 +523,8 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
         aperture_names = np.append([aperture_name], np.delete(
             aperture_names, np.argmax(aperture_names == aperture_name)))
 
-        # Loop through them. Pick the first one that satisfies the `max_pixels` constraint
+        # Loop through them. Pick the first one that satisfies
+        # the `max_pixels` constraint
         for aperture_name in aperture_names:
             aperture = apertures[aperture_name]
             aperture[np.isnan(fpix[0])] = 0
@@ -515,7 +538,8 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
                 break
         if np.sum(apcopy) + ncol > max_pixels:
             log.error(
-                "No apertures available with fewer than %d pixels. Aborting." % max_pixels)
+                "No apertures available with fewer than %d pixels. Aborting."
+                % max_pixels)
             return None
 
         # Now, finally, we collapse the saturated columns into single pixels
@@ -528,16 +552,20 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
         # That's really bad, since that's where all the information is. Let's
         # artificially extend the aperture by two pixels at the top and bottom
         # of each saturated column. This *could* increase contamination, but
-        # it's unlikely since the saturated target is by definition really bright
+        # it's unlikely since the saturated target is by definition really
+        # bright
         ext = 0
         for j in range(aperture.shape[1]):
             if np.any(f97[:, j] > satflx):
                 for i in range(aperture.shape[0]):
-                    if (aperture[i, j] == 0) and (np.nanmedian(fpix[:, i, j]) > 0):
-                        if (i + 2 < aperture.shape[0]) and aperture[i + 2, j] == 1:
+                    if (aperture[i, j] == 0) and \
+                            (np.nanmedian(fpix[:, i, j]) > 0):
+                        if (i + 2 < aperture.shape[0]) and \
+                                aperture[i + 2, j] == 1:
                             aperture[i, j] = 2
                             ext += 1
-                        elif (i + 1 < aperture.shape[0]) and aperture[i + 1, j] == 1:
+                        elif (i + 1 < aperture.shape[0]) and \
+                                aperture[i + 1, j] == 1:
                             aperture[i, j] = 2
                             ext += 1
                         elif (i - 1 >= 0) and aperture[i - 1, j] == 1:
@@ -581,18 +609,20 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
         # Check if there are too many pixels
         if np.sum(aperture) > max_pixels:
 
-            # This case is simpler: we just pick the largest aperture that's less than or equal to `max_pixels`
+            # This case is simpler: we just pick the largest aperture
+            # that's less than or equal to `max_pixels`
             keys = list(apertures.keys())
             npix = np.array([np.sum(apertures[k]) for k in keys])
             aperture_name = keys[np.argmax(npix * (npix <= max_pixels))]
             aperture = apertures[aperture_name]
             aperture[np.isnan(fpix[0])] = 0
             if np.sum(aperture) > max_pixels:
-                log.error(
-                    "No apertures available with fewer than %d pixels. Aborting." % max_pixels)
+                log.error("No apertures available with fewer than " +
+                          "%d pixels. Aborting." % max_pixels)
                 return None
             log.warn(
-                "Selected aperture is too big. Proceeding with aperture `%s` instead." % aperture_name)
+                "Selected aperture is too big. Proceeding with aperture " +
+                "`%s` instead." % aperture_name)
 
         # Make the pixel flux array 2D
         aperture[np.isnan(fpix[0])] = 0
@@ -605,9 +635,11 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
     if RemoveBackground(EPIC, campaign=campaign) and (len(binds[0]) > 0):
         bkg = np.nanmedian(np.array([f[binds]
                                      for f in fpix], dtype='float64'), axis=1)
-        # Uncertainty of the median: http://davidmlane.com/hyperstat/A106993.html
+        # Uncertainty of the median:
+        # http://davidmlane.com/hyperstat/A106993.html
         bkg_err = 1.253 * np.nanmedian(np.array([e[binds] for e in fpix_err],
-                                                dtype='float64'), axis=1) / np.sqrt(len(binds[0]))
+                                       dtype='float64'), axis=1) \
+            / np.sqrt(len(binds[0]))
         bkg = bkg.reshape(-1, 1)
         bkg_err = bkg_err.reshape(-1, 1)
     else:
@@ -679,20 +711,25 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
     return data
 
 
-def GetNeighbors(EPIC, season=None, model=None, neighbors=10, mag_range=(11., 13.),
+def GetNeighbors(EPIC, season=None, model=None, neighbors=10,
+                 mag_range=(11., 13.),
                  cdpp_range=None, aperture_name='k2sff_15',
                  cadence='lc', **kwargs):
     '''
     Return `neighbors` random bright stars on the same module as `EPIC`.
 
     :param int EPIC: The EPIC ID number
-    :param str model: The :py:obj:`everest` model name. Only used when imposing CDPP bounds. Default :py:obj:`None`
+    :param str model: The :py:obj:`everest` model name. Only used when \
+           imposing CDPP bounds. Default :py:obj:`None`
     :param int neighbors: Number of neighbors to return. Default 10
-    :param str aperture_name: The name of the aperture to use. Select `custom` to call \
+    :param str aperture_name: The name of the aperture to use. Select \
+           `custom` to call \
            :py:func:`GetCustomAperture`. Default `k2sff_15`
     :param str cadence: The light curve cadence. Default `lc`
-    :param tuple mag_range: (`low`, `high`) values for the Kepler magnitude. Default (11, 13)
-    :param tuple cdpp_range: (`low`, `high`) values for the de-trended CDPP. Default :py:obj:`None`
+    :param tuple mag_range: (`low`, `high`) values for the Kepler magnitude. \
+           Default (11, 13)
+    :param tuple cdpp_range: (`low`, `high`) values for the de-trended CDPP. \
+           Default :py:obj:`None`
 
     '''
 
@@ -706,7 +743,8 @@ def GetNeighbors(EPIC, season=None, model=None, neighbors=10, mag_range=(11., 13
         campaign = Season(EPIC)
         if hasattr(campaign, '__len__'):
             raise AttributeError(
-                "Please choose a campaign/season for this target: %s." % campaign)
+                "Please choose a campaign/season for this target: %s."
+                % campaign)
     else:
         campaign = season
     epics, kepmags, channels, short_cadence = np.array(GetK2Stars()[
@@ -724,8 +762,9 @@ def GetNeighbors(EPIC, season=None, model=None, neighbors=10, mag_range=(11., 13
     else:
         mag_lo = mag_range[0]
         mag_hi = mag_range[1]
-        # K2-specific tweak. The short cadence stars are preferentially really bright ones,
-        # so we won't get many neighbors if we stick to the default magnitude range! I'm
+        # K2-specific tweak. The short cadence stars are preferentially
+        # really bright ones, so we won't get many neighbors if we
+        # stick to the default magnitude range! I'm
         # therefore enforcing a lower magnitude cut-off of 8.
         if cadence == 'sc':
             mag_lo = 8.
@@ -753,7 +792,8 @@ def GetNeighbors(EPIC, season=None, model=None, neighbors=10, mag_range=(11., 13
         for star, kp, channel, sc in zip(epics, kepmags, channels, short_cadence):
 
             # Preliminary vetting
-            if not (((channel in c) if nearby else True) and (kp < mag_hi) and (kp > mag_lo) and (sc if cadence == 'sc' else True)):
+            if not (((channel in c) if nearby else True) and (kp < mag_hi) \
+                    and (kp > mag_lo) and (sc if cadence == 'sc' else True)):
                 continue
 
             # Reject if self or if already in list
@@ -761,12 +801,14 @@ def GetNeighbors(EPIC, season=None, model=None, neighbors=10, mag_range=(11., 13
                 continue
 
             # Ensure raw light curve file exists
-            if not os.path.exists(os.path.join(TargetDirectory(star, campaign), 'data.npz')):
+            if not os.path.exists(
+                    os.path.join(TargetDirectory(star, campaign), 'data.npz')):
                 continue
 
             # Ensure crowding is OK. This is quite conservative, as we
-            # need to prevent potential astrophysical false positive contamination
-            # from crowded planet-hosting neighbors when doing neighboring PLD.
+            # need to prevent potential astrophysical false positive
+            # contamination from crowded planet-hosting neighbors when
+            # doing neighboring PLD.
             contam = False
             data = np.load(os.path.join(
                 TargetDirectory(star, campaign), 'data.npz'))
@@ -814,7 +856,8 @@ def GetNeighbors(EPIC, season=None, model=None, neighbors=10, mag_range=(11., 13
 
             # Reject if the model is not present
             if model is not None:
-                if not os.path.exists(os.path.join(TargetDirectory(star, campaign), model + '.npz')):
+                if not os.path.exists(os.path.join(
+                        TargetDirectory(star, campaign), model + '.npz')):
                     continue
 
                 # Reject if CDPP out of range
@@ -843,7 +886,8 @@ def PlanetStatistics(model='nPLD', compare_to='k2sff', **kwargs):
     `compare_to` for all known K2 planets.
 
     :param str model: The :py:obj:`everest` model name
-    :param str compare_to: The :py:obj:`everest` model name or other K2 pipeline name
+    :param str compare_to: The :py:obj:`everest` model name or \
+           other K2 pipeline name
 
     '''
 
@@ -916,12 +960,14 @@ def PlanetStatistics(model='nPLD', compare_to='k2sff', **kwargs):
     pl.show()
 
 
-def ShortCadenceStatistics(campaign=None, clobber=False, model='nPLD', plot=True, **kwargs):
+def ShortCadenceStatistics(campaign=None, clobber=False, model='nPLD',
+                           plot=True, **kwargs):
     '''
     Computes and plots the CDPP statistics comparison between short cadence
     and long cadence de-trended light curves
 
-    :param campaign: The campaign number or list of campaign numbers. Default is to plot all campaigns
+    :param campaign: The campaign number or list of campaign numbers. \
+           Default is to plot all campaigns
     :param bool clobber: Overwrite existing files? Default :py:obj:`False`
     :param str model: The :py:obj:`everest` model name
     :param bool plot: Default :py:obj:`True`
@@ -945,10 +991,10 @@ def ShortCadenceStatistics(campaign=None, clobber=False, model='nPLD', plot=True
                                'tables', 'c%02d_%s.cdpp' % (int(camp), model))
         if clobber or not os.path.exists(outfile):
             with open(outfile, 'w') as f:
-                print(
-                    "EPIC               Kp           Raw CDPP     Everest CDPP      Saturated", file=f)
-                print(
-                    "---------          ------       ---------    ------------      ---------", file=f)
+                print("EPIC               Kp           Raw CDPP     " +
+                      "Everest CDPP      Saturated", file=f)
+                print("---------          ------       ---------    " +
+                      "------------      ---------", file=f)
                 all = GetK2Campaign(int(camp), cadence='sc')
                 stars = np.array([s[0] for s in all], dtype=int)
                 kpmgs = np.array([s[1] for s in all], dtype=float)
@@ -962,7 +1008,8 @@ def ShortCadenceStatistics(campaign=None, clobber=False, model='nPLD', plot=True
                     try:
                         data = np.load(nf)
                         print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d}".format(
-                            stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()], int(data['saturated'])), file=f)
+                              stars[i], kpmgs[i], data['cdppr'][()], data['cdpp'][()],
+                              int(data['saturated'])), file=f)
                     except:
                         print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d}".format(
                             stars[i], kpmgs[i], np.nan, np.nan, 0), file=f)
@@ -1010,7 +1057,8 @@ def ShortCadenceStatistics(campaign=None, clobber=False, model='nPLD', plot=True
 
         # Get the long cadence stats
         compfile = os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                'tables', 'c%02d_%s.cdpp' % (int(camp), model[:-3]))
+                                'tables', 'c%02d_%s.cdpp' % (int(camp),
+                                                             model[:-3]))
         epic_1, _, _, cdpp6_1, _, _, _, _, saturated = np.loadtxt(
             compfile, unpack=True, skiprows=2)
         epic_1 = np.array(epic_1, dtype=int)
@@ -1062,25 +1110,32 @@ def ShortCadenceStatistics(campaign=None, clobber=False, model='nPLD', plot=True
 
     # Pickable points
     Picker = StatsPicker([ax], [xall], [yall], epics, model=model[:-3],
-                         compare_to=model[:-3], cadence='sc', campaign=campaign)
+                         compare_to=model[:-3], cadence='sc',
+                         campaign=campaign)
     fig.canvas.mpl_connect('pick_event', Picker)
 
     # Show
     pl.show()
 
 
-def Statistics(season=None, clobber=False, model='nPLD', injection=False, compare_to='kepler', plot=True, cadence='lc', planets=False, **kwargs):
+def Statistics(season=None, clobber=False, model='nPLD', injection=False,
+               compare_to='kepler', plot=True, cadence='lc', planets=False,
+               **kwargs):
     '''
-    Computes and plots the CDPP statistics comparison between `model` and `compare_to`
-    for all long cadence light curves in a given campaign
+    Computes and plots the CDPP statistics comparison between `model`
+    and `compare_to` for all long cadence light curves in a given campaign
 
-    :param season: The campaign number or list of campaign numbers. Default is to plot all campaigns
+    :param season: The campaign number or list of campaign numbers. \
+           Default is to plot all campaigns
     :param bool clobber: Overwrite existing files? Default :py:obj:`False`
     :param str model: The :py:obj:`everest` model name
-    :param str compare_to: The :py:obj:`everest` model name or other K2 pipeline name
+    :param str compare_to: The :py:obj:`everest` model name or other \
+           K2 pipeline name
     :param bool plot: Default :py:obj:`True`
-    :param bool injection: Statistics for injection tests? Default :py:obj:`False`
-    :param bool planets: Statistics for known K2 planets? Default :py:obj:`False`
+    :param bool injection: Statistics for injection tests? Default \
+           :py:obj:`False`
+    :param bool planets: Statistics for known K2 planets? \
+           Default :py:obj:`False`
 
     '''
 
@@ -1089,7 +1144,8 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
 
     # Is this short cadence?
     if cadence == 'sc':
-        return ShortCadenceStatistics(campaign=campaign, clobber=clobber, model=model, plot=plot, **kwargs)
+        return ShortCadenceStatistics(campaign=campaign, clobber=clobber,
+                                      model=model, plot=plot, **kwargs)
 
     # Check the campaign
     if campaign is None:
@@ -1101,7 +1157,8 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
 
     # Is this an injection run?
     if injection:
-        return InjectionStatistics(campaign=campaign, clobber=clobber, model=model, plot=plot, **kwargs)
+        return InjectionStatistics(campaign=campaign, clobber=clobber,
+                                   model=model, plot=plot, **kwargs)
 
     # Compute the statistics
     sub = np.array([s[0] for s in GetK2Campaign(campaign)], dtype=int)
@@ -1109,9 +1166,12 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
                            'tables', 'c%02d_%s.cdpp' % (int(campaign), model))
     if clobber or not os.path.exists(outfile):
         with open(outfile, 'w') as f:
-            print(
-                "EPIC               Kp           Raw CDPP     Everest CDPP      Validation        Outliers[1]     Outliers[2]     Datapoints     Saturated", file=f)
-            print("---------          ------       ---------    ------------      ----------        -----------     -----------     ----------     ---------", file=f)
+            print("EPIC               Kp           Raw CDPP     Everest CDPP" +
+                  "      Validation        Outliers[1]     Outliers[2]     " +
+                  "Datapoints     Saturated", file=f)
+            print("---------          ------       ---------    ------------" +
+                  "      ----------        -----------     -----------     " +
+                  "----------     ---------", file=f)
             all = GetK2Campaign(int(campaign))
             stars = np.array([s[0] for s in all], dtype=int)
             kpmgs = np.array([s[1] for s in all], dtype=float)
@@ -1127,7 +1187,8 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
 
                     # Remove NaNs and flagged cadences
                     flux = np.delete(data['fraw'] - data['model'], np.array(
-                        list(set(np.concatenate([data['nanmask'], data['badmask']])))))
+                        list(set(np.concatenate([data['nanmask'],
+                                                 data['badmask']])))))
                     # Iterative sigma clipping to get 5 sigma outliers
                     inds = np.array([], dtype=int)
                     m = 1
@@ -1148,10 +1209,13 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
                         cdpp = data['cdpp6'][()]
 
                     print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(
-                        stars[i], kpmgs[i], data['cdppr'][()], cdpp, data['cdppv'][()], len(data['outmask']), nout, ntot, int(data['saturated'])), file=f)
+                          stars[i], kpmgs[i], data['cdppr'][()], cdpp,
+                          data['cdppv'][()], len(data['outmask']), nout,
+                          ntot, int(data['saturated'])), file=f)
                 except:
                     print("{:>09d} {:>15.3f} {:>15.3f} {:>15.3f} {:>15.3f} {:>15d} {:>15d} {:>15d} {:>15d}".format(
-                        stars[i], kpmgs[i], np.nan, np.nan, np.nan, 0, 0, 0, 0), file=f)
+                          stars[i], kpmgs[i], np.nan, np.nan,
+                          np.nan, 0, 0, 0, 0), file=f)
             print("")
 
     if plot:
@@ -1189,38 +1253,55 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
 
         # Get the comparison model stats
         if compare_to.lower() == 'everest1':
-            epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                      'tables', 'c%02d_everest1.cdpp' % int(campaign)), unpack=True)
+            epic_1, cdpp6_1 = np.loadtxt(
+                              os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                           'tables', 'c%02d_everest1.cdpp'
+                                           % int(campaign)), unpack=True)
             cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
             # Outliers
-            epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                           'tables', 'c%02d_everest1.out' % int(campaign)), unpack=True)
+            epic_1, out_1, tot_1 = np.loadtxt(
+                                   os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                                'tables', 'c%02d_everest1.out'
+                                                % int(campaign)), unpack=True)
             out_1 = sort_like(out_1, epic, epic_1)
             tot_1 = sort_like(tot_1, epic, epic_1)
         elif compare_to.lower() == 'k2sc':
-            epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                      'tables', 'c%02d_k2sc.cdpp' % int(campaign)), unpack=True)
+            epic_1, cdpp6_1 = np.loadtxt(
+                              os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                           'tables', 'c%02d_k2sc.cdpp' %
+                                           int(campaign)), unpack=True)
             cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
             # Outliers
-            epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                           'tables', 'c%02d_k2sc.out' % int(campaign)), unpack=True)
+            epic_1, out_1, tot_1 = np.loadtxt(
+                                   os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                                'tables', 'c%02d_k2sc.out'
+                                                % int(campaign)), unpack=True)
             out_1 = sort_like(out_1, epic, epic_1)
             tot_1 = sort_like(tot_1, epic, epic_1)
         elif compare_to.lower() == 'k2sff':
-            epic_1, cdpp6_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                      'tables', 'c%02d_k2sff.cdpp' % int(campaign)), unpack=True)
+            epic_1, cdpp6_1 = np.loadtxt(
+                              os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                           'tables', 'c%02d_k2sff.cdpp'
+                                           % int(campaign)), unpack=True)
             cdpp6_1 = sort_like(cdpp6_1, epic, epic_1)
             # Outliers
-            epic_1, out_1, tot_1 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                           'tables', 'c%02d_k2sff.out' % int(campaign)), unpack=True)
+            epic_1, out_1, tot_1 = np.loadtxt(
+                                   os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                                'tables', 'c%02d_k2sff.out'
+                                                % int(campaign)), unpack=True)
             out_1 = sort_like(out_1, epic, epic_1)
             tot_1 = sort_like(tot_1, epic, epic_1)
         elif compare_to.lower() == 'kepler':
-            kic, kepler_kp, kepler_cdpp6 = np.loadtxt(os.path.join(EVEREST_SRC, 'missions', 'k2',
-                                                                   'tables', 'kepler.cdpp'), unpack=True)
+            kic, kepler_kp, kepler_cdpp6 = np.loadtxt(
+                                           os.path.join(EVEREST_SRC,
+                                                        'missions', 'k2',
+                                                        'tables',
+                                                        'kepler.cdpp'),
+                                           unpack=True)
         else:
-            compfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'tables', 'c%02d_%s.cdpp' % (
-                int(campaign), compare_to))
+            compfile = os.path.join(EVEREST_SRC, 'missions', 'k2',
+                                    'tables', 'c%02d_%s.cdpp' %
+                                    (int(campaign), compare_to))
 
             epic_1, _, _, cdpp6_1, _, _, out_1, tot_1, saturated = np.loadtxt(
                 compfile, unpack=True, skiprows=2)
@@ -1237,18 +1318,21 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
         # ------ 1. Plot cdpp vs. mag
         if compare_to.lower() != 'kepler':
             fig = pl.figure(figsize=(16, 5))
-            ax = [pl.subplot2grid((120, 120), (0,  0), colspan=35, rowspan=120),
+            ax = [pl.subplot2grid((120, 120), (0,  0), colspan=35,
+                                  rowspan=120),
                   pl.subplot2grid((120, 120), (0,  40),
                                   colspan=35, rowspan=120),
                   pl.subplot2grid((120, 120), (0,  80),
                                   colspan=35, rowspan=55),
-                  pl.subplot2grid((120, 120), (65,  80), colspan=35, rowspan=55)]
+                  pl.subplot2grid((120, 120), (65,  80), colspan=35,
+                                  rowspan=55)]
         else:
             fig = pl.figure(figsize=(12, 5))
             ax = [pl.subplot2grid((120, 75), (0,  0), colspan=35, rowspan=120),
                   None,
                   pl.subplot2grid((120, 75), (0,  40), colspan=35, rowspan=55),
-                  pl.subplot2grid((120, 75), (65,  40), colspan=35, rowspan=55)]
+                  pl.subplot2grid((120, 75), (65,  40), colspan=35,
+                                  rowspan=55)]
         fig.canvas.set_window_title(
             'K2 Campaign %s: %s versus %s' % (campaign, model, compare_to))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.125, top=0.9)
@@ -1275,7 +1359,8 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
                           marker='.', alpha=alpha_kepler)
             ax[0].scatter(kp, cdpp6, color='b', marker='.',
                           alpha=alpha_unsat, picker=True)
-            for x, y, style in zip([kepler_kp, kp], [kepler_cdpp6, cdpp6], ['yo', 'bo']):
+            for x, y, style in zip([kepler_kp, kp], [kepler_cdpp6, cdpp6],
+                                   ['yo', 'bo']):
                 by = np.zeros_like(bins) * np.nan
                 for b, bin in enumerate(bins):
                     i = np.where((y > -np.inf) & (y < np.inf) &
@@ -1352,7 +1437,8 @@ def Statistics(season=None, clobber=False, model='nPLD', injection=False, compar
 
         # Pickable points
         Picker = StatsPicker([ax[0], ax[1]], [kp, kp], [
-                             cdpp6, y], epic, model=model, compare_to=compare_to, campaign=campaign)
+                             cdpp6, y], epic, model=model,
+                             compare_to=compare_to, campaign=campaign)
         fig.canvas.mpl_connect('pick_event', Picker)
 
         # Show
@@ -1380,14 +1466,16 @@ def HasShortCadence(EPIC, season=None):
         return None
 
 
-def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show=True, **kwargs):
+def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True,
+                        show=True, **kwargs):
     '''
     Computes and plots the statistics for injection/recovery tests.
 
     :param int campaign: The campaign number. Default 0
     :param str model: The :py:obj:`everest` model name
     :param bool plot: Default :py:obj:`True`
-    :param bool show: Show the plot? Default :py:obj:`True`. If :py:obj:`False`, returns the `fig, ax` instances.
+    :param bool show: Show the plot? Default :py:obj:`True`. \
+           If :py:obj:`False`, returns the `fig, ax` instances.
     :param bool clobber: Overwrite existing files? Default :py:obj:`False`
 
     '''
@@ -1402,10 +1490,10 @@ def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show
                                'tables', 'c%04.1f_%s.inj' % (campaign, model))
     if clobber or not os.path.exists(outfile):
         with open(outfile, 'w') as f:
-            print(
-                "EPIC         Depth         UControl      URecovered    MControl      MRecovered", file=f)
-            print(
-                "---------    ----------    ----------    ----------    ----------    ----------", file=f)
+            print("EPIC         Depth         UControl      URecovered"+
+                  "    MControl      MRecovered", file=f)
+            print("---------    ----------    ----------    ----------"+
+                  "    ----------    ----------", file=f)
             for i, _ in enumerate(stars):
                 sys.stdout.write('\rProcessing target %d/%d...' %
                                  (i + 1, len(stars)))
@@ -1435,7 +1523,8 @@ def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show
 
                         # Log it
                         print("{:>09d} {:>13.8f} {:>13.8f} {:>13.8f} {:>13.8f} {:>13.8f}".format(
-                            stars[i], depth, ucontrol, urecovered, mcontrol, mrecovered), file=f)
+                              stars[i], depth, ucontrol, urecovered, mcontrol,
+                              mrecovered), file=f)
 
                     except:
                         pass
@@ -1446,8 +1535,8 @@ def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show
 
         # Load the statistics
         try:
-            epic, depth, ucontrol, urecovered, mcontrol, mrecovered = np.loadtxt(
-                outfile, unpack=True, skiprows=2)
+            epic, depth, ucontrol, urecovered, mcontrol, mrecovered = \
+                np.loadtxt(outfile, unpack=True, skiprows=2)
         except ValueError:
             raise Exception("No targets to plot.")
 
@@ -1483,15 +1572,20 @@ def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show
             # Indices for this plot
             idx = np.where(depth == depths[i])
 
-            for j, control, recovered in zip([0, 1], [ucontrol[idx], mcontrol[idx]], [urecovered[idx], mrecovered[idx]]):
+            for j, control, recovered in zip([0, 1], [ucontrol[idx],
+                                                      mcontrol[idx]],
+                                                     [urecovered[idx],
+                                                      mrecovered[idx]]):
 
                 # Control
-                ax[i, j].hist(control, bins=nbins[i], range=ranges[i], color='r',
-                              histtype='step', weights=np.ones_like(control) / len(control))
+                ax[i, j].hist(control, bins=nbins[i], range=ranges[i],
+                              color='r', histtype='step',
+                              weights=np.ones_like(control) / len(control))
 
                 # Recovered
-                ax[i, j].hist(recovered, bins=nbins[i], range=ranges[i], color='b',
-                              histtype='step', weights=np.ones_like(recovered) / len(recovered))
+                ax[i, j].hist(recovered, bins=nbins[i], range=ranges[i],
+                              color='b', histtype='step',
+                              weights=np.ones_like(recovered) / len(recovered))
 
                 # Indicate center
                 ax[i, j].axvline(1., color='k', ls='--')
@@ -1502,31 +1596,47 @@ def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show
                              0]) / len(recovered)
                     al = len(np.where(recovered < ranges[i][0])[
                              0]) / len(recovered)
-                    ax[i, j].annotate('%.2f' % al, xy=(0.01, 0.93), xycoords='axes fraction',
-                                      xytext=(0.1, 0.93), ha='left', va='center', color='b',
-                                      arrowprops=dict(arrowstyle="->", color='b'))
-                    ax[i, j].annotate('%.2f' % au, xy=(0.99, 0.93), xycoords='axes fraction',
-                                      xytext=(0.9, 0.93), ha='right', va='center', color='b',
-                                      arrowprops=dict(arrowstyle="->", color='b'))
+                    ax[i, j].annotate('%.2f' % al, xy=(0.01, 0.93),
+                                      xycoords='axes fraction',
+                                      xytext=(0.1, 0.93), ha='left',
+                                      va='center', color='b',
+                                      arrowprops=dict(arrowstyle="->",
+                                      color='b'))
+                    ax[i, j].annotate('%.2f' % au, xy=(0.99, 0.93),
+                                      xycoords='axes fraction',
+                                      xytext=(0.9, 0.93), ha='right',
+                                      va='center', color='b',
+                                      arrowprops=dict(arrowstyle="->",
+                                      color='b'))
                 if len(control):
                     cu = len(np.where(control > ranges[i][1])[
                              0]) / len(control)
                     cl = len(np.where(control < ranges[i][0])[
                              0]) / len(control)
-                    ax[i, j].annotate('%.2f' % cl, xy=(0.01, 0.86), xycoords='axes fraction',
-                                      xytext=(0.1, 0.86), ha='left', va='center', color='r',
-                                      arrowprops=dict(arrowstyle="->", color='r'))
-                    ax[i, j].annotate('%.2f' % cu, xy=(0.99, 0.86), xycoords='axes fraction',
-                                      xytext=(0.9, 0.86), ha='right', va='center', color='r',
-                                      arrowprops=dict(arrowstyle="->", color='r'))
+                    ax[i, j].annotate('%.2f' % cl, xy=(0.01, 0.86),
+                                      xycoords='axes fraction',
+                                      xytext=(0.1, 0.86), ha='left',
+                                      va='center', color='r',
+                                      arrowprops=dict(arrowstyle="->",
+                                      color='r'))
+                    ax[i, j].annotate('%.2f' % cu, xy=(0.99, 0.86),
+                                      xycoords='axes fraction',
+                                      xytext=(0.9, 0.86), ha='right',
+                                      va='center', color='r',
+                                      arrowprops=dict(arrowstyle="->",
+                                      color='r'))
 
                 # Indicate the median
                 if len(recovered):
-                    ax[i, j].annotate('M = %.2f' % np.median(recovered), xy=(0.35, 0.5), ha='right',
-                                      xycoords='axes fraction', color='b', fontsize=16)
+                    ax[i, j].annotate('M = %.2f' % np.median(recovered),
+                                      xy=(0.35, 0.5), ha='right',
+                                      xycoords='axes fraction', color='b',
+                                      fontsize=16)
                 if len(control):
-                    ax[i, j].annotate('M = %.2f' % np.median(control), xy=(0.65, 0.5), ha='left',
-                                      xycoords='axes fraction', color='r', fontsize=16)
+                    ax[i, j].annotate('M = %.2f' % np.median(control),
+                                      xy=(0.65, 0.5), ha='left',
+                                      xycoords='axes fraction',
+                                      color='r', fontsize=16)
 
                 # Tweaks
                 ax[i, j].set_xticks(xticks[i])
@@ -1535,7 +1645,8 @@ def InjectionStatistics(campaign=0, clobber=False, model='nPLD', plot=True, show
                 ax[i, j].set_xlabel(r'$D/D_0$', fontsize=16)
 
                 ax[i, j].get_yaxis().set_major_locator(MaxNLocator(5))
-                for tick in ax[i, j].get_xticklabels() + ax[i, j].get_yticklabels():
+                for tick in ax[i, j].get_xticklabels() + \
+                        ax[i, j].get_yticklabels():
                     tick.set_fontsize(14)
 
         if show:
@@ -1557,52 +1668,85 @@ def HDUCards(headers, hdu=0):
     if hdu == 0:
         # Get info from the TPF Primary HDU Header
         tpf_header = headers[0]
-        entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'CHANNEL', 'MODULE',
-                   'OUTPUT', 'CAMPAIGN', 'DATA_REL', 'OBSMODE', 'TTABLEID',
-                   'RADESYS', 'RA_OBJ', 'DEC_OBJ',  'EQUINOX', 'KEPMAG']
+        entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'CHANNEL',
+                   'MODULE', 'OUTPUT', 'CAMPAIGN', 'DATA_REL', 'OBSMODE',
+                   'TTABLEID', 'RADESYS', 'RA_OBJ', 'DEC_OBJ',  'EQUINOX',
+                   'KEPMAG']
     elif (hdu == 1) or (hdu == 6):
         # Get info from the TPF BinTable HDU Header
         tpf_header = headers[1]
-        entries = ['WCSN4P', 'WCAX4P', '1CTY4P', '2CTY4P', '1CUN4P', '2CUN4P', '1CRV4P',
-                   '2CRV4P', '1CDL4P', '2CDL4P', '1CRP4P', '2CRP4P', 'WCAX4', '1CTYP4',
-                   '2CTYP4', '1CRPX4', '2CRPX4', '1CRVL4', '2CRVL4', '1CUNI4', '2CUNI4',
-                   '1CDLT4', '2CDLT4', '11PC4', '12PC4', '21PC4', '22PC4', 'WCSN5P',
-                   'WCAX5P', '1CTY5P', '2CTY5P', '1CUN5P', '2CUN5P', '1CRV5P', '2CRV5P',
-                   '1CDL5P', '2CDL5P', '1CRP5P', '2CRP5P', 'WCAX5', '1CTYP5', '2CTYP5',
-                   '1CRPX5', '2CRPX5', '1CRVL5', '2CRVL5', '1CUNI5', '2CUNI5', '1CDLT5',
-                   '2CDLT5', '11PC5', '12PC5', '21PC5', '22PC5', 'WCSN6P', 'WCAX6P',
-                   '1CTY6P', '2CTY6P', '1CUN6P', '2CUN6P', '1CRV6P', '2CRV6P', '1CDL6P',
-                   '2CDL6P', '1CRP6P', '2CRP6P', 'WCAX6', '1CTYP6', '2CTYP6', '1CRPX6',
-                   '2CRPX6', '1CRVL6', '2CRVL6', '1CUNI6', '2CUNI6', '1CDLT6', '2CDLT6',
-                   '11PC6', '12PC6', '21PC6', '22PC6', 'WCSN7P', 'WCAX7P', '1CTY7P',
-                   '2CTY7P', '1CUN7P', '2CUN7P', '1CRV7P', '2CRV7P', '1CDL7P', '2CDL7P',
-                   '1CRP7P', '2CRP7P', 'WCAX7', '1CTYP7', '2CTYP7', '1CRPX7', '2CRPX7',
-                   '1CRVL7', '2CRVL7', '1CUNI7', '2CUNI7', '1CDLT7', '2CDLT7', '11PC7',
-                   '12PC7', '21PC7', '22PC7', 'WCSN8P', 'WCAX8P', '1CTY8P', '2CTY8P',
-                   '1CUN8P', '2CUN8P', '1CRV8P', '2CRV8P', '1CDL8P', '2CDL8P', '1CRP8P',
-                   '2CRP8P', 'WCAX8', '1CTYP8', '2CTYP8', '1CRPX8', '2CRPX8', '1CRVL8',
-                   '2CRVL8', '1CUNI8', '2CUNI8', '1CDLT8', '2CDLT8', '11PC8', '12PC8',
-                   '21PC8', '22PC8', 'WCSN9P', 'WCAX9P', '1CTY9P', '2CTY9P', '1CUN9P',
-                   '2CUN9P', '1CRV9P', '2CRV9P', '1CDL9P', '2CDL9P', '1CRP9P', '2CRP9P',
-                   'WCAX9', '1CTYP9', '2CTYP9', '1CRPX9', '2CRPX9', '1CRVL9', '2CRVL9',
-                   '1CUNI9', '2CUNI9', '1CDLT9', '2CDLT9', '11PC9', '12PC9', '21PC9',
-                   '22PC9', 'INHERIT', 'EXTNAME', 'EXTVER', 'TELESCOP', 'INSTRUME',
-                   'OBJECT', 'KEPLERID', 'RADESYS', 'RA_OBJ', 'DEC_OBJ', 'EQUINOX',
-                   'EXPOSURE', 'TIMEREF', 'TASSIGN', 'TIMESYS', 'BJDREFI', 'BJDREFF',
-                   'TIMEUNIT', 'TELAPSE', 'LIVETIME', 'TSTART', 'TSTOP', 'LC_START',
-                   'LC_END', 'DEADC', 'TIMEPIXR', 'TIERRELA', 'INT_TIME', 'READTIME',
-                   'FRAMETIM', 'NUM_FRM', 'TIMEDEL', 'DATE-OBS', 'DATE-END', 'BACKAPP',
-                   'DEADAPP', 'VIGNAPP', 'GAIN', 'READNOIS', 'NREADOUT', 'TIMSLICE',
+        entries = ['WCSN4P', 'WCAX4P', '1CTY4P', '2CTY4P',
+                   '1CUN4P', '2CUN4P', '1CRV4P',
+                   '2CRV4P', '1CDL4P', '2CDL4P', '1CRP4P',
+                   '2CRP4P', 'WCAX4', '1CTYP4',
+                   '2CTYP4', '1CRPX4', '2CRPX4', '1CRVL4',
+                   '2CRVL4', '1CUNI4', '2CUNI4',
+                   '1CDLT4', '2CDLT4', '11PC4', '12PC4',
+                   '21PC4', '22PC4', 'WCSN5P',
+                   'WCAX5P', '1CTY5P', '2CTY5P', '1CUN5P',
+                   '2CUN5P', '1CRV5P', '2CRV5P',
+                   '1CDL5P', '2CDL5P', '1CRP5P', '2CRP5P',
+                   'WCAX5', '1CTYP5', '2CTYP5',
+                   '1CRPX5', '2CRPX5', '1CRVL5', '2CRVL5',
+                   '1CUNI5', '2CUNI5', '1CDLT5',
+                   '2CDLT5', '11PC5', '12PC5', '21PC5',
+                   '22PC5', 'WCSN6P', 'WCAX6P',
+                   '1CTY6P', '2CTY6P', '1CUN6P', '2CUN6P',
+                   '1CRV6P', '2CRV6P', '1CDL6P',
+                   '2CDL6P', '1CRP6P', '2CRP6P', 'WCAX6',
+                   '1CTYP6', '2CTYP6', '1CRPX6',
+                   '2CRPX6', '1CRVL6', '2CRVL6', '1CUNI6',
+                   '2CUNI6', '1CDLT6', '2CDLT6',
+                   '11PC6', '12PC6', '21PC6', '22PC6',
+                   'WCSN7P', 'WCAX7P', '1CTY7P',
+                   '2CTY7P', '1CUN7P', '2CUN7P', '1CRV7P',
+                   '2CRV7P', '1CDL7P', '2CDL7P',
+                   '1CRP7P', '2CRP7P', 'WCAX7', '1CTYP7',
+                   '2CTYP7', '1CRPX7', '2CRPX7',
+                   '1CRVL7', '2CRVL7', '1CUNI7', '2CUNI7',
+                   '1CDLT7', '2CDLT7', '11PC7',
+                   '12PC7', '21PC7', '22PC7', 'WCSN8P',
+                   'WCAX8P', '1CTY8P', '2CTY8P',
+                   '1CUN8P', '2CUN8P', '1CRV8P', '2CRV8P',
+                   '1CDL8P', '2CDL8P', '1CRP8P',
+                   '2CRP8P', 'WCAX8', '1CTYP8', '2CTYP8',
+                   '1CRPX8', '2CRPX8', '1CRVL8',
+                   '2CRVL8', '1CUNI8', '2CUNI8', '1CDLT8',
+                   '2CDLT8', '11PC8', '12PC8',
+                   '21PC8', '22PC8', 'WCSN9P', 'WCAX9P',
+                   '1CTY9P', '2CTY9P', '1CUN9P',
+                   '2CUN9P', '1CRV9P', '2CRV9P', '1CDL9P',
+                   '2CDL9P', '1CRP9P', '2CRP9P',
+                   'WCAX9', '1CTYP9', '2CTYP9', '1CRPX9',
+                   '2CRPX9', '1CRVL9', '2CRVL9',
+                   '1CUNI9', '2CUNI9', '1CDLT9', '2CDLT9',
+                   '11PC9', '12PC9', '21PC9',
+                   '22PC9', 'INHERIT', 'EXTNAME', 'EXTVER',
+                   'TELESCOP', 'INSTRUME',
+                   'OBJECT', 'KEPLERID', 'RADESYS', 'RA_OBJ',
+                   'DEC_OBJ', 'EQUINOX',
+                   'EXPOSURE', 'TIMEREF', 'TASSIGN', 'TIMESYS',
+                   'BJDREFI', 'BJDREFF',
+                   'TIMEUNIT', 'TELAPSE', 'LIVETIME', 'TSTART',
+                   'TSTOP', 'LC_START',
+                   'LC_END', 'DEADC', 'TIMEPIXR', 'TIERRELA',
+                   'INT_TIME', 'READTIME',
+                   'FRAMETIM', 'NUM_FRM', 'TIMEDEL', 'DATE-OBS',
+                   'DATE-END', 'BACKAPP',
+                   'DEADAPP', 'VIGNAPP', 'GAIN', 'READNOIS',
+                   'NREADOUT', 'TIMSLICE',
                    'MEANBLCK', 'LCFXDOFF', 'SCFXDOFF']
     elif (hdu == 3) or (hdu == 4) or (hdu == 5):
         # Get info from the TPF BinTable HDU Header
         tpf_header = headers[2]
-        entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'RADESYS', 'RA_OBJ',
-                   'DEC_OBJ', 'EQUINOX', 'WCSAXES', 'CTYPE1', 'CTYPE2', 'CRPIX1',
-                   'CRPIX2', 'CRVAL1', 'CRVAL2', 'CUNIT1', 'CUNIT2', 'CDELT1',
-                   'CDELT2', 'PC1_1', 'PC1_2', 'PC2_1', 'PC2_2', 'WCSNAMEP', 'WCSAXESP',
-                   'CTYPE1P', 'CUNIT1P', 'CRPIX1P', 'CRVAL1P', 'CDELT1P', 'CTYPE2P',
-                   'CUNIT2P', 'CRPIX2P', 'CRVAL2P', 'CDELT2P', 'NPIXSAP', 'NPIXMISS']
+        entries = ['TELESCOP', 'INSTRUME', 'OBJECT', 'KEPLERID', 'RADESYS',
+                   'RA_OBJ', 'DEC_OBJ', 'EQUINOX', 'WCSAXES', 'CTYPE1',
+                   'CTYPE2', 'CRPIX1', 'CRPIX2', 'CRVAL1', 'CRVAL2',
+                   'CUNIT1', 'CUNIT2', 'CDELT1', 'CDELT2', 'PC1_1',
+                   'PC1_2', 'PC2_1', 'PC2_2', 'WCSNAMEP', 'WCSAXESP',
+                   'CTYPE1P', 'CUNIT1P', 'CRPIX1P', 'CRVAL1P', 'CDELT1P',
+                   'CTYPE2P', 'CUNIT2P', 'CRPIX2P', 'CRVAL2P', 'CDELT2P',
+                   'NPIXSAP', 'NPIXMISS']
     else:
         return []
 
@@ -1667,7 +1811,8 @@ def DVSFile(ID, season, cadence='lc'):
         strcadence = '_sc'
     else:
         strcadence = ''
-    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_dvs%s.pdf' % (ID, season, EVEREST_MAJOR_MINOR, strcadence)
+    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_dvs%s.pdf' \
+           % (ID, season, EVEREST_MAJOR_MINOR, strcadence)
 
 
 def FITSFile(ID, season, cadence='lc'):
@@ -1680,7 +1825,8 @@ def FITSFile(ID, season, cadence='lc'):
 
     '''
 
-    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s.fits' % (ID, season, EVEREST_MAJOR_MINOR, cadence)
+    return 'hlsp_everest_k2_llc_%d-c%02d_kepler_v%s_%s.fits' \
+           % (ID, season, EVEREST_MAJOR_MINOR, cadence)
 
 
 def FITSUrl(ID, season):
@@ -1766,7 +1912,8 @@ def FitCBVs(model):
             if b == 0:
                 m[b] -= np.nanmedian(m[b])
             else:
-                # Match the first finite model point on either side of the break
+                # Match the first finite model point on either side of the
+                # break
                 # We could consider something more elaborate in the future
                 i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i])
                                      for i in range(1, len(m[b - 1]) - 1)])
@@ -1817,7 +1964,8 @@ def FitCBVs(model):
             if b == 0:
                 m[b] -= np.nanmedian(m[b])
             else:
-                # Match the first finite model point on either side of the break
+                # Match the first finite model point on either side of the
+                # break
                 # We could consider something more elaborate in the future
                 i0 = -1 - np.argmax([np.isfinite(m[b - 1][-i])
                                      for i in range(1, len(m[b - 1]) - 1)])

@@ -6,7 +6,8 @@
 
 '''
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+     unicode_literals
 from .k2 import *
 from .sysrem import GetCBVs
 from . import utils, pbs, pipelines, sysrem
@@ -14,7 +15,8 @@ from .pbs import Download, Run, Status, Publish
 
 #: The string that identifies individual targets for this mission
 IDSTRING = 'EPIC'
-#: The character abbreviation of the name given to an observing "season" for this mission
+#: The character abbreviation of the name given to an
+#: observing "season" for this mission
 SEASONCHAR = 'C'
 #: The string representing the filter/band used in the mission
 MAGSTRING = r'K$_\mathrm{p}$'
@@ -22,11 +24,13 @@ MAGSTRING = r'K$_\mathrm{p}$'
 TIMEUNITS = 'BJD - 2454833'
 #: The currently supported seasons
 SEASONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 102, 111, 112, 12, 13]
-#: Returns :py:obj:`True` if argument is a valid `K2` target identifier (necessary but not sufficient)
-ISTARGET = lambda x: ((type(x) is int) and (x > 1e8) and (x < 1e9) and str(x).startswith('2'))
+#: Returns :py:obj:`True` if argument is a valid `K2` target
+#: identifier (necessary but not sufficient)
+ISTARGET = lambda x: ((type(x) is int) and (x > 1e8) and
+                      (x < 1e9) and str(x).startswith('2'))
 #: The published light curve CSV file header
 CSVHEADER = \
-'''EPIC %09d
+  '''EPIC %09d
 ==============
 
 

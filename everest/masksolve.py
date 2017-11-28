@@ -6,7 +6,8 @@
 
 '''
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 from .utils import prange
 import numpy as np
 try:
@@ -19,6 +20,7 @@ import logging
 log = logging.getLogger(__name__)
 
 __all__ = ["MaskSolve"]
+
 
 def MaskSolve(A, b, w=5, progress=True, niter=None):
     '''
@@ -60,7 +62,7 @@ def MaskSolve(A, b, w=5, progress=True, niter=None):
     # Solve the first two steps explicitly.
     for n in range(2):
         mask = np.arange(n, w + n)
-        A_ = np.delete(np.delete(A, mask, axis = 0), mask, axis = 1)
+        A_ = np.delete(np.delete(A, mask, axis=0), mask, axis=1)
         b_ = np.delete(b, mask)
         U = cholesky(A_)
         X[n] = cho_solve((U, False), b_)
@@ -72,30 +74,32 @@ def MaskSolve(A, b, w=5, progress=True, niter=None):
         b_[n] = b[n]
 
         # Remove a row.
-        S33 = U[n+1:,n+1:]
-        S23 = U[n,n+1:]
+        S33 = U[n + 1:, n + 1:]
+        S23 = U[n, n + 1:]
         cholupdate(S33, S23)
 
         # Add a row.
-        A12 = A[:n,n]
-        A22 = A[n,n]
-        A23 = A[n,n+w+1:]
-        S11 = U[:n,:n]
-        S12 = solve_triangular(S11.T, A12, lower=True, check_finite=False, trans=0, overwrite_b=True)
+        A12 = A[:n, n]
+        A22 = A[n, n]
+        A23 = A[n, n + w + 1:]
+        S11 = U[:n, :n]
+        S12 = solve_triangular(S11.T, A12, lower=True,
+                               check_finite=False, trans=0, overwrite_b=True)
         S22 = np.sqrt(A22 - np.dot(S12.T, S12))
-        S13 = U[:n, n+1:]
+        S13 = U[:n, n + 1:]
         S23 = (A23 - np.dot(S12.T, S13)) / S22
         choldowndate(S33, np.array(S23))
-        U[:n,n] = S12
-        U[n,n] = S22
-        U[n,n+1:] = S23
-        U[n+1:,n+1:] = S33
+        U[:n, n] = S12
+        U[n, n] = S22
+        U[n, n + 1:] = S23
+        U[n + 1:, n + 1:] = S33
 
         # Now we can solve our linear equation
-        X[n+1] = cho_solve((U, False), b_)
+        X[n + 1] = cho_solve((U, False), b_)
 
     # Return the matrix
     return X
+
 
 def MaskSolveSlow(A, b, w=5, progress=True, niter=None):
     '''
@@ -119,12 +123,13 @@ def MaskSolveSlow(A, b, w=5, progress=True, niter=None):
     # data index `n` to data index `n+w-1` (inclusive).
     for n in prange(niter):
         mask = np.arange(n, n + w)
-        An = np.delete(np.delete(A, mask, axis = 0), mask, axis = 1)
+        An = np.delete(np.delete(A, mask, axis=0), mask, axis=1)
         Un = cholesky(An)
         bn = np.delete(b, mask)
         X[n] = cho_solve((Un, False), bn)
 
     return X
+
 
 if __name__ == '__main__':
 
@@ -141,5 +146,5 @@ if __name__ == '__main__':
     VSlow = MaskSolvekSlow(np.array(A), b, niter=niter)
 
     diff = np.abs(((VFast - VSlow + 1e-10) / VSlow).flatten())
-    pl.hist(np.log10(diff), bins = 30)
+    pl.hist(np.log10(diff), bins=30)
     pl.show()

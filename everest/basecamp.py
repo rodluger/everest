@@ -12,7 +12,8 @@ inherit from :py:class:`Basecamp`.
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 from . import missions
-from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, AP_COLLAPSED_PIXEL, prange
+from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, \
+     AP_COLLAPSED_PIXEL, prange
 from .mathutils import Chunks, Scatter, SavGol, Interpolate
 from .masksolve import MaskSolve
 from .gp import GetCovariance
