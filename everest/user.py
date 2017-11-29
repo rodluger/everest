@@ -58,7 +58,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def WhyNot(ID, mission='k2'):
+def Search(ID, mission='k2'):
     """Why is my target not in the EVEREST database?"""
     # Only K2 supported for now
     assert mission == 'k2', "Only the K2 mission is supported for now."
@@ -158,7 +158,7 @@ def DownloadFile(ID, season=None, mission='k2', cadence='lc',
     if season is None:
         if getattr(missions, mission).ISTARGET(ID):
             raise ValueError('Target not found in local database. ' +
-                             'Run `everest.WhyNot(%d)` to figure out why!'
+                             'Run `everest.Search(%d)` for more information.'
                              % ID)
         else:
             raise ValueError('Invalid target ID.')
@@ -225,7 +225,7 @@ def DownloadFile(ID, season=None, mission='k2', cadence='lc',
         return os.path.join(path, filename)
     else:
         raise Exception("Unable to download the file." +
-                        "Run `everest.WhyNot(%d)` to troubleshoot." % ID)
+                        "Run `everest.Search(%d)` to troubleshoot." % ID)
 
 
 def DVS(ID, season=None, mission='k2', clobber=False,
@@ -304,6 +304,8 @@ class Everest(Basecamp):
         self.ID = ID
         self.mission = mission
         self.clobber = clobber
+        if season is not None:
+            self._season = season
 
         # Initialize preliminary logging
         if not quiet:

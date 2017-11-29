@@ -39,4 +39,4 @@ if not __EVEREST_SETUP__:
     from .inject import *
     from .missions import *
     from .transit import Transit, TransitModel, TransitShape
-    from .user import Everest, DVS, WhyNot
+    from .user import Everest, DVS, Search

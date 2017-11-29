@@ -39,9 +39,9 @@ matplotlib.rcParams['ytick.direction'] = 'in'
 log = logging.getLogger(__name__)
 
 
-def DetrendFITS(fitsfile, clobber=False, **kwargs):
+def DetrendFITS(fitsfile, raw=False, season=None, clobber=False, **kwargs):
     """
-    De-trend a FITS file using :py:class:`everest.detrender.rPLD`.
+    De-trend a K2 FITS file using :py:class:`everest.detrender.rPLD`.
 
     :param str fitsfile: The full path to the FITS file
     :param ndarray aperture: A 2D integer array corresponding to the \
@@ -54,7 +54,10 @@ def DetrendFITS(fitsfile, clobber=False, **kwargs):
     """
     # Get info
     EPIC = pyfits.getheader(fitsfile, 0)['KEPLERID']
-    season = pyfits.getheader(fitsfile, 0)['CAMPAIGN']
+    if season is None:
+        season = pyfits.getheader(fitsfile, 0)['CAMPAIGN']
+        if season is None or season == "":
+            season = 0
     everestfile = os.path.join(
         everest.missions.k2.TargetDirectory(EPIC, season),
         everest.missions.k2.FITSFile(EPIC, season))
@@ -63,7 +66,7 @@ def DetrendFITS(fitsfile, clobber=False, **kwargs):
     if clobber or not os.path.exists(everestfile):
 
         # Get raw data
-        data = GetData(fitsfile, clobber=clobber, **kwargs)
+        data = GetData(fitsfile, EPIC, season, clobber=clobber, **kwargs)
 
         # De-trend
         model = everest.rPLD(EPIC,
@@ -80,7 +83,7 @@ def DetrendFITS(fitsfile, clobber=False, **kwargs):
                                                             model.cadence)))
 
     # Return an Everest instance
-    return everest.Everest(EPIC)
+    return everest.Everest(EPIC, season=season)
 
 
 class ApertureSelector(object):
@@ -374,7 +377,7 @@ class ApertureSelector(object):
         self.fig.canvas.draw()
 
 
-def GetData(fitsfile, clobber=False,
+def GetData(fitsfile, EPIC, campaign, clobber=False,
             saturation_tolerance=-0.1,
             bad_bits=[1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17],
             get_hires=True, get_nearby=True,
@@ -397,10 +400,6 @@ def GetData(fitsfile, clobber=False,
            Default :py:obj:`True`
 
     '''
-
-    # Get the campaign number and EPIC number
-    EPIC = pyfits.getheader(fitsfile, 0)['KEPLERID']
-    campaign = pyfits.getheader(fitsfile, 0)['CAMPAIGN']
 
     # Get the npz file name
     filename = os.path.join(EVEREST_DAT, 'k2', 'c%02d' % campaign,
@@ -428,13 +427,19 @@ def GetData(fitsfile, clobber=False,
 
         # Get a hi res image of the target
         if get_hires:
-            hires = GetHiResImage(EPIC)
+            try:
+                hires = GetHiResImage(EPIC)
+            except ValueError:
+                hires = None
         else:
             hires = None
 
         # Get nearby sources
         if get_nearby:
-            nearby = GetSources(EPIC)
+            try:
+                nearby = GetSources(EPIC)
+            except ValueError:
+                nearby = []
         else:
             nearby = []
 
@@ -490,7 +495,7 @@ def GetData(fitsfile, clobber=False,
     data = np.load(filename)
     aperture = data['aperture'][()]
     pixel_images = data['pixel_images']
-    nearby = data['nearby']
+    nearby = data['nearby'][()]
     hires = data['hires'][()]
     fitsheader = data['fitsheader']
     cadn = data['cadn']
@@ -635,6 +640,8 @@ def GetData(fitsfile, clobber=False,
     data.Ypos = pc2
     data.meta = fitsheader
     data.mag = fitsheader[0]['KEPMAG'][1]
+    if type(data.mag) is pyfits.card.Undefined:
+        data.mag = np.nan
     data.pixel_images = pixel_images
     data.nearby = nearby
     data.hires = hires

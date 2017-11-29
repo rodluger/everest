@@ -170,7 +170,7 @@ class Detrender(Basecamp):
 
         # Initialize logging
         self.ID = ID
-        if kwargs.get('season', None):
+        if kwargs.get('season', None) is not None:
             self._season = kwargs.get('season')
             if hasattr(self._season, '__len__'):
                 raise AttributeError(
