@@ -58,8 +58,8 @@ html:
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 ifdef EVEREST_DOCS
-  # Export to server
-	@rsync -aP --times --delete .build/html/ $(EVEREST_DOCS)
+    # Export to server
+	@deploy.sh
 	@echo "Export finished."
 endif
 
