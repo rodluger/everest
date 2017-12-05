@@ -491,7 +491,7 @@ class Everest(Basecamp):
                 self.bkg = 0.
             self.bpad = f[1].header['BPAD']
             self.cbv_minstars = []
-            self.cbv_num = f[1].header['CBVNUM']
+            self.cbv_num = f[1].header.get('CBVNUM', 1)
             self.cbv_niter = f[1].header['CBVNITER']
             self.cbv_win = f[1].header['CBVWIN']
             self.cbv_order = f[1].header['CBVORD']

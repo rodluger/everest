@@ -17,7 +17,6 @@ from .mathutils import SavGol
 from .gp import GetCovariance
 from .transit import TransitShape
 from scipy.linalg import cho_solve, cho_factor
-from scipy.linalg import block_diag
 try:
     from tqdm import tqdm
     def prange(x): return tqdm(range(x))
