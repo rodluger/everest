@@ -37,10 +37,10 @@ def lnlike(x, star):
 star = Everest(201635569)
 
 # Set up the MCMC sampler
-params = ['Period (days)', 't0 (BJD - 2456811)', 'Impact parameter']
-blobs = ['Depth']
-nsteps = 100
-nburn = 30
+params = ['Period (days)', r't$_0$ (BJD - 2456811)', 'Impact parameter']
+blobs = ['Depth (%)']
+nsteps = 1000
+nburn = 300
 nwalk = 10
 ndim = len(params)
 nblobs = len(blobs)
@@ -55,28 +55,37 @@ for i in tqdm(sampler.sample(x0, iterations=nsteps, blobs0=blobs0),
               total=nsteps):
         pass
 
-# Re-scale the transit time for prettier axes labels
-sampler.chain[:, :, 1] -= 1978.
-
-# Take the absolute value of the impact parameter for plotting
-sampler.chain[:, :, 2] = np.abs(sampler.chain[:, :, 2])
-
 # Add the blobs to the chain for plotting
 chain = np.concatenate((sampler.chain,
                         np.array(sampler.blobs).swapaxes(0, 1)), axis=2)
 
+# Re-scale the transit time for prettier axes labels
+chain[:, :, 1] -= 1978.
+
+# Take the absolute value of the impact parameter for plotting
+chain[:, :, 2] = np.abs(chain[:, :, 2])
+
+# Re-scale the transit depth as a percentage
+chain[:, :, 3] *= 100.
+
 # Plot the chains
-fig1, ax = pl.subplots(ndim + nblobs, figsize=(6, 6))
+fig1, ax = pl.subplots(ndim + nblobs, figsize=(6, 7))
+fig1.suptitle("K2-14b", fontsize=16, fontweight='bold')
 ax[-1].set_xlabel("Iteration", fontsize=14)
 for n in range(ndim + nblobs):
     for k in range(nwalk):
         ax[n].plot(chain[k, :, n], alpha=0.3, lw=1)
-    ax[n].set_ylabel((params + blobs)[n], fontsize=10)
+    ax[n].set_ylabel((params + blobs)[n], fontsize=9)
     ax[n].margins(0, None)
     ax[n].axvline(nburn, color='b', alpha=0.5, lw=1, ls='--')
+fig1.savefig("k2-14b_chains.png", bbox_inches='tight')
 
 # Plot the posterior distributions
 samples = chain[:, nburn:, :].reshape(-1, ndim + nblobs)
 fig2 = corner(samples, labels=params + blobs)
+fig2.suptitle("K2-14b", fontsize=16, fontweight='bold')
 fig2.set_size_inches(6, 6)
-pl.show()
+for ax in fig2.axes:
+    for tick in ax.get_xticklabels() + ax.get_yticklabels():
+        tick.set_fontsize(7)
+fig2.savefig("k2-14b_corner.png", bbox_inches='tight')

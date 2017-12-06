@@ -23,15 +23,54 @@ log = logging.getLogger(__name__)
 
 
 class TransitModel(object):
-    '''
+    r"""
+    A transit model for use in regression. Note that the transit model
+    is linear in the transit depth, so the depth (or planet/star radius
+    ratio) is not a free parameter here!
 
-    '''
+    :param str name: The name of the planet, such as "b".
+    :param bool single: Is this a single transit? Default :py:obj:`False` \
+        (transit is assumed to be periodic at period given by `per`).
+    :param float sig_RpRs: The standard deviation of the prior on the \
+        planet/star radius ratio. Used only when the transit model is \
+        included in the design matrix. Default `0.001`
+    :param kwargs: Any of the :py:mod:`pysyzygy.Transit` keyword arguments. \
+        These include:
+
+    - **b** or **bcirc** - The (circular) impact parameter. Default `0.`
+    - **MpMs** - The planet-star mass ratio. Default `0.`
+    - **per** - The planet orbital period in days. Default `10.`
+    - **rhos** or **aRs** - The stellar density in `g/cm^3` or the semi-major \
+        axis-stellar radius ratio. Default is `rhos = 1.4`, the density of \
+        the Sun
+    - **ecc** and **w** or **esw** and **ecw** - The eccentricity and the \
+        longitude of pericenter in radians, or the two eccentricity vectors. \
+        Default is `ecc = 0.` and `w = 0.`
+    - **t0** or **times** - The time of first transit, or the time of each \
+        of the transits (in case they are not periodic) in days. Default \
+        is `t0 = 0.`
+    - **u1** and **u2** or **q1** and **q2** - The quadratic limb darkening \
+        parameters (u1, u2) or the modified quadratic limb darkening \
+        parameters (q1, q2) from \
+        `Kipping (2013) <http://dx.doi.org/10.1093/mnras/stt1435>`_. \
+        Default is `u1 = 0.40` and `u2 = 0.26`
+    - **exptime** - The exposure time in days for binning the model. \
+        Default `ps.KEPLONGEXP`
+    - **fullorbit** - Compute the orbital parameters for the entire orbit? \
+        Only useful if you're interested in the full arrays of orbital \
+        parameters. Default `False`
+    - **maxpts** - Maximum number of points in the model. Increase \
+        this if you're getting errors. Default `10,000`
+    - **exppts** - The number of exposure points per cadence when \
+        binning the model. Default `50`
+    - **keptol** - The tolerance of the Kepler solver. Default `1.e-15`
+    - **maxkepiter** - Maximum number of iterations in the Kepler solver. \
+        Default `100`
+
+    """
 
     def __init__(self, name, single=False, sig_RpRs=0.001, **kwargs):
-        '''
-
-        '''
-
+        """Instantiate the pysyzygy model."""
         # The planet/transit model ID
         assert type(name) is str, "Arg `name` must be a string."
         self.name = name
@@ -56,10 +95,7 @@ class TransitModel(object):
         self.params = kwargs
 
     def __call__(self, time):
-        '''
-
-        '''
-
+        """Return the model evaluated at `time`."""
         model = (self._transit(time) - 1) / self.depth
 
         # Single transit?

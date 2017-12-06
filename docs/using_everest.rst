@@ -105,6 +105,77 @@ Note that this does not overwrite outlier masks, which are stored in the
            :py:meth:`compute <everest.basecamp.Basecamp.compute>` typically takes a few \
            seconds. For short cadence light curves, it may take a minute or two.
 
+Transit Search & Optimization
+=============================
+
+Masking the transits is one way to prevent overfitting and improve the de-trending
+power, but it can be somewhat inelegant. Oftentimes, one may not know when (or if!)
+transits occur in a light curve, so masking them ahead of time is not possible.
+Fortunately, the fact that :py:obj:`everest` is a *linear model* makes it easy to
+simultaneously optimize the transit and the instrumental components, ensuring that
+the PLD model won't try to fit out transits (and that the transit model won't
+latch on to systematics). There are two ways to go about this simultaneous fit in
+:py:obj:`everest`.
+
+The first is to explicitly include a transit model in the PLD
+design matrix---which means we treat the transit model like an additional regressor
+and solve for its weight (which is just the transit depth). This will give you the
+*maximum likelihood* (ML) solution for the transit
+depth, if the other transit properties (period, time of first transit, impact
+parameter, etc.) are known.
+
+.. code-block:: python
+
+     model = everest.TransitModel(name, **kwargs)
+     star.transit_model = model
+     star.compute()
+
+See :py:obj:`everest.transit.TransitModel` for the available keyword arguments.
+After running :py:obj:`compute`, the ML transit depth is stored in :py:obj:`star.transit_depth`.
+
+The method above may be of limited use, particularly when the transit times
+and shape are not precisely known. Moreover, although it is possible to obtain
+the uncertainty on the ML solution for the depth, that uncertainty isn't
+really that meaningful, since it doesn't take into account any uncertainty in
+the PLD model; instead, it is the uncertainty on
+the depth when the likelihood of the PLD model is maximized. Usually, a much
+better approach is to compute the transit depth that maximizes the *marginal
+likelihood*; this depth is what you get when you marginalize (integrate over)
+the uncertainty on all of the parameters of the model. Luckily, for a linear
+model it is easy (and super fast) to compute the marginal likelihood. In
+:py:obj:`everest`, all you need to do is
+
+.. code-block:: python
+
+     m = model(star.time)
+     lnlike, depth , vardepth = star.lnlike(m, full_output=True)
+
+where `model` is the same transit model as above. The variable `depth` is
+the depth that maximizes the marginal likelihood under the given transit `model`,
+and `vardepth` is its variance (the square of the standard deviation on the
+estimate of the depth).
+
+Under this framework, we can go a step further: say we **don't** know the
+other transit model parameters, such as the period, the times of transit,
+or if there's any transit present to begin with. Since we have a fast way
+of computing the marginal likelihood (`lnlike` above), we can use it to
+obtain posterior distributions for the parameters of interest. Since the
+transit model is not linear in any of these other parameters, we need to
+use approximate methods, such as MCMC (Markov Chain Monte Carlo), to
+obtain the posteriors. Check out the :download:`mcmc.py <mcmc.py>` script
+for an example in which the properties of K2-14b are estimated based on
+evaluating the marginal likelihood.
+
+.. figure:: k2-14b_chains.png
+    :width: 300px
+    :align: center
+    :figclass: align-center
+
+.. figure:: k2-14b_corner.png
+    :width: 300px
+    :align: center
+    :figclass: align-center
+
 CBV Corrections
 ===============
 
@@ -229,9 +300,9 @@ the model beforehand:
 Custom Detrending
 =================
 
-   As of version **2.0.8**, users can de-trend their own raw *K2* FITS files
-   using the :py:func:`everest.standalone.DetrendFITS` function, which is
-   a wrapper for the :py:class:`everest.detrender.rPLD` detrender.
+As of version **2.0.8**, users can de-trend their own raw *K2* FITS files
+using the :py:func:`everest.standalone.DetrendFITS` function, which is
+a wrapper for the :py:class:`everest.detrender.rPLD` detrender.
 
 .. raw:: html
 
