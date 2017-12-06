@@ -164,17 +164,46 @@ transit model is not linear in any of these other parameters, we need to
 use approximate methods, such as MCMC (Markov Chain Monte Carlo), to
 obtain the posteriors. Check out the :download:`mcmc.py <mcmc.py>` script
 for an example in which the properties of K2-14b are estimated based on
-evaluating the marginal likelihood.
+evaluating the marginal likelihood. The basic idea is to define our likelihood
+as a function of the transit parameters (in this case, the period, the
+time of first transit, and the impact parameter):
+
+.. code-block:: python
+
+    def lnlike(x, star):
+        """Return the log likelihood given parameter vector `x`."""
+        per, t0, b = x
+        model = TransitModel('b', per=per, t0=t0, b=b)(star.time)
+        ll = star.lnlike(model)
+        return ll
+
+where :py:obj:`star = everest.Everest(201635569)`
+and use the :py:obj:`emcee` package to run an MCMC chain to obtain
+the posterior distributions of these parameters. Here's what the chains
+look like, for 10 walkers and 1000 iterations (~5 minutes on my laptop):
 
 .. figure:: k2-14b_chains.png
     :width: 300px
     :align: center
     :figclass: align-center
 
+And here's the posterior distributions after discarding the first
+300 steps as burn-in:
+
 .. figure:: k2-14b_corner.png
     :width: 300px
     :align: center
     :figclass: align-center
+
+In general, this is going to be somewhat slower than computing the
+maximum likelihood estimate -- such as what you do when you fit for
+the transit parameters given the "de-trended" light curve. But the
+beauty here is that we are never "de-trending" -- we are **performing
+inference on the original dataset** given information about the nature
+of the noise (the covariance matrix). This will lead to more robust
+posterior distributions, less overfitting, and more realistic uncertainties
+on the transit parameters. If possible, the "de-trend-then-search" method
+should be avoided and this should be done instead!
 
 CBV Corrections
 ===============
