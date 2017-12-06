@@ -1,6 +1,6 @@
 .. raw:: html
-   
-   <div align="center"> 
+
+   <div align="center">
    <img src="_images/everest.png" width="300px">
    </img>
    <br/>
@@ -12,14 +12,15 @@ Documentation
 =============
 
 .. toctree::
-   :maxdepth: 1 
-   
+   :maxdepth: 1
+
    overview
+   using_everest
    catalog
    code
    papers
    previous
-   
+
 Indices and tables
 ==================
 

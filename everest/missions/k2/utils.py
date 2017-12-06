@@ -132,11 +132,15 @@ class StatsPicker(object):
             if self.compare_to.lower() in Pipelines:
                 log.info('Plotting %s model for %d...' %
                          (self.compare_to, self.epic[i]))
-                subprocess.Popen(['python', '-c',
-                                  'import everest; everest.k2.pipelines.' +
-                                  'plot(%d, pipeline="%s", campaign=%d)' %
-                                  (self.epic[i], self.compare_to,
-                                   self.campaign)])
+                cmd = ['python', '-c',
+                       'import everest; everest.k2.pipelines.' +
+                       'plot(%d, pipeline="%s"%s)' %
+                       (self.epic[i], self.compare_to,
+                        ", campaign=%d" % self.campaign
+                        if self.campaign is not None
+                        else "")]
+                print(" ".join(cmd))
+                subprocess.Popen(cmd)
             elif self.compare_to.lower() == 'kepler':
                 pass
             else:
