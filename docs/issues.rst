@@ -57,7 +57,7 @@ Finally, I wrote a simple :download:`iPython Notebook <rrlyrae.ipynb>` showing
 how to go about manually de-trending an RR Lyrae light curve for which the
 EVEREST pipeline failed. Take a look at the code for ideas on how to handle
 these issues for other similar targets. Note that this file can also be
-viewed on `github <https://github.com/rodluger/everest/blob/master/docs/rrlyrae.ipynb>`.
+viewed on `github <https://github.com/rodluger/everest/blob/master/docs/rrlyrae.ipynb>`_.
 
 Aperture losses
 ~~~~~~~~~~~~~~~

@@ -59,6 +59,7 @@ git add -f *.js
 git add -f _sources
 git add -f _static
 git add -f _images
+git add -f _downloads
 git add -f *.csv
 git -c user.name='sphinx' -c user.email='sphinx' commit -m "rebuild gh-pages at ${rev}"
 git push -f https://github.com/rodluger/everest.git HEAD:gh-pages
