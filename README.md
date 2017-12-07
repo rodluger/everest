@@ -15,7 +15,6 @@
 To install the latest <b>EVEREST</b> release (2.0.8):
 <br/>
 <pre><code>pip install everest-pipeline</code></pre>
-<br/>
 You can also install the current development version of <b>EVEREST</b> (2.0.9) from source:
 <br/><br/>
 <pre><code>git clone https://github.com/rodluger/everest
