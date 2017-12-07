@@ -74,7 +74,7 @@ def Search(ID, mission='k2'):
               "the EVEREST catalog.")
         return
     elif season is not None:
-        print("Target is in the EVEREST catalog.")
+        print("Target is in campaign %d of the EVEREST catalog." % season)
         return
 
     # Get the kplr object

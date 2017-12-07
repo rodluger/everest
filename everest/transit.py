@@ -162,7 +162,7 @@ def Transit(time, t0=0., dur=0.1, per=3.56789, depth=0.001, **kwargs):
     :param float per: The orbital period in days. Default 3.56789
     :param float depth: The fractional transit depth. Default 0.001
     :param dict kwargs: Any additional keyword arguments, passed directly \
-           to :py:func:`everest.pysyzygy.Transit`
+           to :py:func:`pysyzygy.Transit`
     :returns tmod: The transit model evaluated at the same times as the \
                    :py:obj:`time` array
 
@@ -176,20 +176,28 @@ def Transit(time, t0=0., dur=0.1, per=3.56789, depth=0.001, **kwargs):
 
 
 class TransitShape(object):
-    '''
+    r"""
+    Return a single transit model used for injection/recovery tests.
 
-    '''
+    A `Mandel-Agol <http://adsabs.harvard.edu/abs/2002ApJ...580L.171M>`_
+    transit model, but with the depth and the duration as primary
+    input variables. Note that the time(s) of transit is not an
+    input parameter, nor is the period.
 
-    def __init__(self, depth=1, dur=0.1, per=3.56789, **kwargs):
-        '''
+    :param float depth: The transit depth. Set this to 1. for transit \
+           injection/recovery tests. Default `1`
+    :param float dur: The transit duration in days. Default `0.1`
+    :param kwargs: Any additional keyword arguments, passed directly \
+           to :py:func:`pysyzygy.Transit`
+    """
 
-        '''
-
+    def __init__(self, depth=1, dur=0.1, **kwargs):
+        """Initialize the pysyzygy model."""
         kwargs.pop('t0', None)
         kwargs.pop('times', None)
 
         # Update kwargs with correct duration
-        kwargs.update({'per': per})
+        kwargs.update({'per': 3.56789})
         kwargs.update({'rhos': Get_rhos(dur, **kwargs)})
 
         # Transit window size w/ padding
@@ -205,8 +213,5 @@ class TransitShape(object):
         self.y = transit_model
 
     def __call__(self, time, t0=0.):
-        '''
-
-        '''
-
+        """Evalaute the transit model."""
         return np.interp(time, self.x + t0, self.y)

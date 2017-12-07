@@ -34,12 +34,15 @@ if __name__ == '__main__':
                         help='Plot the k2sff light curve for the target (K2 only)')
     parser.add_argument("-s", "--k2sc", action='store_true',
                         help='Plot the k2sc light curve for the target (K2 only)')
+    parser.add_argument("-o", "--overfit", action='store_true',
+                    help='Compute and plot the overfitting metrics')
     args = parser.parse_args()
     show = False
 
     # Everest2 plot is default
     if not any([getattr(args, a) for a in ['raw', 'dvs', 'k2sff',
-                                           'k2sc', 'everest1', 'aperture']]):
+                                           'k2sc', 'everest1', 'aperture',
+                                           'overfit']]):
         args.everest2 = True
 
     # Plot the data
@@ -72,6 +75,13 @@ if __name__ == '__main__':
             args.ID, 'k2sc', show=False)
         show = True
 
+    # Compute the overfitting metric
+    if args.overfit:
+        star = everest.Everest(args.ID, mission=args.mission,
+                               cadence=args.cadence)
+        overfit = star.overfit()
+        overfit.show()
+    
     if show:
         import matplotlib.pyplot as pl
         pl.show()

@@ -12,9 +12,8 @@ inherit from :py:class:`Basecamp`.
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 from . import missions
-from .utils import InitLog, Formatter, AP_SATURATED_PIXEL, \
-     AP_COLLAPSED_PIXEL, prange
-from .mathutils import Chunks, Scatter, SavGol, Interpolate
+from .utils import AP_SATURATED_PIXEL, prange
+from .mathutils import SavGol
 from .masksolve import MaskSolve
 from .gp import GetCovariance
 from .search import Search
@@ -22,16 +21,13 @@ from .transit import TransitModel, TransitShape
 from .dvs import OVERFIT
 from scipy.linalg import block_diag, cholesky, cho_factor, cho_solve
 import os
-import sys
 import numpy as np
-import george
 import matplotlib.pyplot as pl
-import matplotlib.image as mpimg
-from matplotlib.ticker import MaxNLocator, FuncFormatter
 from scipy.ndimage import zoom
 from itertools import combinations_with_replacement as multichoose
-import traceback
 import logging
+import platform
+import subprocess
 log = logging.getLogger(__name__)
 
 __all__ = ['Basecamp', 'Overfitting']
@@ -40,34 +36,38 @@ __all__ = ['Basecamp', 'Overfitting']
 class Overfitting(object):
     """Stores information on the overfitting metrics for a light curve."""
 
-    def __init__(self, O1, O2, O3, O4, O5):
-        '''
-
-        '''
-
+    def __init__(self, O1, O2, O3, O4, O5, pdf):
+        """Store values."""
         self._O1 = O1
         self._O2 = O2
         self._O3 = O3
         self._O4 = O4
         self._O5 = O5
+        self.pdf = pdf
 
-    def masked(self, depth = 0.01):
-        '''
-        The masked overfitting metric for a given transit depth.
-
-        '''
-
+    def masked(self, depth=0.01):
+        """Return the masked overfitting metric for a given transit depth."""
         return np.hstack(self._O5) / depth
 
-    def unmasked(self, depth = 0.01):
-        '''
-        The unmasked overfitting metric for a given transit depth.
-
-        '''
-
+    def unmasked(self, depth=0.01):
+        """Return the unmasked overfitting metric for a given transit depth."""
         return 1 - (np.hstack(self._O2) +
                     np.hstack(self._O3) / depth) / np.hstack(self._O1)
 
+    def show(self):
+        """Show the overfitting PDF summary."""
+        try:
+            if platform.system().lower().startswith('darwin'):
+                subprocess.call(['open', self.pdf])
+            elif os.name == 'nt':
+                os.startfile(self.pdf)
+            elif os.name == 'posix':
+                subprocess.call(['xdg-open', self.pdf])
+            else:
+                raise IOError("")
+        except IOError:
+            log.info("Unable to open the pdf. Try opening it manually:")
+            log.info(self.pdf)
 
 class Basecamp(object):
     '''
@@ -812,11 +812,14 @@ class Basecamp(object):
         return time, depth, vardepth, delchisq
 
     def overfit(self, tau=None, plot=True, clobber=False, w=9, **kwargs):
-        '''
-        Returns the overfitting metrics for the light curve.
+        """
+        Compute the masked & unmasked overfitting metrics for the light curve.
 
-        '''
-
+        This routine injects a transit model given by `tau` at every cadence
+        in the light curve and recovers the transit depth when (1) leaving
+        the transit unmasked and (2) masking the transit prior to performing
+        regression.
+        """
         fname = os.path.join(self.dir, self.name + '_overfit.npz')
         figname = os.path.join(self.dir, self.name)
 
@@ -968,7 +971,7 @@ class Basecamp(object):
             O5 = data['O5']
 
         # Plot
-        if plot:
+        if plot and (clobber or not os.path.exists(figname + '_overfit.pdf')):
 
             log.info("Plotting the overfitting metrics...")
 
@@ -1052,7 +1055,7 @@ class Basecamp(object):
             log.info("Saved plot to %s_overfit.pdf" % figname)
             pl.close()
 
-        return Overfitting(O1, O2, O3, O4, O5)
+        return Overfitting(O1, O2, O3, O4, O5, figname + '_overfit.pdf')
 
     def lnlike(self, model, refactor=False, pos_tol=2.5, neg_tol=50.,
                full_output=False):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, print_function, absolute_import
-from setuptools import setup, find_packages
+from setuptools import setup
 
 # Hackishly inject a constant into builtins to enable importing of the
 # module in "setup" mode. Stolen from `kplr`
@@ -27,7 +27,8 @@ settings. Read the documentation at https://github.com/rodluger/everest
 # Setup!
 setup(name='everest-pipeline',
       version=everest.__version__,
-      description='EPIC Variability Extraction and Removal for Exoplanet Science Targets',
+      description='EPIC Variability Extraction and Removal ' +
+                  'for Exoplanet Science Targets',
       long_description=long_description,
       classifiers=[
           'Development Status :: 5 - Production/Stable',
@@ -56,7 +57,8 @@ setup(name='everest-pipeline',
       ],
       dependency_links=[
           'https://github.com/rodluger/k2plr/tarball/dev#egg=k2plr-0.2.7'],
-      # not yet 'https://github.com/rodluger/choldate/tarball/master#egg=choldate-0.0.1',
+      # not yet 'https://github.com/rodluger/
+      #          choldate/tarball/master#egg=choldate-0.0.1',
       scripts=['bin/everest', 'bin/everest-stats', 'bin/everest-status'],
       include_package_data=True,
       zip_safe=False,
