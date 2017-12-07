@@ -9,6 +9,10 @@
   <a href="https://archive.stsci.edu/prepds/everest/"><img src="https://img.shields.io/badge/MAST-lightcurves-brightgreen.svg?style=flat"/></a>
 </p>
 
+```diff
+- NOTE: Version 2.0.9, which includes K2 campaigns 10--13, will be pip-installable shortly! Light curves are en route to MAST and should be available by 12/20/2017.
+```
+
 <div align="justify">
 <b>E</b>PIC <b>V</b>ariability <b>E</b>xtraction and <b>R</b>emoval for <b>E</b>xoplanet <b>S</b>cience <b>T</b>argets: A pipeline for de-trending <b>K2</b> light curves with pixel level decorrelation and Gaussian processes. Here you'll find the Python code used to generate the <b>EVEREST</b> catalog, as well as tools for accessing and interacting with the de-trended light curves.
 
