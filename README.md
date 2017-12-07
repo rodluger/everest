@@ -13,9 +13,9 @@
 <b>E</b>PIC <b>V</b>ariability <b>E</b>xtraction and <b>R</b>emoval for <b>E</b>xoplanet <b>S</b>cience <b>T</b>argets: A pipeline for de-trending <b>K2</b> light curves with pixel level decorrelation and Gaussian processes. Here you'll find the Python code used to generate the <b>EVEREST</b> catalog, as well as tools for accessing and interacting with the de-trended light curves.
 
 To install the latest <b>EVEREST</b> release (2.0.8):
-<br/><br/>
+<br/>
 <pre><code>pip install everest-pipeline</code></pre>
-<br/><br/>
+<br/>
 You can also install the current development version of <b>EVEREST</b> (2.0.9) from source:
 <br/><br/>
 <pre><code>git clone https://github.com/rodluger/everest
