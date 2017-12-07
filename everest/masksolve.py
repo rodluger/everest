@@ -46,6 +46,7 @@ def MaskSolve(A, b, w=5, progress=True, niter=None):
     if cholupdate is None:
         log.info("Running the slow version of `MaskSolve`.")
         log.info("Install the `choldate` package for better performance.")
+        log.info("https://github.com/rodluger/choldate")
         return MaskSolveSlow(A, b, w=w, progress=progress, niter=niter)
 
     # Number of data points
