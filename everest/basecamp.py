@@ -812,13 +812,30 @@ class Basecamp(object):
         return time, depth, vardepth, delchisq
 
     def overfit(self, tau=None, plot=True, clobber=False, w=9, **kwargs):
-        """
+        r"""
         Compute the masked & unmasked overfitting metrics for the light curve.
 
         This routine injects a transit model given by `tau` at every cadence
         in the light curve and recovers the transit depth when (1) leaving
         the transit unmasked and (2) masking the transit prior to performing
         regression.
+
+        :param tau: A function or callable that accepts two arguments, \
+               `time` and `t0`, and returns an array corresponding to a \
+               zero-mean, unit depth transit model centered at \
+               `t0` and evaluated at `time`. \
+               The easiest way to provide this is to use an instance of \
+               `everest.transit.TransitShape`. Default is \
+               `everest.transit.TransitShape(dur=0.1)`, a transit \
+               with solar-like limb darkening and a duratio of 0.1 days.
+        :param bool plot: Plot the results as a PDF? Default :py:obj:`True`
+        :param bool clobber: Overwrite the results if present? Default \
+               :py:obj:`False`
+        :param int w: The size of the masking window in cadences for \
+               computing the masked overfitting metric. Default `9` \
+               (about 4.5 hours for `K2` long cadence).
+
+        :returns: An instance of `everest.basecamp.Overfitting`.
         """
         fname = os.path.join(self.dir, self.name + '_overfit.npz')
         figname = os.path.join(self.dir, self.name)
