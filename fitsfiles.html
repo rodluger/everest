@@ -1,0 +1,547 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>FITS Files &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="The Catalog" href="catalog.html"/>
+        <link rel="next" title="Data Validation Summaries" href="dvsfigs.html"/>
+        <link rel="prev" title="Data Release Notes" href="releasenotes.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="catalog.html">The Catalog</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="releasenotes.html">Data Release Notes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">FITS Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#primary-hdu"><code class="docutils literal"><span class="pre">[0]</span></code> Primary HDU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lightcurve-hdu"><code class="docutils literal"><span class="pre">[1]</span></code> Lightcurve HDU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pixels-hdu"><code class="docutils literal"><span class="pre">[2]</span></code> Pixels HDU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#aperture-hdu"><code class="docutils literal"><span class="pre">[3]</span></code> Aperture HDU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#images-hdu"><code class="docutils literal"><span class="pre">[4]</span></code> Images HDU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#hires-hdu"><code class="docutils literal"><span class="pre">[5]</span></code> HiRes HDU</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dvsfigs.html">Data Validation Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bulk.html">Bulk Download</a></li>
+<li class="toctree-l2"><a class="reference internal" href="issues.html">Known Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">The Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="catalog.html">The Catalog</a>&raquo;</li>
+      
+    
+      <li>FITS Files</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="fits-files">
+<h1>FITS Files<a class="headerlink" href="#fits-files" title="Permalink to this headline">¶</a></h1>
+<p>The FITS files available in the <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> catalog contain the de-trended
+light curves, as well as information used by <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> to do
+customized post-processing. Each FITS file is composed of six extensions:</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#primary-hdu" id="id1"><code class="docutils literal"><span class="pre">[0]</span></code> Primary HDU</a></li>
+<li><a class="reference internal" href="#lightcurve-hdu" id="id2"><code class="docutils literal"><span class="pre">[1]</span></code> Lightcurve HDU</a></li>
+<li><a class="reference internal" href="#pixels-hdu" id="id3"><code class="docutils literal"><span class="pre">[2]</span></code> Pixels HDU</a></li>
+<li><a class="reference internal" href="#aperture-hdu" id="id4"><code class="docutils literal"><span class="pre">[3]</span></code> Aperture HDU</a></li>
+<li><a class="reference internal" href="#images-hdu" id="id5"><code class="docutils literal"><span class="pre">[4]</span></code> Images HDU</a></li>
+<li><a class="reference internal" href="#hires-hdu" id="id6"><code class="docutils literal"><span class="pre">[5]</span></code> HiRes HDU</a></li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is <strong>highly recommended</strong> that users access the catalog through the <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> <a class="reference internal" href="ui.html"><span class="doc">user interface</span></a>, as this allows for post-processing of the light curves with custom masks.</p>
+</div>
+<div class="section" id="primary-hdu">
+<h2><a class="toc-backref" href="#id1"><code class="docutils literal"><span class="pre">[0]</span></code> Primary HDU</a><a class="headerlink" href="#primary-hdu" title="Permalink to this headline">¶</a></h2>
+<p>A header unit containing general information about the data collection for this target;
+this info was copied directly from the original <em>K2</em> target pixel files. The <code class="docutils literal"><span class="pre">VERSION</span></code>
+and <code class="docutils literal"><span class="pre">DATE</span></code> tags were added to indicate the <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> pipeline version and
+creation date, respectively.</p>
+</div>
+<div class="section" id="lightcurve-hdu">
+<h2><a class="toc-backref" href="#id2"><code class="docutils literal"><span class="pre">[1]</span></code> Lightcurve HDU</a><a class="headerlink" href="#lightcurve-hdu" title="Permalink to this headline">¶</a></h2>
+<p>The main data unit containing the de-trended light curve. Again, the header keywords
+were taken from the equivalent extension in the original <em>K2</em> target pixel files. The
+following <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> keywords were added:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Keyword</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>MISSION</td>
+<td>The photometry mission name</td>
+</tr>
+<tr class="row-odd"><td>VERSION</td>
+<td>The EVEREST pipeline version</td>
+</tr>
+<tr class="row-even"><td>DATE</td>
+<td>FITS file creation date (YYYY-MM-DD)</td>
+</tr>
+<tr class="row-odd"><td>MODEL</td>
+<td>The name of the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model used to de-trend</td>
+</tr>
+<tr class="row-even"><td>APNAME</td>
+<td>The name of the aperture used</td>
+</tr>
+<tr class="row-odd"><td>BPAD</td>
+<td>Light curve segment overlap in cadences for mending at breakpoints</td>
+</tr>
+<tr class="row-even"><td>BRKPT<strong>XX</strong></td>
+<td>Index/indices of light curve breakpoint(s)</td>
+</tr>
+<tr class="row-odd"><td>CBVNUM</td>
+<td>Number of CBV signals to regress on</td>
+</tr>
+<tr class="row-even"><td>CBVNITER</td>
+<td>Number of CBV SysRem iterations</td>
+</tr>
+<tr class="row-odd"><td>CBVWIN</td>
+<td>Window size for smoothing CBVs</td>
+</tr>
+<tr class="row-even"><td>CBVORD</td>
+<td>Filter order when smoothing CBVs</td>
+</tr>
+<tr class="row-odd"><td>CDIVS</td>
+<td>Number of cross-validation subdivisions</td>
+</tr>
+<tr class="row-even"><td>CDPP</td>
+<td>Average de-trended CDPP</td>
+</tr>
+<tr class="row-odd"><td>CDPPR</td>
+<td>Raw light curve CDPP</td>
+</tr>
+<tr class="row-even"><td>CDPPV</td>
+<td>Estimated average validation CDPP</td>
+</tr>
+<tr class="row-odd"><td>CDPPG</td>
+<td>Average GP-de-trended CDPP</td>
+</tr>
+<tr class="row-even"><td>CDPP<strong>XX</strong></td>
+<td>De-trended CDPP in light curve segment <strong>XX</strong></td>
+</tr>
+<tr class="row-odd"><td>CDPPR<strong>XX</strong></td>
+<td>Raw CDPP in light curve segment <strong>XX</strong></td>
+</tr>
+<tr class="row-even"><td>CDPPV<strong>XX</strong></td>
+<td>Estimated validation CDPP in light curve segment <strong>XX</strong></td>
+</tr>
+<tr class="row-odd"><td>CVMIN</td>
+<td>Cross-validation objective function</td>
+</tr>
+<tr class="row-even"><td>GITER</td>
+<td>Number of GP optimiziation iterations</td>
+</tr>
+<tr class="row-odd"><td>GPFACTOR</td>
+<td>GP amplitude initialization factor</td>
+</tr>
+<tr class="row-even"><td>GPWHITE</td>
+<td>GP white noise amplitude (e-/s)</td>
+</tr>
+<tr class="row-odd"><td>GPRED</td>
+<td>GP red noise amplitude (e-/s)</td>
+</tr>
+<tr class="row-even"><td>GPTAU</td>
+<td>GP red noise timescale (days)</td>
+</tr>
+<tr class="row-odd"><td>LAM<strong>XXYY</strong></td>
+<td>Cross-validation parameter for segment <strong>XX</strong> and PLD order <strong>YY</strong></td>
+</tr>
+<tr class="row-even"><td>RECL<strong>XXYY</strong></td>
+<td>Cross-validation parameter for segment <strong>XX</strong> and PLD order <strong>YY</strong> (<code class="xref py py-class docutils literal"><span class="pre">iPLD</span></code> only)</td>
+</tr>
+<tr class="row-odd"><td>LEPS</td>
+<td>Cross-validation minimum-finding CDPP tolerance</td>
+</tr>
+<tr class="row-even"><td>MAXPIX</td>
+<td>Maximum size of TPF aperture in pixels</td>
+</tr>
+<tr class="row-odd"><td>NRBY<strong>XX</strong>ID</td>
+<td>Nearby source <strong>XX</strong> ID number</td>
+</tr>
+<tr class="row-even"><td>NRBY<strong>XX</strong>X</td>
+<td>Nearby source <strong>XX</strong> X position (pixels)</td>
+</tr>
+<tr class="row-odd"><td>NRBY<strong>XX</strong>Y</td>
+<td>Nearby source <strong>XX</strong> Y position (pixels)</td>
+</tr>
+<tr class="row-even"><td>NRBY<strong>XX</strong>M</td>
+<td>Nearby source <strong>XX</strong> magnitude</td>
+</tr>
+<tr class="row-odd"><td>NRBY<strong>XX</strong>X0</td>
+<td>Nearby source reference X (pixels)</td>
+</tr>
+<tr class="row-even"><td>NRBY<strong>XX</strong>Y0</td>
+<td>Nearby source reference Y (pixels)</td>
+</tr>
+<tr class="row-odd"><td>NEIGH<strong>XX</strong></td>
+<td>Neighboring star ID used to de-trend (<code class="xref py py-class docutils literal"><span class="pre">nPLD</span></code> only)</td>
+</tr>
+<tr class="row-even"><td>OITER</td>
+<td>Number of outlier clipping iterations</td>
+</tr>
+<tr class="row-odd"><td>OPTGP</td>
+<td>GP optimization performed?</td>
+</tr>
+<tr class="row-even"><td>OSIGMA</td>
+<td>Outlier tolerance (standard deviations)</td>
+</tr>
+<tr class="row-odd"><td>P<strong>XX</strong>T0</td>
+<td>Masked planet transit time (days)</td>
+</tr>
+<tr class="row-even"><td>P<strong>XX</strong>PER</td>
+<td>Masked planet period (days)</td>
+</tr>
+<tr class="row-odd"><td>P<strong>XX</strong>DUR</td>
+<td>Masked planet transit duration (days)</td>
+</tr>
+<tr class="row-even"><td>PLDORDER</td>
+<td>PLD de-trending order</td>
+</tr>
+<tr class="row-odd"><td>SATUR</td>
+<td>Is target saturated?</td>
+</tr>
+<tr class="row-even"><td>SATTOL</td>
+<td>Fractional saturation tolerance</td>
+</tr>
+</tbody>
+</table>
+<p>The <code class="docutils literal"><span class="pre">data</span></code> container of this extension contains the following arrays:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Keyword</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>TIME</td>
+<td>The original timestamp. For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, this is <code class="xref py py-obj docutils literal"><span class="pre">(BJD</span> <span class="pre">-</span> <span class="pre">2454833)</span></code></td>
+</tr>
+<tr class="row-odd"><td>CADN</td>
+<td>The original cadence number</td>
+</tr>
+<tr class="row-even"><td>FLUX</td>
+<td>The <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> de-trended flux, same units as original SAP flux (e-/s)</td>
+</tr>
+<tr class="row-odd"><td>FCOR</td>
+<td>The CBV-corrected de-trended flux (e-/s)</td>
+</tr>
+<tr class="row-even"><td>FRAW</td>
+<td>The original (raw) SAP flux</td>
+</tr>
+<tr class="row-odd"><td>FRAW_ERR</td>
+<td>The observing errors on the raw flux</td>
+</tr>
+<tr class="row-even"><td>QUALITY</td>
+<td>An <code class="xref py py-obj docutils literal"><span class="pre">int64</span></code> array of quality flags for each cadence (see note below)</td>
+</tr>
+<tr class="row-odd"><td>BKG</td>
+<td>If present, the background flux subtracted from each cadence</td>
+</tr>
+<tr class="row-even"><td>CBV<strong>XX</strong></td>
+<td>The co-trending basis vectors used to produce the corrected flux <code class="xref py py-obj docutils literal"><span class="pre">FCOR</span></code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">QUALITY</span></code> array uses the same bit flags as <cite>K2</cite>, with the addition of four <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> flags that indicate a data point was masked when computing the model:</p>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="89%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>23</strong></td>
+<td>Data point is flagged in the raw <cite>K2</cite> TPF</td>
+</tr>
+<tr class="row-even"><td><strong>24</strong></td>
+<td>Data point is a <code class="xref py py-obj docutils literal"><span class="pre">NaN</span></code></td>
+</tr>
+<tr class="row-odd"><td><strong>25</strong></td>
+<td>Data point was determined to be an outlier</td>
+</tr>
+<tr class="row-even"><td><strong>26</strong></td>
+<td><em>Not used</em></td>
+</tr>
+<tr class="row-odd"><td><strong>27</strong></td>
+<td>Data point is during a transit/eclipse</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>As an example, to get the indices of all points that were flagged with bit <strong>23</strong> in
+Python, run</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">QUALITY</span> <span class="o">&amp;</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="mi">23</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p class="last">Note, however, that the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> <a class="reference internal" href="ui.html"><span class="doc">user interface</span></a> provides easy access to
+these masks via the <code class="xref py py-attr docutils literal"><span class="pre">Everest.badmask</span></code>, <code class="xref py py-attr docutils literal"><span class="pre">Everest.nanmask</span></code>,
+<code class="xref py py-attr docutils literal"><span class="pre">Everest.outmask</span></code>, and <code class="xref py py-attr docutils literal"><span class="pre">Everest.transitmask</span></code> attributes.</p>
+</div>
+</div>
+<div class="section" id="pixels-hdu">
+<h2><a class="toc-backref" href="#id3"><code class="docutils literal"><span class="pre">[2]</span></code> Pixels HDU</a><a class="headerlink" href="#pixels-hdu" title="Permalink to this headline">¶</a></h2>
+<p>An extension containing the pixel-level light curve.
+The <code class="docutils literal"><span class="pre">data</span></code> container stores two arrays:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Keyword</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>FPIX</td>
+<td>The flux in each of the pixels in the aperture</td>
+</tr>
+<tr class="row-odd"><td>X1N</td>
+<td>The first order PLD vectors for the neighbors (<code class="xref py py-class docutils literal"><span class="pre">nPLD</span></code> only)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="aperture-hdu">
+<h2><a class="toc-backref" href="#id4"><code class="docutils literal"><span class="pre">[3]</span></code> Aperture HDU</a><a class="headerlink" href="#aperture-hdu" title="Permalink to this headline">¶</a></h2>
+<p>An extension containing the aperture mask used for PLD de-trending. Ones correspond to pixels
+that were included in the de-trending; zeros correspond to pixels that were ignored.</p>
+</div>
+<div class="section" id="images-hdu">
+<h2><a class="toc-backref" href="#id5"><code class="docutils literal"><span class="pre">[4]</span></code> Images HDU</a><a class="headerlink" href="#images-hdu" title="Permalink to this headline">¶</a></h2>
+<p>Stores images of the full target postage stamp at three points in the light curve, for
+plotting purposes only.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="15%" />
+<col width="85%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>Keyword</strong></td>
+<td><strong>Description</strong></td>
+</tr>
+<tr class="row-even"><td>STAMP1</td>
+<td>The postage stamp at the first cadence</td>
+</tr>
+<tr class="row-odd"><td>STAMP2</td>
+<td>The postage stamp at the midpoint</td>
+</tr>
+<tr class="row-even"><td>STAMP3</td>
+<td>The postage stamp at the last cadence</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="hires-hdu">
+<h2><a class="toc-backref" href="#id6"><code class="docutils literal"><span class="pre">[5]</span></code> HiRes HDU</a><a class="headerlink" href="#hires-hdu" title="Permalink to this headline">¶</a></h2>
+<p>An image HDU containing a higher resolution image of the target. For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, this is
+obtained from the Palomar Observatory Sky Survey.</p>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script></div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="dvsfigs.html" class="btn btn-neutral float-right" title="Data Validation Summaries" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="releasenotes.html" class="btn btn-neutral" title="Data Release Notes" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

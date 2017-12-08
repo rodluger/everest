@@ -1,0 +1,391 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>transit.py - Transit models &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="Code Engine" href="engine.html"/>
+        <link rel="next" title="utils.py - General utils" href="utils.html"/>
+        <link rel="prev" title="standalone.py - Standalone de-trending" href="standalone.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="engine.html">Code Engine</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="basecamp.html"><code class="docutils literal"><span class="pre">basecamp.py</span></code> - The Everest base class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html"><code class="docutils literal"><span class="pre">config.py</span></code> - Misc settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detrender.html"><code class="docutils literal"><span class="pre">detrender.py</span></code> - De-trending models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dvs.html"><code class="docutils literal"><span class="pre">dvs.py</span></code> - Data Validation Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fits.html"><code class="docutils literal"><span class="pre">fits.py</span></code> - FITS conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp.html"><code class="docutils literal"><span class="pre">gp.py</span></code> - Gaussian Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inject.html"><code class="docutils literal"><span class="pre">inject.py</span></code> - Transit injection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="masksolve.html"><code class="docutils literal"><span class="pre">masksolve.py</span></code> - Solve a masked linear problem quickly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math.html"><code class="docutils literal"><span class="pre">mathutils.py</span></code> - Math utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pool.html"><code class="docutils literal"><span class="pre">pool.py</span></code> - Multiprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standalone.html"><code class="docutils literal"><span class="pre">standalone.py</span></code> - Standalone de-trending</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">transit.py</span></code> - Transit models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html"><code class="docutils literal"><span class="pre">utils.py</span></code> - General utils</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="missions.html">Missions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="engine.html">Code Engine</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">transit.py</span></code> - Transit models</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.transit"></span><div class="section" id="transit-py-transit-models">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">transit.py</span></code> - Transit models<a class="headerlink" href="#transit-py-transit-models" title="Permalink to this headline">¶</a></h1>
+<p>These are routines used to generate a transit model, primarily for
+transit injection/recovery tests. These are wrappers around
+<code class="xref py py-func docutils literal"><span class="pre">pysyzygy.Transit()</span></code>, with the added feature that
+the transit <code class="xref py py-obj docutils literal"><span class="pre">depth</span></code> and the transit <code class="xref py py-obj docutils literal"><span class="pre">duration</span></code> can be specified
+as input variables (as opposed to the planet-star radius ratio
+and the stellar density, which <code class="xref py py-mod docutils literal"><span class="pre">pysyzygy</span></code> expects).</p>
+<dl class="function">
+<dt id="everest.transit.Get_RpRs">
+<code class="descclassname">everest.transit.</code><code class="descname">Get_RpRs</code><span class="sig-paren">(</span><em>d</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.transit.Get_RpRs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the planet radius over the stellar radius
+for a given depth <code class="xref py py-obj docutils literal"><span class="pre">d</span></code>, given
+the <code class="xref py py-class docutils literal"><span class="pre">everest.pysyzygy</span></code> transit <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.transit.Get_rhos">
+<code class="descclassname">everest.transit.</code><code class="descname">Get_rhos</code><span class="sig-paren">(</span><em>dur</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.transit.Get_rhos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the stellar density for a given transit
+duration <code class="xref py py-obj docutils literal"><span class="pre">dur</span></code>, given
+the <code class="xref py py-class docutils literal"><span class="pre">everest.pysyzygy</span></code> transit <code class="xref py py-obj docutils literal"><span class="pre">kwargs</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.transit.Transit">
+<code class="descclassname">everest.transit.</code><code class="descname">Transit</code><span class="sig-paren">(</span><em>time</em>, <em>t0=0.0</em>, <em>dur=0.1</em>, <em>per=3.56789</em>, <em>depth=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.transit.Transit" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference external" href="http://adsabs.harvard.edu/abs/2002ApJ...580L.171M">Mandel-Agol</a>
+transit model, but with the depth and the duration as primary
+input variables.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>time</strong> (<em>numpy.ndarray</em>) – The time array</li>
+<li><strong>t0</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The time of first transit in units of            <code class="xref py py-obj docutils literal"><span class="pre">BJD</span></code> - 2454833.</li>
+<li><strong>dur</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The transit duration in days. Don’t go too crazy on            this one – very small or very large values will break the            inverter. Default 0.1</li>
+<li><strong>per</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The orbital period in days. Default 3.56789</li>
+<li><strong>depth</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The fractional transit depth. Default 0.001</li>
+<li><strong>kwargs</strong> (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><em>dict</em></a>) – Any additional keyword arguments, passed directly            to <code class="xref py py-func docutils literal"><span class="pre">pysyzygy.Transit()</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns tmod:</th><td class="field-body"><p class="first last">The transit model evaluated at the same times as the                    <a class="reference external" href="https://docs.python.org/2/library/time.html#module-time" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">time</span></code></a> array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.transit.TransitModel">
+<em class="property">class </em><code class="descclassname">everest.transit.</code><code class="descname">TransitModel</code><span class="sig-paren">(</span><em>name</em>, <em>single=False</em>, <em>sig_RpRs=0.001</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.transit.TransitModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>A transit model for use in regression. Note that the transit model
+is linear in the transit depth, so the depth (or planet/star radius
+ratio) is not a free parameter here!</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the planet, such as “b”.</li>
+<li><strong>single</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Is this a single transit? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a> (transit is assumed to be periodic at period given by <cite>per</cite>).</li>
+<li><strong>sig_RpRs</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The standard deviation of the prior on the planet/star radius ratio. Used only when the transit model is included in the design matrix. Default <cite>0.001</cite></li>
+<li><strong>kwargs</strong> – Any of the <code class="xref py py-mod docutils literal"><span class="pre">pysyzygy.Transit</span></code> keyword arguments. These include:</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><strong>b</strong> or <strong>bcirc</strong> - The (circular) impact parameter. Default <cite>0.</cite></li>
+<li><strong>MpMs</strong> - The planet-star mass ratio. Default <cite>0.</cite></li>
+<li><strong>per</strong> - The planet orbital period in days. Default <cite>10.</cite></li>
+<li><dl class="first docutils">
+<dt><strong>rhos</strong> or <strong>aRs</strong> - The stellar density in <cite>g/cm^3</cite> or the semi-major </dt>
+<dd>axis-stellar radius ratio. Default is <cite>rhos = 1.4</cite>, the density of the Sun</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>ecc</strong> and <strong>w</strong> or <strong>esw</strong> and <strong>ecw</strong> - The eccentricity and the </dt>
+<dd>longitude of pericenter in radians, or the two eccentricity vectors. Default is <cite>ecc = 0.</cite> and <cite>w = 0.</cite></dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>t0</strong> or <strong>times</strong> - The time of first transit, or the time of each </dt>
+<dd>of the transits (in case they are not periodic) in days. Default is <cite>t0 = 0.</cite></dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>u1</strong> and <strong>u2</strong> or <strong>q1</strong> and <strong>q2</strong> - The quadratic limb darkening </dt>
+<dd>parameters (u1, u2) or the modified quadratic limb darkening parameters (q1, q2) from <a class="reference external" href="http://dx.doi.org/10.1093/mnras/stt1435">Kipping (2013)</a>. Default is <cite>u1 = 0.40</cite> and <cite>u2 = 0.26</cite></dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>exptime</strong> - The exposure time in days for binning the model. </dt>
+<dd>Default <cite>ps.KEPLONGEXP</cite></dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>fullorbit</strong> - Compute the orbital parameters for the entire orbit? </dt>
+<dd>Only useful if you’re interested in the full arrays of orbital parameters. Default <cite>False</cite></dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>maxpts</strong> - Maximum number of points in the model. Increase </dt>
+<dd>this if you’re getting errors. Default <cite>10,000</cite></dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><strong>exppts</strong> - The number of exposure points per cadence when </dt>
+<dd>binning the model. Default <cite>50</cite></dd>
+</dl>
+</li>
+<li><strong>keptol</strong> - The tolerance of the Kepler solver. Default <cite>1.e-15</cite></li>
+<li><dl class="first docutils">
+<dt><strong>maxkepiter</strong> - Maximum number of iterations in the Kepler solver. </dt>
+<dd>Default <cite>100</cite></dd>
+</dl>
+</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.transit.TransitShape">
+<em class="property">class </em><code class="descclassname">everest.transit.</code><code class="descname">TransitShape</code><span class="sig-paren">(</span><em>depth=1</em>, <em>dur=0.1</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.transit.TransitShape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a single transit model used for injection/recovery tests.</p>
+<p>A <a class="reference external" href="http://adsabs.harvard.edu/abs/2002ApJ...580L.171M">Mandel-Agol</a>
+transit model, but with the depth and the duration as primary
+input variables. Note that the time(s) of transit is not an
+input parameter, nor is the period.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>depth</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The transit depth. Set this to 1. for transit injection/recovery tests. Default <cite>1</cite></li>
+<li><strong>dur</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The transit duration in days. Default <cite>0.1</cite></li>
+<li><strong>kwargs</strong> – Any additional keyword arguments, passed directly to <code class="xref py py-func docutils literal"><span class="pre">pysyzygy.Transit()</span></code></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils.html" class="btn btn-neutral float-right" title="utils.py - General utils" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="standalone.html" class="btn btn-neutral" title="standalone.py - Standalone de-trending" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

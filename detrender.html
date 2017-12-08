@@ -1,0 +1,614 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>detrender.py - De-trending models &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="Code Engine" href="engine.html"/>
+        <link rel="next" title="dvs.py - Data Validation Summary" href="dvs.html"/>
+        <link rel="prev" title="config.py - Misc settings" href="config.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="engine.html">Code Engine</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="basecamp.html"><code class="docutils literal"><span class="pre">basecamp.py</span></code> - The Everest base class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html"><code class="docutils literal"><span class="pre">config.py</span></code> - Misc settings</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">detrender.py</span></code> - De-trending models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dvs.html"><code class="docutils literal"><span class="pre">dvs.py</span></code> - Data Validation Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fits.html"><code class="docutils literal"><span class="pre">fits.py</span></code> - FITS conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp.html"><code class="docutils literal"><span class="pre">gp.py</span></code> - Gaussian Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inject.html"><code class="docutils literal"><span class="pre">inject.py</span></code> - Transit injection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="masksolve.html"><code class="docutils literal"><span class="pre">masksolve.py</span></code> - Solve a masked linear problem quickly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math.html"><code class="docutils literal"><span class="pre">mathutils.py</span></code> - Math utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pool.html"><code class="docutils literal"><span class="pre">pool.py</span></code> - Multiprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standalone.html"><code class="docutils literal"><span class="pre">standalone.py</span></code> - Standalone de-trending</a></li>
+<li class="toctree-l3"><a class="reference internal" href="transit.html"><code class="docutils literal"><span class="pre">transit.py</span></code> - Transit models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html"><code class="docutils literal"><span class="pre">utils.py</span></code> - General utils</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="missions.html">Missions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="engine.html">Code Engine</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">detrender.py</span></code> - De-trending models</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.detrender"></span><div class="section" id="detrender-py-de-trending-models">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">detrender.py</span></code> - De-trending models<a class="headerlink" href="#detrender-py-de-trending-models" title="Permalink to this headline">¶</a></h1>
+<p>This module contains the generic models used to de-trend light curves for
+the various supported missions. Most of the functionality is implemented in
+<a class="reference internal" href="#everest.detrender.Detrender" title="everest.detrender.Detrender"><code class="xref py py-class docutils literal"><span class="pre">Detrender</span></code></a>, and specific de-trending methods are implemented as
+subclasses. The default <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model is <a class="reference internal" href="#everest.detrender.nPLD" title="everest.detrender.nPLD"><code class="xref py py-class docutils literal"><span class="pre">nPLD</span></code></a>.</p>
+<dl class="class">
+<dt id="everest.detrender.Detrender">
+<em class="property">class </em><code class="descclassname">everest.detrender.</code><code class="descname">Detrender</code><span class="sig-paren">(</span><em>ID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generic <em>PLD</em> model with scalar matrix <em>L2</em> regularization. Includes
+functionality for loading pixel-level light curves, identifying outliers,
+generating the data covariance matrix, computing the regularized pixel
+model, and plotting the results.
+Specific models are implemented as subclasses.</p>
+<p><strong>General:</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ID</strong> – The target star ID (<em>EPIC</em>, <em>KIC</em>, or <em>TIC</em> number,            for instance)</li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The cadence of the observations. Default <code class="xref py py-obj docutils literal"><span class="pre">lc</span></code></li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Overwrite existing <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> models? Default            <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>clobber_tpf</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Download and overwrite the saved raw TPF data?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>debug</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – De-trend in debug mode? If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, prints all            output to screen and enters <a class="reference external" href="https://docs.python.org/2/library/pdb.html#module-pdb" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">pdb</span></code></a> post-mortem mode for            debugging when an error is raised. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>mission</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the mission. Default <cite>k2</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Detrender:</strong></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>aperture_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the aperture to use. These are            defined in the datasets and are mission specific. Defaults to            the mission default</li>
+<li><strong>bpad</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – When light curve breakpoints are set, the light curve            chunks must be stitched together at the end. To prevent kinks            and/or discontinuities, the chunks are made to overlap by            <code class="xref py py-obj docutils literal"><span class="pre">bpad</span></code> cadences on either end. The chunks are then            mended and the overlap is  discarded. Default 100</li>
+<li><strong>breakpoints</strong> – Add light curve breakpoints when de-trending? If            <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, splits the light curve into chunks and de-trends            each one separately, then stitches them back and the end. This is            useful for missions like <em>K2</em>, where the light curve noise            properties are very different at the beginning and end of each            campaign. The cadences at which breakpoints are inserted are            specified in the <code class="xref py py-func docutils literal"><span class="pre">Breakpoints()</span></code> function            of each mission. Alternatively, the user may specify a list of            cadences at which to break up the light curve. Default            <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>cbv_num</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of CBVs to regress on during            post-processing. Default 1</li>
+<li><strong>cbv_niter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of <code class="xref py py-obj docutils literal"><span class="pre">SysRem</span></code> iterations to            perform when computing CBVs. Default 50</li>
+<li><strong>cbv_win</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The filter window size (in cadences) for smoothing            the CBVs. Default 999</li>
+<li><strong>cbv_order</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The filter order for smoothing CBVs. Default 3</li>
+<li><strong>cdivs</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of light curve subdivisions when            cross-validating. During each iteration, one of these subdivisions            will be masked and used as the validation set. Default 3</li>
+<li><strong>cv_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The quantity to be minimized during cross-validation.            Default <cite>MAD</cite> (median absolute deviation). Can also be set to            <cite>TV</cite> (total variation).</li>
+<li><strong>giter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of iterations when optimizing the GP.            During each iteration, the minimizer is initialized with a            perturbed guess; after <code class="xref py py-obj docutils literal"><span class="pre">giter</span></code> iterations, the step with            the highest likelihood is kept. Default 3</li>
+<li><strong>gmaxf</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The maximum number of function evaluations when            optimizing the GP. Default 200</li>
+<li><strong>gp_factor</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – When computing the initial kernel parameters,            the red noise amplitude is set to the standard deviation of the            data times this factor. Larger values generally help with            convergence, particularly for very variable stars. Default 100</li>
+<li><strong>kernel_params</strong> (<em>array_like</em>) – The initial value of the            <code class="xref py py-obj docutils literal"><span class="pre">Matern-3/2</span></code> kernel parameters            (white noise amplitude in flux units, red noise amplitude in            flux units, and timescale in days). Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>            (determined from the data)</li>
+<li><strong>get_hires</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Download a high resolution image of the target?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>get_nearby</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Retrieve the location of nearby sources?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>lambda_arr</strong> (<em>array_like</em>) – The array of <img class="math" src="_images/math/5b99ed91598429157b547a2c3700a6b25c52824a.png" alt="\Lambda"/> values to            iterate over during the cross-validation step. <img class="math" src="_images/math/5b99ed91598429157b547a2c3700a6b25c52824a.png" alt="\Lambda"/>            is the regularization parameter, or the standard deviation of            the Gaussian prior on the weights for each order of PLD.            Default <code class="docutils literal"><span class="pre">10</span> <span class="pre">**</span> <span class="pre">np.arange(0,18,0.5)</span></code></li>
+<li><strong>leps</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The fractional tolerance when optimizing            <img class="math" src="_images/math/5b99ed91598429157b547a2c3700a6b25c52824a.png" alt="\Lambda"/>. The chosen value of <img class="math" src="_images/math/5b99ed91598429157b547a2c3700a6b25c52824a.png" alt="\Lambda"/> will be            within this amount of the minimum of the CDPP curve.            Default 0.05</li>
+<li><strong>max_pixels</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The maximum number of pixels. Very large apertures            are likely to cause memory errors, particularly for high order            PLD. If the chosen aperture exceeds this many            pixels, a different aperture is chosen from the dataset. If no            apertures with fewer than this many pixels are available, an error             is thrown. Default 75</li>
+<li><strong>optimize_gp</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Perform the GP optimization steps?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>osigma</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The outlier standard deviation threshold. Default 5</li>
+<li><strong>oiter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The maximum number of steps taken during iterative            sigma clipping. Default 10</li>
+<li><strong>planets</strong> – Any transiting planets/EBs that should be explicitly            masked during cross-validation. It is not            usually necessary to specify these at the cross-validation stage,            since deep transits are masked as outliers and shallow transits            do not affect the lambda optimization. However, it <em>is</em> necessary            to mask deep transits in short cadence mode, since these can            heavily bias the cross-validation scheme to lower values of            lambda, leading to severe underfitting.            This parameter should be a tuple or a list of tuples in the            form (<cite>t0</cite>, <cite>period</cite>, <cite>duration</cite>)            for each of the planets to be masked (all values in days).</li>
+<li><strong>pld_order</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The pixel level decorrelation order. Default <cite>3</cite>.            Higher orders may cause memory errors</li>
+<li><strong>saturated_aperture_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – If the target is found to be            saturated, de-trending is performed            on this aperture instead. Defaults to the mission default</li>
+<li><strong>saturation_tolerance</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The tolerance when determining whether            or not to collapse a column in the aperture. The column collapsing            is implemented in the individual mission modules. Default -0.1,            i.e., if a target is 10% shy of the nominal saturation level, it
+is considered to be saturated.</li>
+<li><strong>transit_model</strong> – An instance or list of instances of            <a class="reference internal" href="transit.html#everest.transit.TransitModel" title="everest.transit.TransitModel"><code class="xref py py-class docutils literal"><span class="pre">everest.transit.TransitModel</span></code></a>. If specified,            <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> will include these in the regression when            calculating the PLD coefficients. The final instrumental light            curve model will <strong>not</strong> include the transit fits – they are used            solely to obtain unbiased PLD coefficients. The best fit transit            depths from the fit are stored            in the <code class="xref py py-obj docutils literal"><span class="pre">transit_depth</span></code> attribute of the model.            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="everest.detrender.Detrender.cross_validate">
+<code class="descname">cross_validate</code><span class="sig-paren">(</span><em>ax</em>, <em>info=''</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.cross_validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cross-validate to find the optimal value of <code class="xref py py-obj docutils literal"><span class="pre">lambda</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ax</strong> – The current <code class="xref py py-obj docutils literal"><span class="pre">matplotlib.pyplot</span></code> axis instance to                plot the cross-validation results.</li>
+<li><strong>info</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The label to show in the bottom right-hand corner                of the plot. Default <cite>‘’</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.cv_compute">
+<code class="descname">cv_compute</code><span class="sig-paren">(</span><em>b</em>, <em>A</em>, <em>B</em>, <em>C</em>, <em>mK</em>, <em>f</em>, <em>m1</em>, <em>m2</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.cv_compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the model (cross-validation step only) for chunk <code class="xref py py-obj docutils literal"><span class="pre">b</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.cv_precompute">
+<code class="descname">cv_precompute</code><span class="sig-paren">(</span><em>mask</em>, <em>b</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.cv_precompute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pre-compute the matrices <code class="xref py py-obj docutils literal"><span class="pre">A</span></code> and <code class="xref py py-obj docutils literal"><span class="pre">B</span></code>
+(cross-validation step only)
+for chunk <code class="xref py py-obj docutils literal"><span class="pre">b</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.exception_handler">
+<code class="descname">exception_handler</code><span class="sig-paren">(</span><em>pdb</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.exception_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>A custom exception handler.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pdb</strong> – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, enters PDB post-mortem                mode for debugging.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.finalize">
+<code class="descname">finalize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.finalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is called at the end of the de-trending, prior to
+plotting the final results.
+Subclass it to add custom functionality to individual models.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.fobj">
+<code class="descname">fobj</code><span class="sig-paren">(</span><em>y</em>, <em>y0</em>, <em>t</em>, <em>gp</em>, <em>mask</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.fobj" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.get_outliers">
+<code class="descname">get_outliers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.get_outliers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs iterative sigma clipping to get outliers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.get_ylim">
+<code class="descname">get_ylim</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.get_ylim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the ideal y-axis limits for the light curve plot. Attempts to
+set the limits equal to those of the raw light curve, but if more than
+1% of the flux lies either above or below these limits, auto-expands
+to include those points. At the end, adds 5% padding to both the
+top and the bottom.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.init_kernel">
+<code class="descname">init_kernel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.init_kernel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the covariance matrix with a guess at
+the GP kernel parameters.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><em>name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a saved version of the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.load_tpf">
+<code class="descname">load_tpf</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.load_tpf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the target pixel file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.mask_planets">
+<code class="descname">mask_planets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.mask_planets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="everest.detrender.Detrender.name">
+<code class="descname">name</code><a class="headerlink" href="#everest.detrender.Detrender.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the current <a class="reference internal" href="#everest.detrender.Detrender" title="everest.detrender.Detrender"><code class="xref py py-class docutils literal"><span class="pre">Detrender</span></code></a> subclass.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.optimize_lambda">
+<code class="descname">optimize_lambda</code><span class="sig-paren">(</span><em>validation</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.optimize_lambda" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the index of <code class="xref py py-attr docutils literal"><span class="pre">self.lambda_arr</span></code> that minimizes the
+validation scatter in the segment with minimum at the lowest value
+of <code class="xref py py-obj docutils literal"><span class="pre">lambda</span></code>, with
+fractional tolerance <code class="xref py py-attr docutils literal"><span class="pre">self.leps</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>validation</strong> (<em>numpy.ndarray</em>) – The scatter in the validation set                as a function of <code class="xref py py-obj docutils literal"><span class="pre">lambda</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.plot_cbv">
+<code class="descname">plot_cbv</code><span class="sig-paren">(</span><em>ax</em>, <em>flux</em>, <em>info</em>, <em>show_cbv=False</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.plot_cbv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the final CBV-corrected light curve.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.plot_final">
+<code class="descname">plot_final</code><span class="sig-paren">(</span><em>ax</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.plot_final" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the final de-trended light curve.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.plot_lc">
+<code class="descname">plot_lc</code><span class="sig-paren">(</span><em>ax</em>, <em>info_left=''</em>, <em>info_right=''</em>, <em>color='b'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.plot_lc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the current light curve. This is called at several stages to
+plot the de-trending progress as a function of the different
+<em>PLD</em> orders.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ax</strong> – The current <code class="xref py py-obj docutils literal"><span class="pre">matplotlib.pyplot</span></code> axis instance</li>
+<li><strong>info_left</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Information to display at the left of the                plot. Default <cite>‘’</cite></li>
+<li><strong>info_right</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Information to display at the right of the                plot. Default <cite>‘’</cite></li>
+<li><strong>color</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The color of the data points. Default <cite>‘b’</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.publish">
+<code class="descname">publish</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.publish" title="Permalink to this definition">¶</a></dt>
+<dd><p>Correct the light curve with the CBVs, generate a
+cover page for the DVS figure,
+and produce a FITS file for publication.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.publish_csv">
+<code class="descname">publish_csv</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.publish_csv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the de-trending step.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.save_model">
+<code class="descname">save_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.save_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves all of the de-trending information to disk in an <cite>npz</cite> file
+and saves the DVS as a <cite>pdf</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>A subclass-specific routine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.Detrender.update_gp">
+<code class="descname">update_gp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.Detrender.update_gp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls <code class="xref py py-func docutils literal"><span class="pre">gp.GetKernelParams()</span></code> to optimize the GP and obtain the
+covariance matrix for the regression.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.detrender.rPLD">
+<em class="property">class </em><code class="descclassname">everest.detrender.</code><code class="descname">rPLD</code><span class="sig-paren">(</span><em>ID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.rPLD" title="Permalink to this definition">¶</a></dt>
+<dd><p>The regular PLD model. Nothing fancy.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.detrender.nPLD">
+<em class="property">class </em><code class="descclassname">everest.detrender.</code><code class="descname">nPLD</code><span class="sig-paren">(</span><em>ID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.nPLD" title="Permalink to this definition">¶</a></dt>
+<dd><p>The “neighboring stars” <em>PLD</em> model. This model uses the
+<em>PLD</em> vectors of neighboring stars to help in the de-trending and can lead
+to increased performance over the regular <a class="reference internal" href="#everest.detrender.rPLD" title="everest.detrender.rPLD"><code class="xref py py-class docutils literal"><span class="pre">rPLD</span></code></a> model,
+particularly for dimmer stars.</p>
+<dl class="method">
+<dt id="everest.detrender.nPLD.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.nPLD.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called during production de-trending, prior to
+calling the <a class="reference internal" href="#everest.detrender.Detrender.run" title="everest.detrender.Detrender.run"><code class="xref py py-obj docutils literal"><span class="pre">Detrender.run()</span></code></a> method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cdpp_range</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – If <code class="xref py py-obj docutils literal"><span class="pre">parent_model</span></code> is set,                neighbors are selected only if                their de-trended CDPPs fall within this range. Default <cite>None</cite></li>
+<li><strong>mag_range</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – Only select neighbors whose magnitudes are                within this range. Default (11., 13.)</li>
+<li><strong>neighbors</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of neighboring stars to use in                the de-trending. The higher this number, the more signals                there are and hence the more de-trending information there is.                However, the neighboring star signals are regularized together                with the target’s signals, so adding too many neighbors will                inevitably reduce the contribution of the target’s own                signals, which may reduce performance. Default <cite>10</cite></li>
+<li><strong>parent_model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – By default, <a class="reference internal" href="#everest.detrender.nPLD" title="everest.detrender.nPLD"><code class="xref py py-class docutils literal"><span class="pre">nPLD</span></code></a> is run in                stand-alone mode. The neighbor signals are computed directly                from their TPFs, so there is no need to have run <em>PLD</em> on them                beforehand. However, if <code class="xref py py-obj docutils literal"><span class="pre">parent_model</span></code>                is set, <a class="reference internal" href="#everest.detrender.nPLD" title="everest.detrender.nPLD"><code class="xref py py-class docutils literal"><span class="pre">nPLD</span></code></a> will use information from the                <code class="xref py py-obj docutils literal"><span class="pre">parent_model</span></code> model of each neighboring star when                de-trending. This is particularly useful for identifying                outliers in the neighbor signals and preventing them from                polluting the current target. Setting <code class="xref py py-obj docutils literal"><span class="pre">parent_model</span></code>                to <a class="reference internal" href="#everest.detrender.rPLD" title="everest.detrender.rPLD"><code class="xref py py-class docutils literal"><span class="pre">rPLD</span></code></a>, for instance, will use the                outlier information in the <a class="reference internal" href="#everest.detrender.rPLD" title="everest.detrender.rPLD"><code class="xref py py-class docutils literal"><span class="pre">rPLD</span></code></a> model of the                neighbors (this must have been run ahead of time).                Note, however, that tests with <em>K2</em> data show that including                outliers in the neighbor signals actually                <em>improves</em> the performance, since many of these outliers                are associated with events such as thruster firings and are                present in all light curves, and therefore <em>help</em> in the                de-trending. Default <cite>None</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>..note :: Optionally, the <code class="xref py py-obj docutils literal"><span class="pre">neighbors</span></code> may be specified                   directly as a list of target IDs to use.                   In this case, users may also provide a list of                   <a class="reference internal" href="utils.html#everest.utils.DataContainer" title="everest.utils.DataContainer"><code class="xref py py-class docutils literal"><span class="pre">everest.utils.DataContainer</span></code></a> instances                   corresponding to each of the neighbors in the                   <code class="xref py py-obj docutils literal"><span class="pre">neighbors_data</span></code> kwarg.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.detrender.iPLD">
+<em class="property">class </em><code class="descclassname">everest.detrender.</code><code class="descname">iPLD</code><span class="sig-paren">(</span><em>ID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.iPLD" title="Permalink to this definition">¶</a></dt>
+<dd><p>The iterative PLD model.</p>
+<p>..warning :: Deprecated and not thoroughly tested.</p>
+<dl class="method">
+<dt id="everest.detrender.iPLD.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.iPLD.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called during production de-trending, prior to
+calling the <a class="reference internal" href="#everest.detrender.Detrender.run" title="everest.detrender.Detrender.run"><code class="xref py py-obj docutils literal"><span class="pre">Detrender.run()</span></code></a> method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parent_model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the model to operate on.                Default <cite>nPLD</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.detrender.pPLD">
+<em class="property">class </em><code class="descclassname">everest.detrender.</code><code class="descname">pPLD</code><span class="sig-paren">(</span><em>ID</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.pPLD" title="Permalink to this definition">¶</a></dt>
+<dd><p>A neighboring PLD extension that uses Powell’s method to find the
+cross-validation parameter <code class="xref py py-obj docutils literal"><span class="pre">lambda</span></code>.</p>
+<dl class="method">
+<dt id="everest.detrender.pPLD.cross_validate">
+<code class="descname">cross_validate</code><span class="sig-paren">(</span><em>ax</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.pPLD.cross_validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the cross-validation step.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.pPLD.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.pPLD.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs the de-trending.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.pPLD.setup">
+<code class="descname">setup</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.pPLD.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called during production de-trending, prior to
+calling the <a class="reference internal" href="#everest.detrender.Detrender.run" title="everest.detrender.Detrender.run"><code class="xref py py-obj docutils literal"><span class="pre">Detrender.run()</span></code></a> method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>piter</strong> (<em>inter</em>) – The number of iterations in the minimizer.                Default 3</li>
+<li><strong>pmaxf</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The maximum number of function evaluations per                iteration. Default 300</li>
+<li><strong>ppert</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The fractional amplitude of the perturbation on                the initial guess. Default 0.1</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.detrender.pPLD.validation_scatter">
+<code class="descname">validation_scatter</code><span class="sig-paren">(</span><em>log_lam</em>, <em>b</em>, <em>masks</em>, <em>pre_v</em>, <em>gp</em>, <em>flux</em>, <em>time</em>, <em>med</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.detrender.pPLD.validation_scatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the scatter in the validation set.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="dvs.html" class="btn btn-neutral float-right" title="dvs.py - Data Validation Summary" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="config.html" class="btn btn-neutral" title="config.py - Misc settings" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

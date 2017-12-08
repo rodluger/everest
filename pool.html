@@ -1,0 +1,411 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pool.py - Multiprocessing &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="Code Engine" href="engine.html"/>
+        <link rel="next" title="standalone.py - Standalone de-trending" href="standalone.html"/>
+        <link rel="prev" title="mathutils.py - Math utils" href="math.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="engine.html">Code Engine</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="basecamp.html"><code class="docutils literal"><span class="pre">basecamp.py</span></code> - The Everest base class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html"><code class="docutils literal"><span class="pre">config.py</span></code> - Misc settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detrender.html"><code class="docutils literal"><span class="pre">detrender.py</span></code> - De-trending models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dvs.html"><code class="docutils literal"><span class="pre">dvs.py</span></code> - Data Validation Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fits.html"><code class="docutils literal"><span class="pre">fits.py</span></code> - FITS conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp.html"><code class="docutils literal"><span class="pre">gp.py</span></code> - Gaussian Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inject.html"><code class="docutils literal"><span class="pre">inject.py</span></code> - Transit injection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="masksolve.html"><code class="docutils literal"><span class="pre">masksolve.py</span></code> - Solve a masked linear problem quickly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math.html"><code class="docutils literal"><span class="pre">mathutils.py</span></code> - Math utils</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">pool.py</span></code> - Multiprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standalone.html"><code class="docutils literal"><span class="pre">standalone.py</span></code> - Standalone de-trending</a></li>
+<li class="toctree-l3"><a class="reference internal" href="transit.html"><code class="docutils literal"><span class="pre">transit.py</span></code> - Transit models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html"><code class="docutils literal"><span class="pre">utils.py</span></code> - General utils</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="missions.html">Missions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="engine.html">Code Engine</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">pool.py</span></code> - Multiprocessing</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.pool"></span><div class="section" id="pool-py-multiprocessing">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">pool.py</span></code> - Multiprocessing<a class="headerlink" href="#pool-py-multiprocessing" title="Permalink to this headline">¶</a></h1>
+<p>An implementation of three different types of pools:</p>
+<blockquote>
+<div><ul class="simple">
+<li>An MPI pool borrowed from <code class="xref py py-mod docutils literal"><span class="pre">emcee</span></code>. This pool passes
+Python objects back and forth to the workers and communicates
+once per task.</li>
+<li>A multiprocessing for local parallelization, borrowed
+from <code class="xref py py-mod docutils literal"><span class="pre">emcee</span></code></li>
+<li>A serial pool, which uses the built-in <a class="reference external" href="https://docs.python.org/2/library/functions.html#map" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">map</span></code></a> function</li>
+</ul>
+</div></blockquote>
+<dl class="class">
+<dt id="everest.pool.MPIPool">
+<em class="property">class </em><code class="descclassname">everest.pool.</code><code class="descname">MPIPool</code><span class="sig-paren">(</span><em>comm=None</em>, <em>loadbalance=False</em>, <em>debug=False</em>, <em>wait_on_start=True</em>, <em>exit_on_end=True</em>, <em>cores_per_task=1</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MPIPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pool that distributes tasks over a set of MPI processes. MPI is an
+API for distributed memory parallelism.  This pool will let you run
+emcee without shared memory, letting you use much larger machines
+with emcee.</p>
+<p>The pool only support the <a class="reference internal" href="#everest.pool.MPIPool.map" title="everest.pool.MPIPool.map"><code class="xref py py-func docutils literal"><span class="pre">map()</span></code></a> method at the moment because
+this is the only functionality that emcee needs. That being said,
+this pool is fairly general and it could be used for other purposes.</p>
+<p>Contributed by <a class="reference external" href="https://github.com/joezuntz">Joe Zuntz</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>comm</strong> – (optional)
+The <code class="xref py py-mod docutils literal"><span class="pre">mpi4py</span></code> communicator.</li>
+<li><strong>loadbalance</strong> – (optional)
+if <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> and <code class="xref py py-obj docutils literal"><span class="pre">ntask</span></code> &gt; <code class="xref py py-obj docutils literal"><span class="pre">Ncpus</span></code>,
+tries to loadbalance by sending
+out one task to each cpu first and then sending out the rest
+as the cpus get done.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="everest.pool.MPIPool.bcast">
+<code class="descname">bcast</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MPIPool.bcast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent to mpi4py <a class="reference internal" href="#everest.pool.MPIPool.bcast" title="everest.pool.MPIPool.bcast"><code class="xref py py-func docutils literal"><span class="pre">bcast()</span></code></a> collective operation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.pool.MPIPool.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MPIPool.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Just send a message off to all the pool members which contains
+the special <code class="xref py py-class docutils literal"><span class="pre">_close_pool_message</span></code> sentinel.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="everest.pool.MPIPool.enabled">
+<em class="property">static </em><code class="descname">enabled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MPIPool.enabled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="everest.pool.MPIPool.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>function</em>, <em>tasks</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MPIPool.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like the built-in <a class="reference internal" href="#everest.pool.MPIPool.map" title="everest.pool.MPIPool.map"><code class="xref py py-func docutils literal"><span class="pre">map()</span></code></a> function, apply a function to all
+of the values in a list and return the list of results.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>function</strong> – The function to apply to the list.</li>
+<li><strong>tasks</strong> – The list of elements.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.pool.MPIPool.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MPIPool.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>If this isn’t the master process, wait for instructions.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.pool.MultiPool">
+<em class="property">class </em><code class="descclassname">everest.pool.</code><code class="descname">MultiPool</code><span class="sig-paren">(</span><em>processes=None</em>, <em>initializer=None</em>, <em>initargs=()</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MultiPool" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is simply <code class="xref py py-mod docutils literal"><span class="pre">emcee</span></code>’s <code class="xref py py-class docutils literal"><span class="pre">InterruptiblePool</span></code>.</p>
+<p>A modified version of <code class="xref py py-class docutils literal"><span class="pre">multiprocessing.pool.Pool</span></code> that has better
+behavior with regard to <code class="xref py py-obj docutils literal"><span class="pre">KeyboardInterrupts</span></code>
+in the <a class="reference internal" href="#everest.pool.MultiPool.map" title="everest.pool.MultiPool.map"><code class="xref py py-func docutils literal"><span class="pre">map()</span></code></a> method.</p>
+<p>Contributed by Peter K. G. Williams &lt;<a class="reference external" href="mailto:peter&#37;&#52;&#48;newton&#46;cx">peter<span>&#64;</span>newton<span>&#46;</span>cx</a>&gt;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>processes</strong> – (optional)
+The number of worker processes to use; defaults to the number of CPUs.</li>
+<li><strong>initializer</strong> – (optional)
+Either <cite>None</cite>, or a callable that will be invoked by each worker
+process when it starts.</li>
+<li><strong>initargs</strong> – (optional)
+Arguments for <em>initializer</em>; it will be called as
+<cite>initializer(*initargs)</cite>.</li>
+<li><strong>kwargs</strong> – (optional)
+Extra arguments. Python 2.7 supports a <cite>maxtasksperchild</cite> parameter.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="staticmethod">
+<dt id="everest.pool.MultiPool.enabled">
+<em class="property">static </em><code class="descname">enabled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MultiPool.enabled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="everest.pool.MultiPool.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>func</em>, <em>iterable</em>, <em>chunksize=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.MultiPool.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent of <cite>map()</cite> built-in, without swallowing
+<cite>KeyboardInterrupt</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>func</strong> – The function to apply to the items.</li>
+<li><strong>iterable</strong> – An iterable of items that will have <cite>func</cite> applied to them.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.pool.SerialPool">
+<em class="property">class </em><code class="descclassname">everest.pool.</code><code class="descname">SerialPool</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.SerialPool" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="staticmethod">
+<dt id="everest.pool.SerialPool.enabled">
+<em class="property">static </em><code class="descname">enabled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.SerialPool.enabled" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="everest.pool.SerialPool.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>function</em>, <em>iterable</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.SerialPool.map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="everest.pool.SerialPool.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.SerialPool.wait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.pool.Pool">
+<code class="descclassname">everest.pool.</code><code class="descname">Pool</code><span class="sig-paren">(</span><em>pool='AnyPool'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.pool.Pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chooses between the different pools.
+If <code class="docutils literal"><span class="pre">pool</span> <span class="pre">==</span> <span class="pre">'AnyPool'</span></code>, chooses based on availability.</p>
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="standalone.html" class="btn btn-neutral float-right" title="standalone.py - Standalone de-trending" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="math.html" class="btn btn-neutral" title="mathutils.py - Math utils" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

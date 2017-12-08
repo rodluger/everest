@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>The Everest Pipeline &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="Overview" href="overview.html"/>
+        <link rel="next" title="The Catalog" href="catalog.html"/>
+        <link rel="prev" title="Using Everest" href="using_everest.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="overview.html">Overview</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The Everest Pipeline</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#download-the-data">1. Download the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#de-trend-the-data">2. De-trend the data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compute-cbvs">3. Compute CBVs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publish">4. Publish</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">The Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="overview.html">Overview</a>&raquo;</li>
+      
+    
+      <li>The Everest Pipeline</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="the-everest-pipeline">
+<h1>The Everest Pipeline<a class="headerlink" href="#the-everest-pipeline" title="Permalink to this headline">¶</a></h1>
+<p>Below are the basic instructions for reproducing the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> catalog. For
+large photometric surveys like <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, processing all light curves will take
+a lot of time and a lot of computing power. It took on the order of 100,000 CPU hours
+to generate the catalog for <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code> campaigns 0-8.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Users do not need to follow these instructions, unless they wish to tweak model parameters and generate catalogs of their own. Most users will simply want to interface with the existing catalog. See the <a class="reference internal" href="ui.html"><span class="doc">user interface</span></a> section.</p>
+</div>
+<div class="section" id="download-the-data">
+<h2>1. Download the data<a class="headerlink" href="#download-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Each <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> mission implements its own functionality for interfacing
+with the raw data. For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, individual raw light curves can be downloaded
+by running</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">everest</span><span class="o">.</span><span class="n">missions</span><span class="o">.</span><span class="n">k2</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">EPIC</span><span class="p">,</span> <span class="n">download_only</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Batch downloading for entire campaigns is implemented for individual missions.
+For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, you can submit a PBS job to a cluster with
+<a class="reference internal" href="k2_pbs.html#everest.missions.k2.pbs.Download" title="everest.missions.k2.pbs.Download"><code class="xref py py-func docutils literal"><span class="pre">everest.missions.k2.pbs.Download()</span></code></a>.</p>
+</div>
+<div class="section" id="de-trend-the-data">
+<h2>2. De-trend the data<a class="headerlink" href="#de-trend-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Individual light curves can be de-trended by instantiating one of the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> models:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">everest</span><span class="o">.</span><span class="n">nPLD</span><span class="p">(</span><span class="n">EPIC</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Currently, the available models are <a class="reference internal" href="detrender.html#everest.detrender.nPLD" title="everest.detrender.nPLD"><code class="xref py py-class docutils literal"><span class="pre">everest.nPLD</span></code></a>,
+<code class="xref py py-class docutils literal"><span class="pre">everest.sPLD</span></code>, <a class="reference internal" href="detrender.html#everest.detrender.pPLD" title="everest.detrender.pPLD"><code class="xref py py-class docutils literal"><span class="pre">everest.pPLD</span></code></a>, and
+the experimental <a class="reference internal" href="detrender.html#everest.detrender.iPLD" title="everest.detrender.iPLD"><code class="xref py py-class docutils literal"><span class="pre">everest.iPLD</span></code></a>. These are all subclasses
+of the <a class="reference internal" href="detrender.html#everest.detrender.Detrender" title="everest.detrender.Detrender"><code class="xref py py-class docutils literal"><span class="pre">everest.detrender.Detrender</span></code></a> class, which accepts a bunch
+of keyword arguments.</p>
+<p>De-trending generates a <code class="xref py py-obj docutils literal"><span class="pre">log</span></code> log file, a <code class="xref py py-obj docutils literal"><span class="pre">npz</span></code> model file,
+and a <code class="xref py py-obj docutils literal"><span class="pre">pdf</span></code> data validation summary (DVS) file. These are all stored
+in the directory given by the <code class="xref py py-func docutils literal"><span class="pre">TargetDirectory()</span></code> function of the mission
+(for <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, see <a class="reference internal" href="k2_k2.html#everest.missions.k2.k2.TargetDirectory" title="everest.missions.k2.k2.TargetDirectory"><code class="xref py py-func docutils literal"><span class="pre">everest.k2.TargetDirectory</span></code></a>).</p>
+<p>Batch de-trending is also implemented for individual missions.
+For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, see <a class="reference internal" href="k2_pbs.html#everest.missions.k2.pbs.Run" title="everest.missions.k2.pbs.Run"><code class="xref py py-func docutils literal"><span class="pre">everest.missions.k2.pbs.Run()</span></code></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You can check the status of the de-trending of each <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code> campaign with the <a class="reference internal" href="k2_pbs.html#everest.missions.k2.pbs.Status" title="everest.missions.k2.pbs.Status"><code class="xref py py-func docutils literal"><span class="pre">everest.k2.Status</span></code></a> function. This is also implemented as the <code class="xref py py-obj docutils literal"><span class="pre">everest-status</span></code> command line utility in <code class="xref py py-obj docutils literal"><span class="pre">everest/bin</span></code>.</p>
+</div>
+</div>
+<div class="section" id="compute-cbvs">
+<h2>3. Compute CBVs<a class="headerlink" href="#compute-cbvs" title="Permalink to this headline">¶</a></h2>
+<p>Co-trending basis vectors (CBVs) can be computed for each of the <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>
+campaigns once they are done running. To do this, run
+<a class="reference internal" href="k2_sysrem.html#everest.missions.k2.sysrem.GetCBVs" title="everest.missions.k2.sysrem.GetCBVs"><code class="xref py py-func docutils literal"><span class="pre">everest.k2.GetCBVs</span></code></a>
+on each campaign. This will compile all of the de-trended light curves and
+compute the top signals that are shared among all light curves using <a class="reference internal" href="k2_sysrem.html#module-everest.missions.k2.sysrem" title="everest.missions.k2.sysrem"><code class="xref py py-mod docutils literal"><span class="pre">SysRem</span></code></a>.</p>
+</div>
+<div class="section" id="publish">
+<h2>4. Publish<a class="headerlink" href="#publish" title="Permalink to this headline">¶</a></h2>
+<p>FITS files can be generated by instantiating an <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model and calling
+its <a class="reference internal" href="detrender.html#everest.detrender.Detrender.publish" title="everest.detrender.Detrender.publish"><code class="xref py py-meth docutils literal"><span class="pre">publish</span></code></a> method. This step also
+corrects light curves with the CBVs and updates the DVS figure.</p>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script></div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="catalog.html" class="btn btn-neutral float-right" title="The Catalog" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="using_everest.html" class="btn btn-neutral" title="Using Everest" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

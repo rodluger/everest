@@ -1,0 +1,576 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using Everest &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="Overview" href="overview.html"/>
+        <link rel="next" title="The Everest Pipeline" href="pipeline.html"/>
+        <link rel="prev" title="Installation" href="installation.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="overview.html">Overview</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using Everest</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#a-simple-example">A Simple Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#masking-transits">Masking Transits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transit-search-optimization">Transit Search &amp; Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cbv-corrections">CBV Corrections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tuning-the-model">Tuning the Model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pipeline-comparison">Pipeline Comparison</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#folded-transits">Folded Transits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-detrending">Custom Detrending</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overfitting-metrics">Overfitting Metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.html">The Everest Pipeline</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using Everest</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-simple-example">A Simple Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#masking-transits">Masking Transits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#transit-search-optimization">Transit Search &amp; Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cbv-corrections">CBV Corrections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tuning-the-model">Tuning the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-comparison">Pipeline Comparison</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#folded-transits">Folded Transits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-detrending">Custom Detrending</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overfitting-metrics">Overfitting Metrics</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code.html">The Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="overview.html">Overview</a>&raquo;</li>
+      
+    
+      <li>Using Everest</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="using-everest">
+<h1>Using Everest<a class="headerlink" href="#using-everest" title="Permalink to this headline">¶</a></h1>
+<p>There are two ways of interacting with the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> catalog: via the command line and
+through the Python interface. For quick visualization, check out the <a class="reference internal" href="everest.html"><span class="doc">everest</span></a> and
+<a class="reference internal" href="estats.html"><span class="doc">estats</span></a> command line tools.
+For customized access to de-trended light curves in Python, keep reading!</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#a-simple-example" id="id1">A Simple Example</a></li>
+<li><a class="reference internal" href="#masking-transits" id="id2">Masking Transits</a></li>
+<li><a class="reference internal" href="#transit-search-optimization" id="id3">Transit Search &amp; Optimization</a></li>
+<li><a class="reference internal" href="#cbv-corrections" id="id4">CBV Corrections</a></li>
+<li><a class="reference internal" href="#tuning-the-model" id="id5">Tuning the Model</a></li>
+<li><a class="reference internal" href="#pipeline-comparison" id="id6">Pipeline Comparison</a></li>
+<li><a class="reference internal" href="#folded-transits" id="id7">Folded Transits</a></li>
+<li><a class="reference internal" href="#custom-detrending" id="id8">Custom Detrending</a></li>
+<li><a class="reference internal" href="#overfitting-metrics" id="id9">Overfitting Metrics</a></li>
+</ul>
+</div>
+<div class="section" id="a-simple-example">
+<h2><a class="toc-backref" href="#id1">A Simple Example</a><a class="headerlink" href="#a-simple-example" title="Permalink to this headline">¶</a></h2>
+<p>Once you’ve installed <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code>, you can easily import it in Python:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">everest</span>
+</pre></div>
+</div>
+<p>Say we’re interested in <strong>EPIC 201367065</strong>, a <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code> transiting exoplanet host star.
+Let’s instantiate the <a class="reference internal" href="user.html#everest.user.Everest" title="everest.user.Everest"><code class="xref py py-class docutils literal"><span class="pre">Everest</span></code></a> class for this target:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span> <span class="o">=</span> <span class="n">everest</span><span class="o">.</span><span class="n">Everest</span><span class="p">(</span><span class="mi">201367065</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You will see the following printed to the screen:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>INFO  <span class="o">[</span>everest.user.DownloadFile<span class="o">()]</span>: Downloading the file...
+INFO  <span class="o">[</span>everest.user.load_fits<span class="o">()]</span>: Loading FITS file <span class="k">for</span> <span class="m">201367065</span>.
+</pre></div>
+</div>
+<p>Everest automatically downloaded the light curve and created an object containing all of
+the de-trending information. For more information on the various methods and attributes
+of <code class="xref py py-obj docutils literal"><span class="pre">star</span></code>, check out the
+<a class="reference internal" href="detrender.html#everest.detrender.Detrender" title="everest.detrender.Detrender"><code class="xref py py-class docutils literal"><span class="pre">everest.Detrender</span></code></a> documentation (from which
+<a class="reference internal" href="user.html#everest.user.Everest" title="everest.user.Everest"><code class="xref py py-class docutils literal"><span class="pre">Everest</span></code></a> inherits a bunch of parameters) and the
+<a class="reference internal" href="user.html#everest.user.Everest" title="everest.user.Everest"><code class="xref py py-class docutils literal"><span class="pre">Everest</span></code></a> docstring.</p>
+<p>To bring up the DVS (<a class="reference internal" href="dvsfigs.html"><span class="doc">data validation summary</span></a>) for the target, execute</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">dvs</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>You can also plot it interactively:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_plot.jpeg"><img alt="_images/everest_plot.jpeg" src="_images/everest_plot.jpeg" style="width: 600px;" /></a>
+</div>
+<p>The raw light curve is shown at the top and the de-trended light curve at the bottom.
+The 6 hr CDPP (a photometric precision metric) is shown at the top of each plot in
+red. Since this light curve was de-trended with a break point, which divides it into
+two separate segments, the CDPP is shown for each one. At the top, below the title,
+we indicate the CDPP for the entire light curve (raw → de-trended). Outliers are
+indicated in red, and arrows indicate points that are beyond the limits of the plot
+(zoom out to see them). You can read more about these plots <a class="reference internal" href="dvsfigs.html"><span class="doc">here</span></a>.</p>
+<p>Finally, if you want to manipulate the light curve yourself, the timeseries is stored
+in <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">time</span></span></code> and <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">flux</span></span></code> (PLD-de-trended flux) or <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">fcor</span></span></code> (de-trended
+flux with CBV correction). The indices of all outliers are stored in <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">mask</span></span></code>.</p>
+</div>
+<div class="section" id="masking-transits">
+<h2><a class="toc-backref" href="#id2">Masking Transits</a><a class="headerlink" href="#masking-transits" title="Permalink to this headline">¶</a></h2>
+<p>If you’re using <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> for exoplanet/eclipsing binary science, you will
+likely want to apply a mask to any transits in the light curve to prevent
+them from getting washed out by the least-squares fitting step. The de-trended
+light curves provided in the catalog automatically mask large outliers, but it is
+still strongly recommended that all transits be masked during the de-trending step
+to minimize de-trending bias. This can be done <strong>easily</strong> and <strong>quickly</strong> as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">mask_planet</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">per</span><span class="p">,</span> <span class="n">dur</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="n">star</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>where <code class="code python docutils literal"><span class="name"><span class="pre">t0</span></span></code> is the time of first transit, <code class="code python docutils literal"><span class="name"><span class="pre">per</span></span></code> is the period,
+and <code class="code python docutils literal"><span class="name"><span class="pre">dur</span></span></code> is the full transit duration (all in days).</p>
+<p>Alternatively, you can specify directly which indices in the light curve should be masked by
+setting the <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">transitmask</span></span></code> attribute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">transit_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="nb">int</span><span class="p">)</span>
+<span class="n">star</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Note that this does not overwrite outlier masks, which are stored in the
+<code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">outmask</span></span></code>, <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">badmask</span></span></code>, and <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">nanmask</span></span></code> arrays.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You must run the <a class="reference internal" href="basecamp.html#everest.basecamp.Basecamp.compute" title="everest.basecamp.Basecamp.compute"><code class="xref py py-meth docutils literal"><span class="pre">compute</span></code></a> method for the model to be re-trained on the out-of-transit data. Running <a class="reference internal" href="basecamp.html#everest.basecamp.Basecamp.compute" title="everest.basecamp.Basecamp.compute"><code class="xref py py-meth docutils literal"><span class="pre">compute</span></code></a> typically takes a few seconds. For short cadence light curves, it may take a minute or two.</p>
+</div>
+</div>
+<div class="section" id="transit-search-optimization">
+<h2><a class="toc-backref" href="#id3">Transit Search &amp; Optimization</a><a class="headerlink" href="#transit-search-optimization" title="Permalink to this headline">¶</a></h2>
+<p>Masking the transits is one way to prevent overfitting and improve the de-trending
+power, but it can be somewhat inelegant. Oftentimes, one may not know when (or if!)
+transits occur in a light curve, so masking them ahead of time is not possible.
+Fortunately, the fact that <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> is a <em>linear model</em> makes it easy to
+simultaneously optimize the transit and the instrumental components, ensuring that
+the PLD model won’t try to fit out transits (and that the transit model won’t
+latch on to systematics). There are two ways to go about this simultaneous fit in
+<code class="xref py py-obj docutils literal"><span class="pre">everest</span></code>.</p>
+<p>The first is to explicitly include a transit model in the PLD
+design matrix—which means we treat the transit model like an additional regressor
+and solve for its weight (which is just the transit depth). This will give you the
+<em>maximum likelihood</em> (ML) solution for the transit
+depth, if the other transit properties (period, time of first transit, impact
+parameter, etc.) are known.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">everest</span><span class="o">.</span><span class="n">TransitModel</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="n">star</span><span class="o">.</span><span class="n">transit_model</span> <span class="o">=</span> <span class="n">model</span>
+<span class="n">star</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="transit.html#everest.transit.TransitModel" title="everest.transit.TransitModel"><code class="xref py py-obj docutils literal"><span class="pre">everest.transit.TransitModel</span></code></a> for the available keyword arguments.
+After running <code class="xref py py-obj docutils literal"><span class="pre">compute</span></code>, the ML transit depth is stored in <code class="xref py py-obj docutils literal"><span class="pre">star.transit_depth</span></code>.</p>
+<p>The method above may be of limited use, particularly when the transit times
+and shape are not precisely known. Moreover, although it is possible to obtain
+the uncertainty on the ML solution for the depth, that uncertainty isn’t
+really that meaningful, since it doesn’t take into account any uncertainty in
+the PLD model; instead, it is the uncertainty on
+the depth when the likelihood of the PLD model is maximized. Usually, a much
+better approach is to compute the transit depth that maximizes the <em>marginal
+likelihood</em>; this depth is what you get when you marginalize (integrate over)
+the uncertainty on all of the parameters of the model. Luckily, for a linear
+model it is easy (and super fast) to compute the marginal likelihood. In
+<code class="xref py py-obj docutils literal"><span class="pre">everest</span></code>, all you need to do is</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">m</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">star</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+<span class="n">lnlike</span><span class="p">,</span> <span class="n">depth</span> <span class="p">,</span> <span class="n">vardepth</span> <span class="o">=</span> <span class="n">star</span><span class="o">.</span><span class="n">lnlike</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">full_output</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <cite>model</cite> is the same transit model as above. The variable <cite>depth</cite> is
+the depth that maximizes the marginal likelihood under the given transit <cite>model</cite>,
+and <cite>vardepth</cite> is its variance (the square of the standard deviation on the
+estimate of the depth).</p>
+<p>Under this framework, we can go a step further: say we <strong>don’t</strong> know the
+other transit model parameters, such as the period, the times of transit,
+or if there’s any transit present to begin with. Since we have a fast way
+of computing the marginal likelihood (<cite>lnlike</cite> above), we can use it to
+obtain posterior distributions for the parameters of interest. Since the
+transit model is not linear in any of these other parameters, we need to
+use approximate methods, such as MCMC (Markov Chain Monte Carlo), to
+obtain the posteriors. Check out the <a class="reference download internal" href="_downloads/mcmc.py" download=""><code class="xref download docutils literal"><span class="pre">mcmc.py</span></code></a> script
+for an example in which the properties of K2-14b are estimated based on
+evaluating the marginal likelihood. The basic idea is to define our likelihood
+as a function of the transit parameters (in this case, the period, the
+time of first transit, and the impact parameter):</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">lnlike</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">star</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the log likelihood given parameter vector `x`.&quot;&quot;&quot;</span>
+    <span class="n">per</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">TransitModel</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">per</span><span class="o">=</span><span class="n">per</span><span class="p">,</span> <span class="n">t0</span><span class="o">=</span><span class="n">t0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">)(</span><span class="n">star</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+    <span class="n">ll</span> <span class="o">=</span> <span class="n">star</span><span class="o">.</span><span class="n">lnlike</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ll</span>
+</pre></div>
+</div>
+<p>where <code class="xref py py-obj docutils literal"><span class="pre">star</span> <span class="pre">=</span> <span class="pre">everest.Everest(201635569)</span></code>
+and use the <code class="xref py py-obj docutils literal"><span class="pre">emcee</span></code> package to run an MCMC chain to obtain
+the posterior distributions of these parameters. Here’s what the chains
+look like, for 10 walkers and 1000 iterations (~5 minutes on my laptop):</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/k2-14b_chains.png"><img alt="_images/k2-14b_chains.png" src="_images/k2-14b_chains.png" style="width: 300px;" /></a>
+</div>
+<p>And here’s the posterior distributions after discarding the first
+300 steps as burn-in:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/k2-14b_corner.png"><img alt="_images/k2-14b_corner.png" src="_images/k2-14b_corner.png" style="width: 300px;" /></a>
+</div>
+<p>In general, this is going to be somewhat slower than computing the
+maximum likelihood estimate – such as what you do when you fit for
+the transit parameters given the “de-trended” light curve. But the
+beauty here is that we are never “de-trending” – we are <strong>performing
+inference on the original dataset</strong> given information about the nature
+of the noise (the covariance matrix). This will lead to more robust
+posterior distributions, less overfitting, and more realistic uncertainties
+on the transit parameters. If possible, the “de-trend-then-search” method
+should be avoided and this should be done instead!</p>
+</div>
+<div class="section" id="cbv-corrections">
+<h2><a class="toc-backref" href="#id4">CBV Corrections</a><a class="headerlink" href="#cbv-corrections" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> pipeline automatically corrects de-trended light curves
+with a single co-trending basis vector (CBV) calculated from all the de-trended
+light curves observed during that season/campaign. The CBV-corrected flux is stored
+in <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">fcor</span></span></code> and is the quantity that is plotted by default when the user calls
+<code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">plot</span></span><span class="punctuation"><span class="pre">()</span></span></code> (the uncorrected, de-trended flux is <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">flux</span></span></code>).</p>
+<p>Sometimes, it is desirable to correct the light curve with a different number of CBVs.
+For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> calculates 5 CBVs for each campaign, so any number
+from 0-5 is possible. To correct the light curve with 2 CBVs, run</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">cbv_num</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">star</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Plotting the light curve will now show the flux corrected with two CBVs.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> catalog uses only 1 CBV to prevent fitting out real astrophysical variability. Care must be taken when using more CBVs to ensure this is not the case.</p>
+</div>
+<p>Here is an example of <strong>EPIC 201367065</strong> corrected with 0, 1, 2, 3, and 4 CBVs. Note that
+the fourth CBV appears to <em>introduce</em> extra variability; at that point, the correction
+is likely overfitting.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="65%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><strong>Number of CBVs</strong></th>
+<th class="head"><strong>De-trended light curve</strong></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><strong>0</strong></td>
+<td><div class="align-center first last figure">
+<a class="reference internal image-reference" href="_images/everest_0cbv.jpeg"><img alt="_images/everest_0cbv.jpeg" src="_images/everest_0cbv.jpeg" style="width: 400px;" /></a>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>1</strong></td>
+<td><div class="align-center first last figure">
+<a class="reference internal image-reference" href="_images/everest_1cbv.jpeg"><img alt="_images/everest_1cbv.jpeg" src="_images/everest_1cbv.jpeg" style="width: 400px;" /></a>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><strong>2</strong></td>
+<td><div class="align-center first last figure">
+<a class="reference internal image-reference" href="_images/everest_2cbv.jpeg"><img alt="_images/everest_2cbv.jpeg" src="_images/everest_2cbv.jpeg" style="width: 400px;" /></a>
+</div>
+</td>
+</tr>
+<tr class="row-odd"><td><strong>3</strong></td>
+<td><div class="align-center first last figure">
+<a class="reference internal image-reference" href="_images/everest_3cbv.jpeg"><img alt="_images/everest_3cbv.jpeg" src="_images/everest_3cbv.jpeg" style="width: 400px;" /></a>
+</div>
+</td>
+</tr>
+<tr class="row-even"><td><strong>4</strong></td>
+<td><div class="align-center first last figure">
+<a class="reference internal image-reference" href="_images/everest_4cbv.jpeg"><img alt="_images/everest_4cbv.jpeg" src="_images/everest_4cbv.jpeg" style="width: 400px;" /></a>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The CBVs are stored as column vectors in the <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">XCBV</span></span></code> design matrix.</p>
+</div>
+</div>
+<div class="section" id="tuning-the-model">
+<h2><a class="toc-backref" href="#id5">Tuning the Model</a><a class="headerlink" href="#tuning-the-model" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="detrender.html#everest.detrender.Detrender.cross_validate" title="everest.detrender.Detrender.cross_validate"><code class="xref py py-meth docutils literal"><span class="pre">cross-validation</span> <span class="pre">step</span></code></a> seeks
+to find the optimal value of the regularization parameter <code class="code python docutils literal"><span class="keyword"><span class="pre">lambda</span></span></code> for each
+PLD order. These are stored in the <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">lam</span></span></code> array, which has shape
+<code class="code python docutils literal"><span class="punctuation"><span class="pre">(</span></span><span class="name"><span class="pre">nsegments</span></span><span class="punctuation"><span class="pre">,</span></span> <span class="name"><span class="pre">pld_order</span></span><span class="punctuation"><span class="pre">)</span></span></code>. Changing these numbers will change the PLD weights
+and thus the de-trending power, but it will likely lead to underfitting/overfitting.
+Nevertheless, in cases where the optimization fails, tweaking of these numbers could
+be useful. Here’s the <code class="code python docutils literal"><span class="name"><span class="pre">star</span></span><span class="operator"><span class="pre">.</span></span><span class="name"><span class="pre">lam</span></span></code> array for <strong>EPIC 201367065</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="mf">3.16e05</span><span class="p">,</span> <span class="mf">3.16e11</span><span class="p">,</span> <span class="mf">1.0e11</span><span class="p">],</span>
+ <span class="p">[</span><span class="mf">1.00e09</span><span class="p">,</span> <span class="mf">1.00e09</span><span class="p">,</span> <span class="mf">1.e09</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>We can compute the second order PLD model by zeroing out the third order elements:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">lam</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">3.16e05</span><span class="p">,</span> <span class="mf">3.16e11</span><span class="p">,</span> <span class="mf">0.</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">1.00e09</span><span class="p">,</span> <span class="mf">1.00e09</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]]</span>
+<span class="n">star</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="pipeline-comparison">
+<h2><a class="toc-backref" href="#id6">Pipeline Comparison</a><a class="headerlink" href="#pipeline-comparison" title="Permalink to this headline">¶</a></h2>
+<p>It’s easy to plot the light curve de-trended with different pipelines:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">(</span><span class="s1">&#39;everest1&#39;</span><span class="p">)</span>
+<span class="n">star</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">(</span><span class="s1">&#39;k2sff&#39;</span><span class="p">)</span>
+<span class="n">star</span><span class="o">.</span><span class="n">plot_pipeline</span><span class="p">(</span><span class="s1">&#39;k2sc&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Here’s <strong>EPIC 201367065</strong> de-trended with <code class="xref py py-obj docutils literal"><span class="pre">K2SFF</span></code>:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_k2sff.jpg"><img alt="_images/everest_k2sff.jpg" src="_images/everest_k2sff.jpg" style="width: 600px;" /></a>
+</div>
+</div>
+<div class="section" id="folded-transits">
+<h2><a class="toc-backref" href="#id7">Folded Transits</a><a class="headerlink" href="#folded-transits" title="Permalink to this headline">¶</a></h2>
+<p>If there are transits/eclipses in a light curve, <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> can use the GP
+prediction to whiten the timeseries and fold it on the period of the planet.
+If the time of first transit and period of an exoplanet/EB are known, plotting the
+folded transit/eclipse is easy. Just remember to mask the transit and re-compute
+the model beforehand:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">star</span><span class="o">.</span><span class="n">mask_planet</span><span class="p">(</span><span class="mf">1980.42</span><span class="p">,</span> <span class="mf">10.054</span><span class="p">)</span>
+<span class="n">star</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<span class="n">star</span><span class="o">.</span><span class="n">plot_folded</span><span class="p">(</span><span class="mf">1980.42</span><span class="p">,</span> <span class="mf">10.054</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_folded.jpeg"><img alt="_images/everest_folded.jpeg" src="_images/everest_folded.jpeg" style="width: 400px;" /></a>
+</div>
+</div>
+<div class="section" id="custom-detrending">
+<h2><a class="toc-backref" href="#id8">Custom Detrending</a><a class="headerlink" href="#custom-detrending" title="Permalink to this headline">¶</a></h2>
+<p>As of version <strong>2.0.9</strong>, users can de-trend their own raw <em>K2</em> FITS files
+using the <a class="reference internal" href="standalone.html#everest.standalone.DetrendFITS" title="everest.standalone.DetrendFITS"><code class="xref py py-func docutils literal"><span class="pre">everest.standalone.DetrendFITS()</span></code></a> function, which is
+a wrapper for the <a class="reference internal" href="detrender.html#everest.detrender.rPLD" title="everest.detrender.rPLD"><code class="xref py py-class docutils literal"><span class="pre">everest.detrender.rPLD</span></code></a> detrender.</p>
+</div>
+<div class="section" id="overfitting-metrics">
+<h2><a class="toc-backref" href="#id9">Overfitting Metrics</a><a class="headerlink" href="#overfitting-metrics" title="Permalink to this headline">¶</a></h2>
+<p>As we discussed above, <code class="xref py py-func docutils literal"><span class="pre">everest()</span></code> is known to overfit transits when
+they are not properly masked. Users can now compute an estimate of the degree
+of overfitting in any light curve by typing</p>
+<blockquote>
+<div>everest 201601162 -o</div></blockquote>
+<p>into a terminal. This will compute and plot two overfitting metrics: the
+<strong>unmasked overfitting metric</strong> and the <strong>masked overfitting metric</strong>. Both
+correspond to the fractional decrease in a transit depth due to overfitting
+and are computed by running transit injection/recovery tests at every
+cadence in a light curve.
+For EPIC 201601162, computing these metrics took about 2 minutes on my laptop.
+Here is what a snippet of the diagnostic plot looks like:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/overfitting.png"><img alt="_images/overfitting.png" src="_images/overfitting.png" style="width: 600px;" /></a>
+</div>
+<p>The top panel shows the unmasked overfitting metric: the degree of overfitting
+when transits are not masked. This is evaluated at every cadence. The distribution
+of values is shown as the histogram at the right, indicating a median overfitting
+of 0.07 (7%), with a typical spread (median absolute deviation, or MAD) of 0.036 (3.6%).
+The bottom panel shows the masked overfitting metric: the degree of overfitting
+when transits are masked (see above). This is much smaller and is zero on average,
+indicating that <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> <strong>does not overfit</strong> when transits are excluded
+from the regression.</p>
+<p>The actual PDF has several more rows, corresponding to the overfitting metrics for
+different injected transit depths. In general, overfitting gets worse the lower the
+signal-to-noise ratio of the light curve.</p>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script></div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pipeline.html" class="btn btn-neutral float-right" title="The Everest Pipeline" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

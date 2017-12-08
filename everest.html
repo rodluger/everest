@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>everest - Command line access &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="User Interface" href="ui.html"/>
+        <link rel="next" title="everest-stats - De-trending Statistics" href="estats.html"/>
+        <link rel="prev" title="user.py - User Python routines" href="user.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="ui.html">User Interface</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="user.html"><code class="docutils literal"><span class="pre">user.py</span></code> - User Python routines</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">everest</span></code> - Command line access</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#everest-1">Everest 1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#everest-2">Everest 2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#other-pipelines">Other pipelines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#raw">Raw</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-validation-summary">Data Validation Summary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#aperture">Aperture</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="estats.html"><code class="docutils literal"><span class="pre">everest-stats</span></code> - De-trending Statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="estatus.html"><code class="docutils literal"><span class="pre">everest-status</span></code> - De-trending Status</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="engine.html">Code Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="missions.html">Missions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="ui.html">User Interface</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">everest</span></code> - Command line access</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="everest-command-line-access">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> - Command line access<a class="headerlink" href="#everest-command-line-access" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> command accepts several options, which we list below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">ID</span></code></td>
+<td>The target <code class="xref py py-obj docutils literal"><span class="pre">ID</span></code> number (<cite>required</cite>)</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">-1</span></code></td>
+<td>Plot the <code class="xref py py-obj docutils literal"><span class="pre">everest</span> <span class="pre">1.0</span></code> de-trended light curve (<code class="xref py py-obj docutils literal"><span class="pre">K2</span></code> <cite>only</cite>)</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">-2</span></code></td>
+<td>Plot the <code class="xref py py-obj docutils literal"><span class="pre">everest</span> <span class="pre">2.0</span></code> de-trended light curve (<cite>default</cite>)</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">-a</span></code></td>
+<td>Plot the target aperture/postage stamp</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">-c</span></code> <cite>cadence</cite></td>
+<td>Cadence type (<code class="xref py py-obj docutils literal"><span class="pre">lc</span></code> | <code class="xref py py-obj docutils literal"><span class="pre">sc</span></code>). Default <code class="xref py py-obj docutils literal"><span class="pre">lc</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">-d</span></code></td>
+<td>Show the <code class="xref py py-obj docutils literal"><span class="pre">everest</span> <span class="pre">2.0</span></code> data validation summary</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">-f</span></code></td>
+<td>Plot the <code class="xref py py-obj docutils literal"><span class="pre">k2sff</span></code> light curve for the target (<code class="xref py py-obj docutils literal"><span class="pre">K2</span></code> <cite>only</cite>)</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">-h</span></code></td>
+<td>Show the help message and exit</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">-m</span></code> <cite>mission</cite></td>
+<td>The mission name (<code class="xref py py-obj docutils literal"><span class="pre">k2</span></code> | <code class="xref py py-obj docutils literal"><span class="pre">kepler</span></code> | <code class="xref py py-obj docutils literal"><span class="pre">tess</span></code>). Default <code class="xref py py-obj docutils literal"><span class="pre">k2</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">-n</span></code></td>
+<td>Do not apply the CBV correction</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">-r</span></code></td>
+<td>Plot the raw light curve</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">-s</span></code></td>
+<td>Plot the <code class="xref py py-obj docutils literal"><span class="pre">k2sc</span></code> light curve for the target (<code class="xref py py-obj docutils literal"><span class="pre">K2</span></code> <cite>only</cite>)</td>
+</tr>
+</tbody>
+</table>
+<p>This tool implements most of the basic <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> functionality. It automatically
+downloads light curves and data validation summaries from MAST and plots them with some
+customization. Below we show some examples. For other options and further customization,
+see the <a class="reference internal" href="user.html"><span class="doc">Python user interface</span></a> section.</p>
+<div class="section" id="everest-1">
+<h2>Everest 1<a class="headerlink" href="#everest-1" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">-1</span></code> option brings up the light curve de-trended with version 1 of the pipeline:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_1.jpeg"><img alt="_images/everest_1.jpeg" src="_images/everest_1.jpeg" style="width: 600px;" /></a>
+</div>
+</div>
+<div class="section" id="everest-2">
+<h2>Everest 2<a class="headerlink" href="#everest-2" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">-2</span></code> option (default, if no flags are present) shows the light curve de-trended
+with the current version (2) of the pipeline:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_2.jpeg"><img alt="_images/everest_2.jpeg" src="_images/everest_2.jpeg" style="width: 600px;" /></a>
+</div>
+<p>If the <code class="xref py py-obj docutils literal"><span class="pre">-n</span></code> flag is present, the code does not apply the CBV correction, resulting
+in a light curve with a bit more low-frequency residual systematics:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_n.jpeg"><img alt="_images/everest_n.jpeg" src="_images/everest_n.jpeg" style="width: 600px;" /></a>
+</div>
+</div>
+<div class="section" id="other-pipelines">
+<h2>Other pipelines<a class="headerlink" href="#other-pipelines" title="Permalink to this headline">¶</a></h2>
+<p>Other supported pipelines can be plotted with the <code class="xref py py-obj docutils literal"><span class="pre">--pipeline_name</span></code> flag,
+or with the abbreviated flags (i.e., <code class="xref py py-obj docutils literal"><span class="pre">-f</span></code> for <code class="xref py py-obj docutils literal"><span class="pre">k2sff</span></code> or
+<code class="xref py py-obj docutils literal"><span class="pre">-s</span></code> for <code class="xref py py-obj docutils literal"><span class="pre">k2sc</span></code>). Here’s the plot for <code class="code python docutils literal"><span class="name"><span class="pre">everest</span></span> <span class="literal number integer"><span class="pre">201367065</span></span> <span class="operator"><span class="pre">–</span></span><span class="name"><span class="pre">k2sff</span></span></code>:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_k2sff.jpg"><img alt="_images/everest_k2sff.jpg" src="_images/everest_k2sff.jpg" style="width: 600px;" /></a>
+</div>
+</div>
+<div class="section" id="raw">
+<h2>Raw<a class="headerlink" href="#raw" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">-r</span></code> option brings up the raw light curve:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_raw.jpeg"><img alt="_images/everest_raw.jpeg" src="_images/everest_raw.jpeg" style="width: 600px;" /></a>
+</div>
+</div>
+<div class="section" id="data-validation-summary">
+<h2>Data Validation Summary<a class="headerlink" href="#data-validation-summary" title="Permalink to this headline">¶</a></h2>
+<p>See <a class="reference internal" href="dvsfigs.html"><span class="doc">Data Validation Summary</span></a>.</p>
+</div>
+<div class="section" id="aperture">
+<h2>Aperture<a class="headerlink" href="#aperture" title="Permalink to this headline">¶</a></h2>
+<p>Nothing too fancy. The <code class="xref py py-obj docutils literal"><span class="pre">-a</span></code> flag plots the postage stamp with the aperture
+used to de-trend:</p>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="_images/everest_a.jpeg"><img alt="_images/everest_a.jpeg" src="_images/everest_a.jpeg" style="width: 300px;" /></a>
+</div>
+<p>The plots show snapshots of the postage stamp at the beginning of the timeseries (<strong>start</strong>),
+the middle of the timeseries (<strong>mid</strong>) and the end of the timeseries (<strong>end</strong>). The
+final plot (<strong>hires</strong>) is a high resolution image of the target. For <code class="xref py py-obj docutils literal"><span class="pre">K2</span></code>, this
+is taken from the Palomary Observatory Sky Survey.</p>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script></div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="estats.html" class="btn btn-neutral float-right" title="everest-stats - De-trending Statistics" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="user.html" class="btn btn-neutral" title="user.py - User Python routines" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

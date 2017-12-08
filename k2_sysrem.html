@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>sysrem.py - CBV routines &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="K2" href="k2.html"/>
+        <link rel="next" title="download.pbs - Data download" href="k2_download.html"/>
+        <link rel="prev" title="pipelines.py - Pipeline comparison" href="k2_pipelines.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="engine.html">Code Engine</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="missions.html">Missions</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="k2.html">K2</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="k2_init.html"><code class="docutils literal"><span class="pre">__init__.py</span></code> - Initialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_utils.html"><code class="docutils literal"><span class="pre">utils.py</span></code> - Mission auxiliary routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_k2.html"><code class="docutils literal"><span class="pre">k2.py</span></code> - Main mission routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_pbs.html"><code class="docutils literal"><span class="pre">pbs.py</span></code> - PBS cluster routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_pipelines.html"><code class="docutils literal"><span class="pre">pipelines.py</span></code> - Pipeline comparison</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">sysrem.py</span></code> - CBV routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_download.html"><code class="docutils literal"><span class="pre">download.pbs</span></code> - Data download</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_run.html"><code class="docutils literal"><span class="pre">run.pbs</span></code> - Cluster runs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kepler.html">Kepler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tess.html">TESS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="missions.html">Missions</a>&raquo;</li>
+      
+        <li><a href="k2.html">K2</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">sysrem.py</span></code> - CBV routines</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.missions.k2.sysrem"></span><div class="section" id="sysrem-py-cbv-routines">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">sysrem.py</span></code> - CBV routines<a class="headerlink" href="#sysrem-py-cbv-routines" title="Permalink to this headline">¶</a></h1>
+<p>Routines for computing the co-trending basis vectors (CBVs)
+for each <cite>K2</cite> campaign using the <a class="reference internal" href="#everest.missions.k2.sysrem.SysRem" title="everest.missions.k2.sysrem.SysRem"><code class="xref py py-obj docutils literal"><span class="pre">SysRem</span></code></a> algorithm.</p>
+<dl class="function">
+<dt id="everest.missions.k2.sysrem.GetCBVs">
+<code class="descclassname">everest.missions.k2.sysrem.</code><code class="descname">GetCBVs</code><span class="sig-paren">(</span><em>campaign</em>, <em>model='nPLD'</em>, <em>clobber=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.sysrem.GetCBVs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the CBVs for a given campaign.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>campaign</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The campaign number</li>
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model. Default <cite>nPLD</cite></li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Overwrite existing files? Default <cite>False</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.sysrem.GetChunk">
+<code class="descclassname">everest.missions.k2.sysrem.</code><code class="descname">GetChunk</code><span class="sig-paren">(</span><em>time</em>, <em>breakpoints</em>, <em>b</em>, <em>mask=[]</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.sysrem.GetChunk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices corresponding to a given light curve chunk.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>b</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The index of the chunk to return</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.sysrem.GetStars">
+<code class="descclassname">everest.missions.k2.sysrem.</code><code class="descname">GetStars</code><span class="sig-paren">(</span><em>campaign</em>, <em>module</em>, <em>model='nPLD'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.sysrem.GetStars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns de-trended light curves for all stars on a given module in
+a given campaign.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.sysrem.SysRem">
+<code class="descclassname">everest.missions.k2.sysrem.</code><code class="descname">SysRem</code><span class="sig-paren">(</span><em>time</em>, <em>flux</em>, <em>err</em>, <em>ncbv=5</em>, <em>niter=50</em>, <em>sv_win=999</em>, <em>sv_order=3</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.sysrem.SysRem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies <a class="reference internal" href="#everest.missions.k2.sysrem.SysRem" title="everest.missions.k2.sysrem.SysRem"><code class="xref py py-obj docutils literal"><span class="pre">SysRem</span></code></a> to a given set of light curves.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>time</strong> (<em>array_like</em>) – The time array for all of the light curves</li>
+<li><strong>flux</strong> (<em>array_like</em>) – A 2D array of the fluxes for each of the light            curves, shape <cite>(nfluxes, ntime)</cite></li>
+<li><strong>err</strong> (<em>array_like</em>) – A 2D array of the flux errors for each of the            light curves, shape <cite>(nfluxes, ntime)</cite></li>
+<li><strong>ncbv</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of signals to recover. Default 5</li>
+<li><strong>niter</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The number of <a class="reference internal" href="#everest.missions.k2.sysrem.SysRem" title="everest.missions.k2.sysrem.SysRem"><code class="xref py py-obj docutils literal"><span class="pre">SysRem</span></code></a> iterations to perform.            Default 50</li>
+<li><strong>sv_win</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The Savitsky-Golay filter window size. Default 999</li>
+<li><strong>sv_order</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The Savitsky-Golay filter order. Default 3</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="k2_download.html" class="btn btn-neutral float-right" title="download.pbs - Data download" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="k2_pipelines.html" class="btn btn-neutral" title="pipelines.py - Pipeline comparison" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

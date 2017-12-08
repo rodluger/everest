@@ -1,0 +1,576 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>k2.py - Main mission routines &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="K2" href="k2.html"/>
+        <link rel="next" title="pbs.py - PBS cluster routines" href="k2_pbs.html"/>
+        <link rel="prev" title="utils.py - Mission auxiliary routines" href="k2_utils.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="engine.html">Code Engine</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="missions.html">Missions</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="k2.html">K2</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="k2_init.html"><code class="docutils literal"><span class="pre">__init__.py</span></code> - Initialization</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_utils.html"><code class="docutils literal"><span class="pre">utils.py</span></code> - Mission auxiliary routines</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">k2.py</span></code> - Main mission routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_pbs.html"><code class="docutils literal"><span class="pre">pbs.py</span></code> - PBS cluster routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_pipelines.html"><code class="docutils literal"><span class="pre">pipelines.py</span></code> - Pipeline comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_sysrem.html"><code class="docutils literal"><span class="pre">sysrem.py</span></code> - CBV routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_download.html"><code class="docutils literal"><span class="pre">download.pbs</span></code> - Data download</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_run.html"><code class="docutils literal"><span class="pre">run.pbs</span></code> - Cluster runs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kepler.html">Kepler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tess.html">TESS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="missions.html">Missions</a>&raquo;</li>
+      
+        <li><a href="k2.html">K2</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">k2.py</span></code> - Main mission routines</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.missions.k2.k2"></span><div class="section" id="k2-py-main-mission-routines">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">k2.py</span></code> - Main mission routines<a class="headerlink" href="#k2-py-main-mission-routines" title="Permalink to this headline">¶</a></h1>
+<p>Implements several routines specific to the <cite>K2</cite> mission.</p>
+<dl class="function">
+<dt id="everest.missions.k2.k2.Setup">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">Setup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.Setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the code is installed. Sets up directories and downloads
+the K2 catalog.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.Season">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">Season</code><span class="sig-paren">(</span><em>EPIC</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.Season" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the campaign number for a given EPIC target.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.Breakpoints">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">Breakpoints</code><span class="sig-paren">(</span><em>EPIC</em>, <em>season=None</em>, <em>cadence='lc'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.Breakpoints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the location of the breakpoints for a given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>EPIC</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The EPIC ID number</li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The light curve cadence. Default <cite>lc</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The number corresponding to a given breakpoint is the number               of cadences <em>since the beginning of the campaign</em>.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.GetData">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">GetData</code><span class="sig-paren">(</span><em>EPIC, season=None, cadence='lc', clobber=False, delete_raw=False, aperture_name='k2sff_15', saturated_aperture_name='k2sff_19', max_pixels=75, download_only=False, saturation_tolerance=-0.1, bad_bits=[1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17], get_hires=True, get_nearby=True, **kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.GetData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a <code class="xref py py-obj docutils literal"><span class="pre">DataContainer</span></code> instance with the
+raw data for the target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>EPIC</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The EPIC ID number</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The observing season (campaign). Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The light curve cadence. Default <cite>lc</cite></li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Overwrite existing files? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>delete_raw</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Delete the FITS TPF after processing it?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>aperture_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the aperture to use. Select            <cite>custom</cite> to call <code class="xref py py-func docutils literal"><span class="pre">GetCustomAperture()</span></code>. Default <cite>k2sff_15</cite></li>
+<li><strong>saturated_aperture_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the aperture to use if            the target is saturated. Default <cite>k2sff_19</cite></li>
+<li><strong>max_pixels</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Maximum number of pixels in the TPF. Default 75</li>
+<li><strong>download_only</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Download raw TPF and return? Default            <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>saturation_tolerance</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Target is considered saturated            if flux is within this fraction of the pixel well depth.            Default -0.1</li>
+<li><strong>bad_bits</strong> (<em>array_like</em>) – Flagged :py:obj`QUALITY` bits to consider            outliers when computing the model.            Default <cite>[1,2,3,4,5,6,7,8,9,11,12,13,14,16,17]</cite></li>
+<li><strong>get_hires</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Download a high resolution image of the target?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>get_nearby</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Retrieve location of nearby sources?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.GetNeighbors">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">GetNeighbors</code><span class="sig-paren">(</span><em>EPIC</em>, <em>season=None</em>, <em>model=None</em>, <em>neighbors=10</em>, <em>mag_range=(11.0</em>, <em>13.0)</em>, <em>cdpp_range=None</em>, <em>aperture_name='k2sff_15'</em>, <em>cadence='lc'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.GetNeighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <cite>neighbors</cite> random bright stars on the same module as <cite>EPIC</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>EPIC</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The EPIC ID number</li>
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model name. Only used when            imposing CDPP bounds. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></li>
+<li><strong>neighbors</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of neighbors to return. Default 10</li>
+<li><strong>aperture_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the aperture to use. Select            <cite>custom</cite> to call            <code class="xref py py-func docutils literal"><span class="pre">GetCustomAperture()</span></code>. Default <cite>k2sff_15</cite></li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The light curve cadence. Default <cite>lc</cite></li>
+<li><strong>mag_range</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – (<cite>low</cite>, <cite>high</cite>) values for the Kepler magnitude.            Default (11, 13)</li>
+<li><strong>cdpp_range</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#tuple" title="(in Python v2.7)"><em>tuple</em></a>) – (<cite>low</cite>, <cite>high</cite>) values for the de-trended CDPP.            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.Statistics">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">Statistics</code><span class="sig-paren">(</span><em>season=None</em>, <em>clobber=False</em>, <em>model='nPLD'</em>, <em>injection=False</em>, <em>compare_to='kepler'</em>, <em>plot=True</em>, <em>cadence='lc'</em>, <em>planets=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.Statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and plots the CDPP statistics comparison between <cite>model</cite>
+and <cite>compare_to</cite> for all long cadence light curves in a given campaign</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>season</strong> – The campaign number or list of campaign numbers.            Default is to plot all campaigns</li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Overwrite existing files? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model name</li>
+<li><strong>compare_to</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model name or other            K2 pipeline name</li>
+<li><strong>plot</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>injection</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Statistics for injection tests? Default            <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>planets</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Statistics for known K2 planets?            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.TargetDirectory">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">TargetDirectory</code><span class="sig-paren">(</span><em>ID</em>, <em>season</em>, <em>relative=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.TargetDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the location of the <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code> data on disk
+for a given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ID</strong> – The target ID</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The target season number</li>
+<li><strong>relative</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Relative path? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.HasShortCadence">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">HasShortCadence</code><span class="sig-paren">(</span><em>EPIC</em>, <em>season=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.HasShortCadence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <cite>True</cite> if short cadence data is available for this target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>EPIC</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The EPIC ID number</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The campaign number. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.DVSFile">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">DVSFile</code><span class="sig-paren">(</span><em>ID</em>, <em>season</em>, <em>cadence='lc'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.DVSFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the DVS PDF for a given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ID</strong> – The target ID</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The target season number</li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The cadence type. Default <cite>lc</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.InjectionStatistics">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">InjectionStatistics</code><span class="sig-paren">(</span><em>campaign=0</em>, <em>clobber=False</em>, <em>model='nPLD'</em>, <em>plot=True</em>, <em>show=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.InjectionStatistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and plots the statistics for injection/recovery tests.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>campaign</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The campaign number. Default 0</li>
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model name</li>
+<li><strong>plot</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>show</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Show the plot? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>.            If <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>, returns the <cite>fig, ax</cite> instances.</li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Overwrite existing files? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.HDUCards">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">HDUCards</code><span class="sig-paren">(</span><em>headers</em>, <em>hdu=0</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.HDUCards" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates HDU cards for inclusion in the de-trended light curve FITS file.
+Used internally.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.CSVFile">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">CSVFile</code><span class="sig-paren">(</span><em>ID</em>, <em>user='rl'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.CSVFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the CSV file for a given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ID</strong> – The target ID</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The target season number</li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The cadence type. Default <cite>lc</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.FITSFile">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">FITSFile</code><span class="sig-paren">(</span><em>ID</em>, <em>season</em>, <em>cadence='lc'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.FITSFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the FITS file for a given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ID</strong> – The target ID</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The target season number</li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The cadence type. Default <cite>lc</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.FITSUrl">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">FITSUrl</code><span class="sig-paren">(</span><em>ID</em>, <em>season</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.FITSUrl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the online path to the FITS file for a given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ID</strong> – The target ID</li>
+<li><strong>season</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The target season number</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.CDPP">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">CDPP</code><span class="sig-paren">(</span><em>flux</em>, <em>mask=[]</em>, <em>cadence='lc'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.CDPP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the proxy 6-hr CDPP metric.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>flux</strong> (<em>array_like</em>) – The flux array to compute the CDPP for</li>
+<li><strong>mask</strong> (<em>array_like</em>) – The indices to be masked</li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The light curve cadence. Default <cite>lc</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.GetTargetCBVs">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">GetTargetCBVs</code><span class="sig-paren">(</span><em>model</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.GetTargetCBVs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the design matrix of CBVs for the given target.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> – An instance of the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model for the target</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.FitCBVs">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">FitCBVs</code><span class="sig-paren">(</span><em>model</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.FitCBVs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits the CBV design matrix to the de-trended flux of a given target. This
+is called internally whenever the user accesses the <code class="xref py py-attr docutils literal"><span class="pre">fcor</span></code>
+attribute.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>model</strong> – An instance of the <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model for the target</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.PlanetStatistics">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">PlanetStatistics</code><span class="sig-paren">(</span><em>model='nPLD'</em>, <em>compare_to='k2sff'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.PlanetStatistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and plots the CDPP statistics comparison between <cite>model</cite> and
+<cite>compare_to</cite> for all known K2 planets.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model name</li>
+<li><strong>compare_to</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> model name or            other K2 pipeline name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.k2.StatsToCSV">
+<code class="descclassname">everest.missions.k2.k2.</code><code class="descname">StatsToCSV</code><span class="sig-paren">(</span><em>campaign</em>, <em>model='nPLD'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.k2.StatsToCSV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the CSV file used in the search database for the documentation.</p>
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="k2_pbs.html" class="btn btn-neutral float-right" title="pbs.py - PBS cluster routines" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="k2_utils.html" class="btn btn-neutral" title="utils.py - Mission auxiliary routines" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

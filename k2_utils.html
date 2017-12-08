@@ -1,0 +1,410 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>utils.py - Mission auxiliary routines &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="K2" href="k2.html"/>
+        <link rel="next" title="k2.py - Main mission routines" href="k2_k2.html"/>
+        <link rel="prev" title="__init__.py - Initialization" href="k2_init.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="engine.html">Code Engine</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="missions.html">Missions</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="k2.html">K2</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="k2_init.html"><code class="docutils literal"><span class="pre">__init__.py</span></code> - Initialization</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">utils.py</span></code> - Mission auxiliary routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_k2.html"><code class="docutils literal"><span class="pre">k2.py</span></code> - Main mission routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_pbs.html"><code class="docutils literal"><span class="pre">pbs.py</span></code> - PBS cluster routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_pipelines.html"><code class="docutils literal"><span class="pre">pipelines.py</span></code> - Pipeline comparison</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_sysrem.html"><code class="docutils literal"><span class="pre">sysrem.py</span></code> - CBV routines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_download.html"><code class="docutils literal"><span class="pre">download.pbs</span></code> - Data download</a></li>
+<li class="toctree-l4"><a class="reference internal" href="k2_run.html"><code class="docutils literal"><span class="pre">run.pbs</span></code> - Cluster runs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kepler.html">Kepler</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tess.html">TESS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="missions.html">Missions</a>&raquo;</li>
+      
+        <li><a href="k2.html">K2</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">utils.py</span></code> - Mission auxiliary routines</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.missions.k2.utils"></span><div class="section" id="utils-py-mission-auxiliary-routines">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">utils.py</span></code> - Mission auxiliary routines<a class="headerlink" href="#utils-py-mission-auxiliary-routines" title="Permalink to this headline">¶</a></h1>
+<p><cite>K2</cite>-specific auxiliary routines. These are not
+generally called from the top level of the code.</p>
+<dl class="function">
+<dt id="everest.missions.k2.utils.Campaign">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">Campaign</code><span class="sig-paren">(</span><em>EPIC</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.Campaign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the campaign number(s) for a given EPIC target. If target
+is not found, returns <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>EPIC</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The EPIC number of the target.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.GetK2Stars">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">GetK2Stars</code><span class="sig-paren">(</span><em>clobber=False</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.GetK2Stars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and return a <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> of all <em>K2</em> stars organized by
+campaign. Saves each campaign to a <cite>.stars</cite> file in the
+<cite>everest/missions/k2/tables</cite> directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, download and overwrite            existing files. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The keys of the dictionary returned by this function are the               (integer) numbers of each campaign. Each item in the               <a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">dict</span></code></a> is a list of the targets in the corresponding               campaign, and each item in that list is in turn a list of the               following: <strong>EPIC number</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">int</span></code></a>),               <strong>Kp magnitude</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">float</span></code></a>), <strong>CCD channel number</strong>               (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">int</span></code></a>), and <strong>short cadence available</strong>               (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a>).</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.GetK2Campaign">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">GetK2Campaign</code><span class="sig-paren">(</span><em>campaign</em>, <em>clobber=False</em>, <em>split=False</em>, <em>epics_only=False</em>, <em>cadence='lc'</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.GetK2Campaign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all stars in a given <em>K2</em> campaign.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>campaign</strong> – The <em>K2</em> campaign number. If this is an <a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">int</span></code></a>,            returns all targets in that campaign. If a <a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">float</span></code></a> in            the form <code class="xref py py-obj docutils literal"><span class="pre">X.Y</span></code>, runs the <code class="xref py py-obj docutils literal"><span class="pre">Y^th</span></code> decile of campaign            <code class="xref py py-obj docutils literal"><span class="pre">X</span></code>.</li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, download and overwrite existing            files. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>split</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> and <code class="xref py py-obj docutils literal"><span class="pre">campaign</span></code> is an            <a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">int</span></code></a>, returns each of the subcampaigns as a separate            list. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>epics_only</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, returns only the EPIC numbers.            If <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>, returns metadata associated with each target.            Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>cadence</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Long (<code class="xref py py-obj docutils literal"><span class="pre">lc</span></code>) or short (<code class="xref py py-obj docutils literal"><span class="pre">sc</span></code>) cadence?            Default <code class="xref py py-obj docutils literal"><span class="pre">lc</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.Channel">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">Channel</code><span class="sig-paren">(</span><em>EPIC</em>, <em>campaign=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the channel number for a given EPIC target.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.RemoveBackground">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">RemoveBackground</code><span class="sig-paren">(</span><em>EPIC</em>, <em>campaign=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.RemoveBackground" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a> or <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>, indicating whether or not
+to remove the background flux for the target. If <code class="docutils literal"><span class="pre">campaign</span> <span class="pre">&lt;</span> <span class="pre">3</span></code>,
+returns <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, otherwise returns <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.GetNeighboringChannels">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">GetNeighboringChannels</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.GetNeighboringChannels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all channels on the same module as <code class="xref py py-obj docutils literal"><span class="pre">channel</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.GetSources">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">GetSources</code><span class="sig-paren">(</span><em>ID</em>, <em>darcsec=None</em>, <em>stars_only=False</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.GetSources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Grabs the EPIC coordinates from the TPF and searches MAST
+for other EPIC targets within the same aperture.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ID</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The 9-digit <code class="xref py py-obj docutils literal"><span class="pre">EPIC</span></code> number of the target</li>
+<li><strong>darcsec</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – The search radius in arcseconds.            Default is four times the largest dimension of the aperture.</li>
+<li><strong>stars_only</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, only returns objects            explicitly designated as <cite>“stars”</cite> in MAST. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A list of <code class="xref py py-class docutils literal"><span class="pre">Source</span></code> instances containing               other <code class="xref py py-obj docutils literal"><span class="pre">EPIC</span></code> targets within or close to this               target’s aperture</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.GetHiResImage">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">GetHiResImage</code><span class="sig-paren">(</span><em>ID</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.GetHiResImage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queries the Palomar Observatory Sky Survey II catalog to
+obtain a higher resolution optical image of the star with EPIC number
+<code class="xref py py-obj docutils literal"><span class="pre">ID</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.GetCustomAperture">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">GetCustomAperture</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.GetCustomAperture" title="Permalink to this definition">¶</a></dt>
+<dd><div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Routine not yet implemented.</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.missions.k2.utils.StatsPicker">
+<em class="property">class </em><code class="descclassname">everest.missions.k2.utils.</code><code class="descname">StatsPicker</code><span class="sig-paren">(</span><em>axes</em>, <em>x</em>, <em>y</em>, <em>epic</em>, <em>model='PLD'</em>, <em>compare_to='k2sff'</em>, <em>cadence='lc'</em>, <em>campaign=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.StatsPicker" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that enables clicking on the individual points on
+the <code class="xref py py-func docutils literal"><span class="pre">k2.Statistics()</span></code> scatter plots.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>axes</strong> – A <code class="xref py py-mod docutils literal"><span class="pre">matplotlib.pyplot</span></code> axis instance or a            list of axis instances</li>
+<li><strong>x</strong> – An array or a list of arrays corresponding to the            abscissa of <code class="xref py py-obj docutils literal"><span class="pre">axes</span></code></li>
+<li><strong>y</strong> – An array or a list of arrays corresponding to the            ordinate of <code class="xref py py-obj docutils literal"><span class="pre">axes</span></code></li>
+<li><strong>epic</strong> (<em>array_like</em>) – A list of EPIC target numbers for            each of the plotted points</li>
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the current <code class="xref py py-mod docutils literal"><span class="pre">everest</span></code>            model. Default <cite>“PLD”</cite></li>
+<li><strong>compare_to</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The name of the model against which the data            is being compared. Default <cite>“k2sff”</cite></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.SaturationFlux">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">SaturationFlux</code><span class="sig-paren">(</span><em>EPIC</em>, <em>campaign=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.SaturationFlux" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the well depth for the target. If any of the target’s pixels
+have flux larger than this value, they are likely to be saturated and
+cause charge bleeding. The well depths were obtained from Table 13
+of the Kepler instrument handbook. We assume an exposure time of 6.02s.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.Module">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">Module</code><span class="sig-paren">(</span><em>EPIC</em>, <em>campaign=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.Module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the module number for a given EPIC target.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="everest.missions.k2.utils.Channels">
+<code class="descclassname">everest.missions.k2.utils.</code><code class="descname">Channels</code><span class="sig-paren">(</span><em>module</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.missions.k2.utils.Channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the channels contained in the given K2 module.</p>
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="k2_k2.html" class="btn btn-neutral float-right" title="k2.py - Main mission routines" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="k2_init.html" class="btn btn-neutral" title="__init__.py - Initialization" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

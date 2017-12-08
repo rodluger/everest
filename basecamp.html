@@ -1,0 +1,516 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>basecamp.py - The Everest base class &mdash; everest</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="everest" href="index.html"/>
+        <link rel="up" title="Code Engine" href="engine.html"/>
+        <link rel="next" title="config.py - Misc settings" href="config.html"/>
+        <link rel="prev" title="Code Engine" href="engine.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> everest
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.0.9
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using_everest.html">Using Everest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">The Catalog</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="code.html">The Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference external" href="https://github.com/rodluger/everest">Github Project Page</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="engine.html">Code Engine</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="docutils literal"><span class="pre">basecamp.py</span></code> - The Everest base class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="config.html"><code class="docutils literal"><span class="pre">config.py</span></code> - Misc settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detrender.html"><code class="docutils literal"><span class="pre">detrender.py</span></code> - De-trending models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dvs.html"><code class="docutils literal"><span class="pre">dvs.py</span></code> - Data Validation Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fits.html"><code class="docutils literal"><span class="pre">fits.py</span></code> - FITS conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gp.html"><code class="docutils literal"><span class="pre">gp.py</span></code> - Gaussian Processes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="inject.html"><code class="docutils literal"><span class="pre">inject.py</span></code> - Transit injection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="masksolve.html"><code class="docutils literal"><span class="pre">masksolve.py</span></code> - Solve a masked linear problem quickly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math.html"><code class="docutils literal"><span class="pre">mathutils.py</span></code> - Math utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pool.html"><code class="docutils literal"><span class="pre">pool.py</span></code> - Multiprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standalone.html"><code class="docutils literal"><span class="pre">standalone.py</span></code> - Standalone de-trending</a></li>
+<li class="toctree-l3"><a class="reference internal" href="transit.html"><code class="docutils literal"><span class="pre">transit.py</span></code> - Transit models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils.html"><code class="docutils literal"><span class="pre">utils.py</span></code> - General utils</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="missions.html">Missions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="papers.html">The Papers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="previous.html">Old Versions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">everest</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">everest</a> &raquo;</li>
+      
+        <li><a href="code.html">The Code</a>&raquo;</li>
+      
+        <li><a href="engine.html">Code Engine</a>&raquo;</li>
+      
+    
+      <li><code class="docutils literal"><span class="pre">basecamp.py</span></code> - The Everest base class</li>
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-everest.basecamp"></span><div class="section" id="basecamp-py-the-everest-base-class">
+<h1><code class="xref py py-mod docutils literal"><span class="pre">basecamp.py</span></code> - The Everest base class<a class="headerlink" href="#basecamp-py-the-everest-base-class" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> engine. All <code class="xref py py-obj docutils literal"><span class="pre">everest</span></code> models
+inherit from <a class="reference internal" href="#everest.basecamp.Basecamp" title="everest.basecamp.Basecamp"><code class="xref py py-class docutils literal"><span class="pre">Basecamp</span></code></a>.</p>
+<dl class="class">
+<dt id="everest.basecamp.Basecamp">
+<em class="property">class </em><code class="descclassname">everest.basecamp.</code><code class="descname">Basecamp</code><a class="headerlink" href="#everest.basecamp.Basecamp" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="everest.basecamp.Basecamp.X">
+<code class="descname">X</code><span class="sig-paren">(</span><em>i</em>, <em>j=slice(None</em>, <em>None</em>, <em>None)</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.X" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the design matrix at the given <em>PLD</em> order and the given
+indices. The columns are the <em>PLD</em> vectors for the target at the
+corresponding order, computed as the product of the fractional pixel
+flux of all sets of <code class="xref py py-obj docutils literal"><span class="pre">n</span></code> pixels, where <code class="xref py py-obj docutils literal"><span class="pre">n</span></code> is the <em>PLD</em>
+order.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.apply_mask">
+<code class="descname">apply_mask</code><span class="sig-paren">(</span><em>x=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.apply_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the outlier mask, an array of indices corresponding to the
+non-outliers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>numpy.ndarray</em>) – If specified, returns the masked version of                <code class="xref py py-obj docutils literal"><span class="pre">x</span></code> instead. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.cdpps">
+<code class="descname">cdpps</code><a class="headerlink" href="#everest.basecamp.Basecamp.cdpps" title="Permalink to this definition">¶</a></dt>
+<dd><p>The string version of the current value of the CDPP in <em>ppm</em>. This
+displays the CDPP for each segment of the light curve individually
+(if breakpoints are present).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.compute">
+<code class="descname">compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.compute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the model for the current value of lambda.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.compute_joint">
+<code class="descname">compute_joint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.compute_joint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the model in a single step, allowing for a light curve-wide
+transit model. This is a bit more expensive to compute.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.dir">
+<code class="descname">dir</code><a class="headerlink" href="#everest.basecamp.Basecamp.dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the directory where the raw data and output for the target is
+stored.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.fcor">
+<code class="descname">fcor</code><a class="headerlink" href="#everest.basecamp.Basecamp.fcor" title="Permalink to this definition">¶</a></dt>
+<dd><p>The CBV-corrected de-trended flux.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.flux">
+<code class="descname">flux</code><a class="headerlink" href="#everest.basecamp.Basecamp.flux" title="Permalink to this definition">¶</a></dt>
+<dd><p>The corrected/de-trended flux. This is computed by subtracting
+the linear model from the raw SAP flux.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.get_cdpp">
+<code class="descname">get_cdpp</code><span class="sig-paren">(</span><em>flux=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.get_cdpp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the scalar CDPP for the light curve.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.get_cdpp_arr">
+<code class="descname">get_cdpp_arr</code><span class="sig-paren">(</span><em>flux=None</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.get_cdpp_arr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the CDPP value in <em>ppm</em> for each of the
+chunks in the light curve.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.get_chunk">
+<code class="descname">get_chunk</code><span class="sig-paren">(</span><em>b</em>, <em>x=None</em>, <em>pad=True</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.get_chunk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices corresponding to a given light curve chunk.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>b</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The index of the chunk to return</li>
+<li><strong>x</strong> (<em>numpy.ndarray</em>) – If specified, applies the mask to array                <code class="xref py py-obj docutils literal"><span class="pre">x</span></code>. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.get_masked_chunk">
+<code class="descname">get_masked_chunk</code><span class="sig-paren">(</span><em>b</em>, <em>x=None</em>, <em>pad=True</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.get_masked_chunk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="#everest.basecamp.Basecamp.get_chunk" title="everest.basecamp.Basecamp.get_chunk"><code class="xref py py-meth docutils literal"><span class="pre">get_chunk()</span></code></a>, but first removes the outlier indices.
+:param int b: The index of the chunk to return
+:param numpy.ndarray x: If specified, applies the mask to                array <code class="xref py py-obj docutils literal"><span class="pre">x</span></code>. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">None</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.get_norm">
+<code class="descname">get_norm</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.get_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the PLD normalization. In the base class, this is just
+the sum of all the pixel fluxes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.get_weights">
+<code class="descname">get_weights</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.get_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the PLD weights vector <code class="xref py py-obj docutils literal"><span class="pre">w</span></code>.</p>
+<p>..warning :: Deprecated and not thoroughly tested.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.lnlike">
+<code class="descname">lnlike</code><span class="sig-paren">(</span><em>model</em>, <em>refactor=False</em>, <em>pos_tol=2.5</em>, <em>neg_tol=50.0</em>, <em>full_output=False</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.lnlike" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the likelihood of the astrophysical model <cite>model</cite>.</p>
+<p>Returns the likelihood of <cite>model</cite> marginalized over the PLD model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model</strong> (<em>ndarray</em>) – A vector of the same shape as <cite>self.time</cite> corresponding to the astrophysical model.</li>
+<li><strong>refactor</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Re-compute the Cholesky decomposition? This typically does not need to be done, except when the PLD model changes. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>.</li>
+<li><strong>pos_tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – the positive (i.e., above the median) outlier tolerance in standard deviations.</li>
+<li><strong>neg_tol</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – the negative (i.e., below the median) outlier tolerance in standard deviations.</li>
+<li><strong>full_output</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a>, returns the maximum likelihood model amplitude and the variance on the amplitude in addition to the log-likelihood. In the case of a transit model, these are the transit depth and depth variance. Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.logfile">
+<code class="descname">logfile</code><a class="headerlink" href="#everest.basecamp.Basecamp.logfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the full path to the log file for the current run.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.mask">
+<code class="descname">mask</code><a class="headerlink" href="#everest.basecamp.Basecamp.mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>The array of indices to be masked. This is the union of the sets of
+outliers, bad (flagged) cadences, transit cadences, and <code class="xref py py-obj docutils literal"><span class="pre">NaN</span></code>
+cadences.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.norm">
+<code class="descname">norm</code><a class="headerlink" href="#everest.basecamp.Basecamp.norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>The PLD normalization. Typically, this is just the simple aperture
+photometry flux (i.e., the sum of all the pixels in the aperture).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.overfit">
+<code class="descname">overfit</code><span class="sig-paren">(</span><em>tau=None</em>, <em>plot=True</em>, <em>clobber=False</em>, <em>w=9</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.overfit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the masked &amp; unmasked overfitting metrics for the light curve.</p>
+<p>This routine injects a transit model given by <cite>tau</cite> at every cadence
+in the light curve and recovers the transit depth when (1) leaving
+the transit unmasked and (2) masking the transit prior to performing
+regression.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tau</strong> – A function or callable that accepts two arguments, <cite>time</cite> and <cite>t0</cite>, and returns an array corresponding to a zero-mean, unit depth transit model centered at <cite>t0</cite> and evaluated at <cite>time</cite>. The easiest way to provide this is to use an instance of <a class="reference internal" href="transit.html#everest.transit.TransitShape" title="everest.transit.TransitShape"><code class="xref py py-class docutils literal"><span class="pre">everest.transit.TransitShape</span></code></a>. Default is <code class="xref py py-class docutils literal"><span class="pre">everest.transit.TransitShape(dur=0.1)</span></code>, a transit with solar-like limb darkening and a duratio of 0.1 days.</li>
+<li><strong>plot</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Plot the results as a PDF? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">True</span></code></a></li>
+<li><strong>clobber</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Overwrite the results if present? Default <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)"><code class="xref py py-obj docutils literal"><span class="pre">False</span></code></a></li>
+<li><strong>w</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The size of the masking window in cadences for computing the masked overfitting metric. Default <cite>9</cite> (about 4.5 hours for <cite>K2</cite> long cadence).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An instance of <cite>everest.basecamp.Overfitting</cite>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.plot_aperture">
+<code class="descname">plot_aperture</code><span class="sig-paren">(</span><em>axes</em>, <em>labelsize=8</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.plot_aperture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the aperture and the pixel images at the beginning, middle,
+and end of the time series. Also plots a high resolution image of
+the target, if available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.plot_info">
+<code class="descname">plot_info</code><span class="sig-paren">(</span><em>dvs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.plot_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots miscellaneous de-trending information on the data
+validation summary figure.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dvs</strong> – A <code class="xref py py-class docutils literal"><span class="pre">dvs.DVS</span></code> figure instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Basecamp.search">
+<code class="descname">search</code><span class="sig-paren">(</span><em>pos_tol=2.5</em>, <em>neg_tol=50.0</em>, <em>clobber=False</em>, <em>name='search'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Basecamp.search" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.season">
+<code class="descname">season</code><a class="headerlink" href="#everest.basecamp.Basecamp.season" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the current observing season.</p>
+<p>For <em>K2</em>, this is the observing campaign, while for <em>Kepler</em>,
+it is the current quarter.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.transit_model">
+<code class="descname">transit_model</code><a class="headerlink" href="#everest.basecamp.Basecamp.transit_model" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="everest.basecamp.Basecamp.weights">
+<code class="descname">weights</code><a class="headerlink" href="#everest.basecamp.Basecamp.weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>The PLD weights vector. The model may be computed by dotting the design
+matrix <a class="reference internal" href="#everest.basecamp.Basecamp.X" title="everest.basecamp.Basecamp.X"><code class="xref py py-attr docutils literal"><span class="pre">X</span></code></a> with this vector. Note that these are computed just
+for plotting purpoeses – the actual weights are never explicitly
+computed during the de-trending, since it can be rather slow.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="everest.basecamp.Overfitting">
+<em class="property">class </em><code class="descclassname">everest.basecamp.</code><code class="descname">Overfitting</code><span class="sig-paren">(</span><em>O1</em>, <em>O2</em>, <em>O3</em>, <em>O4</em>, <em>O5</em>, <em>pdf</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Overfitting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores information on the overfitting metrics for a light curve.</p>
+<dl class="method">
+<dt id="everest.basecamp.Overfitting.masked">
+<code class="descname">masked</code><span class="sig-paren">(</span><em>depth=0.01</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Overfitting.masked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the masked overfitting metric for a given transit depth.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Overfitting.show">
+<code class="descname">show</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Overfitting.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the overfitting PDF summary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="everest.basecamp.Overfitting.unmasked">
+<code class="descname">unmasked</code><span class="sig-paren">(</span><em>depth=0.01</em><span class="sig-paren">)</span><a class="headerlink" href="#everest.basecamp.Overfitting.unmasked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the unmasked overfitting metric for a given transit depth.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-47070068-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="config.html" class="btn btn-neutral float-right" title="config.py - Misc settings" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="engine.html" class="btn btn-neutral" title="Code Engine" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Rodrigo Luger.
+      Last updated on Dec 08, 2017.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'2.0.9',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
