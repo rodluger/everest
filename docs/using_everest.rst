@@ -329,9 +329,44 @@ the model beforehand:
 Custom Detrending
 =================
 
-As of version **2.0.8**, users can de-trend their own raw *K2* FITS files
+As of version **2.0.9**, users can de-trend their own raw *K2* FITS files
 using the :py:func:`everest.standalone.DetrendFITS` function, which is
 a wrapper for the :py:class:`everest.detrender.rPLD` detrender.
+
+Overfitting Metrics
+===================
+
+As we discussed above, :py:func:`everest` is known to overfit transits when
+they are not properly masked. Users can now compute an estimate of the degree
+of overfitting in any light curve by typing
+
+	everest 201601162 -o
+
+into a terminal. This will compute and plot two overfitting metrics: the
+**unmasked overfitting metric** and the **masked overfitting metric**. Both
+correspond to the fractional decrease in a transit depth due to overfitting
+and are computed by running transit injection/recovery tests at every
+cadence in a light curve.
+For EPIC 201601162, computing these metrics took about 2 minutes on my laptop.
+Here is what a snippet of the diagnostic plot looks like:
+
+.. figure:: overfitting.png
+   :width: 600px
+   :align: center
+   :figclass: align-center
+
+The top panel shows the unmasked overfitting metric: the degree of overfitting
+when transits are not masked. This is evaluated at every cadence. The distribution
+of values is shown as the histogram at the right, indicating a median overfitting
+of 0.07 (7%), with a typical spread (median absolute deviation, or MAD) of 0.036 (3.6%).
+The bottom panel shows the masked overfitting metric: the degree of overfitting
+when transits are masked (see above). This is much smaller and is zero on average,
+indicating that :py:obj:`everest` **does not overfit** when transits are excluded
+from the regression.
+
+The actual PDF has several more rows, corresponding to the overfitting metrics for
+different injected transit depths. In general, overfitting gets worse the lower the
+signal-to-noise ratio of the light curve.
 
 .. raw:: html
 
