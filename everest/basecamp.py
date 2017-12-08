@@ -825,8 +825,8 @@ class Basecamp(object):
                zero-mean, unit depth transit model centered at \
                `t0` and evaluated at `time`. \
                The easiest way to provide this is to use an instance of \
-               `everest.transit.TransitShape`. Default is \
-               `everest.transit.TransitShape(dur=0.1)`, a transit \
+               :py:class:`everest.transit.TransitShape`. Default is \
+               :py:class:`everest.transit.TransitShape(dur=0.1)`, a transit \
                with solar-like limb darkening and a duratio of 0.1 days.
         :param bool plot: Plot the results as a PDF? Default :py:obj:`True`
         :param bool clobber: Overwrite the results if present? Default \
