@@ -1,13 +1,13 @@
 .. raw:: html
-  
+
   <head>
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
   </head>
-    
+
   <!-- Title --!>
   <h2 style="display: inline;"><span id="target-name">Loading...</span></h2>
   <br><br>
-  
+
   <!-- Info --!>
   <div class="wy-table-responsive" id = "target-table">
   <table border="1" class="docutils">
@@ -63,14 +63,14 @@
   </tbody>
   </table>
   </div>
-  
+
   <!-- The magical stuff --!>
   <script>
-    
+
     function isInt(value) {
       return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value))
     }
-    
+
     // Reads query strings
     function getParameterByName(name, url) {
       if (!url) {
@@ -83,24 +83,24 @@
       if (!results[2]) return '';
       return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
-    
+
     // Read query strings
     var id = getParameterByName("id");
     var mission = getParameterByName("mission");
-    
+
     // Constants
-    var mast_root = "http://archive.stsci.edu/missions/hlsp/everest/v2/";
+    var mast_root = "https://archive.stsci.edu/hlsps/everest/v2/";
     var version = "2.0";
-    
+
     // Initialize
     document.title = "Loading...";
     document.getElementById("target-table").style.display = 'none';
-    
+
     // Mission-specific
     if (id != null) {
       if (mission == "k2") {
         if ((id.length == 9) && isInt(id)) {
-          
+
           // Check if short cadence exists
           $.get("sc.csv")
             .done(function( data ) {
@@ -110,22 +110,27 @@
                 document.getElementById("target-links-sc").style.display = 'inline';
               }
             });
-          
+
           // Figure out the campaign number
-          var campaigns = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08"];
+          var campaigns = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c102", "c111", "c112", "c12", "c13"];
           var done = 0;
           for (var i = 0; i < campaigns.length; i++) {
             $.get(campaigns[i] + ".csv")
               .done(function( data ) {
                 var start = data.indexOf(id);
                 if (start != -1) {
-                
+
                   // We found the target; get the data
-                  var campaign = data.substr(0,3);
-                  if (campaign.substr(1,2) < 10)
-                    var campaign_int = campaign.substr(2,1)
-                  else
-                    var campaign_int = campaign.substr(1,2)
+                  var campaign = data.substr(0,4);
+                  if (campaign.substr(1,3) < 10) {
+                    var campaign_int = campaign.substr(3,1);
+                    campaign = "c" + campaign.substr(2,2);
+                  } else if (campaign.substr(1,3) < 100) {
+                    var campaign_int = campaign.substr(2,2);
+                    campaign = "c" + campaign.substr(2,2);
+                  } else {
+                    var campaign_int = campaign.substr(1,3);
+                  }
                   var stop = data.indexOf("\n", start);
                   var info = data.slice(start, stop).split(',');
                   var mag = info[1];
@@ -139,24 +144,24 @@
                   // Set the name
                   document.getElementById("target-name").innerHTML = "EPIC " + id;
                   document.title = "EPIC " + id;
-          
+
                   // Path to MAST
                   var path = mast_root + campaign + "/" + id.substr(0,4) + "00000" + "/" + id.substr(4,5) + "/";
-          
+
                   // Path to files
                   var fits = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_lc.fits";
                   var fits_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_sc.fits";
                   var dvs = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs.pdf";
                   var dvs_sc = path + "hlsp_everest_k2_llc_" + id + "-" + campaign + "_kepler_v" + version + "_dvs_sc.pdf";
-                  
+
                   // Everest version
                   if (campaign_int <= 8)
                     var requires = "EVEREST 2.0.6";
-                  else if (campaign_int == 10)
-                    var requires = "EVEREST 2.0.7";
+                  else if ((campaign_int == 102) || (campaign_int == 111) || (campaign_int == 112) || (campaign_int == 12) || (campaign_int == 13))
+                    var requires = "EVEREST 2.0.8";
                   else
                     var requires = "";
-                    
+
                   // Set the info
                   document.getElementById("target-mission").innerHTML = ("K2");
                   document.getElementById("target-season").innerHTML = (campaign_int);
@@ -171,11 +176,11 @@
                   document.getElementById("target-fits-link-sc").setAttribute('href', fits_sc);
                   document.getElementById("target-dvs-link-lc").setAttribute('href', dvs);
                   document.getElementById("target-dvs-link-sc").setAttribute('href', dvs_sc);
-                  
+
                   // Make visible
                   document.getElementById("target-table").style.display = 'inline';
                 }
-                
+
                 // Check if we've gone through all campaigns. If still no match, throw error
                 done++;
                 if (done == campaigns.length - 1) {

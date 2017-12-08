@@ -9,7 +9,8 @@ the data files, and the MAST url.
 
 '''
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+     unicode_literals
 from . import __version__ as EVEREST_VERSION
 import os
 import six
@@ -23,32 +24,32 @@ EVEREST_MAJOR_MINOR = ".".join(EVEREST_VERSION.split(".")[:-1])
 #: Is this the development (pre-publication) version?
 EVEREST_DEV = int(os.environ.get('EVEREST2_DEV', 0))
 if EVEREST_DEV:
-  
-  # Dev version hack: enforce a non-ui backend
-  import platform
-  import matplotlib as mpl
-  if platform.system() == "Linux":
-    mpl.use("Agg", warn=False)
-  else:
-    # Dev version hack: custom font
-    mpl.rc('font', family='serif') 
-    mpl.rc('font', serif='Palatino Linotype')
+
+    # Dev version hack: enforce a non-ui backend
+    import platform
+    import matplotlib as mpl
+    if platform.system() == "Linux":
+        mpl.use("Agg", warn=False)
+    else:
+        # Dev version hack: custom font
+        mpl.rc('font', family='serif')
+        mpl.rc('font', serif='Palatino Linotype')
 
 #: The :py:mod:`everest` data directory
-EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR", os.path.join("~", ".everest2")))                               
+EVEREST_DAT = os.path.expanduser(os.environ.get("EVEREST2_DATA_DIR",
+                                                os.path.join("~",
+                                                             ".everest2")))
 #: The :py:mod:`everest` source code directory
 EVEREST_SRC = os.path.dirname(os.path.abspath(__file__))
-#: The ``user@server:/path`` scp argument for accessing the FITS files (pre-publication only)
+#: The ``user@server:/path`` scp argument for accessing the FITS files
+#: (pre-publication only)
 EVEREST_FITS = os.environ.get('EVEREST2_FITS', None)
 #: The directory containing the Kepler PRF files
-KEPPRF_DIR = os.path.expanduser(os.environ.get("KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF"))) 
+KEPPRF_DIR = os.path.expanduser(os.environ.get(
+    "KEPPRF_DIR", os.path.join("~", "src", "KeplerPRF")))
 
-if EVEREST_DEV:
-  # Development version light curve location
-  MAST_ROOT = 'http://staff.washington.edu/rodluger/test/'
-else:
-  #: The MAST url where the light curves are published
-  MAST_ROOT = 'https://archive.stsci.edu/missions/hlsp/everest/v2/'
+#: The MAST url where the light curves are published
+MAST_ROOT = 'https://archive.stsci.edu/hlsps/everest/v2/'
 
 #: Everest quality bit: masked because a Kepler flag was raised
 QUALITY_BAD = 23

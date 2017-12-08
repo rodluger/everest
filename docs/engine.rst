@@ -1,7 +1,7 @@
 Code Engine
 ===========
 
-The modules below house all of the mission-independent routines for 
+The modules below house all of the mission-independent routines for
 de-trending light curves. The core of the code is in :doc:`basecamp <basecamp>` and
 :doc:`detrender <detrender>`. The classes implemented in these two modules call the
 rest of the code below. For mission-specific routines, which include downloading
@@ -9,7 +9,7 @@ and pre-processing the raw data and formatting the final output, see :doc:`missi
 
 .. toctree::
    :maxdepth: 2
-   
+
    basecamp
    config
    detrender
@@ -17,8 +17,10 @@ and pre-processing the raw data and formatting the final output, see :doc:`missi
    fits
    gp
    inject
+   masksolve
    math
    pool
+   standalone
    transit
    utils
 

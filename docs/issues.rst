@@ -33,10 +33,31 @@ adapt PLD to work for these stars.
 RR Lyrae
 ~~~~~~~~
 Everest 2.0 again improves the performance of PLD on extremely variable stars
-relative to Everest 1.0. Nonetheless, about 40% of long cadence RR Lyrae seem to be 
+relative to Everest 1.0. Nonetheless, about 40% of long cadence RR Lyrae seem to be
 overfitted by the algorithm. We recommend inspecting the raw and de-trended light
 curves in the :doc:`data validation summaries <dvsfigs>` to check whether PLD
-has dampened the astrophysical signal.
+has dampened the astrophysical signal. Check out :download:`this file <rrlyrae.tsv>`
+for a list of the EPIC numbers of 100 RR Lyrae stars from the first few K2 campaigns,
+obtained from the K2VARCAT catalog. We report (qualitative) scores for each of the
+EVEREST1, EVEREST2, K2SFF, and K2SC pipelines based on whether they overfitted the
+variability. Inspecting the light curves of several of these can give you a good
+sense of what an "overfitted" RR Lyrae star looks like. Remember that to bring up the
+EVEREST, K2SFF, and K2SC light curve of any star, just type
+
+.. code-block :: bash
+
+   everest 210868876
+   everest 210868876 -f
+   everest 210868876 -s
+
+in the terminal, respectively. This particular example suffered overfitting
+in both EVEREST and K2SFF, but not in K2SC.
+
+Finally, I wrote a simple :download:`iPython Notebook <rrlyrae.ipynb>` showing
+how to go about manually de-trending an RR Lyrae light curve for which the
+EVEREST pipeline failed. Take a look at the code for ideas on how to handle
+these issues for other similar targets. Note that this file can also be
+viewed on `github <https://github.com/rodluger/everest/blob/master/docs/rrlyrae.ipynb>`_.
 
 Aperture losses
 ~~~~~~~~~~~~~~~
