@@ -10,8 +10,8 @@
 </p>
 
 ```diff
-- NOTE: Version 2.0.9, which includes K2 campaigns 10--13, will be pip-installable shortly! 
-- Light curves are en route to MAST and should be available by 12/20/2017.
++ NOTE: Version 2.0.9, which includes K2 campaigns 10--13, is now pip-installable. 
++ NOTE: Campaign 14 light curves are currently being processed and should be available in the next couple weeks.
 ```
 
 <div align="justify">
