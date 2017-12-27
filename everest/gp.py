@@ -16,10 +16,17 @@ from scipy.optimize import fmin_l_bfgs_b
 from scipy.signal import savgol_filter
 import numpy as np
 np.random.seed(48151623)
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion, StrictVersion
 import george
 from george.kernels import Matern32Kernel, ExpSine2Kernel
-if StrictVersion(george.__version__) <= StrictVersion("0.2.1"):
+try:
+    george_version = StrictVersion(george.__version__)
+except ValueError:
+    george_version = LooseVersion(george.__version__)
+    comp_version = LooseVersion("0.3.0")
+else:
+    comp_version = StrictVersion("0.3.0")
+if george_version < comp_version:
     from george.kernels import WhiteKernel
     OLDGEORGE = True
 else:
