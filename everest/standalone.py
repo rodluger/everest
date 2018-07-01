@@ -380,7 +380,7 @@ class ApertureSelector(object):
 def GetData(fitsfile, EPIC, campaign, clobber=False,
             saturation_tolerance=-0.1,
             bad_bits=[1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17],
-            get_hires=True, get_nearby=True,
+            get_hires=False, get_nearby=False,
             aperture=None, **kwargs):
     '''
     Returns a :py:obj:`DataContainer` instance with the
