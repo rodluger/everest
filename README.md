@@ -10,17 +10,17 @@
 </p>
 
 ```diff
-- NOTE: Version 2.0.9, which includes K2 campaigns 10--13, will be pip-installable shortly! 
-- Light curves are en route to MAST and should be available by 12/20/2017.
++ NOTE: Version 2.0.9, which includes K2 campaigns 10--13, is now pip-installable. 
++ NOTE: Campaign 14 light curves should be available in the next couple weeks.
 ```
 
 <div align="justify">
 <b>E</b>PIC <b>V</b>ariability <b>E</b>xtraction and <b>R</b>emoval for <b>E</b>xoplanet <b>S</b>cience <b>T</b>argets: A pipeline for de-trending <b>K2</b> light curves with pixel level decorrelation and Gaussian processes. Here you'll find the Python code used to generate the <b>EVEREST</b> catalog, as well as tools for accessing and interacting with the de-trended light curves.
 
-To install the latest <b>EVEREST</b> release (2.0.8):
+To install the latest <b>EVEREST</b> release (**2.0.9**):
 <br/>
 <pre><code>pip install everest-pipeline</code></pre>
-You can also install the current development version of <b>EVEREST</b> (2.0.9) from source:
+You can also install the current development version of <b>EVEREST</b> (**2.0.9**) from source:
 <br/>
 <pre><code>git clone https://github.com/rodluger/everest
 cd everest
