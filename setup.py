@@ -50,7 +50,7 @@ setup(name='everest-pipeline',
           'george>=0.2.1',
           'six',
           'astropy',
-          'pysyzygy>=0.0.1',
+          'pysyzygy>=0.0.2',
           'k2plr==0.2.7',
           'PyPDF2',
           # not yet 'choldate'
