@@ -27,7 +27,7 @@ from scipy.interpolate import griddata
 from k2plr.api import K2_CAMPAIGNS
 import numpy as np
 from tempfile import NamedTemporaryFile
-import urllib
+from six.moves import urllib
 import re
 import os
 import subprocess
