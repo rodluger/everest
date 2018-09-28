@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import, \
      unicode_literals
 
 # Version number
-__version__ = "2.0.10"
+__version__ = "2.0.11"
 
 # Was everest imported from setup.py?
 try:
