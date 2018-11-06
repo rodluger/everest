@@ -1,5 +1,5 @@
 <p align="center">
-  <img width = "300" src="http://staff.washington.edu/rodluger/everest/_images/everest.png"/>
+  <img width = "300" src="https://rodluger.github.io/everest/_images/everest.png"/>
 </p>
 <p align="center">
   <a href="https://travis-ci.org/rodluger/everest/"><img src="https://travis-ci.org/rodluger/everest.svg?branch=master"/></a>
