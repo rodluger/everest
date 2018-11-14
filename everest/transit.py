@@ -16,7 +16,10 @@ from __future__ import division, print_function, absolute_import, \
      unicode_literals
 import numpy as np
 import matplotlib.pyplot as pl
-import pysyzygy as ps
+try:
+    import pysyzygy as ps
+except:
+    ps = None
 from scipy.optimize import fmin
 import logging
 log = logging.getLogger(__name__)
@@ -75,6 +78,10 @@ class TransitModel(object):
         assert type(name) is str, "Arg `name` must be a string."
         self.name = name
 
+        # Skip if pysyzygy not installed
+        if ps is None:
+            return
+
         # The transit model
         self._transit = ps.Transit(**kwargs)
 
@@ -96,6 +103,9 @@ class TransitModel(object):
 
     def __call__(self, time):
         """Return the model evaluated at `time`."""
+        if ps is None:
+            raise Exception("Unable to import `pysyzygy`.")
+
         model = (self._transit(time) - 1) / self.depth
 
         # Single transit?
@@ -112,6 +122,8 @@ def Get_RpRs(d, **kwargs):
     the :py:class:`everest.pysyzygy` transit :py:obj:`kwargs`.
 
     '''
+    if ps is None:
+            raise Exception("Unable to import `pysyzygy`.")
 
     def Depth(RpRs, **kwargs):
         return 1 - ps.Transit(RpRs=RpRs, **kwargs)([kwargs.get('t0', 0.)])
@@ -129,6 +141,8 @@ def Get_rhos(dur, **kwargs):
     the :py:class:`everest.pysyzygy` transit :py:obj:`kwargs`.
 
     '''
+    if ps is None:
+            raise Exception("Unable to import `pysyzygy`.")
 
     assert dur >= 0.01 and dur <= 0.5, "Invalid value for the duration."
 
@@ -167,6 +181,8 @@ def Transit(time, t0=0., dur=0.1, per=3.56789, depth=0.001, **kwargs):
                    :py:obj:`time` array
 
     '''
+    if ps is None:
+        raise Exception("Unable to import `pysyzygy`.")
 
     # Note that rhos can affect RpRs, so we should really do this iteratively,
     # but the effect is pretty negligible!
@@ -193,6 +209,8 @@ class TransitShape(object):
 
     def __init__(self, depth=1, dur=0.1, **kwargs):
         """Initialize the pysyzygy model."""
+        if ps is None:
+            return
         kwargs.pop('t0', None)
         kwargs.pop('times', None)
 
@@ -214,4 +232,6 @@ class TransitShape(object):
 
     def __call__(self, time, t0=0.):
         """Evalaute the transit model."""
+        if ps is None:
+            raise Exception("Unable to import `pysyzygy`.")
         return np.interp(time, self.x + t0, self.y)
