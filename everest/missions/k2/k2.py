@@ -109,12 +109,12 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
             102: [],           # NO BREAKPOINT
             111: [],
             112: [],
-            12: [1900],        # GUESS
+            12: [1900],        # OK
             13: [2157],        # OK
-            14: [],
-            15: [],
-            16: [],
-            17: []
+            14: [1950],        # GUESS
+            15: [2150],        # GUESS
+            16: [1945],        # GUESS
+            17: [1640]         # GUESS
         }
     elif cadence == 'sc':
         breakpoints = {
@@ -241,7 +241,8 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
         campaign = season
 
     # Is there short cadence data available for this target?
-    short_cadence = HasShortCadence(EPIC, season=campaign)
+    # DEBUG: Disabling short cadence for now!
+    short_cadence = False #HasShortCadence(EPIC, season=campaign)
     if cadence == 'sc' and not short_cadence:
         raise ValueError("Short cadence data not available for this target.")
 
@@ -261,7 +262,9 @@ def GetData(EPIC, season=None, cadence='lc', clobber=False, delete_raw=False,
                               str(EPIC), 'ktwo%09d-c%02d_spd-targ.fits.gz'
                               % (EPIC, campaign))
         if clobber or not os.path.exists(tpf):
-            kplr_client.k2_star(EPIC).get_target_pixel_files(fetch=True)
+            # DEBUG: Disabling short cadence for now!
+            kplr_client.k2_star(EPIC).get_target_pixel_files(fetch=True,
+                short_cadence=False)
 
         with pyfits.open(tpf) as f:
             qdata = f[1].data
