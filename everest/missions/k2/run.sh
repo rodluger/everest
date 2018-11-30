@@ -6,7 +6,7 @@ if [ $EPIC -eq 0 ]; then
 fi
 
 # CD into our working directory
-cd ${EVEREST_DAT}
+cd ${EVERESTDAT}
 
 if [ $NODES -eq 1 ]; then
   # Run on a single node with Python multiprocessing

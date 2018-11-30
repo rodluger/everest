@@ -54,12 +54,12 @@ def Download(campaign=0, queue='cca', email=None, walltime=8, **kwargs):
     # Submit the cluster job
     slurmfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'download.sh')
     str_w = '--time=%d:00:00' % walltime
-    str_v = '--export=ALL,EVEREST_DAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (
+    str_v = '--export=ALL,EVERESTDAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (
         EVEREST_DAT, campaign, subcampaign)
     if subcampaign == -1:
-        str_name = '--job-name=download_c%02d' % campaign
+        str_name = '--job-name=downloadc%02d' % campaign
     else:
-        str_name = '--job-name=download_c%02d.%d' % (campaign, subcampaign)
+        str_name = '--job-name=downloadc%02d.%d' % (campaign, subcampaign)
     str_out = "--output=%s" % os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
     sbatch_args = ['sbatch', slurmfile,
                  "--partition=%s" % queue,
@@ -71,6 +71,7 @@ def Download(campaign=0, queue='cca', email=None, walltime=8, **kwargs):
         sbatch_args.append(['--mail-user=%s' % email, '--mail-type=END,FAIL'])
     # Now we submit the job
     print("Submitting the job...")
+    print(" ".join(sbatch_args))
     subprocess.call(sbatch_args)
 
 
@@ -163,7 +164,7 @@ def Run(campaign=0, EPIC=None, nodes=5, ppn=12, walltime=100,
     else:
         str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
     str_w = 'walltime=%d:00:00' % walltime
-    str_v = "EVEREST_DAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
+    str_v = "EVERESTDAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
             "EPIC=%d," % (0 if EPIC is None else EPIC) + \
             "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % \
             (campaign, subcampaign, strkwargs)
@@ -284,7 +285,7 @@ def Publish(campaign=0, EPIC=None, nodes=5, ppn=12, walltime=100,
     else:
         str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
     str_w = 'walltime=%d:00:00' % walltime
-    str_v = "EVEREST_DAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
+    str_v = "EVERESTDAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
             "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % \
             (campaign, subcampaign, strkwargs)
 
