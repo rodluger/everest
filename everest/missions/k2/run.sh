@@ -10,8 +10,8 @@ cd ${EVERESTDAT}
 
 if [ $NODES -eq 1 ]; then
   # Run on a single node with Python multiprocessing
-  python -c "import everest; everest.missions.k2.pbs._Run($CAMPAIGN, $SUBCAMPAIGN, $EPIC, $STRKWARGS)"
+  python -c "import everest; everest.missions.k2.slurm._Run($CAMPAIGN, $SUBCAMPAIGN, $EPIC, $STRKWARGS)"
 else
   # Run on multiple nodes with MPI
-  mpirun -np $SLURM_NTASKS python -c "import everest; everest.missions.k2.pbs._Run($CAMPAIGN, $SUBCAMPAIGN, $EPIC, $STRKWARGS)"
+  mpirun -np $SLURM_NTASKS python -c "import everest; everest.missions.k2.slurm._Run($CAMPAIGN, $SUBCAMPAIGN, $EPIC, $STRKWARGS)"
 fi
