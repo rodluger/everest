@@ -10,8 +10,8 @@ from __future__ import division, print_function, absolute_import, \
      unicode_literals
 from .k2 import *
 from .sysrem import GetCBVs
-from . import utils, pbs, pipelines, sysrem
-from .pbs import Download, Run, Status, Publish
+from . import utils, slurm, pipelines, sysrem
+from .slurm import Download, Run, Status, Publish
 
 #: The string that identifies individual targets for this mission
 IDSTRING = 'EPIC'
