@@ -61,12 +61,13 @@ def Download(campaign=0, queue='cca', email=None, walltime=8, **kwargs):
     else:
         str_name = '--job-name=downloadc%02d.%d' % (campaign, subcampaign)
     str_out = "--output=%s" % os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
-    sbatch_args = ['sbatch', slurmfile,
-                 "--partition=%s" % queue,
-                 str_v,
-                 str_out,
-                 str_name,
-                 str_w]
+    sbatch_args = ['sbatch',
+                   "--partition=%s" % queue,
+                   str_v,
+                   str_out,
+                   str_name,
+                   str_w,
+                   slurmfile]
     if email is not None:
         sbatch_args.append(['--mail-user=%s' % email, '--mail-type=END,FAIL'])
     # Now we submit the job
