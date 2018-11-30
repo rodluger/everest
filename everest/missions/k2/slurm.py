@@ -57,9 +57,9 @@ def Download(campaign=0, queue='cca', email=None, walltime=8, **kwargs):
     str_v = '--export=ALL,EVERESTDAT=%s,CAMPAIGN=%d,SUBCAMPAIGN=%d' % (
         EVEREST_DAT, campaign, subcampaign)
     if subcampaign == -1:
-        str_name = 'downloadc%02d' % campaign
+        str_name = 'dwn%02d' % campaign
     else:
-        str_name = 'downloadc%02d.%d' % (campaign, subcampaign)
+        str_name = 'dwn%02d.%d' % (campaign, subcampaign)
     str_out = "--output=%s" % os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
     sbatch_args = ['sbatch',
                    "--partition=%s" % queue,
@@ -112,8 +112,8 @@ def _Download(campaign, subcampaign):
                 continue
 
 
-def Run(campaign=0, EPIC=None, nodes=5, ppn=12, walltime=100,
-        mpn=None, email=None, queue=None, **kwargs):
+def Run(campaign=0, EPIC=None, nodes=5, ppn=None, walltime=100,
+        mpn=None, email=None, queue='cca', **kwargs):
     '''
     Submits a cluster job to compute and plot data for all targets
     in a given campaign.
@@ -159,13 +159,8 @@ def Run(campaign=0, EPIC=None, nodes=5, ppn=12, walltime=100,
 
     # Submit the cluster job
     slurmfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.sh')
-    if mpn is not None:
-        str_n = 'nodes=%d:ppn=%d,feature=%dcore,mem=%dgb' % (
-            nodes, ppn, ppn, mpn * nodes)
-    else:
-        str_n = 'nodes=%d:ppn=%d,feature=%dcore' % (nodes, ppn, ppn)
-    str_w = 'walltime=%d:00:00' % walltime
-    str_v = "EVERESTDAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
+    str_w = '--time=%d:00:00' % walltime
+    str_v = "--export=ALL,EVERESTDAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
             "EPIC=%d," % (0 if EPIC is None else EPIC) + \
             "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % \
             (campaign, subcampaign, strkwargs)
@@ -177,21 +172,25 @@ def Run(campaign=0, EPIC=None, nodes=5, ppn=12, walltime=100,
             str_name = 'c%02d.%d' % (campaign, subcampaign)
     else:
         str_name = 'EPIC%d' % EPIC
-    str_out = os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
-    sbatch_args = ['sbatch', slurmfile,
-                 '-v', str_v,
-                 '-o', str_out,
-                 '-j', 'oe',
-                 '-N', str_name,
-                 '-l', str_n,
-                 '-l', str_w]
+    str_out = "--output=%s" % os.path.join(EVEREST_DAT, 'k2', str_name + '.log')
+    sbatch_args = ['sbatch',
+                   "--partition=%s" % queue,
+                   str_v,
+                   str_out,
+                   "--job-name=%s" % str_name,
+                   "--nodes=%d" % nodes,
+                   str_w]
     if email is not None:
-        sbatch_args.append(['-M', email, '-m', 'ae'])
-    if queue is not None:
-        sbatch_args += ['-q', queue]
-
+        sbatch_args.append(['--mail-user=%s' % email, '--mail-type=END,FAIL'])
+    if mpn is not None:
+        sbatch_args.append(['--mem=%dG' % mpn])
+    if ppn is not None:
+        sbatch_args.append(['--ntasks-per-node=%d' % ppn])
+    sbatch_args.append(slurmfile)
+    
     # Now we submit the job
     print("Submitting the job...")
+    print(" ".join(sbatch_args))
     subprocess.call(sbatch_args)
 
 
