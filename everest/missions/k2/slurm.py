@@ -183,9 +183,9 @@ def Run(campaign=0, EPIC=None, nodes=5, ppn=None, walltime=100,
     if email is not None:
         sbatch_args.append(['--mail-user=%s' % email, '--mail-type=END,FAIL'])
     if mpn is not None:
-        sbatch_args.append(['--mem=%dG' % mpn])
+        sbatch_args.append('--mem=%dG' % mpn)
     if ppn is not None:
-        sbatch_args.append(['--ntasks-per-node=%d' % ppn])
+        sbatch_args.append('--ntasks-per-node=%d' % ppn)
     sbatch_args.append(slurmfile)
     
     # Now we submit the job
