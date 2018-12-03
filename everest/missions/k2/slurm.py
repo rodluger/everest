@@ -157,13 +157,19 @@ def Run(campaign=0, EPIC=None, nodes=5, ppn=None, walltime=100,
                          'values may only be `int`s, `float`s, `string`s, ' +
                          '`bool`s, or lists of these.')
 
+    # Number of tasks
+    if ppn is not None:
+        tasks = nodes * ppn
+    else:
+        tasks = nodes * 40
+
     # Submit the cluster job
     slurmfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'run.sh')
     str_w = '--time=%d:00:00' % walltime
     str_v = "--export=ALL,EVERESTDAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
             "EPIC=%d," % (0 if EPIC is None else EPIC) + \
-            "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % \
-            (campaign, subcampaign, strkwargs)
+            "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s',TASKS=%d" % \
+            (campaign, subcampaign, strkwargs, tasks)
 
     if EPIC is None:
         if subcampaign == -1:
@@ -277,12 +283,18 @@ def Publish(campaign=0, EPIC=None, nodes=5, ppn=None, walltime=100,
                          'values may only be `int`s, `float`s, `string`s, ' +
                          '`bool`s, or lists of these.')
 
+    # Number of tasks
+    if ppn is not None:
+        tasks = nodes * ppn
+    else:
+        tasks = nodes * 40
+
     # Submit the cluster job
     slurmfile = os.path.join(EVEREST_SRC, 'missions', 'k2', 'publish.sh')
     str_w = '--time=%d:00:00' % walltime
     str_v = "--export=ALL,EVERESTDAT=%s,NODES=%d," % (EVEREST_DAT, nodes) + \
-            "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s'" % \
-            (campaign, subcampaign, strkwargs)
+            "CAMPAIGN=%d,SUBCAMPAIGN=%d,STRKWARGS='%s',TASKS=%d" % \
+            (campaign, subcampaign, strkwargs, tasks)
 
     if subcampaign == -1:
         str_name = 'c%02d' % campaign
