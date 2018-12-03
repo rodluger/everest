@@ -11,5 +11,5 @@ if [ $NODES -eq 1 ]; then
   python -c "import everest; everest.missions.k2.slurm._Publish($CAMPAIGN, $SUBCAMPAIGN, $STRKWARGS)"
 else
   # Run on multiple nodes with MPI
-  mpirun -np $SLURM_NTASKS python -c "import everest; everest.missions.k2.slurm._Publish($CAMPAIGN, $SUBCAMPAIGN, $STRKWARGS)"
+  mpirun -np $SLURM_NPROCS python -c "import everest; everest.missions.k2.slurm._Publish($CAMPAIGN, $SUBCAMPAIGN, $STRKWARGS)"
 fi
