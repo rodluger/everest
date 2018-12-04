@@ -192,6 +192,8 @@ def Run(campaign=0, EPIC=None, nodes=5, ppn=None, walltime=100,
         sbatch_args.append('--mem=%dG' % mpn)
     if ppn is not None:
         sbatch_args.append('--ntasks-per-node=%d' % ppn)
+    if queue == 'preempt':
+        sbatch_args.append('--qos=preempt')
     sbatch_args.append(slurmfile)
     
     # Now we submit the job
@@ -314,6 +316,8 @@ def Publish(campaign=0, EPIC=None, nodes=5, ppn=None, walltime=100,
         sbatch_args.append('--mem=%dG' % mpn)
     if ppn is not None:
         sbatch_args.append('--ntasks-per-node=%d' % ppn)
+    if queue == 'preempt':
+        sbatch_args.append('--qos=preempt')
     sbatch_args.append(slurmfile)
     
     # Now we submit the job
