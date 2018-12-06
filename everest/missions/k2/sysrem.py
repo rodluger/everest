@@ -12,7 +12,7 @@ for each `K2` campaign using the :py:obj:`SysRem` algorithm.
 from __future__ import division, print_function, absolute_import, \
      unicode_literals
 from ...config import EVEREST_DAT
-from ...utils import InitLog
+from ...utils import InitLog, prange
 from .utils import GetK2Campaign, Campaign, Channels
 import os
 import numpy as np
@@ -188,7 +188,7 @@ def GetCBVs(campaign, model='nPLD', clobber=False, **kwargs):
 
         log.info('Obtaining light curves...')
         time = None
-        for module in range(2, 25):
+        for module in prange(range(2, 25)):
 
             # Get the light curves
             lcfile = os.path.join(path, '%d.npz' % module)
