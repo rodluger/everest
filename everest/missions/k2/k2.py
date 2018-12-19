@@ -115,6 +115,7 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
             15: [2150],        # GUESS
             16: [1945],        # GUESS
             17: [1640]         # GUESS
+            18: [1245]         # GUESS
         }
     elif cadence == 'sc':
         breakpoints = {
@@ -154,7 +155,8 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
             14: [],
             15: [],
             16: [],
-            17: []
+            17: [],
+            18: []
         }
     else:
         raise ValueError("Invalid value for the cadence.")
