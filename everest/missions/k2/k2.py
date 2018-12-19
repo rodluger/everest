@@ -111,11 +111,11 @@ def Breakpoints(EPIC, season=None, cadence='lc', **kwargs):
             112: [],
             12: [1900],        # OK
             13: [2157],        # OK
-            14: [1950],        # GUESS
-            15: [2150],        # GUESS
-            16: [1945],        # GUESS
-            17: [1640],        # GUESS
-            18: [1245]         # GUESS
+            14: [1950],        # OK
+            15: [2150],        # OK
+            16: [1945],        # OK
+            17: [1640],        # OK
+            18: []             # Short campaign
         }
     elif cadence == 'sc':
         breakpoints = {
