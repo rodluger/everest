@@ -21,6 +21,7 @@ import subprocess
 import numpy as np
 import pickle
 import traceback
+import glob
 import logging
 log = logging.getLogger(__name__)
 
@@ -358,7 +359,7 @@ def _Publish(campaign, subcampaign, strkwargs):
 
 
 def Status(season=range(18), model='nPLD', purge=False, injection=False,
-           cadence='lc', **kwargs):
+           cadence='lc', purge_hard=False, **kwargs):
     '''
     Shows the progress of the de-trending runs for the specified campaign(s).
 
@@ -434,6 +435,11 @@ def Status(season=range(18), model='nPLD', purge=False, injection=False,
                                 os.remove(os.path.join(
                                     EVEREST_DAT, 'k2', 'c%02d' % c,
                                     folder, subfolder, model + '.err'))
+                            if purge_hard:
+                                for file in glob.glob(os.path.join(
+                                    EVEREST_DAT, 'k2', 'c%02d' % c,
+                                    folder, subfolder, '*')):
+                                    os.remove(file)
                         else:
                             remain.append(folder[:4] + subfolder)
         if proc == total:
