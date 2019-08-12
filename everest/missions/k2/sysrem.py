@@ -191,6 +191,7 @@ def GetCBVs(campaign, model='nPLD', clobber=False, **kwargs):
         for module in range(2, 25):
 
             # Get the light curves
+            log.info('Loading module %d/%d...' % (module, 24))
             lcfile = os.path.join(path, '%d.npz' % module)
             if clobber or not os.path.exists(lcfile):
                 try:
