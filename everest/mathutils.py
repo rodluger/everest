@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import, \
 import numpy as np
 from scipy.signal import medfilt
 from scipy.signal import savgol_filter
-from scipy.misc import comb
+from scipy.special import comb
 import logging
 log = logging.getLogger(__name__)
 
